@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-08-17T14:44:57+00:00\n"
+"POT-Creation-Date: 2026-08-18T06:59:33+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: smart-media-offloader\n"
@@ -116,11 +116,12 @@ msgstr ""
 
 #: includes/Offload/Observers/MediaLibraryFilterObserver.php:57
 #: includes/Offload/Observers/OffloadStatusObserver.php:70
+#: build/index.js:1
 msgid "Offloaded"
 msgstr ""
 
 #: includes/Offload/Observers/MediaLibraryFilterObserver.php:58
-#: build/index.js:6
+#: build/index.js:11
 msgid "Local only"
 msgstr ""
 
@@ -142,6 +143,7 @@ msgstr ""
 
 #: includes/Offload/Observers/RowActionsObserver.php:96
 #: build/index.js:1
+#: build/index.js:4
 msgid "Bring Back"
 msgstr ""
 
@@ -317,258 +319,468 @@ msgid "Save changes"
 msgstr ""
 
 #: build/index.js:1
-msgid "Restore offloaded media from the cloud back to your server. Downloads are atomic and verified — an attachment only switches back to local URLs once every file is safely on disk."
+msgid "Restored"
 msgstr ""
 
 #: build/index.js:1
-#: build/index.js:6
+msgid "Offloaded Media Log"
+msgstr ""
+
+#: build/index.js:1
+msgid "Restored Media Log"
+msgstr ""
+
+#: build/index.js:1
+msgid "Live"
+msgstr ""
+
+#. translators: %d: count of processed media items.
+#: build/index.js:2
+#, js-format
+msgid "%d item(s)"
+msgstr ""
+
+#: build/index.js:2
+msgid "Processing queue… completed items will appear here."
+msgstr ""
+
+#. translators: 1: attachment ID, 2: time.
+#: build/index.js:3
+#, js-format
+msgid "#%1$d · %2$s"
+msgstr ""
+
+#: build/index.js:3
+msgid "Failed"
+msgstr ""
+
+#: build/index.js:3
+msgid "Media library is empty. No media to restore."
+msgstr ""
+
+#: build/index.js:3
+msgid "All media attachments are already stored locally on your server."
+msgstr ""
+
+#: build/index.js:3
+#: build/index.js:19
+msgid "No errors"
+msgstr ""
+
+#. translators: %d: error count.
+#: build/index.js:4
+#: build/index.js:19
+#, js-format
+msgid "%d error(s) encountered"
+msgstr ""
+
+#: build/index.js:4
+msgid "Cloud objects deleting after restore"
+msgstr ""
+
+#: build/index.js:4
+msgid "Restore offloaded media from the cloud back to your server. Downloads are atomic and verified — an attachment only switches back to local URLs once every file is safely on disk."
+msgstr ""
+
+#: build/index.js:4
+#: build/index.js:14
 msgid "Configure a cloud provider in Settings first."
 msgstr ""
 
+#: build/index.js:4
+#: build/index.js:14
+msgid "Total Library Media"
+msgstr ""
+
+#: build/index.js:4
+msgid "Offloaded (Ready to Restore)"
+msgstr ""
+
+#: build/index.js:4
+msgid "Already Local"
+msgstr ""
+
+#: build/index.js:4
+msgid "All media is already stored locally on your server."
+msgstr ""
+
+#: build/index.js:4
+msgid "There are no offloaded cloud attachments to restore at this time."
+msgstr ""
+
 #. translators: %d: number of offloaded attachments.
-#: build/index.js:2
+#: build/index.js:5
 #, js-format
 msgid "%d attachment(s) are offloaded and can be brought back."
 msgstr ""
 
 #. translators: %s: formatted byte size.
-#: build/index.js:3
+#: build/index.js:6
 #, js-format
 msgid "Estimated download: up to %s (files still on disk are skipped)."
 msgstr ""
 
 #. translators: %s: formatted byte size.
-#: build/index.js:4
+#: build/index.js:7
 #, js-format
 msgid "Free disk space: %s"
 msgstr ""
 
-#: build/index.js:4
+#: build/index.js:7
 msgid "Free disk space could not be determined on this host."
 msgstr ""
 
-#: build/index.js:4
+#: build/index.js:7
 msgid "Warning: free disk space may not be enough for a full restore. Free up space before starting."
 msgstr ""
 
-#: build/index.js:4
-msgid "Also delete files from the cloud after each verified restore"
+#: build/index.js:7
+msgid "Restore Safety & Storage Options"
 msgstr ""
 
-#: build/index.js:4
-msgid "Off by default. Cloud objects are only removed after all files are verified on your server."
+#: build/index.js:7
+msgid "Restore storage options"
 msgstr ""
 
-#: build/index.js:4
-msgid "Start Bring Back"
+#: build/index.js:7
+msgid "Keep Cloud Copies"
 msgstr ""
 
-#. translators: 1: processed count, 2: total count, 3: error count.
-#: build/index.js:5
+#: build/index.js:7
+msgid "Recommended"
+msgstr ""
+
+#: build/index.js:7
+msgid "Files are downloaded to your server and served locally. Originals remain safe in your cloud bucket as backups."
+msgstr ""
+
+#: build/index.js:7
+msgid "Delete from Cloud After Restore"
+msgstr ""
+
+#: build/index.js:7
+msgid "Reclaim Storage"
+msgstr ""
+
+#: build/index.js:7
+msgid "Reclaims bucket storage. Cloud files are permanently deleted ONLY after 100% verified download on your server."
+msgstr ""
+
+#: build/index.js:7
+msgid "No Offloaded Media to Restore"
+msgstr ""
+
+#. translators: %d: number of offloaded attachments.
 #: build/index.js:8
+#: build/index.js:9
 #, js-format
-msgid "%1$d of %2$d processed — %3$d error(s)"
+msgid "Start Bring Back (%d)"
 msgstr ""
 
-#: build/index.js:5
-#: build/index.js:8
-msgid "Finished."
+#: build/index.js:9
+msgid "Restoring…"
 msgstr ""
 
-#: build/index.js:5
-#: build/index.js:8
-msgid "Cancelled."
+#: build/index.js:9
+#: build/index.js:17
+msgid "Finished"
 msgstr ""
 
-#: build/index.js:5
-msgid "Cloud copies are being deleted."
+#: build/index.js:9
+#: build/index.js:17
+msgid "Cancelled"
 msgstr ""
 
-#: build/index.js:5
-#: build/index.js:8
+#. translators: 1: processed count, 2: total count.
+#: build/index.js:10
+#: build/index.js:18
+#, js-format
+msgid "%1$d of %2$d processed"
+msgstr ""
+
+#: build/index.js:10
+#: build/index.js:19
 msgid "Cancel"
 msgstr ""
 
-#: build/index.js:5
-#: build/index.js:8
+#: build/index.js:10
+#: build/index.js:19
 msgid "Dismiss"
 msgstr ""
 
-#: build/index.js:5
-#: build/index.js:8
+#: build/index.js:10
+#: build/index.js:19
 msgid "Single attachments"
 msgstr ""
 
-#: build/index.js:5
+#: build/index.js:10
 msgid "You can also bring back one file at a time from the Media Library list — use the \"Bring Back\" row action on any offloaded attachment. Each attachment restores from the provider it was offloaded to, even if you switched providers since."
 msgstr ""
 
+#: build/index.js:10
+msgid "Connected & Active"
+msgstr ""
+
+#: build/index.js:10
+msgid "Setup Required"
+msgstr ""
+
 #. translators: %s: cloud provider name.
-#: build/index.js:6
+#: build/index.js:11
 #, js-format
 msgid "Connected to %s"
 msgstr ""
 
-#: build/index.js:6
+#: build/index.js:11
 msgid "Not configured yet"
 msgstr ""
 
-#: build/index.js:6
+#: build/index.js:11
 msgid "New uploads are offloaded automatically and served from your custom domain."
 msgstr ""
 
-#: build/index.js:6
+#: build/index.js:11
 msgid "Add your Cloudflare R2 credentials to get started."
 msgstr ""
 
-#: build/index.js:6
+#: build/index.js:11
 msgid "Open Settings"
 msgstr ""
 
-#: build/index.js:6
+#: build/index.js:11
 msgid "Total media items"
 msgstr ""
 
-#: build/index.js:6
+#: build/index.js:11
 msgid "Offloaded to cloud"
 msgstr ""
 
-#: build/index.js:6
-msgid "Roadmap"
+#: build/index.js:11
+msgid "All Synced"
 msgstr ""
 
-#: build/index.js:6
-msgid "This is a pre-release. Live now: automatic offload on upload with retention policies, bulk offload, and Bring Back — restoring cloud files to your server. Coming next: more S3-compatible providers, added one per release."
+#: build/index.js:11
+msgid "Quick Actions"
 msgstr ""
 
-#: build/index.js:6
+#: build/index.js:11
+msgid "Manage your media library and cloud storage settings."
+msgstr ""
+
+#: build/index.js:11
+#: build/index.js:14
 msgid "Bulk Offload"
 msgstr ""
 
-#: build/index.js:6
+#. translators: %d: local files.
+#: build/index.js:12
+#, js-format
+msgid "%d local files ready to offload"
+msgstr ""
+
+#: build/index.js:12
+msgid "All media is currently offloaded"
+msgstr ""
+
+#: build/index.js:12
+msgid "Bring Back (Restore)"
+msgstr ""
+
+#. translators: %d: offloaded files.
+#: build/index.js:13
+#, js-format
+msgid "%d offloaded files in cloud"
+msgstr ""
+
+#: build/index.js:13
+msgid "No offloaded files to restore"
+msgstr ""
+
+#: build/index.js:13
+msgid "Provider Settings"
+msgstr ""
+
+#. translators: %s: provider name.
+#: build/index.js:14
+#, js-format
+msgid "Manage %s & credentials"
+msgstr ""
+
+#: build/index.js:14
+msgid "Configure cloud bucket credentials"
+msgstr ""
+
+#: build/index.js:14
+msgid "Media library is empty. Upload media files first."
+msgstr ""
+
+#: build/index.js:14
+msgid "All media attachments are already offloaded to the cloud."
+msgstr ""
+
+#: build/index.js:14
 msgid "Move your existing media library to the cloud. Processing runs in the background — you can leave this page and come back."
 msgstr ""
 
+#: build/index.js:14
+msgid "Already Offloaded"
+msgstr ""
+
+#: build/index.js:14
+msgid "Local (Ready to Offload)"
+msgstr ""
+
+#: build/index.js:14
+msgid "All media is already offloaded to the cloud!"
+msgstr ""
+
+#: build/index.js:14
+msgid "All attachments in your library are currently stored in the cloud. Any newly uploaded media will be offloaded automatically."
+msgstr ""
+
+#: build/index.js:14
+msgid "Your WordPress media library is empty."
+msgstr ""
+
+#: build/index.js:14
+msgid "Upload images or media files to WordPress to start offloading."
+msgstr ""
+
 #. translators: %d: number of local attachments.
-#: build/index.js:7
+#: build/index.js:15
 #, js-format
-msgid "%d attachment(s) are local-only and can be offloaded."
+msgid "%d attachment(s) are local-only and ready to be offloaded."
 msgstr ""
 
-#: build/index.js:7
-msgid "Start Bulk Offload"
+#: build/index.js:15
+msgid "All Media Offloaded"
 msgstr ""
 
-#: build/index.js:8
+#. translators: %d: number of local attachments.
+#: build/index.js:16
+#: build/index.js:17
+#, js-format
+msgid "Start Bulk Offload (%d)"
+msgstr ""
+
+#: build/index.js:17
+msgid "Offloading…"
+msgstr ""
+
+#: build/index.js:19
 msgid "You can also offload one file at a time from the Media Library list — use the \"Offload now\" row action. Offload state is shown in each attachment's details, and the library can be filtered by Offloaded / Local only."
 msgstr ""
 
-#: build/index.js:8
+#: build/index.js:19
 msgid "•••••••• (saved — leave empty to keep)"
 msgstr ""
 
 #. translators: %s: wp-config constant name.
-#: build/index.js:9
+#: build/index.js:20
 #, js-format
 msgid "Locked by the %s constant in wp-config.php."
 msgstr ""
 
-#: build/index.js:9
+#: build/index.js:20
 msgid "Loading credentials…"
 msgstr ""
 
-#: build/index.js:9
+#: build/index.js:20
 msgid "Testing…"
 msgstr ""
 
-#: build/index.js:9
+#: build/index.js:20
 msgid "Test Connection"
 msgstr ""
 
-#: build/index.js:9
+#: build/index.js:20
 msgid "Connected"
 msgstr ""
 
-#: build/index.js:9
+#: build/index.js:20
 msgid "Not connected"
 msgstr ""
 
-#: build/index.js:9
-msgid "— Select a provider —"
-msgstr ""
-
-#: build/index.js:9
+#: build/index.js:20
 msgid "Cloud Provider"
 msgstr ""
 
-#: build/index.js:9
+#: build/index.js:20
 msgid "Choose where your media is stored. More providers are coming — each release adds one."
 msgstr ""
 
-#: build/index.js:9
-msgid "Provider"
+#: build/index.js:20
+msgid "Storage Provider"
 msgstr ""
 
-#: build/index.js:9
+#: build/index.js:20
+msgid "Cloud Storage Provider"
+msgstr ""
+
+#: build/index.js:20
+msgid "S3-compatible Object Storage"
+msgstr ""
+
+#: build/index.js:20
 msgid "Retention Policy"
 msgstr ""
 
-#: build/index.js:9
+#: build/index.js:20
 msgid "What happens to local files after a successful offload."
 msgstr ""
 
-#: build/index.js:9
+#: build/index.js:20
 msgid "Retain Local Files — keep everything on the server (cloud is a mirror)"
 msgstr ""
 
-#: build/index.js:9
+#: build/index.js:20
 msgid "Smart Local Cleanup — delete generated thumbnails, keep originals"
 msgstr ""
 
-#: build/index.js:9
+#: build/index.js:20
 msgid "Full Cloud Migration — remove all local copies after offload"
 msgstr ""
 
-#: build/index.js:9
+#: build/index.js:20
 msgid "Behavior"
 msgstr ""
 
-#: build/index.js:9
+#: build/index.js:20
 msgid "Mirror Delete"
 msgstr ""
 
-#: build/index.js:9
+#: build/index.js:20
 msgid "When an attachment is deleted in WordPress, also delete its files from the cloud."
 msgstr ""
 
-#: build/index.js:9
+#: build/index.js:20
 msgid "Object Versioning"
 msgstr ""
 
-#: build/index.js:9
+#: build/index.js:20
 msgid "Add a timestamp segment to object keys so CDN caches never serve stale files after re-uploads."
 msgstr ""
 
-#: build/index.js:9
+#: build/index.js:20
 msgid "Custom Path Prefix"
 msgstr ""
 
-#: build/index.js:9
+#: build/index.js:20
 msgid "Store objects under a custom prefix inside the bucket."
 msgstr ""
 
-#: build/index.js:9
+#: build/index.js:20
 msgid "Path Prefix"
 msgstr ""
 
-#: build/index.js:9
+#: build/index.js:20
 msgid "Uninstall"
 msgstr ""
 
-#: build/index.js:9
+#: build/index.js:20
 msgid "Remove all data on uninstall"
 msgstr ""
 
-#: build/index.js:9
+#: build/index.js:20
 msgid "Delete all plugin settings, credentials and offload markers when the plugin is deleted. Cloud files are never touched."
 msgstr ""

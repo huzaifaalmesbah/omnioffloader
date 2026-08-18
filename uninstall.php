@@ -15,8 +15,8 @@ if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
 
 define( 'SMOWP_DIR', plugin_dir_path( __FILE__ ) );
 
-require_once SMOWP_DIR . 'includes/Autoloader.php';
-
-SmartMediaOffloader\Autoloader::run();
+if ( file_exists( SMOWP_DIR . 'vendor/autoload.php' ) ) {
+	require_once SMOWP_DIR . 'vendor/autoload.php';
+}
 
 SmartMediaOffloader\Core\Uninstaller::uninstall();

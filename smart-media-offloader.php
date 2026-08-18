@@ -33,16 +33,8 @@ define( 'SMOWP_ASSETS_URL', SMOWP_URL . 'assets/' );
 define( 'SMOWP_BASENAME', plugin_basename( __FILE__ ) );
 define( 'SMOWP_FILE', __FILE__ );
 
-// Require Autoloader.
-require_once SMOWP_DIR . 'includes/Autoloader.php';
-
-// Run Autoloader.
-SmartMediaOffloader\Autoloader::run();
-
-// Load Composer dependencies (AWS SDK). A scoped build is preferred when present.
-if ( file_exists( SMOWP_DIR . 'vendor/scoper-autoload.php' ) ) {
-	require_once SMOWP_DIR . 'vendor/scoper-autoload.php';
-} elseif ( file_exists( SMOWP_DIR . 'vendor/autoload.php' ) ) {
+// Load Composer autoloader (includes PSR-4 plugin classes and AWS SDK).
+if ( file_exists( SMOWP_DIR . 'vendor/autoload.php' ) ) {
 	require_once SMOWP_DIR . 'vendor/autoload.php';
 }
 

@@ -88,6 +88,15 @@ export function useBringBack() {
 		async ( deleteCloud: boolean ) => {
 			setBusy( true );
 			setDismissed( false );
+			// Reset state optimistically so stale 100% from a previous run never flashes.
+			setState( {
+				status: 'running',
+				total: 0,
+				processed: 0,
+				errors: 0,
+				delete_cloud: deleteCloud,
+				updated_at: Math.floor( Date.now() / 1000 ),
+			} );
 			setSessionRun( true );
 
 			try {
@@ -99,6 +108,7 @@ export function useBringBack() {
 				}
 			} catch ( error: unknown ) {
 				addNotice( 'error', errorMessage( error ) );
+				setSessionRun( false );
 			} finally {
 				setBusy( false );
 			}

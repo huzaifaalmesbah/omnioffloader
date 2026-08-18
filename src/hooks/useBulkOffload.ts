@@ -71,6 +71,14 @@ export function useBulkOffload() {
 	const start = useCallback( async () => {
 		setBusy( true );
 		setDismissed( false );
+		// Reset state optimistically so stale 100% from a previous run never flashes.
+		setState( {
+			status: 'running',
+			total: 0,
+			processed: 0,
+			errors: 0,
+			updated_at: Math.floor( Date.now() / 1000 ),
+		} );
 		setSessionRun( true );
 
 		try {
@@ -82,6 +90,7 @@ export function useBulkOffload() {
 			}
 		} catch ( error: unknown ) {
 			addNotice( 'error', errorMessage( error ) );
+			setSessionRun( false );
 		} finally {
 			setBusy( false );
 		}

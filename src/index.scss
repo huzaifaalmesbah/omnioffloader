@@ -374,22 +374,128 @@
 	margin-top: 8px;
 }
 
+.smowp-bulk-action {
+	display: flex;
+	flex-direction: column;
+	gap: 14px;
+	margin-top: 4px;
+
+	&__info {
+		margin: 0;
+		font-size: 13.5px;
+		color: var( --smowp-text );
+	}
+}
+
+.smowp-preflight-info {
+	margin-top: -6px;
+	font-size: 12.5px;
+}
+
+.smowp-toggle-group {
+	margin: 6px 0;
+}
+
+// Button styles
+.smowp-btn-primary.components-button.is-primary {
+	background: var( --smowp-accent );
+	color: #ffffff;
+	border-radius: 8px;
+	font-weight: 600;
+	height: 38px;
+	padding: 0 20px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	align-self: flex-start;
+	transition: background 0.15s ease, transform 0.1s ease;
+
+	&:hover:not( :disabled ) {
+		background: var( --smowp-accent-dark );
+	}
+
+	&:active:not( :disabled ) {
+		transform: translateY( 1px );
+	}
+}
+
+.smowp-btn-destructive.components-button {
+	color: #b32d2e;
+	border: 1px solid #f0b8b8;
+	background: #ffffff;
+	border-radius: 6px;
+	font-weight: 500;
+	height: 32px;
+	padding: 0 14px;
+	font-size: 12.5px;
+	transition: all 0.15s ease;
+
+	&:hover:not( :disabled ) {
+		background: #fde8e8;
+		border-color: #b32d2e;
+		color: #b32d2e;
+	}
+}
+
+.smowp-btn-dismiss.components-button {
+	color: var( --smowp-text );
+	border: 1px solid var( --smowp-border );
+	background: var( --smowp-surface );
+	border-radius: 6px;
+	font-weight: 500;
+	height: 32px;
+	padding: 0 14px;
+	font-size: 12.5px;
+	transition: all 0.15s ease;
+
+	&:hover {
+		background: var( --smowp-canvas );
+		border-color: #d1d5db;
+	}
+}
+
 .smowp-badge {
 	display: inline-flex;
 	align-items: center;
+	gap: 6px;
 	padding: 3px 10px;
 	border-radius: 999px;
 	font-size: 12px;
 	font-weight: 600;
 
 	&--ok {
-		background: var( --smowp-accent-tint );
-		color: var( --smowp-accent-dark );
+		background: #e6f6ec;
+		color: #176c3a;
 	}
 
 	&--fail {
 		background: #fde8e8;
 		color: #b32d2e;
+	}
+
+	&--running {
+		background: var( --smowp-accent-tint );
+		color: var( --smowp-accent-dark );
+	}
+}
+
+.smowp-badge-pulse {
+	width: 6px;
+	height: 6px;
+	border-radius: 50%;
+	background: var( --smowp-accent );
+	animation: smowp-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes smowp-pulse {
+	0%,
+	100% {
+		opacity: 1;
+		transform: scale( 1 );
+	}
+	50% {
+		opacity: 0.3;
+		transform: scale( 0.7 );
 	}
 }
 
@@ -405,43 +511,136 @@
 	max-width: 560px;
 }
 
-// Bulk progress
-.smowp-bulk-progress {
-	margin-top: 18px;
+// ---------------------------------------------------------------------------
+// Progress Card Container
+// ---------------------------------------------------------------------------
+.smowp-progress-card {
 	display: flex;
 	flex-direction: column;
-	gap: 10px;
-	max-width: 560px;
+	gap: 14px;
+	background: #f8fafc;
+	border: 1px solid var( --smowp-border );
+	border-radius: var( --smowp-radius-sm );
+	padding: 18px 20px;
+	margin-top: 16px;
+	max-width: 620px;
+	box-shadow: 0 1px 2px rgba( 0, 0, 0, 0.03 );
+	animation: smowp-fade-in 0.25s ease;
+
+	&.is-running {
+		border-color: #bfdbfe;
+		background: #f0f7ff;
+	}
+
+	&.is-done {
+		border-color: #bbf7d0;
+		background: #f0fdf4;
+	}
+
+	&__header {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 12px;
+	}
+
+	&__status {
+		display: flex;
+		align-items: center;
+		gap: 10px;
+		flex-wrap: wrap;
+	}
+
+	&__count {
+		font-size: 13px;
+		font-weight: 500;
+		color: var( --smowp-text );
+	}
+
+	&__pct {
+		font-size: 15px;
+		font-weight: 700;
+		color: var( --smowp-accent-dark );
+		font-feature-settings: 'tnum';
+		font-variant-numeric: tabular-nums;
+	}
+
+	&__footer {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 12px;
+		margin-top: -2px;
+	}
+
+	&__errors {
+		font-size: 12px;
+		color: var( --smowp-text-muted );
+	}
+
+	&__actions {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+	}
+}
+
+@keyframes smowp-fade-in {
+	from {
+		opacity: 0;
+		transform: translateY( 4px );
+	}
+	to {
+		opacity: 1;
+		transform: translateY( 0 );
+	}
+}
+
+// ---------------------------------------------------------------------------
+// Progress Bar Track & Fill
+// ---------------------------------------------------------------------------
+.smowp-progress-wrapper {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	width: 100%;
+}
+
+.smowp-progress-meta {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	font-size: 12.5px;
+}
+
+.smowp-progress-title {
+	font-weight: 600;
+	color: var( --smowp-text );
+}
+
+.smowp-progress-percent {
+	font-weight: 700;
+	color: var( --smowp-accent-dark );
+	font-variant-numeric: tabular-nums;
 }
 
 .smowp-progress {
 	position: relative;
-	height: 22px;
+	height: 10px;
 	border-radius: 999px;
-	background: var( --smowp-canvas );
-	border: 1px solid var( --smowp-border );
+	background: #e2e8f0;
 	overflow: hidden;
+	width: 100%;
 
 	&__fill {
 		height: 100%;
 		background: linear-gradient(
 			90deg,
 			var( --smowp-accent ) 0%,
-			var( --smowp-accent-dark ) 100%
+			#2563eb 100%
 		);
 		border-radius: 999px;
-		transition: width 0.4s ease;
-	}
-
-	&__label {
-		position: absolute;
-		inset: 0;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		font-size: 11px;
-		font-weight: 700;
-		color: var( --smowp-text );
+		transition: width 0.35s cubic-bezier( 0.4, 0, 0.2, 1 );
 	}
 }
 

@@ -32,75 +32,157 @@ export function OffloadPage() {
 					</p>
 				) }
 
-				{ stats?.configured && ! running && (
+				{ stats?.configured && (
 					<>
-						<p>
-							{ sprintf(
-								/* translators: %d: number of local attachments. */
-								__(
-									'%d attachment(s) are local-only and can be offloaded.',
-									'smart-media-offloader'
-								),
-								localCount
-							) }
-						</p>
-						<Button
-							variant="primary"
-							disabled={ busy || localCount === 0 }
-							isBusy={ busy }
-							onClick={ () => void start() }
-						>
-							{ __(
-								'Start Bulk Offload',
-								'smart-media-offloader'
-							) }
-						</Button>
-					</>
-				) }
-
-				{ showProgress && state && (
-					<div className="smowp-bulk-progress">
-						<ProgressBar
-							value={ state.processed }
-							max={ state.total }
-						/>
-						<p className="smowp-muted">
-							{ sprintf(
-								/* translators: 1: processed count, 2: total count, 3: error count. */
-								__(
-									'%1$d of %2$d processed — %3$d error(s)',
-									'smart-media-offloader'
-								),
-								state.processed,
-								state.total,
-								state.errors
-							) }
-							{ state.status === 'done' &&
-								' · ' +
-									__( 'Finished.', 'smart-media-offloader' ) }
-							{ state.status === 'cancelled' &&
-								' · ' +
+						<div className="smowp-bulk-action">
+							<p className="smowp-bulk-action__info">
+								{ sprintf(
+									/* translators: %d: number of local attachments. */
 									__(
-										'Cancelled.',
+										'%d attachment(s) are local-only and can be offloaded.',
+										'smart-media-offloader'
+									),
+									localCount
+								) }
+							</p>
+							{ ! running && (
+								<Button
+									variant="primary"
+									className="smowp-btn-primary"
+									disabled={ busy || localCount === 0 }
+									isBusy={ busy }
+									onClick={ () => void start() }
+								>
+									{ __(
+										'Start Bulk Offload',
 										'smart-media-offloader'
 									) }
-						</p>
+								</Button>
+							) }
+						</div>
 
-						{ running ? (
-							<Button
-								variant="secondary"
-								isDestructive
-								disabled={ busy }
-								onClick={ () => void cancel() }
+						{ showProgress && state && (
+							<div
+								className={
+									'smowp-progress-card' +
+									( running ? ' is-running' : '' ) +
+									( state.status === 'done'
+										? ' is-done'
+										: '' ) +
+									( state.status === 'cancelled'
+										? ' is-cancelled'
+										: '' )
+								}
 							>
-								{ __( 'Cancel', 'smart-media-offloader' ) }
-							</Button>
-						) : (
-							<Button variant="tertiary" onClick={ dismiss }>
-								{ __( 'Dismiss', 'smart-media-offloader' ) }
-							</Button>
+								<div className="smowp-progress-card__header">
+									<div className="smowp-progress-card__status">
+										{ running && (
+											<span className="smowp-badge smowp-badge--running">
+												<span className="smowp-badge-pulse" />
+												{ __(
+													'Offloading…',
+													'smart-media-offloader'
+												) }
+											</span>
+										) }
+										{ state.status === 'done' && (
+											<span className="smowp-badge smowp-badge--ok">
+												{ __(
+													'Finished',
+													'smart-media-offloader'
+												) }
+											</span>
+										) }
+										{ state.status === 'cancelled' && (
+											<span className="smowp-badge smowp-badge--fail">
+												{ __(
+													'Cancelled',
+													'smart-media-offloader'
+												) }
+											</span>
+										) }
+										<span className="smowp-progress-card__count">
+											{ sprintf(
+												/* translators: 1: processed count, 2: total count. */
+												__(
+													'%1$d of %2$d processed',
+													'smart-media-offloader'
+												),
+												state.processed,
+												state.total
+											) }
+										</span>
+									</div>
+
+									<span className="smowp-progress-card__pct">
+										{ state.total > 0
+											? Math.min(
+													100,
+													Math.round(
+														( state.processed /
+															state.total ) *
+															100
+													)
+											  )
+											: 0 }
+										%
+									</span>
+								</div>
+
+								<ProgressBar
+									value={ state.processed }
+									max={ state.total }
+									showPercentage={ false }
+								/>
+
+								<div className="smowp-progress-card__footer">
+									<span className="smowp-progress-card__errors">
+										{ state.errors > 0
+											? sprintf(
+													/* translators: %d: error count. */
+													__(
+														'%d error(s) encountered',
+														'smart-media-offloader'
+													),
+													state.errors
+											  )
+											: __(
+													'No errors',
+													'smart-media-offloader'
+											  ) }
+									</span>
+
+									<div className="smowp-progress-card__actions">
+										{ running ? (
+											<Button
+												variant="secondary"
+												isDestructive
+												className="smowp-btn-destructive"
+												disabled={ busy }
+												onClick={ () => void cancel() }
+											>
+												{ __(
+													'Cancel',
+													'smart-media-offloader'
+												) }
+											</Button>
+										) : (
+											<Button
+												variant="secondary"
+												className="smowp-btn-dismiss"
+												onClick={ dismiss }
+											>
+												{ __(
+													'Dismiss',
+													'smart-media-offloader'
+												) }
+											</Button>
+										) }
+									</div>
+								</div>
+							</div>
 						) }
-					</div>
+					</>
 				) }
 			</Card>
 

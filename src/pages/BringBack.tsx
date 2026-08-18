@@ -1,7 +1,8 @@
-import { Button, ToggleControl } from '@wordpress/components';
+import { Button, Tooltip } from '@wordpress/components';
 import { useState } from '@wordpress/element';
 import { __, sprintf } from '@wordpress/i18n';
 
+import { ActivityLog } from '../components/ui/ActivityLog';
 import { Card } from '../components/ui/Card';
 import { ProgressBar } from '../components/ui/ProgressBar';
 import { useCore } from '../context/CoreContext';
@@ -17,8 +18,28 @@ export function BringBackPage() {
 	);
 
 	const running = state?.status === 'running';
+	const totalCount = stats?.total ?? 0;
 	const offloadedCount = preflight?.offloaded ?? stats?.offloaded ?? 0;
+	const localCount = stats?.local ?? 0;
+	const isAllLocal =
+		stats?.configured && offloadedCount === 0 && totalCount > 0;
 	const freeKnown = ( preflight?.free_bytes ?? 0 ) > 0;
+
+	const isDisabled = busy || offloadedCount === 0;
+	let disabledReason: string = '';
+	if ( offloadedCount === 0 ) {
+		if ( totalCount === 0 ) {
+			disabledReason = __(
+				'Media library is empty. No media to restore.',
+				'smart-media-offloader'
+			);
+		} else {
+			disabledReason = __(
+				'All media attachments are already stored locally on your server.',
+				'smart-media-offloader'
+			);
+		}
+	}
 
 	let statusDetail: string = __( 'No errors', 'smart-media-offloader' );
 	if ( state && state.errors > 0 ) {
@@ -54,17 +75,77 @@ export function BringBackPage() {
 
 				{ stats?.configured && (
 					<>
-						<div className="smowp-bulk-action">
-							<p className="smowp-bulk-action__info">
-								{ sprintf(
-									/* translators: %d: number of offloaded attachments. */
-									__(
-										'%d attachment(s) are offloaded and can be brought back.',
+						<div className="smowp-media-summary">
+							<div className="smowp-media-chip">
+								<span className="smowp-media-chip__label">
+									{ __(
+										'Total Library Media',
 										'smart-media-offloader'
-									),
-									offloadedCount
-								) }
-							</p>
+									) }
+								</span>
+								<strong className="smowp-media-chip__value">
+									{ totalCount }
+								</strong>
+							</div>
+							<div className="smowp-media-chip smowp-media-chip--offloaded">
+								<span className="smowp-media-chip__label">
+									{ __(
+										'Offloaded (Ready to Restore)',
+										'smart-media-offloader'
+									) }
+								</span>
+								<strong className="smowp-media-chip__value">
+									{ offloadedCount }
+								</strong>
+							</div>
+							<div className="smowp-media-chip smowp-media-chip--local">
+								<span className="smowp-media-chip__label">
+									{ __(
+										'Already Local',
+										'smart-media-offloader'
+									) }
+								</span>
+								<strong className="smowp-media-chip__value">
+									{ localCount }
+								</strong>
+							</div>
+						</div>
+
+						{ isAllLocal && (
+							<div className="smowp-notice-banner smowp-notice-banner--info">
+								<span className="smowp-notice-banner__icon">
+									ℹ
+								</span>
+								<div className="smowp-notice-banner__text">
+									<strong>
+										{ __(
+											'All media is already stored locally on your server.',
+											'smart-media-offloader'
+										) }
+									</strong>
+									<p>
+										{ __(
+											'There are no offloaded cloud attachments to restore at this time.',
+											'smart-media-offloader'
+										) }
+									</p>
+								</div>
+							</div>
+						) }
+
+						<div className="smowp-bulk-action">
+							{ offloadedCount > 0 && (
+								<p className="smowp-bulk-action__info">
+									{ sprintf(
+										/* translators: %d: number of offloaded attachments. */
+										__(
+											'%d attachment(s) are offloaded and can be brought back.',
+											'smart-media-offloader'
+										),
+										offloadedCount
+									) }
+								</p>
+							) }
 
 							{ preflight && offloadedCount > 0 && (
 								<p className="smowp-muted smowp-preflight-info">
@@ -106,36 +187,212 @@ export function BringBackPage() {
 								</p>
 							) }
 
-							<div className="smowp-toggle-group">
-								<ToggleControl
-									__nextHasNoMarginBottom
-									label={ __(
-										'Also delete files from the cloud after each verified restore',
+							<div className="smowp-bringback-options">
+								<h4 className="smowp-bringback-options__title">
+									{ __(
+										'Restore Safety & Storage Options',
 										'smart-media-offloader'
 									) }
-									help={ __(
-										'Off by default. Cloud objects are only removed after all files are verified on your server.',
+								</h4>
+								<div
+									className="smowp-bringback-options__grid"
+									role="radiogroup"
+									aria-label={ __(
+										'Restore storage options',
 										'smart-media-offloader'
 									) }
-									checked={ deleteCloud }
-									disabled={ running }
-									onChange={ setDeleteCloud }
-								/>
+								>
+									<div
+										role="radio"
+										aria-checked={ ! deleteCloud }
+										tabIndex={
+											running || offloadedCount === 0
+												? -1
+												: 0
+										}
+										className={
+											'smowp-option-card' +
+											( ! deleteCloud
+												? ' is-selected'
+												: '' ) +
+											( running || offloadedCount === 0
+												? ' is-disabled'
+												: '' )
+										}
+										onClick={ () => {
+											if (
+												! running &&
+												offloadedCount > 0
+											) {
+												setDeleteCloud( false );
+											}
+										} }
+										onKeyDown={ ( e ) => {
+											if (
+												( e.key === ' ' ||
+													e.key === 'Enter' ) &&
+												! running &&
+												offloadedCount > 0
+											) {
+												e.preventDefault();
+												setDeleteCloud( false );
+											}
+										} }
+									>
+										<div className="smowp-option-card__radio">
+											<span className="smowp-radio-circle">
+												{ ! deleteCloud && (
+													<span className="smowp-radio-dot" />
+												) }
+											</span>
+										</div>
+										<div className="smowp-option-card__content">
+											<div className="smowp-option-card__head">
+												<strong>
+													{ __(
+														'Keep Cloud Copies',
+														'smart-media-offloader'
+													) }
+												</strong>
+												<span className="smowp-badge smowp-badge--ok">
+													{ __(
+														'Recommended',
+														'smart-media-offloader'
+													) }
+												</span>
+											</div>
+											<p>
+												{ __(
+													'Files are downloaded to your server and served locally. Originals remain safe in your cloud bucket as backups.',
+													'smart-media-offloader'
+												) }
+											</p>
+										</div>
+									</div>
+
+									<div
+										role="radio"
+										aria-checked={ deleteCloud }
+										tabIndex={
+											running || offloadedCount === 0
+												? -1
+												: 0
+										}
+										className={
+											'smowp-option-card' +
+											( deleteCloud
+												? ' is-selected'
+												: '' ) +
+											( running || offloadedCount === 0
+												? ' is-disabled'
+												: '' )
+										}
+										onClick={ () => {
+											if (
+												! running &&
+												offloadedCount > 0
+											) {
+												setDeleteCloud( true );
+											}
+										} }
+										onKeyDown={ ( e ) => {
+											if (
+												( e.key === ' ' ||
+													e.key === 'Enter' ) &&
+												! running &&
+												offloadedCount > 0
+											) {
+												e.preventDefault();
+												setDeleteCloud( true );
+											}
+										} }
+									>
+										<div className="smowp-option-card__radio">
+											<span className="smowp-radio-circle">
+												{ deleteCloud && (
+													<span className="smowp-radio-dot" />
+												) }
+											</span>
+										</div>
+										<div className="smowp-option-card__content">
+											<div className="smowp-option-card__head">
+												<strong>
+													{ __(
+														'Delete from Cloud After Restore',
+														'smart-media-offloader'
+													) }
+												</strong>
+												<span className="smowp-badge smowp-badge--fail">
+													{ __(
+														'Reclaim Storage',
+														'smart-media-offloader'
+													) }
+												</span>
+											</div>
+											<p>
+												{ __(
+													'Reclaims bucket storage. Cloud files are permanently deleted ONLY after 100% verified download on your server.',
+													'smart-media-offloader'
+												) }
+											</p>
+										</div>
+									</div>
+								</div>
 							</div>
 
 							{ ! running && (
-								<Button
-									variant="primary"
-									className="smowp-btn-primary"
-									disabled={ busy || offloadedCount === 0 }
-									isBusy={ busy }
-									onClick={ () => void start( deleteCloud ) }
-								>
-									{ __(
-										'Start Bring Back',
-										'smart-media-offloader'
+								<div className="smowp-bulk-action__btn-wrap">
+									{ isDisabled && disabledReason ? (
+										<Tooltip text={ disabledReason }>
+											<span
+												className="smowp-btn-disabled-wrap"
+												tabIndex={ 0 }
+												role="button"
+												aria-disabled="true"
+											>
+												<Button
+													variant="primary"
+													className="smowp-btn-primary"
+													disabled
+													isBusy={ busy }
+												>
+													{ offloadedCount === 0
+														? __(
+																'No Offloaded Media to Restore',
+																'smart-media-offloader'
+														  )
+														: sprintf(
+																/* translators: %d: number of offloaded attachments. */
+																__(
+																	'Start Bring Back (%d)',
+																	'smart-media-offloader'
+																),
+																offloadedCount
+														  ) }
+												</Button>
+											</span>
+										</Tooltip>
+									) : (
+										<Button
+											variant="primary"
+											className="smowp-btn-primary"
+											disabled={ busy }
+											isBusy={ busy }
+											onClick={ () =>
+												void start( deleteCloud )
+											}
+										>
+											{ sprintf(
+												/* translators: %d: number of offloaded attachments. */
+												__(
+													'Start Bring Back (%d)',
+													'smart-media-offloader'
+												),
+												offloadedCount
+											) }
+										</Button>
 									) }
-								</Button>
+								</div>
 							) }
 						</div>
 
@@ -246,6 +503,12 @@ export function BringBackPage() {
 										) }
 									</div>
 								</div>
+
+								<ActivityLog
+									items={ state.recent }
+									actionType="restore"
+									running={ running }
+								/>
 							</div>
 						) }
 					</>

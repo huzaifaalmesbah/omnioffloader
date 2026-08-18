@@ -54,7 +54,7 @@ class BulkRestoreProcessor extends WP_Background_Process {
 	/**
 	 * Read the current progress state.
 	 *
-	 * @return array{status: string, total: int, processed: int, errors: int, delete_cloud: bool, updated_at: int}
+	 * @return array{status: string, total: int, processed: int, errors: int, delete_cloud: bool, updated_at: int, recent: array<int, array{id: int, title: string, status: string, timestamp: int, thumb: string, error: string}>}
 	 */
 	public static function get_state() {
 		$state = get_option( self::STATE_OPTION, array() );
@@ -63,7 +63,7 @@ class BulkRestoreProcessor extends WP_Background_Process {
 			$state = array();
 		}
 
-		return array_merge(
+		$merged = array_merge(
 			array(
 				'status'       => 'idle',
 				'total'        => 0,
@@ -71,15 +71,18 @@ class BulkRestoreProcessor extends WP_Background_Process {
 				'errors'       => 0,
 				'delete_cloud' => false,
 				'updated_at'   => 0,
+				'recent'       => array(),
 			),
 			$state
 		);
+
+		return $merged;
 	}
 
 	/**
 	 * Merge values into the progress state.
 	 *
-	 * @param array<string, int|string|bool> $values Values to merge.
+	 * @param array<string, mixed> $values Values to merge.
 	 * @return void
 	 */
 	public static function update_state( array $values ) {
@@ -122,6 +125,7 @@ class BulkRestoreProcessor extends WP_Background_Process {
 				'processed'    => 0,
 				'errors'       => 0,
 				'delete_cloud' => (bool) $delete_cloud,
+				'recent'       => array(),
 			)
 		);
 
@@ -174,10 +178,34 @@ class BulkRestoreProcessor extends WP_Background_Process {
 		$restorer = new AttachmentRestorer();
 		$ok       = $restorer->restore( $attachment_id, ! empty( $state['delete_cloud'] ) );
 
+		$recent = isset( $state['recent'] ) && is_array( $state['recent'] ) ? $state['recent'] : array();
+
+		$attached_file = get_attached_file( $attachment_id );
+		$filename      = $attached_file ? basename( $attached_file ) : '';
+		if ( empty( $filename ) ) {
+			$post_title = get_the_title( $attachment_id );
+			$filename   = ! empty( $post_title ) ? $post_title : sprintf( 'Attachment #%d', $attachment_id );
+		}
+
+		$thumb_url = wp_get_attachment_image_url( $attachment_id, 'thumbnail' );
+
+		$entry = array(
+			'id'        => $attachment_id,
+			'title'     => $filename,
+			'status'    => $ok ? 'success' : 'error',
+			'timestamp' => time(),
+			'thumb'     => $thumb_url ? $thumb_url : '',
+			'error'     => $ok ? '' : (string) get_post_meta( $attachment_id, '_smowp_last_error', true ),
+		);
+
+		array_unshift( $recent, $entry );
+		$recent = array_slice( $recent, 0, 50 );
+
 		self::update_state(
 			array(
 				'processed' => (int) $state['processed'] + 1,
 				'errors'    => (int) $state['errors'] + ( $ok ? 0 : 1 ),
+				'recent'    => $recent,
 			)
 		);
 

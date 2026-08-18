@@ -4,12 +4,22 @@
 
 export type BulkStatus = 'idle' | 'running' | 'done' | 'cancelled';
 
+export interface ProcessedMediaItem {
+	id: number;
+	title: string;
+	status: 'success' | 'error';
+	timestamp: number;
+	thumb?: string;
+	error?: string;
+}
+
 export interface BulkState {
 	status: BulkStatus;
 	total: number;
 	processed: number;
 	errors: number;
 	updated_at: number;
+	recent?: ProcessedMediaItem[];
 }
 
 export interface StartBulkResponse {

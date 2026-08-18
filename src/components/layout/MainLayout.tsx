@@ -25,9 +25,16 @@ export function MainLayout( {
 			<div className="smowp-main">
 				<Header activeView={ activeView } />
 
-				<main className="smowp-content">{ children }</main>
+				<main
+					className={
+						'smowp-content' +
+						( activeView === 'settings' ? ' has-savebar' : '' )
+					}
+				>
+					{ children }
+				</main>
 
-				<SaveBar />
+				{ activeView === 'settings' && <SaveBar /> }
 			</div>
 
 			<SnackbarList

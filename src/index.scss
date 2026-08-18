@@ -196,14 +196,20 @@
 
 .smowp-content {
 	flex: 1;
-	padding: 28px 32px calc( var( --smowp-savebar-height ) + 28px );
+	padding: 28px 32px;
+
+	&.has-savebar {
+		padding-bottom: calc( var( --smowp-savebar-height ) + 28px );
+	}
 }
 
 .smowp-page {
 	display: flex;
 	flex-direction: column;
 	gap: 20px;
-	max-width: 980px;
+	width: 100%;
+	max-width: 100%;
+	box-sizing: border-box;
 }
 
 // ---------------------------------------------------------------------------
@@ -264,7 +270,7 @@
 	background: var( --smowp-surface );
 	border: 1px solid var( --smowp-border );
 	border-radius: var( --smowp-radius );
-	box-shadow: var( --smowp-shadow );
+	box-shadow: 0 1px 3px rgba( 0, 0, 0, 0.04 ), 0 1px 2px rgba( 0, 0, 0, 0.02 );
 	padding: 22px 24px;
 
 	&__head {
@@ -287,23 +293,25 @@
 .smowp-hero {
 	display: flex;
 	align-items: center;
-	gap: 18px;
+	gap: 20px;
 	background: linear-gradient(
 		135deg,
-		var( --smowp-accent ) 0%,
-		var( --smowp-accent-dark ) 100%
+		#0f4c9c 0%,
+		#0d3d7d 100%
 	);
 	border: 0;
-	color: #fff;
+	color: #ffffff;
+	padding: 24px 28px;
 
 	&__icon {
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		width: 64px;
-		height: 64px;
-		border-radius: 16px;
-		background: rgba( 255, 255, 255, 0.16 );
+		width: 60px;
+		height: 60px;
+		border-radius: 14px;
+		background: rgba( 255, 255, 255, 0.14 );
+		flex-shrink: 0;
 
 		svg {
 			fill: currentColor;
@@ -311,42 +319,119 @@
 	}
 
 	&__text {
+		flex: 1;
+
 		h2 {
 			margin: 0;
-			font-size: 18px;
-			color: #fff;
+			font-size: 19px;
+			font-weight: 700;
+			color: #ffffff;
+			letter-spacing: -0.01em;
 		}
 
 		p {
-			margin: 4px 0 10px;
-			color: rgba( 255, 255, 255, 0.85 );
+			margin: 4px 0 12px;
+			color: rgba( 255, 255, 255, 0.88 );
+			font-size: 13.5px;
+			line-height: 1.4;
 		}
 
 		.components-button.is-primary {
-			background: #fff;
+			background: #ffffff;
 			color: var( --smowp-accent-dark );
+			font-weight: 600;
+			border-radius: 8px;
+
+			&:hover {
+				background: #f0f7ff;
+				color: #000000;
+			}
 		}
+	}
+
+	&__badge-wrap {
+		margin-bottom: 6px;
+	}
+
+	&__live-badge {
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+		font-size: 11px;
+		font-weight: 600;
+		text-transform: uppercase;
+		letter-spacing: 0.04em;
+		padding: 2px 10px;
+		border-radius: 999px;
+		background: rgba( 255, 255, 255, 0.18 );
+		color: #ffffff;
+
+		.smowp-badge-pulse {
+			background: #34d399;
+			box-shadow: 0 0 0 0 rgba( 52, 211, 153, 0.7 );
+		}
+	}
+
+	&__setup-badge {
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+		font-size: 11px;
+		font-weight: 600;
+		text-transform: uppercase;
+		letter-spacing: 0.04em;
+		padding: 2px 10px;
+		border-radius: 999px;
+		background: rgba( 251, 191, 36, 0.22 );
+		color: #fef08a;
 	}
 }
 
 // Stat cards grid (Dashboard)
 .smowp-stats-grid {
 	display: grid;
-	grid-template-columns: repeat( auto-fit, minmax( 200px, 1fr ) );
-	gap: 20px;
+	grid-template-columns: repeat( auto-fit, minmax( 220px, 1fr ) );
+	gap: 16px;
 }
 
 .smowp-stat {
 	display: flex;
 	flex-direction: column;
-	gap: 6px;
+	gap: 10px;
+	padding: 18px 20px;
+	background: #ffffff;
+	border: 1px solid var( --smowp-border );
+	border-radius: var( --smowp-radius );
+	outline: none;
+	user-select: none;
+
+	&.is-clickable {
+		cursor: pointer;
+		transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+
+		&:hover {
+			transform: translateY( -2px );
+			border-color: var( --smowp-accent );
+			box-shadow: 0 4px 12px rgba( 0, 0, 0, 0.06 );
+		}
+
+		&:focus-visible {
+			box-shadow: 0 0 0 2px #ffffff, 0 0 0 4px var( --smowp-accent );
+		}
+	}
+
+	&__top {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+	}
 
 	&__icon {
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		width: 40px;
-		height: 40px;
+		width: 36px;
+		height: 36px;
 		border-radius: 10px;
 		background: var( --smowp-accent-tint );
 		color: var( --smowp-accent-dark );
@@ -356,33 +441,500 @@
 		}
 	}
 
+	&__badge {
+		font-size: 11.5px;
+		font-weight: 600;
+		padding: 2px 8px;
+		border-radius: 999px;
+		background: var( --smowp-canvas );
+		color: var( --smowp-text-muted );
+	}
+
+	&__body {
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
+	}
+
 	&__value {
 		font-size: 26px;
 		font-weight: 700;
 		line-height: 1.1;
+		color: var( --smowp-text );
+		font-feature-settings: 'tnum';
+		font-variant-numeric: tabular-nums;
 	}
 
 	&__label {
+		font-size: 12.5px;
 		color: var( --smowp-text-muted );
+	}
+
+	// Variants
+	&--success {
+		.smowp-stat__icon {
+			background: #ecfdf5;
+			color: #059669;
+		}
+
+		.smowp-stat__badge {
+			background: #d1fae5;
+			color: #065f46;
+		}
+	}
+
+	&--local {
+		.smowp-stat__icon {
+			background: #eff6ff;
+			color: #2563eb;
+		}
+
+		.smowp-stat__badge {
+			background: #e0f2fe;
+			color: #0369a1;
+		}
 	}
 }
 
 // ---------------------------------------------------------------------------
-// Forms & misc
+// Quick Actions Grid (Dashboard)
 // ---------------------------------------------------------------------------
+.smowp-quick-actions-grid {
+	display: grid;
+	grid-template-columns: repeat( auto-fit, minmax( 240px, 1fr ) );
+	gap: 12px;
+}
+
+.smowp-quick-action-card {
+	background: #ffffff;
+	border: 1px solid var( --smowp-border );
+	border-radius: var( --smowp-radius-sm );
+	padding: 14px 16px;
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	cursor: pointer;
+	transition: all 0.15s ease;
+	outline: none;
+	user-select: none;
+
+	&:hover {
+		border-color: var( --smowp-accent );
+		background: #fafcff;
+		transform: translateX( 2px );
+
+		.smowp-quick-action-card__arrow {
+			transform: translateX( 3px );
+			color: var( --smowp-accent );
+		}
+	}
+
+	&:focus-visible {
+		box-shadow: 0 0 0 2px #ffffff, 0 0 0 4px var( --smowp-accent );
+	}
+
+	&__icon {
+		width: 38px;
+		height: 38px;
+		border-radius: 10px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		flex-shrink: 0;
+
+		svg {
+			fill: currentColor;
+		}
+
+		&--offload {
+			background: #ecfdf5;
+			color: #059669;
+		}
+
+		&--restore {
+			background: #eff6ff;
+			color: #2563eb;
+		}
+
+		&--settings {
+			background: #f8fafc;
+			color: #475569;
+		}
+	}
+
+	&__info {
+		flex: 1;
+		min-width: 0;
+
+		strong {
+			display: block;
+			font-size: 13px;
+			font-weight: 600;
+			color: var( --smowp-text );
+			margin-bottom: 2px;
+			white-space: nowrap;
+			overflow: hidden;
+			text-overflow: ellipsis;
+		}
+
+		p {
+			margin: 0;
+			font-size: 11.5px;
+			color: var( --smowp-text-muted );
+			white-space: nowrap;
+			overflow: hidden;
+			text-overflow: ellipsis;
+		}
+	}
+
+	&__arrow {
+		font-size: 15px;
+		color: var( --smowp-text-muted );
+		font-weight: 600;
+		transition: transform 0.15s ease, color 0.15s ease;
+	}
+}
+
+// ---------------------------------------------------------------------------
+// Forms & Input Controls
+// ---------------------------------------------------------------------------
+.smowp-form-layout {
+	max-width: 640px;
+	width: 100%;
+	display: flex;
+	flex-direction: column;
+	gap: 18px;
+}
+
 .smowp-credential-fields {
 	display: flex;
 	flex-direction: column;
-	gap: 16px;
-	margin: 16px 0;
-	max-width: 480px;
+	gap: 18px;
+	width: 100%;
 }
 
 .smowp-test-connection {
 	display: flex;
 	align-items: center;
+	gap: 14px;
+	margin-top: 4px;
+
+	.components-button {
+		height: 38px;
+		padding: 0 18px;
+		border-radius: 8px;
+		font-weight: 600;
+		font-size: 13px;
+		border: 1.5px solid var( --smowp-border );
+		background: #ffffff;
+		color: var( --smowp-text );
+		transition: all 0.15s ease;
+
+		&:hover:not( :disabled ) {
+			border-color: var( --smowp-accent );
+			color: var( --smowp-accent );
+			background: var( --smowp-accent-tint );
+		}
+
+		&:focus-visible {
+			box-shadow: 0 0 0 3px rgba( 19, 93, 190, 0.2 );
+		}
+	}
+}
+
+// ---------------------------------------------------------------------------
+// Shared Radio & Check Indicators
+// ---------------------------------------------------------------------------
+.smowp-radio-circle {
+	width: 18px;
+	height: 18px;
+	border-radius: 50%;
+	border: 2px solid var( --smowp-border );
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background: #ffffff;
+	transition: border-color 0.15s ease;
+	flex-shrink: 0;
+}
+
+.smowp-radio-dot {
+	width: 8px;
+	height: 8px;
+	border-radius: 50%;
+	background: var( --smowp-accent );
+}
+
+// ---------------------------------------------------------------------------
+// Provider Selection Cards
+// ---------------------------------------------------------------------------
+.smowp-provider-selector-wrap {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.smowp-provider-selector-label {
+	font-size: 12.5px !important;
+	font-weight: 600 !important;
+	color: #334155 !important;
+	letter-spacing: 0.01em !important;
+	text-transform: uppercase !important;
+}
+
+.smowp-provider-selector-grid {
+	display: grid;
+	grid-template-columns: repeat( auto-fit, minmax( 280px, 1fr ) );
 	gap: 12px;
-	margin-top: 8px;
+}
+
+.smowp-provider-card {
+	background: #ffffff;
+	border: 1.5px solid #cbd5e1;
+	border-radius: var( --smowp-radius-sm );
+	padding: 14px 16px;
+	cursor: pointer;
+	transition: all 0.15s ease;
+	outline: none;
+	user-select: none;
+	box-shadow: 0 1px 2px rgba( 0, 0, 0, 0.02 );
+
+	&:hover {
+		border-color: var( --smowp-accent );
+		background: #fafcff;
+		transform: translateY( -1px );
+	}
+
+	&:focus-visible {
+		box-shadow: 0 0 0 2px #ffffff, 0 0 0 4px var( --smowp-accent );
+	}
+
+	&.is-selected {
+		border-color: var( --smowp-accent );
+		background: #f0f7ff;
+		box-shadow: 0 0 0 1px var( --smowp-accent );
+
+		.smowp-provider-card__icon {
+			background: var( --smowp-accent );
+			color: #ffffff;
+		}
+
+		.smowp-radio-circle {
+			border-color: var( --smowp-accent );
+		}
+	}
+
+	&__head {
+		display: flex;
+		align-items: center;
+		gap: 12px;
+	}
+
+	&__icon {
+		width: 40px;
+		height: 40px;
+		border-radius: 10px;
+		background: var( --smowp-accent-tint );
+		color: var( --smowp-accent-dark );
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		flex-shrink: 0;
+		transition: all 0.15s ease;
+
+		svg {
+			fill: currentColor;
+		}
+	}
+
+	&__title-wrap {
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
+		flex: 1;
+
+		strong {
+			font-size: 14px;
+			font-weight: 700;
+			color: var( --smowp-text );
+		}
+	}
+
+	&__sub {
+		font-size: 11.5px;
+		color: var( --smowp-text-muted );
+	}
+
+	&__check {
+		flex-shrink: 0;
+	}
+}
+
+// Global Form Controls Override inside Smart Media Offloader
+.smowp-app {
+	.components-base-control {
+		margin-bottom: 0;
+
+		&__label {
+			font-size: 12.5px !important;
+			font-weight: 600 !important;
+			color: #334155 !important;
+			margin-bottom: 6px !important;
+			display: block !important;
+			letter-spacing: 0.01em !important;
+			text-transform: uppercase !important;
+		}
+
+		&__help {
+			font-size: 12px !important;
+			color: #64748b !important;
+			margin-top: 6px !important;
+			line-height: 1.45 !important;
+			font-style: normal !important;
+		}
+	}
+
+	// InputControl Container & Backdrop
+	.components-input-control__container {
+		height: 42px !important;
+		min-height: 42px !important;
+		border-radius: 8px !important;
+
+		.components-input-control__backdrop {
+			border: 1.5px solid #cbd5e1 !important;
+			border-radius: 8px !important;
+			background: #ffffff !important;
+			box-shadow: 0 1px 2px rgba( 0, 0, 0, 0.03 ) !important;
+			transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
+		}
+
+		&:hover:not( .is-disabled ) .components-input-control__backdrop {
+			border-color: #94a3b8 !important;
+		}
+
+		&:focus-within .components-input-control__backdrop {
+			border-color: var( --smowp-accent ) !important;
+			box-shadow: 0 0 0 3px rgba( 19, 93, 190, 0.15 ) !important;
+		}
+
+		.components-text-control__input,
+		.components-select-control__input,
+		input[type="text"],
+		input[type="password"],
+		input[type="url"],
+		select {
+			border: 0 !important;
+			box-shadow: none !important;
+			background: transparent !important;
+			outline: none !important;
+			height: 100% !important;
+			padding: 0 14px !important;
+			font-size: 13.5px !important;
+			color: #1e293b !important;
+		}
+
+		.components-select-control__input {
+			padding-right: 36px !important;
+		}
+	}
+
+	// Standalone inputs when InputControl container is NOT present:
+	input[type="text"]:not( .components-input-control__container * ),
+	input[type="password"]:not( .components-input-control__container * ),
+	input[type="url"]:not( .components-input-control__container * ),
+	input[type="number"]:not( .components-input-control__container * ),
+	select:not( .components-input-control__container * ) {
+		height: 42px !important;
+		padding: 0 14px !important;
+		background: #ffffff !important;
+		border: 1.5px solid #cbd5e1 !important;
+		border-radius: 8px !important;
+		font-size: 13.5px !important;
+		color: #1e293b !important;
+		box-shadow: 0 1px 2px rgba( 0, 0, 0, 0.03 ) !important;
+		transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
+		width: 100% !important;
+		box-sizing: border-box !important;
+
+		&::placeholder {
+			color: #94a3b8 !important;
+		}
+
+		&:hover:not( :disabled ) {
+			border-color: #94a3b8 !important;
+		}
+
+		&:focus {
+			border-color: var( --smowp-accent ) !important;
+			box-shadow: 0 0 0 3px rgba( 19, 93, 190, 0.15 ) !important;
+			outline: none !important;
+		}
+
+		&:disabled {
+			background: #f8fafc !important;
+			color: #94a3b8 !important;
+			border-color: #e2e8f0 !important;
+			cursor: not-allowed !important;
+		}
+	}
+
+	.components-radio-control {
+		display: flex;
+		flex-direction: column;
+		gap: 10px;
+
+		&__option {
+			display: flex;
+			align-items: center;
+			gap: 10px;
+			margin: 0 !important;
+			padding: 12px 14px;
+			background: #f8fafc;
+			border: 1.5px solid #e2e8f0;
+			border-radius: 8px;
+			cursor: pointer;
+			transition: all 0.15s ease;
+
+			&:hover {
+				background: #f1f5f9;
+				border-color: #cbd5e1;
+			}
+
+			input[type="radio"] {
+				margin: 0 !important;
+				width: 17px;
+				height: 17px;
+				accent-color: var( --smowp-accent );
+			}
+
+			label {
+				font-size: 13px !important;
+				color: #1e293b !important;
+				font-weight: 500 !important;
+				cursor: pointer;
+				margin: 0 !important;
+			}
+		}
+	}
+
+	.components-toggle-control {
+		padding: 12px 0;
+		border-bottom: 1px solid #f1f5f9;
+
+		&:last-child {
+			border-bottom: none;
+		}
+
+		.components-toggle-control__label {
+			font-size: 13.5px !important;
+			font-weight: 600 !important;
+			color: #1e293b !important;
+		}
+
+		.components-form-toggle.is-checked .components-form-toggle__track {
+			background: var( --smowp-accent ) !important;
+		}
+	}
 }
 
 // ---------------------------------------------------------------------------
@@ -398,22 +950,24 @@
 .smowp-media-chip {
 	display: flex;
 	flex-direction: column;
-	gap: 4px;
-	background: var( --smowp-canvas );
+	gap: 6px;
+	background: #ffffff;
 	border: 1px solid var( --smowp-border );
+	border-left: 4px solid var( --smowp-border );
 	border-radius: var( --smowp-radius-sm );
-	padding: 12px 16px;
+	padding: 14px 18px;
+	box-shadow: 0 1px 2px rgba( 0, 0, 0, 0.02 );
 
 	&__label {
 		font-size: 11.5px;
-		font-weight: 500;
+		font-weight: 600;
 		color: var( --smowp-text-muted );
 		text-transform: uppercase;
-		letter-spacing: 0.02em;
+		letter-spacing: 0.03em;
 	}
 
 	&__value {
-		font-size: 20px;
+		font-size: 24px;
 		font-weight: 700;
 		color: var( --smowp-text );
 		line-height: 1.1;
@@ -421,12 +975,20 @@
 		font-variant-numeric: tabular-nums;
 	}
 
-	&--offloaded &__value {
-		color: #176c3a;
+	&--offloaded {
+		border-left-color: #10b981;
+
+		.smowp-media-chip__value {
+			color: #059669;
+		}
 	}
 
-	&--local &__value {
-		color: var( --smowp-accent-dark );
+	&--local {
+		border-left-color: var( --smowp-accent );
+
+		.smowp-media-chip__value {
+			color: var( --smowp-accent-dark );
+		}
 	}
 }
 
@@ -550,25 +1112,6 @@
 	&__radio {
 		padding-top: 2px;
 		flex-shrink: 0;
-
-		.smowp-radio-circle {
-			width: 18px;
-			height: 18px;
-			border-radius: 50%;
-			border: 2px solid var( --smowp-border );
-			display: flex;
-			align-items: center;
-			justify-content: center;
-			background: #ffffff;
-			transition: border-color 0.15s ease;
-		}
-
-		.smowp-radio-dot {
-			width: 8px;
-			height: 8px;
-			border-radius: 50%;
-			background: var( --smowp-accent );
-		}
 	}
 
 	&__content {
@@ -615,10 +1158,6 @@
 .smowp-preflight-info {
 	margin-top: -6px;
 	font-size: 12.5px;
-}
-
-.smowp-toggle-group {
-	margin: 6px 0;
 }
 
 // Button styles

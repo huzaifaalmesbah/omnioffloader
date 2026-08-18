@@ -1,10 +1,11 @@
 import {
+	Icon,
 	RadioControl,
-	SelectControl,
 	TextControl,
 	ToggleControl,
 } from '@wordpress/components';
 import { __ } from '@wordpress/i18n';
+import { cloudUpload } from '@wordpress/icons';
 
 import { CredentialFields } from '../components/settings/CredentialFields';
 import { TestConnection } from '../components/settings/TestConnection';
@@ -19,17 +20,6 @@ export function SettingsPage() {
 		return null;
 	}
 
-	const providerOptions = [
-		{
-			label: __( '— Select a provider —', 'smart-media-offloader' ),
-			value: '',
-		},
-		...providers.map( ( provider ) => ( {
-			label: provider.name,
-			value: provider.key,
-		} ) ),
-	];
-
 	return (
 		<div className="smowp-page">
 			<Card
@@ -39,23 +29,91 @@ export function SettingsPage() {
 					'smart-media-offloader'
 				) }
 			>
-				<SelectControl
-					label={ __( 'Provider', 'smart-media-offloader' ) }
-					value={ settings.provider }
-					options={ providerOptions }
-					onChange={ ( provider: string ) =>
-						updateSettings( { provider } )
-					}
-					__next40pxDefaultSize
-					__nextHasNoMarginBottom
-				/>
+				<div className="smowp-form-layout">
+					<div className="smowp-provider-selector-wrap">
+						<span className="smowp-provider-selector-label">
+							{ __(
+								'Storage Provider',
+								'smart-media-offloader'
+							) }
+						</span>
+						<div
+							className="smowp-provider-selector-grid"
+							role="radiogroup"
+							aria-label={ __(
+								'Cloud Storage Provider',
+								'smart-media-offloader'
+							) }
+						>
+							{ providers.map( ( provider ) => {
+								const isSelected =
+									settings.provider === provider.key;
+								return (
+									<div
+										key={ provider.key }
+										role="radio"
+										aria-checked={ isSelected }
+										tabIndex={ 0 }
+										className={
+											'smowp-provider-card' +
+											( isSelected ? ' is-selected' : '' )
+										}
+										onClick={ () =>
+											updateSettings( {
+												provider: provider.key,
+											} )
+										}
+										onKeyDown={ ( e ) => {
+											if (
+												e.key === ' ' ||
+												e.key === 'Enter'
+											) {
+												e.preventDefault();
+												updateSettings( {
+													provider: provider.key,
+												} );
+											}
+										} }
+									>
+										<div className="smowp-provider-card__head">
+											<div className="smowp-provider-card__icon">
+												<Icon
+													icon={ cloudUpload }
+													size={ 22 }
+												/>
+											</div>
+											<div className="smowp-provider-card__title-wrap">
+												<strong>
+													{ provider.name }
+												</strong>
+												<span className="smowp-provider-card__sub">
+													{ __(
+														'S3-compatible Object Storage',
+														'smart-media-offloader'
+													) }
+												</span>
+											</div>
+											<div className="smowp-provider-card__check">
+												<span className="smowp-radio-circle">
+													{ isSelected && (
+														<span className="smowp-radio-dot" />
+													) }
+												</span>
+											</div>
+										</div>
+									</div>
+								);
+							} ) }
+						</div>
+					</div>
 
-				{ settings.provider && (
-					<>
-						<CredentialFields provider={ settings.provider } />
-						<TestConnection provider={ settings.provider } />
-					</>
-				) }
+					{ settings.provider && (
+						<>
+							<CredentialFields provider={ settings.provider } />
+							<TestConnection provider={ settings.provider } />
+						</>
+					) }
+				</div>
 			</Card>
 
 			<Card

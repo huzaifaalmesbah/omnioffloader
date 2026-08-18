@@ -22,7 +22,16 @@
 	"scripts": {
 		"phpstan": "phpstan analyse --memory-limit=1G",
 		"phpcs": "phpcs",
-		"phpcbf": "phpcbf"
+		"phpcbf": "phpcbf",
+		"post-autoload-dump": [
+			"Aws\\Script\\Composer\\Composer::removeUnusedServices"
+		]
+	},
+	"extra": {
+		"aws/aws-sdk-php": [
+			"S3",
+			"Sts"
+		]
 	},
 	"config": {
 		"allow-plugins": {

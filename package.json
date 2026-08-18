@@ -16,8 +16,8 @@
 		"i18n:json": "wp i18n make-json languages/ languages/ --no-purge",
 		"i18n": "npm run i18n:pot && npm run i18n:po && npm run i18n:mo && npm run i18n:json",
 		"i18n:build": "npm run i18n:pot && npm run i18n:mo && npm run i18n:json",
-		"bundle": "npm run build:release && zip -r smart-media-offloader.zip . -x \"src/*\" \"node_modules/*\" \".git/*\" \".git\" \".github/*\" \".github\" \".vscode/*\" \".vscode\" \".idea/*\" \".idea\" \".project/*\" \".project\" \".claude/*\" \".claude\" \".agents/*\" \".agents\" \".wordpress-org/*\" \".wordpress-org\" \"bin/*\" \"tests/*\" \"AUDIT.md\" \"CLAUDE.md\" \"PLAN.md\" \"README.md\" \"skills-lock.json\" \"package.json\" \"package-lock.json\" \"tsconfig.json\" \"phpstan.neon.dist\" \"phpcs.xml.dist\" \"composer.json\" \"composer.lock\" \".gitignore\" \".distignore\" \".gitattributes\" \"*.zip\" \"*.DS_Store\" \".DS_Store\"",
-		"bundle:org": "npm run build:release && zip -r smart-media-offloader.zip . -x \"node_modules/*\" \".git/*\" \".git\" \".github/*\" \".github\" \".vscode/*\" \".vscode\" \".idea/*\" \".idea\" \".project/*\" \".project\" \".claude/*\" \".claude\" \".agents/*\" \".agents\" \".wordpress-org/*\" \".wordpress-org\" \"bin/*\" \"tests/*\" \"AUDIT.md\" \"CLAUDE.md\" \"PLAN.md\" \"README.md\" \"skills-lock.json\" \".gitignore\" \".distignore\" \".gitattributes\" \"*.zip\" \"*.DS_Store\" \".DS_Store\""
+		"bundle": "node scripts/bundle.js",
+		"bundle:org": "node scripts/bundle.js --org"
 	},
 	"devDependencies": {
 		"@types/react": "^19.2.18",

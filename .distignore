@@ -14,6 +14,8 @@ node_modules
 src
 bin
 tests
+scripts
+dist
 AUDIT.md
 CLAUDE.md
 PLAN.md

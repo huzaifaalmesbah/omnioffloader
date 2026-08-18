@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-08-18T08:46:50+00:00\n"
+"POT-Creation-Date: 2026-08-18T09:56:09+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: smart-media-offloader\n"
@@ -39,6 +39,16 @@ msgstr ""
 #. Author URI of the plugin
 #: smart-media-offloader.php
 msgid "https://profiles.wordpress.org/huzaifaalmesbah/"
+msgstr ""
+
+#: includes/Abstracts/WP_Background_Processing/WP_Background_Process.php:757
+msgid "Every Minute"
+msgstr ""
+
+#. translators: %d: interval in minutes
+#: includes/Abstracts/WP_Background_Processing/WP_Background_Process.php:760
+#, php-format
+msgid "Every %d Minutes"
 msgstr ""
 
 #: includes/Admin/Settings.php:72

@@ -235,6 +235,7 @@ abstract class WP_Background_Process extends WP_Async_Request
      */
     protected function cancelled()
     {
+        // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.DynamicHooknameFound
         do_action($this->identifier . '_cancelled');
     }
 
@@ -263,6 +264,7 @@ abstract class WP_Background_Process extends WP_Async_Request
      */
     protected function paused()
     {
+        // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.DynamicHooknameFound
         do_action($this->identifier . '_paused');
     }
 
@@ -283,6 +285,7 @@ abstract class WP_Background_Process extends WP_Async_Request
      */
     protected function resumed()
     {
+        // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.DynamicHooknameFound
         do_action($this->identifier . '_resumed');
     }
 
@@ -436,6 +439,7 @@ abstract class WP_Background_Process extends WP_Async_Request
         $this->start_time = time(); // Set start time of current process.
 
         $lock_duration = (property_exists($this, 'queue_lock_time')) ? $this->queue_lock_time : 60; // 1 minute
+        // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.DynamicHooknameFound
         $lock_duration = apply_filters($this->identifier . '_queue_lock_time', $lock_duration);
 
         set_site_transient($this->identifier . '_process_lock', microtime(), $lock_duration);
@@ -486,36 +490,51 @@ abstract class WP_Background_Process extends WP_Async_Request
             $limit = 0;
         }
 
-        $table        = $wpdb->options;
-        $column       = 'option_name';
-        $key_column   = 'option_id';
-        $value_column = 'option_value';
-
-        if (is_multisite()) {
-            $table        = $wpdb->sitemeta;
-            $column       = 'meta_key';
-            $key_column   = 'meta_id';
-            $value_column = 'meta_value';
-        }
-
         $key = $wpdb->esc_like($this->identifier . '_batch_') . '%';
 
-        $sql = '
-			SELECT *
-			FROM ' . $table . '
-			WHERE ' . $column . ' LIKE %s
-			ORDER BY ' . $key_column . ' ASC
-			';
-
-        $args = array($key);
-
-        if (! empty($limit)) {
-            $sql .= ' LIMIT %d';
-
-            $args[] = $limit;
+        if (is_multisite()) {
+            $column       = 'meta_key';
+            $value_column = 'meta_value';
+            if (! empty($limit)) {
+                // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+                $items = $wpdb->get_results(
+                    $wpdb->prepare(
+                        "SELECT meta_key, meta_value FROM {$wpdb->sitemeta} WHERE meta_key LIKE %s ORDER BY meta_id ASC LIMIT %d",
+                        $key,
+                        $limit
+                    )
+                );
+            } else {
+                // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+                $items = $wpdb->get_results(
+                    $wpdb->prepare(
+                        "SELECT meta_key, meta_value FROM {$wpdb->sitemeta} WHERE meta_key LIKE %s ORDER BY meta_id ASC",
+                        $key
+                    )
+                );
+            }
+        } else {
+            $column       = 'option_name';
+            $value_column = 'option_value';
+            if (! empty($limit)) {
+                // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+                $items = $wpdb->get_results(
+                    $wpdb->prepare(
+                        "SELECT option_name, option_value FROM {$wpdb->options} WHERE option_name LIKE %s ORDER BY option_id ASC LIMIT %d",
+                        $key,
+                        $limit
+                    )
+                );
+            } else {
+                // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+                $items = $wpdb->get_results(
+                    $wpdb->prepare(
+                        "SELECT option_name, option_value FROM {$wpdb->options} WHERE option_name LIKE %s ORDER BY option_id ASC",
+                        $key
+                    )
+                );
+            }
         }
-
-        $items = $wpdb->get_results($wpdb->prepare($sql, $args)); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 
         $batches = array();
 
@@ -552,6 +571,7 @@ abstract class WP_Background_Process extends WP_Async_Request
          *
          * @param int $seconds
          */
+        // phpcs:disable WordPress.NamingConventions.PrefixAllGlobals.DynamicHooknameFound
         $throttle_seconds = max(
             0,
             apply_filters(
@@ -562,6 +582,7 @@ abstract class WP_Background_Process extends WP_Async_Request
                 )
             )
         );
+        // phpcs:enable WordPress.NamingConventions.PrefixAllGlobals.DynamicHooknameFound
 
         do {
             $batch = $this->get_batch();
@@ -625,6 +646,7 @@ abstract class WP_Background_Process extends WP_Async_Request
             $return = true;
         }
 
+        // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.DynamicHooknameFound
         return apply_filters($this->identifier . '_memory_exceeded', $return);
     }
 
@@ -660,6 +682,7 @@ abstract class WP_Background_Process extends WP_Async_Request
      */
     protected function time_exceeded()
     {
+        // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.DynamicHooknameFound
         $finish = $this->start_time + apply_filters($this->identifier . '_default_time_limit', 20); // 20 seconds
         $return = false;
 
@@ -667,6 +690,7 @@ abstract class WP_Background_Process extends WP_Async_Request
             $return = true;
         }
 
+        // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.DynamicHooknameFound
         return apply_filters($this->identifier . '_time_exceeded', $return);
     }
 
@@ -691,6 +715,7 @@ abstract class WP_Background_Process extends WP_Async_Request
      */
     protected function completed()
     {
+        // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.DynamicHooknameFound
         do_action($this->identifier . '_completed');
     }
 
@@ -709,6 +734,7 @@ abstract class WP_Background_Process extends WP_Async_Request
             $interval = $this->cron_interval;
         }
 
+        // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.DynamicHooknameFound
         $interval = apply_filters($this->cron_interval_identifier, $interval);
 
         return is_int($interval) && 0 < $interval ? $interval : 5;
@@ -728,9 +754,10 @@ abstract class WP_Background_Process extends WP_Async_Request
         $interval = $this->get_cron_interval();
 
         if (1 === $interval) {
-            $display = __('Every Minute');
+            $display = __('Every Minute', 'smart-media-offloader');
         } else {
-            $display = sprintf(__('Every %d Minutes'), $interval);
+            /* translators: %d: interval in minutes */
+            $display = sprintf(__('Every %d Minutes', 'smart-media-offloader'), $interval);
         }
 
         // Adds an "Every NNN Minute(s)" schedule to the existing cron schedules.

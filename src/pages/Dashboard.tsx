@@ -263,14 +263,6 @@ export function DashboardPage( { onNavigate }: DashboardProps ) {
 					</div>
 				</div>
 			</Card>
-
-			<Card
-				title={ __( 'Roadmap', 'smart-media-offloader' ) }
-				description={ __(
-					'This is a pre-release. Live now: automatic offload on upload with retention policies, bulk offload, and Bring Back — restoring cloud files to your server. Coming next: more S3-compatible providers, added one per release.',
-					'smart-media-offloader'
-				) }
-			/>
 		</div>
 	);
 }

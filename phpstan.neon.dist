@@ -1,0 +1,25 @@
+parameters:
+	level: 6
+	bootstrapFiles:
+		- tests/phpstan-bootstrap.php
+	paths:
+		- smart-media-offloader.php
+		- uninstall.php
+		- includes/
+	excludePaths:
+		analyseAndScan:
+			- vendor/
+			- node_modules/
+			- build/
+		analyse:
+			# Vendored third-party library (Delicious Brains, GPL) — its
+			# symbols are still scanned, but it is not held to this
+			# project's docblock standards.
+			- includes/Abstracts/WP_Background_Processing/
+	scanFiles:
+		- vendor/php-stubs/wp-cli-stubs/wp-cli-stubs.php
+		- vendor/php-stubs/wp-cli-stubs/wp-cli-commands-stubs.php
+	ignoreErrors:
+		# wp-cli's progress bar class (php-cli-tools) has no stubs.
+		- '#unknown class cli\\progress\\Bar#'
+	treatPhpDocTypesAsCertain: false

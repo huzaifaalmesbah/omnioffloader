@@ -1,0 +1,480 @@
+// Smart Media Offloader admin app — Optimazz-style full-page layout.
+// Design agreed in PLAN.md §6.1: left sidebar (logo top, two-line nav items,
+// accent active state), content header (icon badge + page title/subtitle),
+// sticky bottom save bar, white rounded cards on a light gray canvas.
+
+// ---------------------------------------------------------------------------
+// Tokens
+// ---------------------------------------------------------------------------
+:root {
+	--smowp-accent: #135dbe;
+	--smowp-accent-dark: #0e4690;
+	--smowp-accent-tint: #e7eff9;
+	--smowp-canvas: #f4f6f8;
+	--smowp-surface: #ffffff;
+	--smowp-text: #1e1e1e;
+	--smowp-text-muted: #757575;
+	--smowp-border: #e5e7eb;
+	--smowp-radius: 14px;
+	--smowp-radius-sm: 10px;
+	--smowp-shadow: 0 1px 3px rgba( 0, 0, 0, 0.06 );
+	--smowp-sidebar-width: 280px;
+	--smowp-savebar-height: 64px;
+}
+
+// ---------------------------------------------------------------------------
+// Full-page takeover
+// ---------------------------------------------------------------------------
+#smowp-admin-app {
+	min-height: calc( 100vh - 32px );
+	margin-left: -20px;
+	background: var( --smowp-canvas );
+	color: var( --smowp-text );
+	font-size: 13px;
+}
+
+.smowp-loading {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	min-height: 60vh;
+}
+
+.smowp-app {
+	display: grid;
+	grid-template-columns: var( --smowp-sidebar-width ) 1fr;
+	min-height: calc( 100vh - 32px );
+}
+
+// ---------------------------------------------------------------------------
+// Sidebar
+// ---------------------------------------------------------------------------
+.smowp-sidebar {
+	background: var( --smowp-surface );
+	border-right: 1px solid var( --smowp-border );
+	padding: 20px 14px;
+	position: sticky;
+	top: 32px;
+	height: calc( 100vh - 32px );
+	overflow-y: auto;
+	box-sizing: border-box;
+}
+
+.smowp-sidebar__logo {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	padding: 4px 10px 18px;
+	border-bottom: 1px solid var( --smowp-border );
+	margin-bottom: 16px;
+
+	&-icon {
+		display: inline-flex;
+		color: var( --smowp-accent );
+
+		svg {
+			fill: currentColor;
+		}
+	}
+
+	&-name {
+		font-size: 17px;
+		font-weight: 700;
+		letter-spacing: -0.01em;
+	}
+}
+
+.smowp-sidebar__nav {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+.smowp-sidebar__item {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	width: 100%;
+	padding: 10px 12px;
+	border: 0;
+	border-left: 3px solid transparent;
+	border-radius: 6px; // Subtle — softer than the card radius, not a pill.
+	background: transparent;
+	cursor: pointer;
+	text-align: left;
+	color: var( --smowp-text );
+	transition: background 0.15s ease;
+
+	&:hover {
+		background: var( --smowp-canvas );
+	}
+
+	&.is-active {
+		background: var( --smowp-accent-tint );
+		border-left-color: var( --smowp-accent );
+
+		.smowp-sidebar__item-icon,
+		strong {
+			color: var( --smowp-accent-dark );
+		}
+	}
+
+	&-icon {
+		display: inline-flex;
+		color: var( --smowp-text-muted );
+
+		svg {
+			fill: currentColor;
+		}
+	}
+
+	&-text {
+		display: flex;
+		flex-direction: column;
+		line-height: 1.35;
+
+		strong {
+			font-size: 13.5px;
+		}
+
+		small {
+			color: var( --smowp-text-muted );
+			font-size: 11.5px;
+		}
+	}
+}
+
+// ---------------------------------------------------------------------------
+// Main column: header / content / save bar
+// ---------------------------------------------------------------------------
+.smowp-main {
+	display: flex;
+	flex-direction: column;
+	min-width: 0;
+}
+
+.smowp-header {
+	display: flex;
+	align-items: center;
+	gap: 14px;
+	padding: 18px 32px;
+	background: var( --smowp-surface );
+	border-bottom: 1px solid var( --smowp-border );
+	position: sticky;
+	top: 32px;
+	z-index: 10;
+
+	&__badge {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 44px;
+		height: 44px;
+		border-radius: 12px;
+		background: var( --smowp-accent-tint );
+		color: var( --smowp-accent-dark );
+
+		svg {
+			fill: currentColor;
+		}
+	}
+
+	&__titles {
+		h1 {
+			margin: 0;
+			font-size: 20px;
+			font-weight: 700;
+			line-height: 1.2;
+		}
+
+		p {
+			margin: 2px 0 0;
+			color: var( --smowp-text-muted );
+		}
+	}
+}
+
+.smowp-content {
+	flex: 1;
+	padding: 28px 32px calc( var( --smowp-savebar-height ) + 28px );
+}
+
+.smowp-page {
+	display: flex;
+	flex-direction: column;
+	gap: 20px;
+	max-width: 980px;
+}
+
+// ---------------------------------------------------------------------------
+// Save bar (sticky bottom)
+// ---------------------------------------------------------------------------
+.smowp-savebar {
+	position: fixed;
+	right: 0;
+	bottom: 0;
+	left: calc( 160px + var( --smowp-sidebar-width ) ); // WP admin menu + our sidebar.
+	display: flex;
+	align-items: center;
+	justify-content: flex-end;
+	gap: 16px;
+	height: var( --smowp-savebar-height );
+	padding: 0 32px;
+	background: var( --smowp-surface );
+	border-top: 1px solid var( --smowp-border );
+	z-index: 20;
+	box-sizing: border-box;
+
+	&__status {
+		color: var( --smowp-text-muted );
+	}
+
+	.smowp-savebar__button.components-button.is-primary {
+		background: var( --smowp-accent );
+		border-radius: 8px;
+		padding: 0 20px;
+		height: 38px;
+
+		&:hover:not( :disabled ) {
+			background: var( --smowp-accent-dark );
+		}
+	}
+}
+
+// Collapse offset when the WP admin menu is folded.
+.folded .smowp-savebar {
+	left: calc( 36px + var( --smowp-sidebar-width ) );
+}
+
+// ---------------------------------------------------------------------------
+// Cards
+// ---------------------------------------------------------------------------
+.smowp-card {
+	background: var( --smowp-surface );
+	border: 1px solid var( --smowp-border );
+	border-radius: var( --smowp-radius );
+	box-shadow: var( --smowp-shadow );
+	padding: 22px 24px;
+
+	&__head {
+		margin-bottom: 16px;
+
+		h2 {
+			margin: 0;
+			font-size: 15px;
+			font-weight: 700;
+		}
+
+		p {
+			margin: 4px 0 0;
+			color: var( --smowp-text-muted );
+		}
+	}
+}
+
+// Hero banner (Dashboard)
+.smowp-hero {
+	display: flex;
+	align-items: center;
+	gap: 18px;
+	background: linear-gradient(
+		135deg,
+		var( --smowp-accent ) 0%,
+		var( --smowp-accent-dark ) 100%
+	);
+	border: 0;
+	color: #fff;
+
+	&__icon {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 64px;
+		height: 64px;
+		border-radius: 16px;
+		background: rgba( 255, 255, 255, 0.16 );
+
+		svg {
+			fill: currentColor;
+		}
+	}
+
+	&__text {
+		h2 {
+			margin: 0;
+			font-size: 18px;
+			color: #fff;
+		}
+
+		p {
+			margin: 4px 0 10px;
+			color: rgba( 255, 255, 255, 0.85 );
+		}
+
+		.components-button.is-primary {
+			background: #fff;
+			color: var( --smowp-accent-dark );
+		}
+	}
+}
+
+// Stat cards grid (Dashboard)
+.smowp-stats-grid {
+	display: grid;
+	grid-template-columns: repeat( auto-fit, minmax( 200px, 1fr ) );
+	gap: 20px;
+}
+
+.smowp-stat {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+
+	&__icon {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 40px;
+		height: 40px;
+		border-radius: 10px;
+		background: var( --smowp-accent-tint );
+		color: var( --smowp-accent-dark );
+
+		svg {
+			fill: currentColor;
+		}
+	}
+
+	&__value {
+		font-size: 26px;
+		font-weight: 700;
+		line-height: 1.1;
+	}
+
+	&__label {
+		color: var( --smowp-text-muted );
+	}
+}
+
+// ---------------------------------------------------------------------------
+// Forms & misc
+// ---------------------------------------------------------------------------
+.smowp-credential-fields {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+	margin: 16px 0;
+	max-width: 480px;
+}
+
+.smowp-test-connection {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	margin-top: 8px;
+}
+
+.smowp-badge {
+	display: inline-flex;
+	align-items: center;
+	padding: 3px 10px;
+	border-radius: 999px;
+	font-size: 12px;
+	font-weight: 600;
+
+	&--ok {
+		background: var( --smowp-accent-tint );
+		color: var( --smowp-accent-dark );
+	}
+
+	&--fail {
+		background: #fde8e8;
+		color: #b32d2e;
+	}
+}
+
+.smowp-muted {
+	color: var( --smowp-text-muted );
+}
+
+.smowp-warning {
+	background: #fcf0e4;
+	color: #8a4d00;
+	border-radius: 8px;
+	padding: 10px 14px;
+	max-width: 560px;
+}
+
+// Bulk progress
+.smowp-bulk-progress {
+	margin-top: 18px;
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	max-width: 560px;
+}
+
+.smowp-progress {
+	position: relative;
+	height: 22px;
+	border-radius: 999px;
+	background: var( --smowp-canvas );
+	border: 1px solid var( --smowp-border );
+	overflow: hidden;
+
+	&__fill {
+		height: 100%;
+		background: linear-gradient(
+			90deg,
+			var( --smowp-accent ) 0%,
+			var( --smowp-accent-dark ) 100%
+		);
+		border-radius: 999px;
+		transition: width 0.4s ease;
+	}
+
+	&__label {
+		position: absolute;
+		inset: 0;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		font-size: 11px;
+		font-weight: 700;
+		color: var( --smowp-text );
+	}
+}
+
+.smowp-snackbars {
+	position: fixed;
+	bottom: calc( var( --smowp-savebar-height ) + 16px );
+	left: 50%;
+	transform: translateX( -50% );
+	z-index: 30;
+}
+
+// Space between stacked toggles inside cards.
+.smowp-card .components-toggle-control + .components-toggle-control,
+.smowp-card .components-toggle-control + .components-base-control {
+	margin-top: 14px;
+}
+
+// ---------------------------------------------------------------------------
+// Responsive
+// ---------------------------------------------------------------------------
+@media ( max-width: 960px ) {
+	.smowp-app {
+		grid-template-columns: 1fr;
+	}
+
+	.smowp-sidebar {
+		position: static;
+		height: auto;
+		border-right: 0;
+		border-bottom: 1px solid var( --smowp-border );
+	}
+
+	.smowp-savebar {
+		left: 0;
+	}
+}

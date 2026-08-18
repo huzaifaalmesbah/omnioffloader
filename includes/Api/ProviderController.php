@@ -1,0 +1,199 @@
+<?php
+/**
+ * Provider REST controller: credentials + connection test.
+ *
+ * @package SmartMediaOffloader
+ */
+
+namespace SmartMediaOffloader\Api;
+
+use SmartMediaOffloader\Core\Helpers;
+use SmartMediaOffloader\Providers\ProviderRegistry;
+use SmartMediaOffloader\Traits\OptionsHelper;
+use WP_REST_Request;
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
+/**
+ * Class ProviderController
+ *
+ * Secrets are never returned raw: password fields come back empty with
+ * an `is_set` flag, and saving a masked/empty password keeps the stored
+ * secret intact.
+ */
+class ProviderController extends BaseController {
+
+	use OptionsHelper;
+
+	/**
+	 * Register routes.
+	 *
+	 * @return void
+	 */
+	public function register_routes() {
+		$provider_arg = array(
+			'provider' => array(
+				'type'              => 'string',
+				'required'          => true,
+				'sanitize_callback' => 'sanitize_key',
+				'validate_callback' => static function ( $value ) {
+					return ProviderRegistry::has( (string) $value );
+				},
+			),
+		);
+
+		$this->register_get_route( '/provider/credentials', array( $this, 'get_credentials_response' ), $provider_arg );
+
+		$this->register_post_route(
+			'/provider/credentials',
+			array( $this, 'update_credentials_response' ),
+			$provider_arg + array(
+				'values' => array(
+					'type'     => 'object',
+					'required' => true,
+				),
+			)
+		);
+
+		$this->register_post_route( '/provider/test-connection', array( $this, 'test_connection_response' ), $provider_arg );
+	}
+
+	/**
+	 * GET /provider/credentials?provider=…
+	 *
+	 * Field definitions merged with per-site state: value (masked for
+	 * passwords), locked (wp-config constant) and is_set.
+	 *
+	 * @param WP_REST_Request $request Request.
+	 * @return \WP_REST_Response
+	 */
+	public function get_credentials_response( WP_REST_Request $request ) {
+		$provider_key = (string) $request->get_param( 'provider' );
+		$provider     = ProviderRegistry::create( $provider_key );
+
+		$fields = array();
+
+		foreach ( $provider->credential_fields() as $field ) {
+			$name   = $field['name'];
+			$value  = Helpers::get_credential( $provider_key, $name );
+			$locked = Helpers::is_credential_locked( $provider_key, $name );
+			$is_set = '' !== $value;
+
+			// Never return secrets; text values locked by constants are
+			// returned so the admin can see what applies.
+			$exposed = 'password' === $field['type'] ? '' : $value;
+
+			$fields[] = array_merge(
+				$field,
+				array(
+					'value'  => $exposed,
+					'locked' => $locked,
+					'is_set' => $is_set,
+				)
+			);
+		}
+
+		return rest_ensure_response(
+			array(
+				'provider' => $provider_key,
+				'fields'   => $fields,
+			)
+		);
+	}
+
+	/**
+	 * POST /provider/credentials
+	 *
+	 * @param WP_REST_Request $request Request.
+	 * @return \WP_REST_Response|\WP_Error
+	 */
+	public function update_credentials_response( WP_REST_Request $request ) {
+		$provider_key = (string) $request->get_param( 'provider' );
+		$values       = $request->get_param( 'values' );
+
+		if ( ! is_array( $values ) ) {
+			return new \WP_Error(
+				'smowp_invalid_credentials',
+				__( 'Credential values must be an object.', 'smart-media-offloader' ),
+				array( 'status' => 400 )
+			);
+		}
+
+		$provider    = ProviderRegistry::create( $provider_key );
+		$definitions = array();
+
+		foreach ( $provider->credential_fields() as $field ) {
+			$definitions[ $field['name'] ] = $field;
+		}
+
+		$to_save = array();
+
+		foreach ( $values as $name => $value ) {
+			$name = sanitize_key( (string) $name );
+
+			// Only known fields; fields locked by constants are immutable.
+			if ( ! isset( $definitions[ $name ] ) || Helpers::is_credential_locked( $provider_key, $name ) ) {
+				continue;
+			}
+
+			$value = (string) $value;
+
+			// Empty password = "keep the stored secret" (masked round-trip).
+			if ( 'password' === $definitions[ $name ]['type'] && '' === $value ) {
+				continue;
+			}
+
+			$to_save[ $name ] = $value;
+		}
+
+		if ( ! empty( $to_save ) ) {
+			self::update_provider_credentials( $provider_key, $to_save );
+		}
+
+		// Return fresh masked state (same shape as GET).
+		return $this->get_credentials_response( $request );
+	}
+
+	/**
+	 * POST /provider/test-connection
+	 *
+	 * @param WP_REST_Request $request Request.
+	 * @return \WP_REST_Response
+	 */
+	public function test_connection_response( WP_REST_Request $request ) {
+		if ( ! class_exists( \Aws\S3\S3Client::class ) ) {
+			return rest_ensure_response(
+				array(
+					'connected'  => false,
+					'message'    => __( 'The AWS SDK is not installed. Run "composer install" in the plugin directory.', 'smart-media-offloader' ),
+					'checked_at' => current_time( 'mysql', true ),
+				)
+			);
+		}
+
+		$provider_key = (string) $request->get_param( 'provider' );
+		$provider     = ProviderRegistry::create( $provider_key );
+
+		$result = $provider->check_connection();
+
+		if ( true === $result ) {
+			return rest_ensure_response(
+				array(
+					'connected'  => true,
+					'message'    => __( 'Connection successful.', 'smart-media-offloader' ),
+					'checked_at' => current_time( 'mysql', true ),
+				)
+			);
+		}
+
+		return rest_ensure_response(
+			array(
+				'connected'  => false,
+				'message'    => $result->get_error_message(),
+				'checked_at' => current_time( 'mysql', true ),
+			)
+		);
+	}
+}

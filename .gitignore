@@ -1,0 +1,13 @@
+node_modules/
+vendor/
+build/
+languages/*.mo
+languages/*.json
+*.zip
+.DS_Store
+composer.lock
+package-lock.json
+.vscode/
+.idea/
+phpstan.neon
+phpcs.xml

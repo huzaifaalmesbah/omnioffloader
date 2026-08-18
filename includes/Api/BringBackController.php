@@ -1,0 +1,212 @@
+<?php
+/**
+ * Bring Back REST controller: preflight, single restore, bulk queue.
+ *
+ * @package SmartMediaOffloader
+ */
+
+namespace SmartMediaOffloader\Api;
+
+use SmartMediaOffloader\Core\Helpers;
+use SmartMediaOffloader\Core\Plugin;
+use SmartMediaOffloader\Services\AttachmentRestorer;
+use SmartMediaOffloader\Services\BulkRestoreProcessor;
+use SmartMediaOffloader\Traits\AttachmentHelper;
+use WP_REST_Request;
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
+/**
+ * Class BringBackController
+ */
+class BringBackController extends BaseController {
+
+	use AttachmentHelper;
+
+	/**
+	 * Register routes.
+	 *
+	 * @return void
+	 */
+	public function register_routes() {
+		$this->register_get_route( '/bring-back/preflight', array( $this, 'preflight_response' ) );
+
+		$this->register_post_route(
+			'/bring-back/attachment/(?P<id>\d+)',
+			array( $this, 'restore_attachment_response' ),
+			array(
+				'id'           => array(
+					'type'              => 'integer',
+					'required'          => true,
+					'sanitize_callback' => 'absint',
+				),
+				'delete_cloud' => array(
+					'type'              => 'boolean',
+					'default'           => false,
+					'sanitize_callback' => 'rest_sanitize_boolean',
+				),
+			)
+		);
+
+		$this->register_post_route(
+			'/bring-back/bulk',
+			array( $this, 'start_bulk_response' ),
+			array(
+				'delete_cloud' => array(
+					'type'              => 'boolean',
+					'default'           => false,
+					'sanitize_callback' => 'rest_sanitize_boolean',
+				),
+			)
+		);
+		$this->register_get_route( '/bring-back/bulk/progress', array( $this, 'progress_response' ) );
+		$this->register_post_route( '/bring-back/bulk/cancel', array( $this, 'cancel_bulk_response' ) );
+	}
+
+	/**
+	 * The bulk restore engine, or an error when unconfigured.
+	 *
+	 * @return BulkRestoreProcessor|\WP_Error
+	 */
+	private function require_engine() {
+		$processor = Plugin::get_instance()->get_bulk_restore();
+
+		if ( null === $processor ) {
+			return new \WP_Error(
+				'smowp_not_configured',
+				__( 'No cloud provider is configured.', 'smart-media-offloader' ),
+				array( 'status' => 409 )
+			);
+		}
+
+		return $processor;
+	}
+
+	/**
+	 * GET /bring-back/preflight
+	 *
+	 * @return \WP_REST_Response
+	 */
+	public function preflight_response() {
+		return rest_ensure_response( Helpers::get_restore_preflight() );
+	}
+
+	/**
+	 * POST /bring-back/attachment/{id}
+	 *
+	 * @param WP_REST_Request $request Request.
+	 * @return \WP_REST_Response|\WP_Error
+	 */
+	public function restore_attachment_response( WP_REST_Request $request ) {
+		$attachment_id = (int) $request->get_param( 'id' );
+
+		if ( 'attachment' !== get_post_type( $attachment_id ) ) {
+			return new \WP_Error(
+				'smowp_not_attachment',
+				__( 'Not a media attachment.', 'smart-media-offloader' ),
+				array( 'status' => 404 )
+			);
+		}
+
+		if ( ! self::is_offloaded( $attachment_id ) ) {
+			return new \WP_Error(
+				'smowp_not_offloaded',
+				__( 'This attachment is not offloaded.', 'smart-media-offloader' ),
+				array( 'status' => 409 )
+			);
+		}
+
+		$restorer = new AttachmentRestorer();
+		$ok       = $restorer->restore( $attachment_id, (bool) $request->get_param( 'delete_cloud' ) );
+
+		return rest_ensure_response(
+			array(
+				'restored' => $ok,
+				'errors'   => get_post_meta( $attachment_id, 'smowp_error_log', true ),
+			)
+		);
+	}
+
+	/**
+	 * POST /bring-back/bulk
+	 *
+	 * @param WP_REST_Request $request Request.
+	 * @return \WP_REST_Response|\WP_Error
+	 */
+	public function start_bulk_response( WP_REST_Request $request ) {
+		$engine = $this->require_engine();
+
+		if ( is_wp_error( $engine ) ) {
+			return $engine;
+		}
+
+		if ( $engine->is_active() ) {
+			return new \WP_Error(
+				'smowp_bulk_running',
+				__( 'A bulk restore is already running.', 'smart-media-offloader' ),
+				array( 'status' => 409 )
+			);
+		}
+
+		// One bulk pipeline at a time — a simultaneous offload and restore
+		// would race each other over the same files.
+		$offload = Plugin::get_instance()->get_bulk_offload();
+
+		if ( null !== $offload && $offload->is_active() ) {
+			return new \WP_Error(
+				'smowp_bulk_running',
+				__( 'A bulk offload is running — wait for it to finish first.', 'smart-media-offloader' ),
+				array( 'status' => 409 )
+			);
+		}
+
+		$queued = $engine->start( (bool) $request->get_param( 'delete_cloud' ) );
+
+		return rest_ensure_response(
+			array(
+				'queued' => $queued,
+				'state'  => BulkRestoreProcessor::get_state(),
+			)
+		);
+	}
+
+	/**
+	 * GET /bring-back/bulk/progress
+	 *
+	 * Also self-heals stalled queues: when the async loopback dispatch
+	 * cannot reach the site (local SSL, blocked loopbacks), each poll
+	 * processes a short batch inline instead.
+	 *
+	 * @return \WP_REST_Response
+	 */
+	public function progress_response() {
+		$engine = Plugin::get_instance()->get_bulk_restore();
+
+		if ( null !== $engine && 'running' === BulkRestoreProcessor::get_state()['status'] ) {
+			$engine->process_queue_now();
+		}
+
+		return rest_ensure_response( BulkRestoreProcessor::get_state() );
+	}
+
+	/**
+	 * POST /bring-back/bulk/cancel
+	 *
+	 * @return \WP_REST_Response|\WP_Error
+	 */
+	public function cancel_bulk_response() {
+		$engine = $this->require_engine();
+
+		if ( is_wp_error( $engine ) ) {
+			return $engine;
+		}
+
+		$engine->cancel();
+
+		BulkRestoreProcessor::update_state( array( 'status' => 'cancelled' ) );
+
+		return rest_ensure_response( BulkRestoreProcessor::get_state() );
+	}
+}

@@ -1,0 +1,574 @@
+# Copyright (C) 2026 Huzaifa Al Mesbah
+# This file is distributed under the GPL-2.0-or-later.
+msgid ""
+msgstr ""
+"Project-Id-Version: Smart Media Offloader 0.1.0\n"
+"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/smart-media-offloader\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"POT-Creation-Date: 2026-08-17T14:44:57+00:00\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"X-Generator: WP-CLI 2.12.0\n"
+"X-Domain: smart-media-offloader\n"
+
+#. Plugin Name of the plugin
+#: smart-media-offloader.php
+#: includes/Admin/Settings.php:71
+#: build/index.js:1
+msgid "Smart Media Offloader"
+msgstr ""
+
+#. Plugin URI of the plugin
+#: smart-media-offloader.php
+msgid "https://wordpress.org/plugins/smart-media-offloader/"
+msgstr ""
+
+#. Description of the plugin
+#: smart-media-offloader.php
+msgid "Offload WordPress media to Cloudflare R2, serve it from your CDN, and bring files back to your server anytime."
+msgstr ""
+
+#. Author of the plugin
+#: smart-media-offloader.php
+msgid "Huzaifa Al Mesbah"
+msgstr ""
+
+#. Author URI of the plugin
+#: smart-media-offloader.php
+msgid "https://profiles.wordpress.org/huzaifaalmesbah/"
+msgstr ""
+
+#: includes/Admin/Settings.php:72
+msgid "Media Offloader"
+msgstr ""
+
+#: includes/Admin/Settings.php:100
+msgid "Smart Media Offloader: build assets are missing. Run \"npm install && npm run build\" in the plugin directory."
+msgstr ""
+
+#: includes/Api/BaseController.php:58
+#: includes/Offload/Observers/RowActionsObserver.php:133
+#: includes/Offload/Observers/RowActionsObserver.php:163
+msgid "Sorry, you are not allowed to do that."
+msgstr ""
+
+#: includes/Api/BringBackController.php:79
+#: includes/Api/OffloadController.php:75
+msgid "No cloud provider is configured."
+msgstr ""
+
+#: includes/Api/BringBackController.php:108
+#: includes/Api/OffloadController.php:101
+msgid "Not a media attachment."
+msgstr ""
+
+#: includes/Api/BringBackController.php:116
+msgid "This attachment is not offloaded."
+msgstr ""
+
+#: includes/Api/BringBackController.php:148
+msgid "A bulk restore is already running."
+msgstr ""
+
+#: includes/Api/BringBackController.php:160
+msgid "A bulk offload is running — wait for it to finish first."
+msgstr ""
+
+#: includes/Api/CoreController.php:71
+msgid "Settings must be an object."
+msgstr ""
+
+#: includes/Api/CoreController.php:79
+msgid "Unknown cloud provider."
+msgstr ""
+
+#: includes/Api/OffloadController.php:133
+msgid "A bulk offload is already running."
+msgstr ""
+
+#: includes/Api/OffloadController.php:145
+msgid "A bulk restore is running — wait for it to finish first."
+msgstr ""
+
+#: includes/Api/ProviderController.php:119
+msgid "Credential values must be an object."
+msgstr ""
+
+#: includes/Api/ProviderController.php:170
+msgid "The AWS SDK is not installed. Run \"composer install\" in the plugin directory."
+msgstr ""
+
+#: includes/Api/ProviderController.php:185
+msgid "Connection successful."
+msgstr ""
+
+#: includes/Core/Plugin.php:143
+#: build/index.js:1
+msgid "Settings"
+msgstr ""
+
+#: includes/Offload/Observers/MediaLibraryFilterObserver.php:56
+msgid "All offload states"
+msgstr ""
+
+#: includes/Offload/Observers/MediaLibraryFilterObserver.php:57
+#: includes/Offload/Observers/OffloadStatusObserver.php:70
+msgid "Offloaded"
+msgstr ""
+
+#: includes/Offload/Observers/MediaLibraryFilterObserver.php:58
+#: build/index.js:6
+msgid "Local only"
+msgstr ""
+
+#: includes/Offload/Observers/OffloadStatusObserver.php:77
+msgid "Local"
+msgstr ""
+
+#: includes/Offload/Observers/OffloadStatusObserver.php:83
+msgid "last offload failed"
+msgstr ""
+
+#: includes/Offload/Observers/OffloadStatusObserver.php:89
+msgid "Offload status"
+msgstr ""
+
+#: includes/Offload/Observers/RowActionsObserver.php:87
+msgid "Offload now"
+msgstr ""
+
+#: includes/Offload/Observers/RowActionsObserver.php:96
+#: build/index.js:1
+msgid "Bring Back"
+msgstr ""
+
+#: includes/Offload/Observers/RowActionsObserver.php:196
+msgid "Attachment offloaded to the cloud."
+msgstr ""
+
+#: includes/Offload/Observers/RowActionsObserver.php:197
+msgid "Offload failed — see the attachment details for the error."
+msgstr ""
+
+#: includes/Offload/Observers/RowActionsObserver.php:215
+msgid "Attachment restored to the server."
+msgstr ""
+
+#: includes/Offload/Observers/RowActionsObserver.php:216
+msgid "Bring Back failed — see the attachment details for the error."
+msgstr ""
+
+#: includes/Providers/AbstractS3Provider.php:308
+msgid "No bucket name configured."
+msgstr ""
+
+#. translators: %s: error message from the storage provider.
+#: includes/Providers/AbstractS3Provider.php:328
+#, php-format
+msgid "Connection failed: %s"
+msgstr ""
+
+#: includes/Providers/CloudflareR2.php:74
+msgid "Access Key ID"
+msgstr ""
+
+#: includes/Providers/CloudflareR2.php:76
+msgid "Your R2 Access Key ID"
+msgstr ""
+
+#: includes/Providers/CloudflareR2.php:81
+msgid "Secret Access Key"
+msgstr ""
+
+#: includes/Providers/CloudflareR2.php:83
+msgid "Your R2 Secret Access Key"
+msgstr ""
+
+#: includes/Providers/CloudflareR2.php:88
+msgid "Endpoint URL"
+msgstr ""
+
+#: includes/Providers/CloudflareR2.php:91
+msgid "Find it in Cloudflare Dashboard → R2 → your bucket → Settings."
+msgstr ""
+
+#: includes/Providers/CloudflareR2.php:95
+msgid "Bucket Name"
+msgstr ""
+
+#: includes/Providers/CloudflareR2.php:97
+msgid "Your R2 bucket name"
+msgstr ""
+
+#: includes/Providers/CloudflareR2.php:102
+msgid "Custom Domain (CDN URL)"
+msgstr ""
+
+#: includes/Providers/CloudflareR2.php:105
+msgid "Required for serving files publicly — connect a custom domain or public r2.dev URL to the bucket."
+msgstr ""
+
+#: includes/Services/AttachmentRestorer.php:66
+#: includes/Services/AttachmentUploader.php:81
+msgid "No attached file found."
+msgstr ""
+
+#: includes/Services/AttachmentRestorer.php:75
+msgid "Uploads directory not found."
+msgstr ""
+
+#. translators: %s: file name.
+#: includes/Services/AttachmentRestorer.php:96
+#, php-format
+msgid "Main file \"%s\" is missing locally and in the cloud."
+msgstr ""
+
+#: includes/Services/AttachmentRestorer.php:130
+msgid "Restored locally, but some cloud objects could not be deleted."
+msgstr ""
+
+#. translators: %s: directory path.
+#: includes/Services/AttachmentRestorer.php:156
+#, php-format
+msgid "Cannot create directory \"%s\"."
+msgstr ""
+
+#. translators: %s: file path.
+#: includes/Services/AttachmentRestorer.php:173
+#, php-format
+msgid "Refused to restore outside the uploads directory: \"%s\"."
+msgstr ""
+
+#. translators: %s: object key.
+#: includes/Services/AttachmentRestorer.php:207
+#, php-format
+msgid "Download failed for \"%s\"."
+msgstr ""
+
+#: includes/Services/AttachmentRestorer.php:225
+msgid "No provider recorded for this attachment."
+msgstr ""
+
+#. translators: %s: provider key.
+#: includes/Services/AttachmentRestorer.php:237
+#, php-format
+msgid "Provider \"%s\" is not available."
+msgstr ""
+
+#. translators: %s: object key.
+#: includes/Services/AttachmentUploader.php:101
+#, php-format
+msgid "Upload failed for \"%s\"."
+msgstr ""
+
+#: includes/Services/AttachmentUploader.php:113
+msgid "Main file is missing locally."
+msgstr ""
+
+#: build/index.js:1
+msgid "Something went wrong. Please try again."
+msgstr ""
+
+#: build/index.js:1
+msgid "Changes saved."
+msgstr ""
+
+#: build/index.js:1
+msgid "Dashboard"
+msgstr ""
+
+#: build/index.js:1
+msgid "Overview & quick status"
+msgstr ""
+
+#: build/index.js:1
+msgid "Provider & policies"
+msgstr ""
+
+#: build/index.js:1
+msgid "Offload"
+msgstr ""
+
+#: build/index.js:1
+msgid "Move media to the cloud"
+msgstr ""
+
+#: build/index.js:1
+msgid "Restore media to your server"
+msgstr ""
+
+#: build/index.js:1
+msgid "Unsaved changes"
+msgstr ""
+
+#: build/index.js:1
+msgid "All changes saved"
+msgstr ""
+
+#: build/index.js:1
+msgid "Saving…"
+msgstr ""
+
+#: build/index.js:1
+msgid "Save changes"
+msgstr ""
+
+#: build/index.js:1
+msgid "Restore offloaded media from the cloud back to your server. Downloads are atomic and verified — an attachment only switches back to local URLs once every file is safely on disk."
+msgstr ""
+
+#: build/index.js:1
+#: build/index.js:6
+msgid "Configure a cloud provider in Settings first."
+msgstr ""
+
+#. translators: %d: number of offloaded attachments.
+#: build/index.js:2
+#, js-format
+msgid "%d attachment(s) are offloaded and can be brought back."
+msgstr ""
+
+#. translators: %s: formatted byte size.
+#: build/index.js:3
+#, js-format
+msgid "Estimated download: up to %s (files still on disk are skipped)."
+msgstr ""
+
+#. translators: %s: formatted byte size.
+#: build/index.js:4
+#, js-format
+msgid "Free disk space: %s"
+msgstr ""
+
+#: build/index.js:4
+msgid "Free disk space could not be determined on this host."
+msgstr ""
+
+#: build/index.js:4
+msgid "Warning: free disk space may not be enough for a full restore. Free up space before starting."
+msgstr ""
+
+#: build/index.js:4
+msgid "Also delete files from the cloud after each verified restore"
+msgstr ""
+
+#: build/index.js:4
+msgid "Off by default. Cloud objects are only removed after all files are verified on your server."
+msgstr ""
+
+#: build/index.js:4
+msgid "Start Bring Back"
+msgstr ""
+
+#. translators: 1: processed count, 2: total count, 3: error count.
+#: build/index.js:5
+#: build/index.js:8
+#, js-format
+msgid "%1$d of %2$d processed — %3$d error(s)"
+msgstr ""
+
+#: build/index.js:5
+#: build/index.js:8
+msgid "Finished."
+msgstr ""
+
+#: build/index.js:5
+#: build/index.js:8
+msgid "Cancelled."
+msgstr ""
+
+#: build/index.js:5
+msgid "Cloud copies are being deleted."
+msgstr ""
+
+#: build/index.js:5
+#: build/index.js:8
+msgid "Cancel"
+msgstr ""
+
+#: build/index.js:5
+#: build/index.js:8
+msgid "Dismiss"
+msgstr ""
+
+#: build/index.js:5
+#: build/index.js:8
+msgid "Single attachments"
+msgstr ""
+
+#: build/index.js:5
+msgid "You can also bring back one file at a time from the Media Library list — use the \"Bring Back\" row action on any offloaded attachment. Each attachment restores from the provider it was offloaded to, even if you switched providers since."
+msgstr ""
+
+#. translators: %s: cloud provider name.
+#: build/index.js:6
+#, js-format
+msgid "Connected to %s"
+msgstr ""
+
+#: build/index.js:6
+msgid "Not configured yet"
+msgstr ""
+
+#: build/index.js:6
+msgid "New uploads are offloaded automatically and served from your custom domain."
+msgstr ""
+
+#: build/index.js:6
+msgid "Add your Cloudflare R2 credentials to get started."
+msgstr ""
+
+#: build/index.js:6
+msgid "Open Settings"
+msgstr ""
+
+#: build/index.js:6
+msgid "Total media items"
+msgstr ""
+
+#: build/index.js:6
+msgid "Offloaded to cloud"
+msgstr ""
+
+#: build/index.js:6
+msgid "Roadmap"
+msgstr ""
+
+#: build/index.js:6
+msgid "This is a pre-release. Live now: automatic offload on upload with retention policies, bulk offload, and Bring Back — restoring cloud files to your server. Coming next: more S3-compatible providers, added one per release."
+msgstr ""
+
+#: build/index.js:6
+msgid "Bulk Offload"
+msgstr ""
+
+#: build/index.js:6
+msgid "Move your existing media library to the cloud. Processing runs in the background — you can leave this page and come back."
+msgstr ""
+
+#. translators: %d: number of local attachments.
+#: build/index.js:7
+#, js-format
+msgid "%d attachment(s) are local-only and can be offloaded."
+msgstr ""
+
+#: build/index.js:7
+msgid "Start Bulk Offload"
+msgstr ""
+
+#: build/index.js:8
+msgid "You can also offload one file at a time from the Media Library list — use the \"Offload now\" row action. Offload state is shown in each attachment's details, and the library can be filtered by Offloaded / Local only."
+msgstr ""
+
+#: build/index.js:8
+msgid "•••••••• (saved — leave empty to keep)"
+msgstr ""
+
+#. translators: %s: wp-config constant name.
+#: build/index.js:9
+#, js-format
+msgid "Locked by the %s constant in wp-config.php."
+msgstr ""
+
+#: build/index.js:9
+msgid "Loading credentials…"
+msgstr ""
+
+#: build/index.js:9
+msgid "Testing…"
+msgstr ""
+
+#: build/index.js:9
+msgid "Test Connection"
+msgstr ""
+
+#: build/index.js:9
+msgid "Connected"
+msgstr ""
+
+#: build/index.js:9
+msgid "Not connected"
+msgstr ""
+
+#: build/index.js:9
+msgid "— Select a provider —"
+msgstr ""
+
+#: build/index.js:9
+msgid "Cloud Provider"
+msgstr ""
+
+#: build/index.js:9
+msgid "Choose where your media is stored. More providers are coming — each release adds one."
+msgstr ""
+
+#: build/index.js:9
+msgid "Provider"
+msgstr ""
+
+#: build/index.js:9
+msgid "Retention Policy"
+msgstr ""
+
+#: build/index.js:9
+msgid "What happens to local files after a successful offload."
+msgstr ""
+
+#: build/index.js:9
+msgid "Retain Local Files — keep everything on the server (cloud is a mirror)"
+msgstr ""
+
+#: build/index.js:9
+msgid "Smart Local Cleanup — delete generated thumbnails, keep originals"
+msgstr ""
+
+#: build/index.js:9
+msgid "Full Cloud Migration — remove all local copies after offload"
+msgstr ""
+
+#: build/index.js:9
+msgid "Behavior"
+msgstr ""
+
+#: build/index.js:9
+msgid "Mirror Delete"
+msgstr ""
+
+#: build/index.js:9
+msgid "When an attachment is deleted in WordPress, also delete its files from the cloud."
+msgstr ""
+
+#: build/index.js:9
+msgid "Object Versioning"
+msgstr ""
+
+#: build/index.js:9
+msgid "Add a timestamp segment to object keys so CDN caches never serve stale files after re-uploads."
+msgstr ""
+
+#: build/index.js:9
+msgid "Custom Path Prefix"
+msgstr ""
+
+#: build/index.js:9
+msgid "Store objects under a custom prefix inside the bucket."
+msgstr ""
+
+#: build/index.js:9
+msgid "Path Prefix"
+msgstr ""
+
+#: build/index.js:9
+msgid "Uninstall"
+msgstr ""
+
+#: build/index.js:9
+msgid "Remove all data on uninstall"
+msgstr ""
+
+#: build/index.js:9
+msgid "Delete all plugin settings, credentials and offload markers when the plugin is deleted. Cloud files are never touched."
+msgstr ""

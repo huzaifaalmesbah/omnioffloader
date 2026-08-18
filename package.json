@@ -1,0 +1,35 @@
+{
+	"name": "smart-media-offloader",
+	"version": "0.1.0",
+	"description": "Offload WordPress media to Cloudflare R2, serve it from your CDN, and bring files back to your server anytime.",
+	"author": "Huzaifa Al Mesbah",
+	"license": "GPL-2.0-or-later",
+	"scripts": {
+		"build": "wp-scripts build",
+		"build:release": "wp-scripts build && npm run i18n:build",
+		"start": "wp-scripts start",
+		"check-types": "tsc --noEmit",
+		"lint:js": "wp-scripts lint-js src",
+		"i18n:pot": "wp i18n make-pot . languages/smart-media-offloader.pot --exclude=node_modules,src,.git,.github,vendor",
+		"i18n:po": "for po in languages/*.po; do msgmerge --update --backup=none \"$po\" languages/smart-media-offloader.pot; done",
+		"i18n:mo": "wp i18n make-mo languages/",
+		"i18n:json": "wp i18n make-json languages/ languages/ --no-purge",
+		"i18n": "npm run i18n:pot && npm run i18n:po && npm run i18n:mo && npm run i18n:json",
+		"i18n:build": "npm run i18n:pot && npm run i18n:mo && npm run i18n:json",
+		"bundle": "npm run build:release && zip -r ../smart-media-offloader.zip . -x \"src/*\" \"node_modules/*\" \".git/*\" \".git\" \".github/*\" \".github\" \".vscode/*\" \".vscode\" \".project/*\" \".project\" \".claude/*\" \".claude\" \"*.zip\" \"*.DS_Store\" \".DS_Store\" \".wordpress-org/*\" \".wordpress-org\" \"CLAUDE.md\" \"PLAN.md\" \"package.json\" \"package-lock.json\" \"tsconfig.json\" \"phpstan.neon.dist\" \"phpcs.xml.dist\" \"composer.json\" \"composer.lock\" \".gitignore\" \".distignore\" \".gitattributes\" \"README.md\" \"bin/*\" \"tests/*\""
+	},
+	"devDependencies": {
+		"@types/react": "^19.2.18",
+		"@types/react-dom": "^19.2.4",
+		"@wordpress/scripts": "^34.0.0",
+		"typescript": "^5.7.0"
+	},
+	"dependencies": {
+		"@wordpress/api-fetch": "^7.52.0",
+		"@wordpress/components": "^38.0.0",
+		"@wordpress/element": "^8.4.0",
+		"@wordpress/i18n": "^6.25.0",
+		"@wordpress/icons": "^15.4.0",
+		"@wordpress/url": "^4.52.0"
+	}
+}

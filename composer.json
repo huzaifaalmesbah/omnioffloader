@@ -1,0 +1,36 @@
+{
+	"name": "huzaifaalmesbah/smart-media-offloader",
+	"description": "Offload WordPress media to Cloudflare R2, serve it from your CDN, and bring files back to your server anytime.",
+	"type": "wordpress-plugin",
+	"license": "GPL-2.0-or-later",
+	"authors": [
+		{
+			"name": "Huzaifa Al Mesbah"
+		}
+	],
+	"require": {
+		"php": ">=8.1",
+		"aws/aws-sdk-php": "^3.300"
+	},
+	"require-dev": {
+		"szepeviktor/phpstan-wordpress": "^2.0",
+		"phpstan/extension-installer": "^1.4",
+		"wp-coding-standards/wpcs": "^3.1",
+		"dealerdirect/phpcodesniffer-composer-installer": "^1.0",
+		"php-stubs/wp-cli-stubs": "^2.12"
+	},
+	"scripts": {
+		"phpstan": "phpstan analyse --memory-limit=1G",
+		"phpcs": "phpcs",
+		"phpcbf": "phpcbf"
+	},
+	"config": {
+		"allow-plugins": {
+			"phpstan/extension-installer": true,
+			"dealerdirect/phpcodesniffer-composer-installer": true
+		},
+		"platform": {
+			"php": "8.1"
+		}
+	}
+}

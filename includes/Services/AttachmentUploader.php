@@ -2,15 +2,15 @@
 /**
  * Offloads a single attachment to the cloud.
  *
- * @package SmartMediaOffloader
+ * @package OmniOffloader
  */
 
-namespace SmartMediaOffloader\Services;
+namespace OmniOffloader\Services;
 
-use SmartMediaOffloader\Core\Helpers;
-use SmartMediaOffloader\Providers\ProviderInterface;
-use SmartMediaOffloader\Traits\AttachmentHelper;
-use SmartMediaOffloader\Traits\OptionsHelper;
+use OmniOffloader\Core\Helpers;
+use OmniOffloader\Providers\ProviderInterface;
+use OmniOffloader\Traits\AttachmentHelper;
+use OmniOffloader\Traits\OptionsHelper;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -64,7 +64,7 @@ class AttachmentUploader {
 		 * @param bool $should        Default true.
 		 * @param int  $attachment_id Attachment ID.
 		 */
-		if ( ! apply_filters( 'smowp_should_offload_attachment', true, $attachment_id ) ) {
+		if ( ! apply_filters( 'omnioffloader_should_offload_attachment', true, $attachment_id ) ) {
 			return false;
 		}
 
@@ -73,12 +73,12 @@ class AttachmentUploader {
 		 *
 		 * @param int $attachment_id Attachment ID.
 		 */
-		do_action( 'smowp_before_offload', $attachment_id );
+		do_action( 'omnioffloader_before_offload', $attachment_id );
 
 		$files = self::collect_attachment_files( $attachment_id, $metadata );
 
 		if ( empty( $files['main'] ) ) {
-			self::log_attachment_error( $attachment_id, __( 'No attached file found.', 'smart-media-offloader' ) );
+			self::log_attachment_error( $attachment_id, __( 'No attached file found.', 'omnioffloader' ) );
 
 			return false;
 		}
@@ -98,7 +98,7 @@ class AttachmentUploader {
 					$attachment_id,
 					sprintf(
 						/* translators: %s: object key. */
-						__( 'Upload failed for "%s".', 'smart-media-offloader' ),
+						__( 'Upload failed for "%s".', 'omnioffloader' ),
 						$entry['key']
 					)
 				);
@@ -110,7 +110,7 @@ class AttachmentUploader {
 
 		if ( ! $all_ok || ! file_exists( $main['file'] ) || ! $this->provider->object_exists( $main['key'] ) ) {
 			if ( ! file_exists( $main['file'] ) ) {
-				self::log_attachment_error( $attachment_id, __( 'Main file is missing locally.', 'smart-media-offloader' ) );
+				self::log_attachment_error( $attachment_id, __( 'Main file is missing locally.', 'omnioffloader' ) );
 			}
 
 			return false;
@@ -134,7 +134,7 @@ class AttachmentUploader {
 		 * @param int    $attachment_id Attachment ID.
 		 * @param string $subdir        Key prefix used in the bucket.
 		 */
-		do_action( 'smowp_after_offload', $attachment_id, $subdir );
+		do_action( 'omnioffloader_after_offload', $attachment_id, $subdir );
 
 		// Apply the retention policy now that the upload is verified.
 		LocalCleaner::clean( $attachment_id, $retention, $metadata );

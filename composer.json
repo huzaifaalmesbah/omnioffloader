@@ -1,6 +1,6 @@
 {
-	"name": "huzaifaalmesbah/smart-media-offloader",
-	"description": "Offload WordPress media to Cloudflare R2, serve it from your CDN, and bring files back to your server anytime.",
+	"name": "huzaifaalmesbah/omnioffloader",
+	"description": "Offload WordPress media to any cloud storage, serve via CDN, and backup files to Google Drive.",
 	"type": "wordpress-plugin",
 	"license": "GPL-2.0-or-later",
 	"authors": [
@@ -14,7 +14,7 @@
 	},
 	"autoload": {
 		"psr-4": {
-			"SmartMediaOffloader\\": "includes/"
+			"OmniOffloader\\": "includes/"
 		}
 	},
 	"require-dev": {

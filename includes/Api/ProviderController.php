@@ -2,14 +2,14 @@
 /**
  * Provider REST controller: credentials + connection test.
  *
- * @package SmartMediaOffloader
+ * @package OmniOffloader
  */
 
-namespace SmartMediaOffloader\Api;
+namespace OmniOffloader\Api;
 
-use SmartMediaOffloader\Core\Helpers;
-use SmartMediaOffloader\Providers\ProviderRegistry;
-use SmartMediaOffloader\Traits\OptionsHelper;
+use OmniOffloader\Core\Helpers;
+use OmniOffloader\Providers\ProviderRegistry;
+use OmniOffloader\Traits\OptionsHelper;
 use WP_REST_Request;
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -115,8 +115,8 @@ class ProviderController extends BaseController {
 
 		if ( ! is_array( $values ) ) {
 			return new \WP_Error(
-				'smowp_invalid_credentials',
-				__( 'Credential values must be an object.', 'smart-media-offloader' ),
+				'omnioffloader_invalid_credentials',
+				__( 'Credential values must be an object.', 'omnioffloader' ),
 				array( 'status' => 400 )
 			);
 		}
@@ -167,7 +167,7 @@ class ProviderController extends BaseController {
 			return rest_ensure_response(
 				array(
 					'connected'  => false,
-					'message'    => __( 'The AWS SDK is not installed. Run "composer install" in the plugin directory.', 'smart-media-offloader' ),
+					'message'    => __( 'The AWS SDK is not installed. Run "composer install" in the plugin directory.', 'omnioffloader' ),
 					'checked_at' => current_time( 'mysql', true ),
 				)
 			);
@@ -182,7 +182,7 @@ class ProviderController extends BaseController {
 			return rest_ensure_response(
 				array(
 					'connected'  => true,
-					'message'    => __( 'Connection successful.', 'smart-media-offloader' ),
+					'message'    => __( 'Connection successful.', 'omnioffloader' ),
 					'checked_at' => current_time( 'mysql', true ),
 				)
 			);

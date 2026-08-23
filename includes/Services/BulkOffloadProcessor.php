@@ -2,14 +2,14 @@
 /**
  * Background bulk-offload queue.
  *
- * @package SmartMediaOffloader
+ * @package OmniOffloader
  */
 
-namespace SmartMediaOffloader\Services;
+namespace OmniOffloader\Services;
 
-use SmartMediaOffloader\Abstracts\WP_Background_Processing\WP_Background_Process;
-use SmartMediaOffloader\Core\Helpers;
-use SmartMediaOffloader\Providers\ProviderInterface;
+use OmniOffloader\Abstracts\WP_Background_Processing\WP_Background_Process;
+use OmniOffloader\Core\Helpers;
+use OmniOffloader\Providers\ProviderInterface;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -20,7 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * Processes queued attachment IDs in the background (async loopback
  * requests + cron healthcheck, via WP_Background_Process). Progress is
- * heartbeat-written to the `smowp_bulk_offload_state` option, which the
+ * heartbeat-written to the `omnioffloader_bulk_offload_state` option, which the
  * React Offload page polls.
  */
 class BulkOffloadProcessor extends WP_Background_Process {
@@ -28,17 +28,17 @@ class BulkOffloadProcessor extends WP_Background_Process {
 	/**
 	 * Option name holding the progress state.
 	 */
-	public const STATE_OPTION = 'smowp_bulk_offload_state';
+	public const STATE_OPTION = 'omnioffloader_bulk_offload_state';
 
 	/**
 	 * Hook prefix.
 	 *
 	 * @var string
 	 */
-	protected $prefix = 'smowp';
+	protected $prefix = 'omnioffloader';
 
 	/**
-	 * Action name — hooks become smowp_bulk_offload(_cron).
+	 * Action name — hooks become omnioffloader_bulk_offload(_cron).
 	 *
 	 * @var string
 	 */
@@ -113,7 +113,7 @@ class BulkOffloadProcessor extends WP_Background_Process {
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- bulk queue population query.
 		$ids = $wpdb->get_col(
 			"SELECT p.ID FROM {$wpdb->posts} p
-			 LEFT JOIN {$wpdb->postmeta} m ON m.post_id = p.ID AND m.meta_key = 'smowp_offloaded'
+			 LEFT JOIN {$wpdb->postmeta} m ON m.post_id = p.ID AND m.meta_key = 'omnioffloader_offloaded'
 			 WHERE p.post_type = 'attachment' AND m.post_id IS NULL
 			 ORDER BY p.ID ASC"
 		);
@@ -202,7 +202,7 @@ class BulkOffloadProcessor extends WP_Background_Process {
 			'status'    => $ok ? 'success' : 'error',
 			'timestamp' => time(),
 			'thumb'     => $thumb_url ? $thumb_url : '',
-			'error'     => $ok ? '' : (string) get_post_meta( $attachment_id, '_smowp_last_error', true ),
+			'error'     => $ok ? '' : (string) get_post_meta( $attachment_id, '_omnioffloader_last_error', true ),
 		);
 
 		array_unshift( $recent, $entry );

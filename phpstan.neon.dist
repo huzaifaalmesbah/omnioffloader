@@ -3,7 +3,7 @@ parameters:
 	bootstrapFiles:
 		- tests/phpstan-bootstrap.php
 	paths:
-		- smart-media-offloader.php
+		- omnioffloader.php
 		- uninstall.php
 		- includes/
 	excludePaths:

@@ -25,12 +25,12 @@ export function OffloadPage() {
 		if ( totalCount === 0 ) {
 			disabledReason = __(
 				'Media library is empty. Upload media files first.',
-				'smart-media-offloader'
+				'omnioffloader'
 			);
 		} else {
 			disabledReason = __(
 				'All media attachments are already offloaded to the cloud.',
-				'smart-media-offloader'
+				'omnioffloader'
 			);
 		}
 	}
@@ -38,17 +38,17 @@ export function OffloadPage() {
 	return (
 		<div className="smowp-page">
 			<Card
-				title={ __( 'Bulk Offload', 'smart-media-offloader' ) }
+				title={ __( 'Bulk Offload', 'omnioffloader' ) }
 				description={ __(
 					'Move your existing media library to the cloud. Processing runs in the background — you can leave this page and come back.',
-					'smart-media-offloader'
+					'omnioffloader'
 				) }
 			>
 				{ ! stats?.configured && (
 					<p className="smowp-muted">
 						{ __(
 							'Configure a cloud provider in Settings first.',
-							'smart-media-offloader'
+							'omnioffloader'
 						) }
 					</p>
 				) }
@@ -60,7 +60,7 @@ export function OffloadPage() {
 								<span className="smowp-media-chip__label">
 									{ __(
 										'Total Library Media',
-										'smart-media-offloader'
+										'omnioffloader'
 									) }
 								</span>
 								<strong className="smowp-media-chip__value">
@@ -71,7 +71,7 @@ export function OffloadPage() {
 								<span className="smowp-media-chip__label">
 									{ __(
 										'Already Offloaded',
-										'smart-media-offloader'
+										'omnioffloader'
 									) }
 								</span>
 								<strong className="smowp-media-chip__value">
@@ -82,7 +82,7 @@ export function OffloadPage() {
 								<span className="smowp-media-chip__label">
 									{ __(
 										'Local (Ready to Offload)',
-										'smart-media-offloader'
+										'omnioffloader'
 									) }
 								</span>
 								<strong className="smowp-media-chip__value">
@@ -100,13 +100,13 @@ export function OffloadPage() {
 									<strong>
 										{ __(
 											'All media is already offloaded to the cloud!',
-											'smart-media-offloader'
+											'omnioffloader'
 										) }
 									</strong>
 									<p>
 										{ __(
 											'All attachments in your library are currently stored in the cloud. Any newly uploaded media will be offloaded automatically.',
-											'smart-media-offloader'
+											'omnioffloader'
 										) }
 									</p>
 								</div>
@@ -122,13 +122,13 @@ export function OffloadPage() {
 									<strong>
 										{ __(
 											'Your WordPress media library is empty.',
-											'smart-media-offloader'
+											'omnioffloader'
 										) }
 									</strong>
 									<p>
 										{ __(
 											'Upload images or media files to WordPress to start offloading.',
-											'smart-media-offloader'
+											'omnioffloader'
 										) }
 									</p>
 								</div>
@@ -142,7 +142,7 @@ export function OffloadPage() {
 										/* translators: %d: number of local attachments. */
 										__(
 											'%d attachment(s) are local-only and ready to be offloaded.',
-											'smart-media-offloader'
+											'omnioffloader'
 										),
 										localCount
 									) }
@@ -168,13 +168,13 @@ export function OffloadPage() {
 													{ localCount === 0
 														? __(
 																'All Media Offloaded',
-																'smart-media-offloader'
+																'omnioffloader'
 														  )
 														: sprintf(
 																/* translators: %d: number of local attachments. */
 																__(
 																	'Start Bulk Offload (%d)',
-																	'smart-media-offloader'
+																	'omnioffloader'
 																),
 																localCount
 														  ) }
@@ -193,7 +193,7 @@ export function OffloadPage() {
 												/* translators: %d: number of local attachments. */
 												__(
 													'Start Bulk Offload (%d)',
-													'smart-media-offloader'
+													'omnioffloader'
 												),
 												localCount
 											) }
@@ -223,7 +223,7 @@ export function OffloadPage() {
 												<span className="smowp-badge-pulse" />
 												{ __(
 													'Offloading…',
-													'smart-media-offloader'
+													'omnioffloader'
 												) }
 											</span>
 										) }
@@ -231,7 +231,7 @@ export function OffloadPage() {
 											<span className="smowp-badge smowp-badge--ok">
 												{ __(
 													'Finished',
-													'smart-media-offloader'
+													'omnioffloader'
 												) }
 											</span>
 										) }
@@ -239,7 +239,7 @@ export function OffloadPage() {
 											<span className="smowp-badge smowp-badge--fail">
 												{ __(
 													'Cancelled',
-													'smart-media-offloader'
+													'omnioffloader'
 												) }
 											</span>
 										) }
@@ -248,7 +248,7 @@ export function OffloadPage() {
 												/* translators: 1: processed count, 2: total count. */
 												__(
 													'%1$d of %2$d processed',
-													'smart-media-offloader'
+													'omnioffloader'
 												),
 												state.processed,
 												state.total
@@ -284,13 +284,13 @@ export function OffloadPage() {
 													/* translators: %d: error count. */
 													__(
 														'%d error(s) encountered',
-														'smart-media-offloader'
+														'omnioffloader'
 													),
 													state.errors
 											  )
 											: __(
 													'No errors',
-													'smart-media-offloader'
+													'omnioffloader'
 											  ) }
 									</span>
 
@@ -305,7 +305,7 @@ export function OffloadPage() {
 											>
 												{ __(
 													'Cancel',
-													'smart-media-offloader'
+													'omnioffloader'
 												) }
 											</Button>
 										) : (
@@ -316,7 +316,7 @@ export function OffloadPage() {
 											>
 												{ __(
 													'Dismiss',
-													'smart-media-offloader'
+													'omnioffloader'
 												) }
 											</Button>
 										) }
@@ -335,10 +335,10 @@ export function OffloadPage() {
 			</Card>
 
 			<Card
-				title={ __( 'Single attachments', 'smart-media-offloader' ) }
+				title={ __( 'Single attachments', 'omnioffloader' ) }
 				description={ __(
 					'You can also offload one file at a time from the Media Library list — use the "Offload now" row action. Offload state is shown in each attachment\'s details, and the library can be filtered by Offloaded / Local only.',
-					'smart-media-offloader'
+					'omnioffloader'
 				) }
 			/>
 		</div>

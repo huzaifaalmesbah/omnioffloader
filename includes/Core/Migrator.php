@@ -2,10 +2,10 @@
 /**
  * Version-gated data migrations.
  *
- * @package SmartMediaOffloader
+ * @package OmniOffloader
  */
 
-namespace SmartMediaOffloader\Core;
+namespace OmniOffloader\Core;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;

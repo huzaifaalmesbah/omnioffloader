@@ -2,14 +2,14 @@
 /**
  * Rewrites responsive srcset source URLs to the cloud domain.
  *
- * @package SmartMediaOffloader
+ * @package OmniOffloader
  */
 
-namespace SmartMediaOffloader\Offload\Observers;
+namespace OmniOffloader\Offload\Observers;
 
-use SmartMediaOffloader\Offload\ObserverInterface;
-use SmartMediaOffloader\Providers\ProviderInterface;
-use SmartMediaOffloader\Traits\AttachmentHelper;
+use OmniOffloader\Offload\ObserverInterface;
+use OmniOffloader\Providers\ProviderInterface;
+use OmniOffloader\Traits\AttachmentHelper;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;

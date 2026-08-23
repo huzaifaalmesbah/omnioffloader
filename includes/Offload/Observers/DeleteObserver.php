@@ -2,16 +2,16 @@
 /**
  * Mirror delete: removes cloud objects when an attachment is deleted.
  *
- * @package SmartMediaOffloader
+ * @package OmniOffloader
  */
 
-namespace SmartMediaOffloader\Offload\Observers;
+namespace OmniOffloader\Offload\Observers;
 
-use SmartMediaOffloader\Core\Helpers;
-use SmartMediaOffloader\Offload\ObserverInterface;
-use SmartMediaOffloader\Providers\ProviderInterface;
-use SmartMediaOffloader\Traits\AttachmentHelper;
-use SmartMediaOffloader\Traits\OptionsHelper;
+use OmniOffloader\Core\Helpers;
+use OmniOffloader\Offload\ObserverInterface;
+use OmniOffloader\Providers\ProviderInterface;
+use OmniOffloader\Traits\AttachmentHelper;
+use OmniOffloader\Traits\OptionsHelper;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -73,7 +73,7 @@ class DeleteObserver implements ObserverInterface {
 		}
 
 		// Only delete from the provider the files actually live in.
-		$stored_provider = (string) get_post_meta( $attachment_id, 'smowp_provider', true );
+		$stored_provider = (string) get_post_meta( $attachment_id, 'omnioffloader_provider', true );
 
 		if ( '' !== $stored_provider && $stored_provider !== $this->provider->get_key() ) {
 			return;

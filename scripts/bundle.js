@@ -3,7 +3,7 @@ const fs = require('fs');
 const path = require('path');
 
 const isOrg = process.argv.includes('--org');
-const pluginSlug = 'smart-media-offloader';
+const pluginSlug = 'omnioffloader';
 const rootDir = path.resolve(__dirname, '..');
 const distDir = path.join(rootDir, 'dist');
 const targetDir = path.join(distDir, pluginSlug);
@@ -27,7 +27,7 @@ if (fs.existsSync(distDir)) {
 fs.mkdirSync(targetDir, { recursive: true });
 
 const copyList = [
-	'smart-media-offloader.php',
+	'omnioffloader.php',
 	'readme.txt',
 	'uninstall.php',
 	'includes',
@@ -48,7 +48,7 @@ for (const item of copyList) {
 	}
 }
 
-// 4. Create ZIP archive with top-level folder 'smart-media-offloader/'
+// 4. Create ZIP archive with top-level folder 'omnioffloader/'
 console.log('🗜️  Step 4: Creating ZIP archive...');
 if (fs.existsSync(zipFile)) {
 	fs.unlinkSync(zipFile);

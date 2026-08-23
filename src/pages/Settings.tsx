@@ -23,10 +23,10 @@ export function SettingsPage() {
 	return (
 		<div className="smowp-page">
 			<Card
-				title={ __( 'Cloud Provider', 'smart-media-offloader' ) }
+				title={ __( 'Cloud Provider', 'omnioffloader' ) }
 				description={ __(
 					'Choose where your media is stored. More providers are coming — each release adds one.',
-					'smart-media-offloader'
+					'omnioffloader'
 				) }
 			>
 				<div className="smowp-form-layout">
@@ -34,7 +34,7 @@ export function SettingsPage() {
 						<span className="smowp-provider-selector-label">
 							{ __(
 								'Storage Provider',
-								'smart-media-offloader'
+								'omnioffloader'
 							) }
 						</span>
 						<div
@@ -42,7 +42,7 @@ export function SettingsPage() {
 							role="radiogroup"
 							aria-label={ __(
 								'Cloud Storage Provider',
-								'smart-media-offloader'
+								'omnioffloader'
 							) }
 						>
 							{ providers.map( ( provider ) => {
@@ -89,7 +89,7 @@ export function SettingsPage() {
 												<span className="smowp-provider-card__sub">
 													{ __(
 														'S3-compatible Object Storage',
-														'smart-media-offloader'
+														'omnioffloader'
 													) }
 												</span>
 											</div>
@@ -117,10 +117,10 @@ export function SettingsPage() {
 			</Card>
 
 			<Card
-				title={ __( 'Retention Policy', 'smart-media-offloader' ) }
+				title={ __( 'Retention Policy', 'omnioffloader' ) }
 				description={ __(
 					'What happens to local files after a successful offload.',
-					'smart-media-offloader'
+					'omnioffloader'
 				) }
 			>
 				<RadioControl
@@ -129,21 +129,21 @@ export function SettingsPage() {
 						{
 							label: __(
 								'Retain Local Files — keep everything on the server (cloud is a mirror)',
-								'smart-media-offloader'
+								'omnioffloader'
 							),
 							value: String( RetentionPolicy.RetainLocal ),
 						},
 						{
 							label: __(
 								'Smart Local Cleanup — delete generated thumbnails, keep originals',
-								'smart-media-offloader'
+								'omnioffloader'
 							),
 							value: String( RetentionPolicy.SmartCleanup ),
 						},
 						{
 							label: __(
 								'Full Cloud Migration — remove all local copies after offload',
-								'smart-media-offloader'
+								'omnioffloader'
 							),
 							value: String( RetentionPolicy.FullMigration ),
 						},
@@ -158,12 +158,12 @@ export function SettingsPage() {
 				/>
 			</Card>
 
-			<Card title={ __( 'Behavior', 'smart-media-offloader' ) }>
+			<Card title={ __( 'Behavior', 'omnioffloader' ) }>
 				<ToggleControl
-					label={ __( 'Mirror Delete', 'smart-media-offloader' ) }
+					label={ __( 'Mirror Delete', 'omnioffloader' ) }
 					help={ __(
 						'When an attachment is deleted in WordPress, also delete its files from the cloud.',
-						'smart-media-offloader'
+						'omnioffloader'
 					) }
 					checked={ settings.mirror_delete }
 					onChange={ ( mirror_delete: boolean ) =>
@@ -173,10 +173,10 @@ export function SettingsPage() {
 				/>
 
 				<ToggleControl
-					label={ __( 'Object Versioning', 'smart-media-offloader' ) }
+					label={ __( 'Object Versioning', 'omnioffloader' ) }
 					help={ __(
 						'Add a timestamp segment to object keys so CDN caches never serve stale files after re-uploads.',
-						'smart-media-offloader'
+						'omnioffloader'
 					) }
 					checked={ settings.object_versioning }
 					onChange={ ( object_versioning: boolean ) =>
@@ -188,11 +188,11 @@ export function SettingsPage() {
 				<ToggleControl
 					label={ __(
 						'Custom Path Prefix',
-						'smart-media-offloader'
+						'omnioffloader'
 					) }
 					help={ __(
 						'Store objects under a custom prefix inside the bucket.',
-						'smart-media-offloader'
+						'omnioffloader'
 					) }
 					checked={ settings.path_prefix_active }
 					onChange={ ( path_prefix_active: boolean ) =>
@@ -203,7 +203,7 @@ export function SettingsPage() {
 
 				{ settings.path_prefix_active && (
 					<TextControl
-						label={ __( 'Path Prefix', 'smart-media-offloader' ) }
+						label={ __( 'Path Prefix', 'omnioffloader' ) }
 						value={ settings.path_prefix }
 						placeholder="wp-content/uploads"
 						onChange={ ( path_prefix: string ) =>
@@ -215,15 +215,15 @@ export function SettingsPage() {
 				) }
 			</Card>
 
-			<Card title={ __( 'Uninstall', 'smart-media-offloader' ) }>
+			<Card title={ __( 'Uninstall', 'omnioffloader' ) }>
 				<ToggleControl
 					label={ __(
 						'Remove all data on uninstall',
-						'smart-media-offloader'
+						'omnioffloader'
 					) }
 					help={ __(
 						'Delete all plugin settings, credentials and offload markers when the plugin is deleted. Cloud files are never touched.',
-						'smart-media-offloader'
+						'omnioffloader'
 					) }
 					checked={ settings.remove_data_on_uninstall }
 					onChange={ ( remove_data_on_uninstall: boolean ) =>

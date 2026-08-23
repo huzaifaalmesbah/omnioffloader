@@ -2,12 +2,12 @@
 /**
  * "Offloaded / Local" filter dropdown in the media library.
  *
- * @package SmartMediaOffloader
+ * @package OmniOffloader
  */
 
-namespace SmartMediaOffloader\Offload\Observers;
+namespace OmniOffloader\Offload\Observers;
 
-use SmartMediaOffloader\Offload\ObserverInterface;
+use OmniOffloader\Offload\ObserverInterface;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -21,7 +21,7 @@ class MediaLibraryFilterObserver implements ObserverInterface {
 	/**
 	 * Query-arg name for the filter.
 	 */
-	private const QUERY_ARG = 'smowp_filter';
+	private const QUERY_ARG = 'omnioffloader_filter';
 
 	/**
 	 * Register hooks (admin list mode).
@@ -53,9 +53,9 @@ class MediaLibraryFilterObserver implements ObserverInterface {
 
 		?>
 		<select name="<?php echo esc_attr( self::QUERY_ARG ); ?>">
-			<option value=""><?php esc_html_e( 'All offload states', 'smart-media-offloader' ); ?></option>
-			<option value="offloaded" <?php selected( 'offloaded', $current ); ?>><?php esc_html_e( 'Offloaded', 'smart-media-offloader' ); ?></option>
-			<option value="local" <?php selected( 'local', $current ); ?>><?php esc_html_e( 'Local only', 'smart-media-offloader' ); ?></option>
+			<option value=""><?php esc_html_e( 'All offload states', 'omnioffloader' ); ?></option>
+			<option value="offloaded" <?php selected( 'offloaded', $current ); ?>><?php esc_html_e( 'Offloaded', 'omnioffloader' ); ?></option>
+			<option value="local" <?php selected( 'local', $current ); ?>><?php esc_html_e( 'Local only', 'omnioffloader' ); ?></option>
 		</select>
 		<?php
 	}
@@ -79,7 +79,7 @@ class MediaLibraryFilterObserver implements ObserverInterface {
 				'meta_query',
 				array(
 					array(
-						'key'   => 'smowp_offloaded',
+						'key'   => 'omnioffloader_offloaded',
 						'value' => '1',
 					),
 				)
@@ -89,7 +89,7 @@ class MediaLibraryFilterObserver implements ObserverInterface {
 				'meta_query',
 				array(
 					array(
-						'key'     => 'smowp_offloaded',
+						'key'     => 'omnioffloader_offloaded',
 						'compare' => 'NOT EXISTS',
 					),
 				)

@@ -6,7 +6,7 @@ import type {
 	StartBulkRestoreResponse,
 } from '../types';
 
-const BASE = '/smowp/v1';
+const BASE = '/omnioffloader/v1';
 
 export function fetchRestorePreflight(): Promise< RestorePreflight > {
 	return apiFetch( { path: `${ BASE }/bring-back/preflight` } );

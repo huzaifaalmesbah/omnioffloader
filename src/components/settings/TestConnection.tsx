@@ -48,18 +48,18 @@ export function TestConnection( { provider }: TestConnectionProps ) {
 				onClick={ () => void run() }
 			>
 				{ testing
-					? __( 'Testing…', 'smart-media-offloader' )
-					: __( 'Test Connection', 'smart-media-offloader' ) }
+					? __( 'Testing…', 'omnioffloader' )
+					: __( 'Test Connection', 'omnioffloader' ) }
 			</Button>
 
 			{ result === 'ok' && (
 				<span className="smowp-badge smowp-badge--ok">
-					{ __( 'Connected', 'smart-media-offloader' ) }
+					{ __( 'Connected', 'omnioffloader' ) }
 				</span>
 			) }
 			{ result === 'fail' && (
 				<span className="smowp-badge smowp-badge--fail">
-					{ __( 'Not connected', 'smart-media-offloader' ) }
+					{ __( 'Not connected', 'omnioffloader' ) }
 				</span>
 			) }
 		</div>

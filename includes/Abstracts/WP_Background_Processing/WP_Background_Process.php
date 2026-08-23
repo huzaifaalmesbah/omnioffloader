@@ -1,6 +1,6 @@
 <?php
 
-namespace SmartMediaOffloader\Abstracts\WP_Background_Processing;
+namespace OmniOffloader\Abstracts\WP_Background_Processing;
 
 /**
  * WP Background Process
@@ -754,13 +754,13 @@ abstract class WP_Background_Process extends WP_Async_Request
         $interval = $this->get_cron_interval();
 
         if (1 === $interval) {
-            $display = __('Every Minute', 'smart-media-offloader');
+            $display = __('Every Minute', 'omnioffloader');
         } else {
             /* translators: %d: interval in minutes */
-            $display = sprintf(__('Every %d Minutes', 'smart-media-offloader'), $interval);
+            $display = sprintf(__('Every %d Minutes', 'omnioffloader'), $interval);
         }
 
-        // Adds an "Every NNN Minute(s)" schedule to the existing cron schedules.
+        // Adds an " Every NNN Minute(s)" schedule to the existing cron schedules.
         $schedules[$this->cron_interval_identifier] = array(
             'interval' => MINUTE_IN_SECONDS * $interval,
             'display'  => $display,

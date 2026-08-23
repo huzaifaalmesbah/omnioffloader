@@ -2,10 +2,10 @@
 /**
  * WP-CLI command registration.
  *
- * @package SmartMediaOffloader
+ * @package OmniOffloader
  */
 
-namespace SmartMediaOffloader\Cli;
+namespace OmniOffloader\Cli;
 
 use WP_CLI;
 
@@ -19,13 +19,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 class CommandRegistrar {
 
 	/**
-	 * Register all commands under `wp smowp`.
+	 * Register all commands under `wp omnioffloader`.
 	 *
 	 * @return void
 	 */
 	public static function register() {
-		WP_CLI::add_command( 'smowp offload', OffloadCommand::class );
-		WP_CLI::add_command( 'smowp restore', RestoreCommand::class );
-		WP_CLI::add_command( 'smowp status', StatusCommand::class );
+		WP_CLI::add_command( 'omnioffloader offload', OffloadCommand::class );
+		WP_CLI::add_command( 'omnioffloader restore', RestoreCommand::class );
+		WP_CLI::add_command( 'omnioffloader status', StatusCommand::class );
 	}
 }

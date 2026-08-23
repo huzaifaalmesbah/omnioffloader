@@ -4,12 +4,12 @@
  *
  * Central read/write access to all plugin options, with sanitization.
  *
- * @package SmartMediaOffloader
+ * @package OmniOffloader
  */
 
-namespace SmartMediaOffloader\Traits;
+namespace OmniOffloader\Traits;
 
-use SmartMediaOffloader\Core\Helpers;
+use OmniOffloader\Core\Helpers;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -44,7 +44,7 @@ trait OptionsHelper {
 	 * @return array<string, mixed>
 	 */
 	public static function get_settings() {
-		$settings = get_option( 'smowp_settings', array() );
+		$settings = get_option( 'omnioffloader_settings', array() );
 
 		if ( ! is_array( $settings ) ) {
 			$settings = array();
@@ -74,7 +74,7 @@ trait OptionsHelper {
 			'remove_data_on_uninstall' => ! empty( $settings['remove_data_on_uninstall'] ?? $current['remove_data_on_uninstall'] ),
 		);
 
-		update_option( 'smowp_settings', $sanitized, true );
+		update_option( 'omnioffloader_settings', $sanitized, true );
 
 		return $sanitized;
 	}
@@ -110,7 +110,7 @@ trait OptionsHelper {
 	 * @return array<string, array<string, string>>
 	 */
 	public static function get_all_credentials() {
-		$credentials = get_option( 'smowp_credentials', array() );
+		$credentials = get_option( 'omnioffloader_credentials', array() );
 
 		return is_array( $credentials ) ? $credentials : array();
 	}
@@ -154,7 +154,7 @@ trait OptionsHelper {
 		$all[ $provider_key ] = $existing;
 
 		// Credentials are only needed on our admin page / REST calls: no autoload.
-		update_option( 'smowp_credentials', $all, false );
+		update_option( 'omnioffloader_credentials', $all, false );
 	}
 
 	/**
@@ -181,7 +181,7 @@ trait OptionsHelper {
 	 * @return string
 	 */
 	public static function get_plugin_version() {
-		return (string) get_option( 'smowp_version', '0.0.0' );
+		return (string) get_option( 'omnioffloader_version', '0.0.0' );
 	}
 
 	/**
@@ -191,6 +191,6 @@ trait OptionsHelper {
 	 * @return void
 	 */
 	public static function update_plugin_version( $version ) {
-		update_option( 'smowp_version', $version, true );
+		update_option( 'omnioffloader_version', $version, true );
 	}
 }

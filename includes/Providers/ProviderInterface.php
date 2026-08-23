@@ -2,10 +2,10 @@
 /**
  * Cloud provider contract.
  *
- * @package SmartMediaOffloader
+ * @package OmniOffloader
  */
 
-namespace SmartMediaOffloader\Providers;
+namespace OmniOffloader\Providers;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;

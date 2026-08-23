@@ -141,7 +141,7 @@ export function CoreProvider( { children }: { children: React.ReactNode } ) {
 
 			addNotice(
 				'success',
-				__( 'Changes saved.', 'smart-media-offloader' )
+				__( 'Changes saved.', 'omnioffloader' )
 			);
 			refreshStats();
 		} catch ( error: unknown ) {

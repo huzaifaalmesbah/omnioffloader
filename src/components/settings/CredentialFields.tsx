@@ -34,7 +34,7 @@ export function CredentialFields( { provider }: CredentialFieldsProps ) {
 	if ( ! fields ) {
 		return (
 			<p className="smowp-muted">
-				{ __( 'Loading credentials…', 'smart-media-offloader' ) }
+				{ __( 'Loading credentials…', 'omnioffloader' ) }
 			</p>
 		);
 	}
@@ -50,7 +50,7 @@ export function CredentialFields( { provider }: CredentialFieldsProps ) {
 					field.type === 'password' && field.is_set
 						? __(
 								'•••••••• (saved — leave empty to keep)',
-								'smart-media-offloader'
+								'omnioffloader'
 						  )
 						: field.placeholder;
 
@@ -59,7 +59,7 @@ export function CredentialFields( { provider }: CredentialFieldsProps ) {
 							/* translators: %s: wp-config constant name. */
 							__(
 								'Locked by the %s constant in wp-config.php.',
-								'smart-media-offloader'
+								'omnioffloader'
 							),
 							`SMOWP_${ provider.toUpperCase() }_${ field.name.toUpperCase() }`
 					  )

@@ -2,14 +2,14 @@
 /**
  * Core REST controller: settings, provider list, stats.
  *
- * @package SmartMediaOffloader
+ * @package OmniOffloader
  */
 
-namespace SmartMediaOffloader\Api;
+namespace OmniOffloader\Api;
 
-use SmartMediaOffloader\Core\Helpers;
-use SmartMediaOffloader\Providers\ProviderRegistry;
-use SmartMediaOffloader\Traits\OptionsHelper;
+use OmniOffloader\Core\Helpers;
+use OmniOffloader\Providers\ProviderRegistry;
+use OmniOffloader\Traits\OptionsHelper;
 use WP_REST_Request;
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -67,16 +67,16 @@ class CoreController extends BaseController {
 
 		if ( ! is_array( $settings ) ) {
 			return new \WP_Error(
-				'smowp_invalid_settings',
-				__( 'Settings must be an object.', 'smart-media-offloader' ),
+				'omnioffloader_invalid_settings',
+				__( 'Settings must be an object.', 'omnioffloader' ),
 				array( 'status' => 400 )
 			);
 		}
 
 		if ( isset( $settings['provider'] ) && '' !== $settings['provider'] && ! ProviderRegistry::has( (string) $settings['provider'] ) ) {
 			return new \WP_Error(
-				'smowp_invalid_provider',
-				__( 'Unknown cloud provider.', 'smart-media-offloader' ),
+				'omnioffloader_invalid_provider',
+				__( 'Unknown cloud provider.', 'omnioffloader' ),
 				array( 'status' => 400 )
 			);
 		}

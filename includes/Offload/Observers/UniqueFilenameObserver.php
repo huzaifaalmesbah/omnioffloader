@@ -2,12 +2,12 @@
 /**
  * Prevents filename reuse when local copies were removed.
  *
- * @package SmartMediaOffloader
+ * @package OmniOffloader
  */
 
-namespace SmartMediaOffloader\Offload\Observers;
+namespace OmniOffloader\Offload\Observers;
 
-use SmartMediaOffloader\Offload\ObserverInterface;
+use OmniOffloader\Offload\ObserverInterface;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;

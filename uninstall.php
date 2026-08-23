@@ -5,7 +5,7 @@
  * Cleanup only runs when the site owner opted in via the
  * "Remove all data on uninstall" setting.
  *
- * @package SmartMediaOffloader
+ * @package OmniOffloader
  */
 
 // If uninstall not called from WordPress, abort.
@@ -13,10 +13,10 @@ if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
 	die;
 }
 
-define( 'SMOWP_DIR', plugin_dir_path( __FILE__ ) );
+define( 'OMNIOFFLOADER_DIR', plugin_dir_path( __FILE__ ) );
 
-if ( file_exists( SMOWP_DIR . 'vendor/autoload.php' ) ) {
-	require_once SMOWP_DIR . 'vendor/autoload.php';
+if ( file_exists( OMNIOFFLOADER_DIR . 'vendor/autoload.php' ) ) {
+	require_once OMNIOFFLOADER_DIR . 'vendor/autoload.php';
 }
 
-SmartMediaOffloader\Core\Uninstaller::uninstall();
+OmniOffloader\Core\Uninstaller::uninstall();

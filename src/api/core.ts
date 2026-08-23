@@ -2,7 +2,7 @@ import apiFetch from '@wordpress/api-fetch';
 
 import type { MediaStats, ProviderInfo, Settings } from '../types';
 
-const BASE = '/smowp/v1';
+const BASE = '/omnioffloader/v1';
 
 export function fetchSettings(): Promise< Settings > {
 	return apiFetch( { path: `${ BASE }/core/settings` } );

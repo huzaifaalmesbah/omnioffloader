@@ -16,6 +16,6 @@ export function errorMessage( error: unknown ): string {
 
 	return __(
 		'Something went wrong. Please try again.',
-		'smart-media-offloader'
+		'omnioffloader'
 	);
 }

@@ -31,44 +31,44 @@ export function BringBackPage() {
 		if ( totalCount === 0 ) {
 			disabledReason = __(
 				'Media library is empty. No media to restore.',
-				'smart-media-offloader'
+				'omnioffloader'
 			);
 		} else {
 			disabledReason = __(
 				'All media attachments are already stored locally on your server.',
-				'smart-media-offloader'
+				'omnioffloader'
 			);
 		}
 	}
 
-	let statusDetail: string = __( 'No errors', 'smart-media-offloader' );
+	let statusDetail: string = __( 'No errors', 'omnioffloader' );
 	if ( state && state.errors > 0 ) {
 		statusDetail = sprintf(
 			/* translators: %d: error count. */
-			__( '%d error(s) encountered', 'smart-media-offloader' ),
+			__( '%d error(s) encountered', 'omnioffloader' ),
 			state.errors
 		);
 	} else if ( state?.delete_cloud ) {
 		statusDetail = __(
 			'Cloud objects deleting after restore',
-			'smart-media-offloader'
+			'omnioffloader'
 		);
 	}
 
 	return (
 		<div className="smowp-page">
 			<Card
-				title={ __( 'Bring Back', 'smart-media-offloader' ) }
+				title={ __( 'Bring Back', 'omnioffloader' ) }
 				description={ __(
 					'Restore offloaded media from the cloud back to your server. Downloads are atomic and verified — an attachment only switches back to local URLs once every file is safely on disk.',
-					'smart-media-offloader'
+					'omnioffloader'
 				) }
 			>
 				{ ! stats?.configured && (
 					<p className="smowp-muted">
 						{ __(
 							'Configure a cloud provider in Settings first.',
-							'smart-media-offloader'
+							'omnioffloader'
 						) }
 					</p>
 				) }
@@ -80,7 +80,7 @@ export function BringBackPage() {
 								<span className="smowp-media-chip__label">
 									{ __(
 										'Total Library Media',
-										'smart-media-offloader'
+										'omnioffloader'
 									) }
 								</span>
 								<strong className="smowp-media-chip__value">
@@ -91,7 +91,7 @@ export function BringBackPage() {
 								<span className="smowp-media-chip__label">
 									{ __(
 										'Offloaded (Ready to Restore)',
-										'smart-media-offloader'
+										'omnioffloader'
 									) }
 								</span>
 								<strong className="smowp-media-chip__value">
@@ -102,7 +102,7 @@ export function BringBackPage() {
 								<span className="smowp-media-chip__label">
 									{ __(
 										'Already Local',
-										'smart-media-offloader'
+										'omnioffloader'
 									) }
 								</span>
 								<strong className="smowp-media-chip__value">
@@ -120,13 +120,13 @@ export function BringBackPage() {
 									<strong>
 										{ __(
 											'All media is already stored locally on your server.',
-											'smart-media-offloader'
+											'omnioffloader'
 										) }
 									</strong>
 									<p>
 										{ __(
 											'There are no offloaded cloud attachments to restore at this time.',
-											'smart-media-offloader'
+											'omnioffloader'
 										) }
 									</p>
 								</div>
@@ -140,7 +140,7 @@ export function BringBackPage() {
 										/* translators: %d: number of offloaded attachments. */
 										__(
 											'%d attachment(s) are offloaded and can be brought back.',
-											'smart-media-offloader'
+											'omnioffloader'
 										),
 										offloadedCount
 									) }
@@ -153,7 +153,7 @@ export function BringBackPage() {
 										/* translators: %s: formatted byte size. */
 										__(
 											'Estimated download: up to %s (files still on disk are skipped).',
-											'smart-media-offloader'
+											'omnioffloader'
 										),
 										formatBytes( preflight.estimated_bytes )
 									) }
@@ -163,7 +163,7 @@ export function BringBackPage() {
 												/* translators: %s: formatted byte size. */
 												__(
 													'Free disk space: %s',
-													'smart-media-offloader'
+													'omnioffloader'
 												),
 												formatBytes(
 													preflight.free_bytes
@@ -173,7 +173,7 @@ export function BringBackPage() {
 										' · ' +
 											__(
 												'Free disk space could not be determined on this host.',
-												'smart-media-offloader'
+												'omnioffloader'
 											) }
 								</p>
 							) }
@@ -182,7 +182,7 @@ export function BringBackPage() {
 								<p className="smowp-warning">
 									{ __(
 										'Warning: free disk space may not be enough for a full restore. Free up space before starting.',
-										'smart-media-offloader'
+										'omnioffloader'
 									) }
 								</p>
 							) }
@@ -191,7 +191,7 @@ export function BringBackPage() {
 								<h4 className="smowp-bringback-options__title">
 									{ __(
 										'Restore Safety & Storage Options',
-										'smart-media-offloader'
+										'omnioffloader'
 									) }
 								</h4>
 								<div
@@ -199,7 +199,7 @@ export function BringBackPage() {
 									role="radiogroup"
 									aria-label={ __(
 										'Restore storage options',
-										'smart-media-offloader'
+										'omnioffloader'
 									) }
 								>
 									<div
@@ -251,20 +251,20 @@ export function BringBackPage() {
 												<strong>
 													{ __(
 														'Keep Cloud Copies',
-														'smart-media-offloader'
+														'omnioffloader'
 													) }
 												</strong>
 												<span className="smowp-badge smowp-badge--ok">
 													{ __(
 														'Recommended',
-														'smart-media-offloader'
+														'omnioffloader'
 													) }
 												</span>
 											</div>
 											<p>
 												{ __(
 													'Files are downloaded to your server and served locally. Originals remain safe in your cloud bucket as backups.',
-													'smart-media-offloader'
+													'omnioffloader'
 												) }
 											</p>
 										</div>
@@ -319,20 +319,20 @@ export function BringBackPage() {
 												<strong>
 													{ __(
 														'Delete from Cloud After Restore',
-														'smart-media-offloader'
+														'omnioffloader'
 													) }
 												</strong>
 												<span className="smowp-badge smowp-badge--fail">
 													{ __(
 														'Reclaim Storage',
-														'smart-media-offloader'
+														'omnioffloader'
 													) }
 												</span>
 											</div>
 											<p>
 												{ __(
 													'Reclaims bucket storage. Cloud files are permanently deleted ONLY after 100% verified download on your server.',
-													'smart-media-offloader'
+													'omnioffloader'
 												) }
 											</p>
 										</div>
@@ -359,13 +359,13 @@ export function BringBackPage() {
 													{ offloadedCount === 0
 														? __(
 																'No Offloaded Media to Restore',
-																'smart-media-offloader'
+																'omnioffloader'
 														  )
 														: sprintf(
 																/* translators: %d: number of offloaded attachments. */
 																__(
 																	'Start Bring Back (%d)',
-																	'smart-media-offloader'
+																	'omnioffloader'
 																),
 																offloadedCount
 														  ) }
@@ -386,7 +386,7 @@ export function BringBackPage() {
 												/* translators: %d: number of offloaded attachments. */
 												__(
 													'Start Bring Back (%d)',
-													'smart-media-offloader'
+													'omnioffloader'
 												),
 												offloadedCount
 											) }
@@ -416,7 +416,7 @@ export function BringBackPage() {
 												<span className="smowp-badge-pulse" />
 												{ __(
 													'Restoring…',
-													'smart-media-offloader'
+													'omnioffloader'
 												) }
 											</span>
 										) }
@@ -424,7 +424,7 @@ export function BringBackPage() {
 											<span className="smowp-badge smowp-badge--ok">
 												{ __(
 													'Finished',
-													'smart-media-offloader'
+													'omnioffloader'
 												) }
 											</span>
 										) }
@@ -432,7 +432,7 @@ export function BringBackPage() {
 											<span className="smowp-badge smowp-badge--fail">
 												{ __(
 													'Cancelled',
-													'smart-media-offloader'
+													'omnioffloader'
 												) }
 											</span>
 										) }
@@ -441,7 +441,7 @@ export function BringBackPage() {
 												/* translators: 1: processed count, 2: total count. */
 												__(
 													'%1$d of %2$d processed',
-													'smart-media-offloader'
+													'omnioffloader'
 												),
 												state.processed,
 												state.total
@@ -486,7 +486,7 @@ export function BringBackPage() {
 											>
 												{ __(
 													'Cancel',
-													'smart-media-offloader'
+													'omnioffloader'
 												) }
 											</Button>
 										) : (
@@ -497,7 +497,7 @@ export function BringBackPage() {
 											>
 												{ __(
 													'Dismiss',
-													'smart-media-offloader'
+													'omnioffloader'
 												) }
 											</Button>
 										) }
@@ -516,10 +516,10 @@ export function BringBackPage() {
 			</Card>
 
 			<Card
-				title={ __( 'Single attachments', 'smart-media-offloader' ) }
+				title={ __( 'Single attachments', 'omnioffloader' ) }
 				description={ __(
 					'You can also bring back one file at a time from the Media Library list — use the "Bring Back" row action on any offloaded attachment. Each attachment restores from the provider it was offloaded to, even if you switched providers since.',
-					'smart-media-offloader'
+					'omnioffloader'
 				) }
 			/>
 		</div>

@@ -2,10 +2,10 @@
 /**
  * Fired during plugin deactivation.
  *
- * @package SmartMediaOffloader
+ * @package OmniOffloader
  */
 
-namespace SmartMediaOffloader\Core;
+namespace OmniOffloader\Core;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -26,15 +26,15 @@ class Deactivator {
 	 */
 	public static function deactivate() {
 		// Bulk-queue cron healthcheck (WP_Background_Process).
-		wp_clear_scheduled_hook( 'smowp_bulk_offload_cron' );
-		wp_clear_scheduled_hook( 'smowp_bulk_restore_cron' );
+		wp_clear_scheduled_hook( 'omnioffloader_bulk_offload_cron' );
+		wp_clear_scheduled_hook( 'omnioffloader_bulk_restore_cron' );
 
 		// Transient state.
-		delete_transient( 'smowp_activation_redirect' );
-		delete_transient( 'smowp_media_stats' );
+		delete_transient( 'omnioffloader_activation_redirect' );
+		delete_transient( 'omnioffloader_media_stats' );
 
 		// Bulk progress heartbeats.
-		delete_option( 'smowp_bulk_offload_state' );
-		delete_option( 'smowp_bulk_restore_state' );
+		delete_option( 'omnioffloader_bulk_offload_state' );
+		delete_option( 'omnioffloader_bulk_restore_state' );
 	}
 }

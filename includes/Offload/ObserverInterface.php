@@ -2,10 +2,10 @@
 /**
  * Observer contract: one WordPress hook concern per class.
  *
- * @package SmartMediaOffloader
+ * @package OmniOffloader
  */
 
-namespace SmartMediaOffloader\Offload;
+namespace OmniOffloader\Offload;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;

@@ -1,6 +1,6 @@
 <?php
 
-namespace SmartMediaOffloader\Abstracts\WP_Background_Processing;
+namespace OmniOffloader\Abstracts\WP_Background_Processing;
 
 /**
  * WP Async Request

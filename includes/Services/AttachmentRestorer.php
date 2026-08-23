@@ -2,15 +2,15 @@
 /**
  * Bring Back: restores an offloaded attachment from the cloud to the server.
  *
- * @package SmartMediaOffloader
+ * @package OmniOffloader
  */
 
-namespace SmartMediaOffloader\Services;
+namespace OmniOffloader\Services;
 
-use SmartMediaOffloader\Core\Helpers;
-use SmartMediaOffloader\Providers\ProviderInterface;
-use SmartMediaOffloader\Providers\ProviderRegistry;
-use SmartMediaOffloader\Traits\AttachmentHelper;
+use OmniOffloader\Core\Helpers;
+use OmniOffloader\Providers\ProviderInterface;
+use OmniOffloader\Providers\ProviderRegistry;
+use OmniOffloader\Traits\AttachmentHelper;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -20,7 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Class AttachmentRestorer
  *
  * Safety invariants:
- *  - The provider is resolved from the attachment's own `smowp_provider`
+ *  - The provider is resolved from the attachment's own `omnioffloader_provider`
  *    meta, not the active provider — restores keep working after switching
  *    providers as long as the old credentials remain stored.
  *  - Every destination is confined to the uploads basedir (realpath check).
@@ -58,12 +58,12 @@ class AttachmentRestorer {
 		 *
 		 * @param int $attachment_id Attachment ID.
 		 */
-		do_action( 'smowp_before_restore', $attachment_id );
+		do_action( 'omnioffloader_before_restore', $attachment_id );
 
 		$files = self::collect_attachment_files( $attachment_id );
 
 		if ( empty( $files['main'] ) ) {
-			self::log_attachment_error( $attachment_id, __( 'No attached file found.', 'smart-media-offloader' ) );
+			self::log_attachment_error( $attachment_id, __( 'No attached file found.', 'omnioffloader' ) );
 
 			return false;
 		}
@@ -72,7 +72,7 @@ class AttachmentRestorer {
 		$base_real  = realpath( $upload_dir['basedir'] );
 
 		if ( false === $base_real ) {
-			self::log_attachment_error( $attachment_id, __( 'Uploads directory not found.', 'smart-media-offloader' ) );
+			self::log_attachment_error( $attachment_id, __( 'Uploads directory not found.', 'omnioffloader' ) );
 
 			return false;
 		}
@@ -93,7 +93,7 @@ class AttachmentRestorer {
 					$attachment_id,
 					sprintf(
 						/* translators: %s: file name. */
-						__( 'Main file "%s" is missing locally and in the cloud.', 'smart-media-offloader' ),
+						__( 'Main file "%s" is missing locally and in the cloud.', 'omnioffloader' ),
 						wp_basename( $entry['file'] )
 					)
 				);
@@ -117,7 +117,7 @@ class AttachmentRestorer {
 		 * @param int  $attachment_id Attachment ID.
 		 * @param bool $delete_cloud  Whether cloud objects will also be deleted.
 		 */
-		do_action( 'smowp_after_restore', $attachment_id, $delete_cloud );
+		do_action( 'omnioffloader_after_restore', $attachment_id, $delete_cloud );
 
 		Helpers::flush_media_stats();
 
@@ -127,7 +127,7 @@ class AttachmentRestorer {
 			if ( ! $provider->delete_objects( $delete_keys ) ) {
 				self::log_attachment_error(
 					$attachment_id,
-					__( 'Restored locally, but some cloud objects could not be deleted.', 'smart-media-offloader' )
+					__( 'Restored locally, but some cloud objects could not be deleted.', 'omnioffloader' )
 				);
 			}
 		}
@@ -153,7 +153,7 @@ class AttachmentRestorer {
 				$attachment_id,
 				sprintf(
 					/* translators: %s: directory path. */
-					__( 'Cannot create directory "%s".', 'smart-media-offloader' ),
+					__( 'Cannot create directory "%s".', 'omnioffloader' ),
 					$dir
 				)
 			);
@@ -170,7 +170,7 @@ class AttachmentRestorer {
 				$attachment_id,
 				sprintf(
 					/* translators: %s: file path. */
-					__( 'Refused to restore outside the uploads directory: "%s".', 'smart-media-offloader' ),
+					__( 'Refused to restore outside the uploads directory: "%s".', 'omnioffloader' ),
 					$dest
 				)
 			);
@@ -204,7 +204,7 @@ class AttachmentRestorer {
 			$attachment_id,
 			sprintf(
 				/* translators: %s: object key. */
-				__( 'Download failed for "%s".', 'smart-media-offloader' ),
+				__( 'Download failed for "%s".', 'omnioffloader' ),
 				$key
 			)
 		);
@@ -219,10 +219,10 @@ class AttachmentRestorer {
 	 * @return ProviderInterface|null
 	 */
 	private function resolve_provider( $attachment_id ) {
-		$provider_key = (string) get_post_meta( $attachment_id, 'smowp_provider', true );
+		$provider_key = (string) get_post_meta( $attachment_id, 'omnioffloader_provider', true );
 
 		if ( '' === $provider_key ) {
-			self::log_attachment_error( $attachment_id, __( 'No provider recorded for this attachment.', 'smart-media-offloader' ) );
+			self::log_attachment_error( $attachment_id, __( 'No provider recorded for this attachment.', 'omnioffloader' ) );
 
 			return null;
 		}
@@ -234,7 +234,7 @@ class AttachmentRestorer {
 				$attachment_id,
 				sprintf(
 					/* translators: %s: provider key. */
-					__( 'Provider "%s" is not available.', 'smart-media-offloader' ),
+					__( 'Provider "%s" is not available.', 'omnioffloader' ),
 					$provider_key
 				)
 			);

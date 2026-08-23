@@ -2,12 +2,12 @@
 /**
  * Applies the retention policy after a verified offload.
  *
- * @package SmartMediaOffloader
+ * @package OmniOffloader
  */
 
-namespace SmartMediaOffloader\Services;
+namespace OmniOffloader\Services;
 
-use SmartMediaOffloader\Traits\AttachmentHelper;
+use OmniOffloader\Traits\AttachmentHelper;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;

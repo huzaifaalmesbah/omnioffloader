@@ -2,14 +2,14 @@
 /**
  * WP-CLI: offload media to the cloud.
  *
- * @package SmartMediaOffloader
+ * @package OmniOffloader
  */
 
-namespace SmartMediaOffloader\Cli;
+namespace OmniOffloader\Cli;
 
-use SmartMediaOffloader\Core\Plugin;
-use SmartMediaOffloader\Services\AttachmentUploader;
-use SmartMediaOffloader\Traits\AttachmentHelper;
+use OmniOffloader\Core\Plugin;
+use OmniOffloader\Services\AttachmentUploader;
+use OmniOffloader\Traits\AttachmentHelper;
 use WP_CLI;
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -42,9 +42,9 @@ class OffloadCommand {
 	 *
 	 * ## EXAMPLES
 	 *
-	 *     wp smowp offload --all
-	 *     wp smowp offload --ids=12,15,42
-	 *     wp smowp offload --all --dry-run
+	 *     wp omnioffloader offload --all
+	 *     wp omnioffloader offload --ids=12,15,42
+	 *     wp omnioffloader offload --all --dry-run
 	 *
 	 * @param string[]              $args       Positional args (unused).
 	 * @param array<string, string> $assoc_args Named args.
@@ -94,7 +94,7 @@ class OffloadCommand {
 		$progress->finish();
 
 		if ( $failed > 0 ) {
-			WP_CLI::warning( sprintf( '%d offloaded, %d failed (see smowp_error_log meta).', $done, $failed ) );
+			WP_CLI::warning( sprintf( '%d offloaded, %d failed (see omnioffloader_error_log meta).', $done, $failed ) );
 			WP_CLI::halt( 1 );
 		}
 
@@ -130,7 +130,7 @@ class OffloadCommand {
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- CLI batch IDs query.
 		$ids = $wpdb->get_col(
 			"SELECT p.ID FROM {$wpdb->posts} p
-			 LEFT JOIN {$wpdb->postmeta} m ON m.post_id = p.ID AND m.meta_key = 'smowp_offloaded'
+			 LEFT JOIN {$wpdb->postmeta} m ON m.post_id = p.ID AND m.meta_key = 'omnioffloader_offloaded'
 			 WHERE p.post_type = 'attachment' AND m.post_id IS NULL
 			 ORDER BY p.ID ASC"
 		);

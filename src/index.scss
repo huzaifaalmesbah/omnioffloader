@@ -1,4 +1,4 @@
-// Smart Media Offloader admin app — Optimazz-style full-page layout.
+// OmniOffloader admin app — Optimazz-style full-page layout.
 // Design agreed in PLAN.md §6.1: left sidebar (logo top, two-line nav items,
 // accent active state), content header (icon badge + page title/subtitle),
 // sticky bottom save bar, white rounded cards on a light gray canvas.
@@ -25,7 +25,7 @@
 // ---------------------------------------------------------------------------
 // Full-page takeover
 // ---------------------------------------------------------------------------
-#smowp-admin-app {
+#omnioffloader-admin-app, #smowp-admin-app {
 	min-height: calc( 100vh - 32px );
 	margin-left: -20px;
 	background: var( --smowp-canvas );
@@ -770,7 +770,7 @@
 	}
 }
 
-// Global Form Controls Override inside Smart Media Offloader
+// Global Form Controls Override inside OmniOffloader
 .smowp-app {
 	.components-base-control {
 		margin-bottom: 0;

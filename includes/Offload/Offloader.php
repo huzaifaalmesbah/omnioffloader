@@ -2,21 +2,21 @@
 /**
  * Offload engine orchestrator.
  *
- * @package SmartMediaOffloader
+ * @package OmniOffloader
  */
 
-namespace SmartMediaOffloader\Offload;
+namespace OmniOffloader\Offload;
 
-use SmartMediaOffloader\Offload\Observers\ContentImageTagObserver;
-use SmartMediaOffloader\Offload\Observers\DeleteObserver;
-use SmartMediaOffloader\Offload\Observers\MediaLibraryFilterObserver;
-use SmartMediaOffloader\Offload\Observers\OffloadStatusObserver;
-use SmartMediaOffloader\Offload\Observers\RowActionsObserver;
-use SmartMediaOffloader\Offload\Observers\SrcsetObserver;
-use SmartMediaOffloader\Offload\Observers\UniqueFilenameObserver;
-use SmartMediaOffloader\Offload\Observers\UploadObserver;
-use SmartMediaOffloader\Offload\Observers\UrlRewriteObserver;
-use SmartMediaOffloader\Providers\ProviderInterface;
+use OmniOffloader\Offload\Observers\ContentImageTagObserver;
+use OmniOffloader\Offload\Observers\DeleteObserver;
+use OmniOffloader\Offload\Observers\MediaLibraryFilterObserver;
+use OmniOffloader\Offload\Observers\OffloadStatusObserver;
+use OmniOffloader\Offload\Observers\RowActionsObserver;
+use OmniOffloader\Offload\Observers\SrcsetObserver;
+use OmniOffloader\Offload\Observers\UniqueFilenameObserver;
+use OmniOffloader\Offload\Observers\UploadObserver;
+use OmniOffloader\Offload\Observers\UrlRewriteObserver;
+use OmniOffloader\Providers\ProviderInterface;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;

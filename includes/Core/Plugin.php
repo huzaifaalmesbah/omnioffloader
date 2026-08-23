@@ -2,22 +2,22 @@
 /**
  * Main Plugin Class.
  *
- * @package SmartMediaOffloader
+ * @package OmniOffloader
  */
 
-namespace SmartMediaOffloader\Core;
+namespace OmniOffloader\Core;
 
-use SmartMediaOffloader\Admin\Settings;
-use SmartMediaOffloader\Api\BringBackController;
-use SmartMediaOffloader\Api\CoreController;
-use SmartMediaOffloader\Api\OffloadController;
-use SmartMediaOffloader\Api\ProviderController;
-use SmartMediaOffloader\Offload\Offloader;
-use SmartMediaOffloader\Providers\ProviderInterface;
-use SmartMediaOffloader\Providers\ProviderRegistry;
-use SmartMediaOffloader\Services\BulkOffloadProcessor;
-use SmartMediaOffloader\Services\BulkRestoreProcessor;
-use SmartMediaOffloader\Traits\OptionsHelper;
+use OmniOffloader\Admin\Settings;
+use OmniOffloader\Api\BringBackController;
+use OmniOffloader\Api\CoreController;
+use OmniOffloader\Api\OffloadController;
+use OmniOffloader\Api\ProviderController;
+use OmniOffloader\Offload\Offloader;
+use OmniOffloader\Providers\ProviderInterface;
+use OmniOffloader\Providers\ProviderRegistry;
+use OmniOffloader\Services\BulkOffloadProcessor;
+use OmniOffloader\Services\BulkRestoreProcessor;
+use OmniOffloader\Traits\OptionsHelper;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -112,7 +112,7 @@ class Plugin {
 		// so updates applied outside wp-admin still migrate data.
 		add_action( 'init', array( $this, 'maybe_upgrade' ), 5 );
 
-		add_filter( 'plugin_action_links_' . SMOWP_BASENAME, array( $this, 'add_plugin_settings_link' ) );
+		add_filter( 'plugin_action_links_' . OMNIOFFLOADER_BASENAME, array( $this, 'add_plugin_settings_link' ) );
 	}
 
 	/**
@@ -124,13 +124,13 @@ class Plugin {
 	public function maybe_upgrade() {
 		$stored_version = self::get_plugin_version();
 
-		if ( ! version_compare( SMOWP_VERSION, $stored_version, '>' ) ) {
+		if ( ! version_compare( OMNIOFFLOADER_VERSION, $stored_version, '>' ) ) {
 			return;
 		}
 
 		Migrator::run( $stored_version );
 
-		self::update_plugin_version( SMOWP_VERSION );
+		self::update_plugin_version( OMNIOFFLOADER_VERSION );
 	}
 
 	/**
@@ -140,7 +140,7 @@ class Plugin {
 	 * @return array<int|string, string>
 	 */
 	public function add_plugin_settings_link( $links ) {
-		$settings_link = '<a href="' . esc_url( admin_url( 'admin.php?page=smart-media-offloader' ) ) . '">' . esc_html__( 'Settings', 'smart-media-offloader' ) . '</a>';
+		$settings_link = '<a href="' . esc_url( admin_url( 'admin.php?page=omnioffloader' ) ) . '">' . esc_html__( 'Settings', 'omnioffloader' ) . '</a>';
 		array_unshift( $links, $settings_link );
 
 		return $links;
@@ -181,7 +181,7 @@ class Plugin {
 	 */
 	private function initialize_offloader() {
 		// Kill switch for tests and emergencies (define in wp-config.php).
-		if ( defined( 'SMOWP_DISABLE_ENGINE' ) && SMOWP_DISABLE_ENGINE ) {
+		if ( defined( 'OMNIOFFLOADER_DISABLE_ENGINE' ) && OMNIOFFLOADER_DISABLE_ENGINE ) {
 			return;
 		}
 

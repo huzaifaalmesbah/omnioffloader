@@ -2,11 +2,11 @@
 /**
  * React admin app mount point.
  *
- * @package SmartMediaOffloader
+ * @package OmniOffloader
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 ?>
-<div id="smowp-admin-app"></div>
+<div id="omnioffloader-admin-app"></div>

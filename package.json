@@ -1,7 +1,7 @@
 {
-	"name": "smart-media-offloader",
+	"name": "omnioffloader",
 	"version": "0.1.0",
-	"description": "Offload WordPress media to Cloudflare R2, serve it from your CDN, and bring files back to your server anytime.",
+	"description": "Offload WordPress media to any cloud storage, serve via CDN, and backup files to Google Drive.",
 	"author": "Huzaifa Al Mesbah",
 	"license": "GPL-2.0-or-later",
 	"scripts": {
@@ -10,8 +10,8 @@
 		"start": "wp-scripts start",
 		"check-types": "tsc --noEmit",
 		"lint:js": "wp-scripts lint-js src",
-		"i18n:pot": "wp i18n make-pot . languages/smart-media-offloader.pot --exclude=node_modules,src,.git,.github,vendor",
-		"i18n:po": "for po in languages/*.po; do msgmerge --update --backup=none \"$po\" languages/smart-media-offloader.pot; done",
+		"i18n:pot": "wp i18n make-pot . languages/omnioffloader.pot --exclude=node_modules,src,.git,.github,vendor",
+		"i18n:po": "for po in languages/*.po; do msgmerge --update --backup=none \"$po\" languages/omnioffloader.pot; done",
 		"i18n:mo": "wp i18n make-mo languages/",
 		"i18n:json": "wp i18n make-json languages/ languages/ --no-purge",
 		"i18n": "npm run i18n:pot && npm run i18n:po && npm run i18n:mo && npm run i18n:json",

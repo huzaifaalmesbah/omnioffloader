@@ -2,10 +2,10 @@
 /**
  * Admin settings page: menu + React app enqueue.
  *
- * @package SmartMediaOffloader
+ * @package OmniOffloader
  */
 
-namespace SmartMediaOffloader\Admin;
+namespace OmniOffloader\Admin;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -19,7 +19,7 @@ class Settings {
 	/**
 	 * Menu slug / page identifier.
 	 */
-	private const PAGE_SLUG = 'smart-media-offloader';
+	private const PAGE_SLUG = 'omnioffloader';
 
 	/**
 	 * Admin page hook suffix, set when the menu is registered.
@@ -45,11 +45,11 @@ class Settings {
 	 * @return void
 	 */
 	public function maybe_activation_redirect() {
-		if ( ! get_transient( 'smowp_activation_redirect' ) ) {
+		if ( ! get_transient( 'omnioffloader_activation_redirect' ) ) {
 			return;
 		}
 
-		delete_transient( 'smowp_activation_redirect' );
+		delete_transient( 'omnioffloader_activation_redirect' );
 
 		// Not on bulk activations, and only for admins.
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only routing check.
@@ -68,8 +68,8 @@ class Settings {
 	 */
 	public function add_admin_menu() {
 		$this->hook_suffix = (string) add_menu_page(
-			__( 'Smart Media Offloader', 'smart-media-offloader' ),
-			__( 'Media Offloader', 'smart-media-offloader' ),
+			__( 'OmniOffloader', 'omnioffloader' ),
+			__( 'OmniOffloader', 'omnioffloader' ),
 			'manage_options',
 			self::PAGE_SLUG,
 			array( $this, 'render_page' ),
@@ -89,7 +89,7 @@ class Settings {
 			return;
 		}
 
-		$asset_path = SMOWP_DIR . 'build/index.asset.php';
+		$asset_path = OMNIOFFLOADER_DIR . 'build/index.asset.php';
 
 		if ( ! file_exists( $asset_path ) ) {
 			add_action(
@@ -97,7 +97,7 @@ class Settings {
 				static function () {
 					printf(
 						'<div class="notice notice-error"><p>%s</p></div>',
-						esc_html__( 'Smart Media Offloader: build assets are missing. Run "npm install && npm run build" in the plugin directory.', 'smart-media-offloader' )
+						esc_html__( 'OmniOffloader: build assets are missing. Run "npm install && npm run build" in the plugin directory.', 'omnioffloader' )
 					);
 				}
 			);
@@ -108,25 +108,25 @@ class Settings {
 		$asset_file = include $asset_path;
 
 		wp_enqueue_script(
-			'smowp-admin-app',
-			SMOWP_URL . 'build/index.js',
+			'omnioffloader-admin-app',
+			OMNIOFFLOADER_URL . 'build/index.js',
 			$asset_file['dependencies'],
 			$asset_file['version'],
 			true
 		);
 
 		wp_enqueue_style(
-			'smowp-admin-app',
-			SMOWP_URL . 'build/index.css',
+			'omnioffloader-admin-app',
+			OMNIOFFLOADER_URL . 'build/index.css',
 			array( 'wp-components' ),
 			$asset_file['version']
 		);
 
 		wp_localize_script(
-			'smowp-admin-app',
-			'smowp',
+			'omnioffloader-admin-app',
+			'omnioffloader',
 			array(
-				'version'    => SMOWP_VERSION,
+				'version'    => OMNIOFFLOADER_VERSION,
 				'sdk_loaded' => class_exists( \Aws\S3\S3Client::class ),
 				'upload_url' => wp_get_upload_dir()['baseurl'],
 				'media_url'  => admin_url( 'upload.php' ),
@@ -134,14 +134,10 @@ class Settings {
 		);
 
 		wp_set_script_translations(
-			'smowp-admin-app',
-			'smart-media-offloader',
-			SMOWP_DIR . 'languages'
+			'omnioffloader-admin-app',
+			'omnioffloader',
+			OMNIOFFLOADER_DIR . 'languages'
 		);
-
-		// Full-page app: keep other plugins' notices off our screen.
-		remove_all_actions( 'admin_notices' );
-		remove_all_actions( 'all_admin_notices' );
 	}
 
 	/**
@@ -150,6 +146,6 @@ class Settings {
 	 * @return void
 	 */
 	public function render_page() {
-		include SMOWP_DIR . 'includes/templates/admin-app.php';
+		include OMNIOFFLOADER_DIR . 'includes/templates/admin-app.php';
 	}
 }

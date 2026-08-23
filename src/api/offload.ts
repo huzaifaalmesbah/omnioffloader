@@ -2,7 +2,7 @@ import apiFetch from '@wordpress/api-fetch';
 
 import type { AttachmentErrors, BulkState, StartBulkResponse } from '../types';
 
-const BASE = '/smowp/v1';
+const BASE = '/omnioffloader/v1';
 
 export function startBulkOffload(): Promise< StartBulkResponse > {
 	return apiFetch( { path: `${ BASE }/offload/bulk`, method: 'POST' } );

@@ -2,13 +2,13 @@
 /**
  * Cloudflare R2 provider.
  *
- * @package SmartMediaOffloader
+ * @package OmniOffloader
  */
 
-namespace SmartMediaOffloader\Providers;
+namespace OmniOffloader\Providers;
 
 use Aws\S3\S3Client;
-use SmartMediaOffloader\Core\Helpers;
+use OmniOffloader\Core\Helpers;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -71,38 +71,38 @@ class CloudflareR2 extends AbstractS3Provider {
 		return array(
 			array(
 				'name'        => 'key',
-				'label'       => __( 'Access Key ID', 'smart-media-offloader' ),
+				'label'       => __( 'Access Key ID', 'omnioffloader' ),
 				'type'        => 'text',
-				'placeholder' => __( 'Your R2 Access Key ID', 'smart-media-offloader' ),
+				'placeholder' => __( 'Your R2 Access Key ID', 'omnioffloader' ),
 				'description' => '',
 			),
 			array(
 				'name'        => 'secret',
-				'label'       => __( 'Secret Access Key', 'smart-media-offloader' ),
+				'label'       => __( 'Secret Access Key', 'omnioffloader' ),
 				'type'        => 'password',
-				'placeholder' => __( 'Your R2 Secret Access Key', 'smart-media-offloader' ),
+				'placeholder' => __( 'Your R2 Secret Access Key', 'omnioffloader' ),
 				'description' => '',
 			),
 			array(
 				'name'        => 'endpoint',
-				'label'       => __( 'Endpoint URL', 'smart-media-offloader' ),
+				'label'       => __( 'Endpoint URL', 'omnioffloader' ),
 				'type'        => 'text',
 				'placeholder' => 'https://your-account-id.r2.cloudflarestorage.com',
-				'description' => __( 'Find it in Cloudflare Dashboard → R2 → your bucket → Settings.', 'smart-media-offloader' ),
+				'description' => __( 'Find it in Cloudflare Dashboard → R2 → your bucket → Settings.', 'omnioffloader' ),
 			),
 			array(
 				'name'        => 'bucket',
-				'label'       => __( 'Bucket Name', 'smart-media-offloader' ),
+				'label'       => __( 'Bucket Name', 'omnioffloader' ),
 				'type'        => 'text',
-				'placeholder' => __( 'Your R2 bucket name', 'smart-media-offloader' ),
+				'placeholder' => __( 'Your R2 bucket name', 'omnioffloader' ),
 				'description' => '',
 			),
 			array(
 				'name'        => 'domain',
-				'label'       => __( 'Custom Domain (CDN URL)', 'smart-media-offloader' ),
+				'label'       => __( 'Custom Domain (CDN URL)', 'omnioffloader' ),
 				'type'        => 'text',
 				'placeholder' => 'https://media.yourdomain.com',
-				'description' => __( 'Required for serving files publicly — connect a custom domain or public r2.dev URL to the bucket.', 'smart-media-offloader' ),
+				'description' => __( 'Required for serving files publicly — connect a custom domain or public r2.dev URL to the bucket.', 'omnioffloader' ),
 			),
 		);
 	}

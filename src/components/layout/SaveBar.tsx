@@ -10,8 +10,8 @@ export function SaveBar() {
 		<div className="smowp-savebar">
 			<span className="smowp-savebar__status">
 				{ isDirty
-					? __( 'Unsaved changes', 'smart-media-offloader' )
-					: __( 'All changes saved', 'smart-media-offloader' ) }
+					? __( 'Unsaved changes', 'omnioffloader' )
+					: __( 'All changes saved', 'omnioffloader' ) }
 			</span>
 			<Button
 				variant="primary"
@@ -21,8 +21,8 @@ export function SaveBar() {
 				onClick={ () => void save() }
 			>
 				{ isSaving
-					? __( 'Saving…', 'smart-media-offloader' )
-					: __( 'Save changes', 'smart-media-offloader' ) }
+					? __( 'Saving…', 'omnioffloader' )
+					: __( 'Save changes', 'omnioffloader' ) }
 			</Button>
 		</div>
 	);

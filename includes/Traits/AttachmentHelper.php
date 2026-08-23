@@ -4,12 +4,12 @@
  *
  * Object key building, file collection and offload meta read/write.
  *
- * @package SmartMediaOffloader
+ * @package OmniOffloader
  */
 
-namespace SmartMediaOffloader\Traits;
+namespace OmniOffloader\Traits;
 
-use SmartMediaOffloader\Core\Helpers;
+use OmniOffloader\Core\Helpers;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -27,7 +27,7 @@ trait AttachmentHelper {
 	 * @return bool
 	 */
 	public static function is_offloaded( $attachment_id ) {
-		return (bool) get_post_meta( $attachment_id, 'smowp_offloaded', true );
+		return (bool) get_post_meta( $attachment_id, 'omnioffloader_offloaded', true );
 	}
 
 	/**
@@ -37,7 +37,7 @@ trait AttachmentHelper {
 	 * @return string E.g. "2026/08/" — empty for bucket root.
 	 */
 	public static function get_offload_path( $attachment_id ) {
-		return (string) get_post_meta( $attachment_id, 'smowp_path', true );
+		return (string) get_post_meta( $attachment_id, 'omnioffloader_path', true );
 	}
 
 	/**
@@ -54,7 +54,7 @@ trait AttachmentHelper {
 			return self::get_offload_path( $attachment_id );
 		}
 
-		$settings = \SmartMediaOffloader\Core\Plugin::get_settings();
+		$settings = \OmniOffloader\Core\Plugin::get_settings();
 
 		$prefix = '';
 		if ( ! empty( $settings['path_prefix_active'] ) && '' !== $settings['path_prefix'] ) {
@@ -70,11 +70,11 @@ trait AttachmentHelper {
 
 		$version_part = '';
 		if ( ! empty( $settings['object_versioning'] ) ) {
-			$version = (string) get_post_meta( $attachment_id, 'smowp_object_version', true );
+			$version = (string) get_post_meta( $attachment_id, 'omnioffloader_object_version', true );
 
 			if ( '' === $version ) {
 				$version = gmdate( 'YmdHis' );
-				update_post_meta( $attachment_id, 'smowp_object_version', $version );
+				update_post_meta( $attachment_id, 'omnioffloader_object_version', $version );
 			}
 
 			$version_part = trailingslashit( $version );
@@ -167,7 +167,7 @@ trait AttachmentHelper {
 		 * @param string $key           Object key.
 		 * @param int    $attachment_id Attachment ID.
 		 */
-		$main_key = apply_filters( 'smowp_attachment_key', $subdir . wp_basename( $attached_file ), $attachment_id );
+		$main_key = apply_filters( 'omnioffloader_attachment_key', $subdir . wp_basename( $attached_file ), $attachment_id );
 
 		$result['main'][] = array(
 			'file' => $local_dir . wp_basename( $attached_file ),
@@ -283,7 +283,7 @@ trait AttachmentHelper {
 		 * @param int      $attachment_id Attachment ID.
 		 * @param string   $subdir        Key prefix for this attachment.
 		 */
-		$keys = apply_filters( 'smowp_attachment_delete_keys', $keys, $attachment_id, $subdir );
+		$keys = apply_filters( 'omnioffloader_attachment_delete_keys', $keys, $attachment_id, $subdir );
 
 		return array_values(
 			array_unique(
@@ -308,13 +308,13 @@ trait AttachmentHelper {
 	 * @return void
 	 */
 	public static function write_offload_meta( $attachment_id, $provider_key, $bucket, $subdir, $retention ) {
-		update_post_meta( $attachment_id, 'smowp_offloaded', 1 );
-		update_post_meta( $attachment_id, 'smowp_offloaded_at', time() );
-		update_post_meta( $attachment_id, 'smowp_provider', $provider_key );
-		update_post_meta( $attachment_id, 'smowp_bucket', $bucket );
-		update_post_meta( $attachment_id, 'smowp_path', $subdir );
-		update_post_meta( $attachment_id, 'smowp_retention', $retention );
-		delete_post_meta( $attachment_id, 'smowp_error_log' );
+		update_post_meta( $attachment_id, 'omnioffloader_offloaded', 1 );
+		update_post_meta( $attachment_id, 'omnioffloader_offloaded_at', time() );
+		update_post_meta( $attachment_id, 'omnioffloader_provider', $provider_key );
+		update_post_meta( $attachment_id, 'omnioffloader_bucket', $bucket );
+		update_post_meta( $attachment_id, 'omnioffloader_path', $subdir );
+		update_post_meta( $attachment_id, 'omnioffloader_retention', $retention );
+		delete_post_meta( $attachment_id, 'omnioffloader_error_log' );
 	}
 
 	/**
@@ -326,14 +326,14 @@ trait AttachmentHelper {
 	 * @return void
 	 */
 	public static function clear_offload_meta( $attachment_id ) {
-		delete_post_meta( $attachment_id, 'smowp_offloaded' );
-		delete_post_meta( $attachment_id, 'smowp_offloaded_at' );
-		delete_post_meta( $attachment_id, 'smowp_provider' );
-		delete_post_meta( $attachment_id, 'smowp_bucket' );
-		delete_post_meta( $attachment_id, 'smowp_path' );
-		delete_post_meta( $attachment_id, 'smowp_object_version' );
-		delete_post_meta( $attachment_id, 'smowp_retention' );
-		delete_post_meta( $attachment_id, 'smowp_error_log' );
+		delete_post_meta( $attachment_id, 'omnioffloader_offloaded' );
+		delete_post_meta( $attachment_id, 'omnioffloader_offloaded_at' );
+		delete_post_meta( $attachment_id, 'omnioffloader_provider' );
+		delete_post_meta( $attachment_id, 'omnioffloader_bucket' );
+		delete_post_meta( $attachment_id, 'omnioffloader_path' );
+		delete_post_meta( $attachment_id, 'omnioffloader_object_version' );
+		delete_post_meta( $attachment_id, 'omnioffloader_retention' );
+		delete_post_meta( $attachment_id, 'omnioffloader_error_log' );
 	}
 
 	/**
@@ -344,7 +344,7 @@ trait AttachmentHelper {
 	 * @return void
 	 */
 	public static function log_attachment_error( $attachment_id, $message ) {
-		$log = get_post_meta( $attachment_id, 'smowp_error_log', true );
+		$log = get_post_meta( $attachment_id, 'omnioffloader_error_log', true );
 
 		if ( ! is_array( $log ) ) {
 			$log = array();
@@ -358,6 +358,6 @@ trait AttachmentHelper {
 		// Keep the log bounded.
 		$log = array_slice( $log, -10 );
 
-		update_post_meta( $attachment_id, 'smowp_error_log', $log );
+		update_post_meta( $attachment_id, 'omnioffloader_error_log', $log );
 	}
 }

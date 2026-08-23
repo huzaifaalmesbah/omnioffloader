@@ -20,13 +20,13 @@ export function ActivityLog( {
 
 	const successLabel =
 		actionType === 'offload'
-			? __( 'Offloaded', 'smart-media-offloader' )
-			: __( 'Restored', 'smart-media-offloader' );
+			? __( 'Offloaded', 'omnioffloader' )
+			: __( 'Restored', 'omnioffloader' );
 
 	const logTitle =
 		actionType === 'offload'
-			? __( 'Offloaded Media Log', 'smart-media-offloader' )
-			: __( 'Restored Media Log', 'smart-media-offloader' );
+			? __( 'Offloaded Media Log', 'omnioffloader' )
+			: __( 'Restored Media Log', 'omnioffloader' );
 
 	return (
 		<div className="smowp-activity-log">
@@ -36,14 +36,14 @@ export function ActivityLog( {
 					{ running && (
 						<span className="smowp-activity-log__live-pill">
 							<span className="smowp-badge-pulse" />
-							{ __( 'Live', 'smart-media-offloader' ) }
+							{ __( 'Live', 'omnioffloader' ) }
 						</span>
 					) }
 				</div>
 				<span className="smowp-activity-log__count">
 					{ sprintf(
 						/* translators: %d: count of processed media items. */
-						__( '%d item(s)', 'smart-media-offloader' ),
+						__( '%d item(s)', 'omnioffloader' ),
 						items.length
 					) }
 				</span>
@@ -56,7 +56,7 @@ export function ActivityLog( {
 						<p>
 							{ __(
 								'Processing queue… completed items will appear here.',
-								'smart-media-offloader'
+								'omnioffloader'
 							) }
 						</p>
 					</div>
@@ -100,7 +100,7 @@ export function ActivityLog( {
 										/* translators: 1: attachment ID, 2: time. */
 										__(
 											'#%1$d · %2$s',
-											'smart-media-offloader'
+											'omnioffloader'
 										),
 										item.id,
 										timeStr
@@ -126,7 +126,7 @@ export function ActivityLog( {
 										? `✓ ${ successLabel }`
 										: `✕ ${ __(
 												'Failed',
-												'smart-media-offloader'
+												'omnioffloader'
 										  ) }` }
 								</span>
 							</div>

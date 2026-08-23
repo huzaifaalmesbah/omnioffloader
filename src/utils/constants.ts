@@ -16,26 +16,26 @@ export interface RouteMeta {
 export const ROUTES: RouteMeta[] = [
 	{
 		view: 'dashboard',
-		title: __( 'Dashboard', 'smart-media-offloader' ),
-		subtitle: __( 'Overview & quick status', 'smart-media-offloader' ),
+		title: __( 'Dashboard', 'omnioffloader' ),
+		subtitle: __( 'Overview & quick status', 'omnioffloader' ),
 		icon: home,
 	},
 	{
 		view: 'settings',
-		title: __( 'Settings', 'smart-media-offloader' ),
-		subtitle: __( 'Provider & policies', 'smart-media-offloader' ),
+		title: __( 'Settings', 'omnioffloader' ),
+		subtitle: __( 'Provider & policies', 'omnioffloader' ),
 		icon: cog,
 	},
 	{
 		view: 'offload',
-		title: __( 'Offload', 'smart-media-offloader' ),
-		subtitle: __( 'Move media to the cloud', 'smart-media-offloader' ),
+		title: __( 'Offload', 'omnioffloader' ),
+		subtitle: __( 'Move media to the cloud', 'omnioffloader' ),
 		icon: cloudUpload,
 	},
 	{
 		view: 'bring-back',
-		title: __( 'Bring Back', 'smart-media-offloader' ),
-		subtitle: __( 'Restore media to your server', 'smart-media-offloader' ),
+		title: __( 'Bring Back', 'omnioffloader' ),
+		subtitle: __( 'Restore media to your server', 'omnioffloader' ),
 		icon: download,
 	},
 ];
@@ -45,8 +45,8 @@ export const DEFAULT_VIEW = 'dashboard';
 export const PLUGIN_ICON = cloud;
 
 export const PLUGIN_NAME = __(
-	'Smart Media Offloader',
-	'smart-media-offloader'
+	'OmniOffloader',
+	'omnioffloader'
 );
 
 export function getRoute( view: string ): RouteMeta {

@@ -2,10 +2,10 @@
 /**
  * REST API base controller.
  *
- * @package SmartMediaOffloader
+ * @package OmniOffloader
  */
 
-namespace SmartMediaOffloader\Api;
+namespace OmniOffloader\Api;
 
 use WP_REST_Server;
 
@@ -25,7 +25,7 @@ abstract class BaseController {
 	 *
 	 * @var string
 	 */
-	protected $namespace = 'smowp/v1';
+	protected $namespace = 'omnioffloader/v1';
 
 	/**
 	 * Hook route registration.
@@ -54,8 +54,8 @@ abstract class BaseController {
 		}
 
 		return new \WP_Error(
-			'smowp_forbidden',
-			__( 'Sorry, you are not allowed to do that.', 'smart-media-offloader' ),
+			'omnioffloader_forbidden',
+			__( 'Sorry, you are not allowed to do that.', 'omnioffloader' ),
 			array( 'status' => rest_authorization_required_code() )
 		);
 	}

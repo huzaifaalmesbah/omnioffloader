@@ -2,15 +2,15 @@
 /**
  * WP-CLI: plugin status overview.
  *
- * @package SmartMediaOffloader
+ * @package OmniOffloader
  */
 
-namespace SmartMediaOffloader\Cli;
+namespace OmniOffloader\Cli;
 
-use SmartMediaOffloader\Core\Helpers;
-use SmartMediaOffloader\Core\Plugin;
-use SmartMediaOffloader\Services\BulkOffloadProcessor;
-use SmartMediaOffloader\Services\BulkRestoreProcessor;
+use OmniOffloader\Core\Helpers;
+use OmniOffloader\Core\Plugin;
+use OmniOffloader\Services\BulkOffloadProcessor;
+use OmniOffloader\Services\BulkRestoreProcessor;
 use WP_CLI;
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -27,7 +27,7 @@ class StatusCommand {
 	 *
 	 * ## EXAMPLES
 	 *
-	 *     wp smowp status
+	 *     wp omnioffloader status
 	 *
 	 * @return void
 	 */
@@ -35,7 +35,7 @@ class StatusCommand {
 		$plugin   = Plugin::get_instance();
 		$provider = $plugin->get_provider();
 
-		WP_CLI::log( 'Smart Media Offloader ' . SMOWP_VERSION );
+		WP_CLI::log( 'OmniOffloader ' . OMNIOFFLOADER_VERSION );
 		WP_CLI::log( '' );
 
 		if ( null === $provider ) {

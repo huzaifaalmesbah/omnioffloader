@@ -44,14 +44,14 @@ export function DashboardPage( { onNavigate }: DashboardProps ) {
 								<span className="smowp-badge-pulse" />
 								{ __(
 									'Connected & Active',
-									'smart-media-offloader'
+									'omnioffloader'
 								) }
 							</span>
 						) : (
 							<span className="smowp-hero__setup-badge">
 								{ __(
 									'Setup Required',
-									'smart-media-offloader'
+									'omnioffloader'
 								) }
 							</span>
 						) }
@@ -62,24 +62,24 @@ export function DashboardPage( { onNavigate }: DashboardProps ) {
 									/* translators: %s: cloud provider name. */
 									__(
 										'Connected to %s',
-										'smart-media-offloader'
+										'omnioffloader'
 									),
 									providerName
 							  )
 							: __(
 									'Not configured yet',
-									'smart-media-offloader'
+									'omnioffloader'
 							  ) }
 					</h2>
 					<p>
 						{ stats?.configured
 							? __(
 									'New uploads are offloaded automatically and served from your custom domain.',
-									'smart-media-offloader'
+									'omnioffloader'
 							  )
 							: __(
 									'Add your Cloudflare R2 credentials to get started.',
-									'smart-media-offloader'
+									'omnioffloader'
 							  ) }
 					</p>
 					{ ! stats?.configured && (
@@ -87,7 +87,7 @@ export function DashboardPage( { onNavigate }: DashboardProps ) {
 							variant="primary"
 							onClick={ () => onNavigate( 'settings' ) }
 						>
-							{ __( 'Open Settings', 'smart-media-offloader' ) }
+							{ __( 'Open Settings', 'omnioffloader' ) }
 						</Button>
 					) }
 				</div>
@@ -97,7 +97,7 @@ export function DashboardPage( { onNavigate }: DashboardProps ) {
 				<StatCard
 					icon={ image }
 					value={ String( stats?.total ?? '—' ) }
-					label={ __( 'Total media items', 'smart-media-offloader' ) }
+					label={ __( 'Total media items', 'omnioffloader' ) }
 					variant="default"
 				/>
 				<StatCard
@@ -105,7 +105,7 @@ export function DashboardPage( { onNavigate }: DashboardProps ) {
 					value={ String( stats?.offloaded ?? '—' ) }
 					label={ __(
 						'Offloaded to cloud',
-						'smart-media-offloader'
+						'omnioffloader'
 					) }
 					variant="success"
 					badge={ total > 0 ? `${ offloadedPct }%` : undefined }
@@ -114,11 +114,11 @@ export function DashboardPage( { onNavigate }: DashboardProps ) {
 				<StatCard
 					icon={ upload }
 					value={ String( stats?.local ?? '—' ) }
-					label={ __( 'Local only', 'smart-media-offloader' ) }
+					label={ __( 'Local only', 'omnioffloader' ) }
 					variant="local"
 					badge={
 						local === 0 && total > 0
-							? __( 'All Synced', 'smart-media-offloader' )
+							? __( 'All Synced', 'omnioffloader' )
 							: undefined
 					}
 					onClick={ () => onNavigate( 'offload' ) }
@@ -126,10 +126,10 @@ export function DashboardPage( { onNavigate }: DashboardProps ) {
 			</div>
 
 			<Card
-				title={ __( 'Quick Actions', 'smart-media-offloader' ) }
+				title={ __( 'Quick Actions', 'omnioffloader' ) }
 				description={ __(
 					'Manage your media library and cloud storage settings.',
-					'smart-media-offloader'
+					'omnioffloader'
 				) }
 			>
 				<div className="smowp-quick-actions-grid">
@@ -152,7 +152,7 @@ export function DashboardPage( { onNavigate }: DashboardProps ) {
 							<strong>
 								{ __(
 									'Bulk Offload',
-									'smart-media-offloader'
+									'omnioffloader'
 								) }
 							</strong>
 							<p>
@@ -161,13 +161,13 @@ export function DashboardPage( { onNavigate }: DashboardProps ) {
 											/* translators: %d: local files. */
 											__(
 												'%d local files ready to offload',
-												'smart-media-offloader'
+												'omnioffloader'
 											),
 											local
 									  )
 									: __(
 											'All media is currently offloaded',
-											'smart-media-offloader'
+											'omnioffloader'
 									  ) }
 							</p>
 						</div>
@@ -195,7 +195,7 @@ export function DashboardPage( { onNavigate }: DashboardProps ) {
 							<strong>
 								{ __(
 									'Bring Back (Restore)',
-									'smart-media-offloader'
+									'omnioffloader'
 								) }
 							</strong>
 							<p>
@@ -204,13 +204,13 @@ export function DashboardPage( { onNavigate }: DashboardProps ) {
 											/* translators: %d: offloaded files. */
 											__(
 												'%d offloaded files in cloud',
-												'smart-media-offloader'
+												'omnioffloader'
 											),
 											offloaded
 									  )
 									: __(
 											'No offloaded files to restore',
-											'smart-media-offloader'
+											'omnioffloader'
 									  ) }
 							</p>
 						</div>
@@ -238,7 +238,7 @@ export function DashboardPage( { onNavigate }: DashboardProps ) {
 							<strong>
 								{ __(
 									'Provider Settings',
-									'smart-media-offloader'
+									'omnioffloader'
 								) }
 							</strong>
 							<p>
@@ -247,13 +247,13 @@ export function DashboardPage( { onNavigate }: DashboardProps ) {
 											/* translators: %s: provider name. */
 											__(
 												'Manage %s & credentials',
-												'smart-media-offloader'
+												'omnioffloader'
 											),
 											providerName
 									  )
 									: __(
 											'Configure cloud bucket credentials',
-											'smart-media-offloader'
+											'omnioffloader'
 									  ) }
 							</p>
 						</div>

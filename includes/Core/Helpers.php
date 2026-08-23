@@ -2,10 +2,10 @@
 /**
  * Static helper functions.
  *
- * @package SmartMediaOffloader
+ * @package OmniOffloader
  */
 
-namespace SmartMediaOffloader\Core;
+namespace OmniOffloader\Core;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -19,14 +19,14 @@ class Helpers {
 	/**
 	 * Build the wp-config constant name for a credential field.
 	 *
-	 * E.g. ( 'cloudflare_r2', 'key' ) => 'SMOWP_CLOUDFLARE_R2_KEY'.
+	 * E.g. ( 'cloudflare_r2', 'key' ) => 'OMNIOFFLOADER_CLOUDFLARE_R2_KEY'.
 	 *
 	 * @param string $provider_key Provider key.
 	 * @param string $field        Field name.
 	 * @return string
 	 */
 	public static function credential_constant_name( $provider_key, $field ) {
-		return 'SMOWP_' . strtoupper( $provider_key ) . '_' . strtoupper( $field );
+		return 'OMNIOFFLOADER_' . strtoupper( $provider_key ) . '_' . strtoupper( $field );
 	}
 
 	/**
@@ -54,7 +54,7 @@ class Helpers {
 			return (string) constant( $constant );
 		}
 
-		$credentials = get_option( 'smowp_credentials', array() );
+		$credentials = get_option( 'omnioffloader_credentials', array() );
 
 		if ( ! is_array( $credentials ) ) {
 			return '';
@@ -119,7 +119,7 @@ class Helpers {
 	 * @return array{total: int, offloaded: int, local: int}
 	 */
 	public static function get_media_stats() {
-		$cached = get_transient( 'smowp_media_stats' );
+		$cached = get_transient( 'omnioffloader_media_stats' );
 
 		if ( is_array( $cached ) && isset( $cached['total'], $cached['offloaded'], $cached['local'] ) ) {
 			return $cached;
@@ -136,7 +136,7 @@ class Helpers {
 		$offloaded = (int) $wpdb->get_var(
 			$wpdb->prepare(
 				"SELECT COUNT(post_id) FROM {$wpdb->postmeta} WHERE meta_key = %s AND meta_value = %s",
-				'smowp_offloaded',
+				'omnioffloader_offloaded',
 				'1'
 			)
 		);
@@ -147,7 +147,7 @@ class Helpers {
 			'local'     => max( 0, $total - $offloaded ),
 		);
 
-		set_transient( 'smowp_media_stats', $stats, MINUTE_IN_SECONDS );
+		set_transient( 'omnioffloader_media_stats', $stats, MINUTE_IN_SECONDS );
 
 		return $stats;
 	}
@@ -158,8 +158,8 @@ class Helpers {
 	 * @return void
 	 */
 	public static function flush_media_stats() {
-		delete_transient( 'smowp_media_stats' );
-		delete_transient( 'smowp_restore_preflight' );
+		delete_transient( 'omnioffloader_media_stats' );
+		delete_transient( 'omnioffloader_restore_preflight' );
 	}
 
 	/**
@@ -174,7 +174,7 @@ class Helpers {
 	 * @return array{offloaded: int, estimated_bytes: int, free_bytes: int, disk_ok: bool}
 	 */
 	public static function get_restore_preflight() {
-		$cached = get_transient( 'smowp_restore_preflight' );
+		$cached = get_transient( 'omnioffloader_restore_preflight' );
 
 		if ( is_array( $cached ) && isset( $cached['offloaded'], $cached['estimated_bytes'], $cached['free_bytes'], $cached['disk_ok'] ) ) {
 			return $cached;
@@ -185,7 +185,7 @@ class Helpers {
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- indexed meta join query cached via transient below.
 		$ids = $wpdb->get_col(
 			"SELECT p.ID FROM {$wpdb->posts} p
-			 INNER JOIN {$wpdb->postmeta} m ON m.post_id = p.ID AND m.meta_key = 'smowp_offloaded' AND m.meta_value = '1'
+			 INNER JOIN {$wpdb->postmeta} m ON m.post_id = p.ID AND m.meta_key = 'omnioffloader_offloaded' AND m.meta_value = '1'
 			 WHERE p.post_type = 'attachment'"
 		);
 
@@ -228,7 +228,7 @@ class Helpers {
 			'disk_ok'         => 0 === $free || $free > $estimated * 1.1,
 		);
 
-		set_transient( 'smowp_restore_preflight', $preflight, MINUTE_IN_SECONDS );
+		set_transient( 'omnioffloader_restore_preflight', $preflight, MINUTE_IN_SECONDS );
 
 		return $preflight;
 	}

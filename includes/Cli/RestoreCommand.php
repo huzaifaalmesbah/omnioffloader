@@ -2,13 +2,13 @@
 /**
  * WP-CLI: Bring Back — restore media from the cloud.
  *
- * @package SmartMediaOffloader
+ * @package OmniOffloader
  */
 
-namespace SmartMediaOffloader\Cli;
+namespace OmniOffloader\Cli;
 
-use SmartMediaOffloader\Services\AttachmentRestorer;
-use SmartMediaOffloader\Traits\AttachmentHelper;
+use OmniOffloader\Services\AttachmentRestorer;
+use OmniOffloader\Traits\AttachmentHelper;
 use WP_CLI;
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -50,10 +50,10 @@ class RestoreCommand {
 	 *
 	 * ## EXAMPLES
 	 *
-	 *     wp smowp restore --all
-	 *     wp smowp restore --ids=12,15,42
-	 *     wp smowp restore --all --delete-cloud --yes
-	 *     wp smowp restore --all --dry-run
+	 *     wp omnioffloader restore --all
+	 *     wp omnioffloader restore --ids=12,15,42
+	 *     wp omnioffloader restore --all --delete-cloud --yes
+	 *     wp omnioffloader restore --all --dry-run
 	 *
 	 * @param string[]              $args       Positional args (unused).
 	 * @param array<string, string> $assoc_args Named args.
@@ -112,7 +112,7 @@ class RestoreCommand {
 		$progress->finish();
 
 		if ( $failed > 0 ) {
-			WP_CLI::warning( sprintf( '%d restored, %d failed (see smowp_error_log meta).', $done, $failed ) );
+			WP_CLI::warning( sprintf( '%d restored, %d failed (see omnioffloader_error_log meta).', $done, $failed ) );
 			WP_CLI::halt( 1 );
 		}
 
@@ -148,7 +148,7 @@ class RestoreCommand {
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- CLI batch IDs query.
 		$ids = $wpdb->get_col(
 			"SELECT p.ID FROM {$wpdb->posts} p
-			 INNER JOIN {$wpdb->postmeta} m ON m.post_id = p.ID AND m.meta_key = 'smowp_offloaded' AND m.meta_value = '1'
+			 INNER JOIN {$wpdb->postmeta} m ON m.post_id = p.ID AND m.meta_key = 'omnioffloader_offloaded' AND m.meta_value = '1'
 			 WHERE p.post_type = 'attachment'
 			 ORDER BY p.ID ASC"
 		);

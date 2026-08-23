@@ -2,10 +2,10 @@
 /**
  * Provider registry.
  *
- * @package SmartMediaOffloader
+ * @package OmniOffloader
  */
 
-namespace SmartMediaOffloader\Providers;
+namespace OmniOffloader\Providers;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -40,7 +40,7 @@ class ProviderRegistry {
 		 *
 		 * @param array<string, class-string<ProviderInterface>> $providers Provider key => class map.
 		 */
-		$providers = apply_filters( 'smowp_cloud_providers', self::$providers );
+		$providers = apply_filters( 'omnioffloader_cloud_providers', self::$providers );
 
 		return is_array( $providers ) ? $providers : self::$providers;
 	}

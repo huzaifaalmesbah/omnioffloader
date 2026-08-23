@@ -3,7 +3,7 @@ import { addQueryArgs } from '@wordpress/url';
 
 import type { CredentialsResponse, TestConnectionResponse } from '../types';
 
-const BASE = '/smowp/v1';
+const BASE = '/omnioffloader/v1';
 
 export function fetchCredentials(
 	provider: string

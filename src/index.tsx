@@ -5,7 +5,7 @@ import { CoreProvider } from './context/CoreContext';
 import './index.scss';
 
 document.addEventListener( 'DOMContentLoaded', () => {
-	const mount = document.getElementById( 'smowp-admin-app' );
+	const mount = document.getElementById( 'omnioffloader-admin-app' );
 
 	if ( ! mount ) {
 		return;

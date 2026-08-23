@@ -2,13 +2,13 @@
 /**
  * Background bulk-restore (Bring Back) queue.
  *
- * @package SmartMediaOffloader
+ * @package OmniOffloader
  */
 
-namespace SmartMediaOffloader\Services;
+namespace OmniOffloader\Services;
 
-use SmartMediaOffloader\Abstracts\WP_Background_Processing\WP_Background_Process;
-use SmartMediaOffloader\Core\Helpers;
+use OmniOffloader\Abstracts\WP_Background_Processing\WP_Background_Process;
+use OmniOffloader\Core\Helpers;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -19,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * Processes queued attachment IDs in the background (async loopback
  * requests + cron healthcheck, via WP_Background_Process). Progress is
- * heartbeat-written to the `smowp_bulk_restore_state` option, which the
+ * heartbeat-written to the `omnioffloader_bulk_restore_state` option, which the
  * React Bring Back page polls. The per-run "also delete from cloud"
  * choice is stored in the state so every batch honors it.
  */
@@ -28,17 +28,17 @@ class BulkRestoreProcessor extends WP_Background_Process {
 	/**
 	 * Option name holding the progress state.
 	 */
-	public const STATE_OPTION = 'smowp_bulk_restore_state';
+	public const STATE_OPTION = 'omnioffloader_bulk_restore_state';
 
 	/**
 	 * Hook prefix.
 	 *
 	 * @var string
 	 */
-	protected $prefix = 'smowp';
+	protected $prefix = 'omnioffloader';
 
 	/**
-	 * Action name — hooks become smowp_bulk_restore(_cron).
+	 * Action name — hooks become omnioffloader_bulk_restore(_cron).
 	 *
 	 * @var string
 	 */
@@ -105,7 +105,7 @@ class BulkRestoreProcessor extends WP_Background_Process {
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- bulk queue population query.
 		$ids = $wpdb->get_col(
 			"SELECT p.ID FROM {$wpdb->posts} p
-			 INNER JOIN {$wpdb->postmeta} m ON m.post_id = p.ID AND m.meta_key = 'smowp_offloaded' AND m.meta_value = '1'
+			 INNER JOIN {$wpdb->postmeta} m ON m.post_id = p.ID AND m.meta_key = 'omnioffloader_offloaded' AND m.meta_value = '1'
 			 WHERE p.post_type = 'attachment'
 			 ORDER BY p.ID ASC"
 		);
@@ -195,7 +195,7 @@ class BulkRestoreProcessor extends WP_Background_Process {
 			'status'    => $ok ? 'success' : 'error',
 			'timestamp' => time(),
 			'thumb'     => $thumb_url ? $thumb_url : '',
-			'error'     => $ok ? '' : (string) get_post_meta( $attachment_id, '_smowp_last_error', true ),
+			'error'     => $ok ? '' : (string) get_post_meta( $attachment_id, '_omnioffloader_last_error', true ),
 		);
 
 		array_unshift( $recent, $entry );

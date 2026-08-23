@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
-<ruleset name="Smart Media Offloader">
-	<description>WordPress Coding Standards for Smart Media Offloader.</description>
+<ruleset name="OmniOffloader">
+	<description>WordPress Coding Standards for OmniOffloader.</description>
 
-	<file>smart-media-offloader.php</file>
+	<file>omnioffloader.php</file>
 	<file>uninstall.php</file>
 	<file>includes</file>
 
@@ -22,7 +22,7 @@
 		<!-- Short array syntax is used throughout this project. -->
 		<exclude name="Universal.Arrays.DisallowShortArraySyntax"/>
 		<exclude name="Generic.Arrays.DisallowShortArraySyntax"/>
-		<!-- PSR-4 style class files (includes/Autoloader.php), per PLAN.md architecture. -->
+		<!-- PSR-4 style class files, per architecture. -->
 		<exclude name="WordPress.Files.FileName.NotHyphenatedLowercase"/>
 		<exclude name="WordPress.Files.FileName.InvalidClassFileName"/>
 	</rule>
@@ -30,7 +30,7 @@
 	<rule ref="WordPress.WP.I18n">
 		<properties>
 			<property name="text_domain" type="array">
-				<element value="smart-media-offloader"/>
+				<element value="omnioffloader"/>
 			</property>
 		</properties>
 	</rule>
@@ -38,9 +38,9 @@
 	<rule ref="WordPress.NamingConventions.PrefixAllGlobals">
 		<properties>
 			<property name="prefixes" type="array">
-				<element value="smowp"/>
-				<element value="SMOWP"/>
-				<element value="SmartMediaOffloader"/>
+				<element value="omnioffloader"/>
+				<element value="OMNIOFFLOADER"/>
+				<element value="OmniOffloader"/>
 			</property>
 		</properties>
 	</rule>

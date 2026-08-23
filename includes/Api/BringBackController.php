@@ -2,16 +2,16 @@
 /**
  * Bring Back REST controller: preflight, single restore, bulk queue.
  *
- * @package SmartMediaOffloader
+ * @package OmniOffloader
  */
 
-namespace SmartMediaOffloader\Api;
+namespace OmniOffloader\Api;
 
-use SmartMediaOffloader\Core\Helpers;
-use SmartMediaOffloader\Core\Plugin;
-use SmartMediaOffloader\Services\AttachmentRestorer;
-use SmartMediaOffloader\Services\BulkRestoreProcessor;
-use SmartMediaOffloader\Traits\AttachmentHelper;
+use OmniOffloader\Core\Helpers;
+use OmniOffloader\Core\Plugin;
+use OmniOffloader\Services\AttachmentRestorer;
+use OmniOffloader\Services\BulkRestoreProcessor;
+use OmniOffloader\Traits\AttachmentHelper;
 use WP_REST_Request;
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -75,8 +75,8 @@ class BringBackController extends BaseController {
 
 		if ( null === $processor ) {
 			return new \WP_Error(
-				'smowp_not_configured',
-				__( 'No cloud provider is configured.', 'smart-media-offloader' ),
+				'omnioffloader_not_configured',
+				__( 'No cloud provider is configured.', 'omnioffloader' ),
 				array( 'status' => 409 )
 			);
 		}
@@ -104,16 +104,16 @@ class BringBackController extends BaseController {
 
 		if ( 'attachment' !== get_post_type( $attachment_id ) ) {
 			return new \WP_Error(
-				'smowp_not_attachment',
-				__( 'Not a media attachment.', 'smart-media-offloader' ),
+				'omnioffloader_not_attachment',
+				__( 'Not a media attachment.', 'omnioffloader' ),
 				array( 'status' => 404 )
 			);
 		}
 
 		if ( ! self::is_offloaded( $attachment_id ) ) {
 			return new \WP_Error(
-				'smowp_not_offloaded',
-				__( 'This attachment is not offloaded.', 'smart-media-offloader' ),
+				'omnioffloader_not_offloaded',
+				__( 'This attachment is not offloaded.', 'omnioffloader' ),
 				array( 'status' => 409 )
 			);
 		}
@@ -124,7 +124,7 @@ class BringBackController extends BaseController {
 		return rest_ensure_response(
 			array(
 				'restored' => $ok,
-				'errors'   => get_post_meta( $attachment_id, 'smowp_error_log', true ),
+				'errors'   => get_post_meta( $attachment_id, 'omnioffloader_error_log', true ),
 			)
 		);
 	}
@@ -144,8 +144,8 @@ class BringBackController extends BaseController {
 
 		if ( $engine->is_active() ) {
 			return new \WP_Error(
-				'smowp_bulk_running',
-				__( 'A bulk restore is already running.', 'smart-media-offloader' ),
+				'omnioffloader_bulk_running',
+				__( 'A bulk restore is already running.', 'omnioffloader' ),
 				array( 'status' => 409 )
 			);
 		}
@@ -156,8 +156,8 @@ class BringBackController extends BaseController {
 
 		if ( null !== $offload && $offload->is_active() ) {
 			return new \WP_Error(
-				'smowp_bulk_running',
-				__( 'A bulk offload is running — wait for it to finish first.', 'smart-media-offloader' ),
+				'omnioffloader_bulk_running',
+				__( 'A bulk offload is running — wait for it to finish first.', 'omnioffloader' ),
 				array( 'status' => 409 )
 			);
 		}

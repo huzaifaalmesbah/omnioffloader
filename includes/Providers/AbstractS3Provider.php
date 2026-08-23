@@ -2,12 +2,12 @@
 /**
  * Shared implementation for S3-compatible providers.
  *
- * @package SmartMediaOffloader
+ * @package OmniOffloader
  */
 
-namespace SmartMediaOffloader\Providers;
+namespace OmniOffloader\Providers;
 
-use SmartMediaOffloader\Core\Helpers;
+use OmniOffloader\Core\Helpers;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -101,7 +101,7 @@ abstract class AbstractS3Provider implements ProviderInterface {
 		 * @param string $file Local file path.
 		 * @param string $key  Object key.
 		 */
-		$acl = apply_filters( 'smowp_object_acl', '', $file, $key );
+		$acl = apply_filters( 'omnioffloader_object_acl', '', $file, $key );
 
 		$params = array(
 			'Bucket'     => $this->get_bucket(),
@@ -304,8 +304,8 @@ abstract class AbstractS3Provider implements ProviderInterface {
 	public function check_connection() {
 		if ( null === $this->get_bucket() ) {
 			return new \WP_Error(
-				'smowp_missing_bucket',
-				__( 'No bucket name configured.', 'smart-media-offloader' )
+				'omnioffloader_missing_bucket',
+				__( 'No bucket name configured.', 'omnioffloader' )
 			);
 		}
 
@@ -322,10 +322,10 @@ abstract class AbstractS3Provider implements ProviderInterface {
 			return true;
 		} catch ( \Exception $e ) {
 			return new \WP_Error(
-				'smowp_connection_failed',
+				'omnioffloader_connection_failed',
 				sprintf(
 					/* translators: %s: error message from the storage provider. */
-					__( 'Connection failed: %s', 'smart-media-offloader' ),
+					__( 'Connection failed: %s', 'omnioffloader' ),
 					$e->getMessage()
 				)
 			);
@@ -340,6 +340,6 @@ abstract class AbstractS3Provider implements ProviderInterface {
 	 */
 	protected function log_error( $message ) {
 		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- operational logging.
-		error_log( 'Smart Media Offloader [' . $this->get_key() . ']: ' . $message );
+		error_log( 'OmniOffloader [' . $this->get_key() . ']: ' . $message );
 	}
 }

@@ -1,6 +1,6 @@
-=== Smart Media Offloader ===
+=== OmniOffloader — Multi-Cloud Media Storage, CDN & Backup ===
 Contributors: huzaifaalmesbah
-Tags: media, offload, cloudflare r2, cdn, cloud storage
+Tags: media, offload, cloud storage, backup, cdn
 Requires at least: 6.6
 Tested up to: 7.1
 Requires PHP: 8.1
@@ -8,60 +8,58 @@ Stable tag: 0.1.0
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Offload WordPress media to Cloudflare R2, serve it from your CDN, and bring files back to your server anytime.
+Offload WordPress media to cloud storage (AWS S3, R2, Spaces), deliver via CDN, and backup or restore files anytime with Bring Back.
 
 == Description ==
 
-Smart Media Offloader copies your media library to Cloudflare R2 object storage and serves it from your custom domain (CDN), saving server disk space and speeding up your site.
+OmniOffloader copies your WordPress media library to cloud object storage (Cloudflare R2, Amazon S3, DigitalOcean Spaces, Wasabi, Backblaze B2, Google Cloud Storage) and serves it from your custom domain or CDN, saving server disk space and accelerating your website.
 
-**Features (v0.x pre-release):**
+**Key Features:**
 
-* Automatic offload of new uploads to Cloudflare R2
-* Serve media from your custom domain / CDN
-* Three retention policies: keep local files, smart cleanup (remove thumbnails), or full cloud migration
-* **Bring Back**: restore offloaded media from the cloud back to your server — per file or in bulk
-* Modern React-based admin panel
-* Credentials via settings or `wp-config.php` constants
-* WP-CLI commands
+* **Automatic Cloud Offloading**: Automatically copies new uploads to cloud storage (including original files, thumbnails, scaled images, and WebP/AVIF formats).
+* **High-Speed CDN Delivery**: Serves media directly from your custom domain or CDN URL.
+* **Smart Retention Policies**: Choose between keeping local copies, smart cleanup (removing generated thumbnails to save disk space), or full cloud migration.
+* **Bring Back (Disaster Recovery)**: Restore offloaded media from the cloud back to your server at any time — per file or in bulk.
+* **Disk Space Preflight**: Know exactly how much disk space is required before initiating a restore.
+* **Mirror Deletion**: Automatically delete cloud objects when attachments are permanently deleted from WordPress.
+* **Modern React Dashboard**: Sleek, intuitive interface built with WordPress components.
+* **WP-CLI Support**: Complete command line automation for bulk operations and status monitoring.
 
-More S3-compatible providers (Amazon S3, Backblaze B2, DigitalOcean Spaces, Wasabi, MinIO) are planned, added one per release.
+**Upcoming Roadmap:**
+* Amazon AWS S3, DigitalOcean Spaces, Backblaze B2, and Wasabi native presets.
+* Automated scheduled Zip archives & safety backups stored directly to Google Drive.
+* Multi-CDN routing and cache purge integrations.
 
-**Licensing note:** this plugin bundles the AWS SDK for PHP (Apache-2.0), which is GPL-compatible under GPLv3 — covered by this plugin's "GPL-2.0-or-later" license.
+**Licensing Note:** This plugin bundles the AWS SDK for PHP (Apache-2.0), which is GPL-compatible under GPLv3 — covered by this plugin's "GPL-2.0-or-later" license.
 
 == Installation ==
 
-1. Upload the plugin to `/wp-content/plugins/smart-media-offloader/`, or install via the Plugins screen.
-2. Activate the plugin.
-3. Go to **Media Offloader** in the admin menu.
-4. Enter your Cloudflare R2 credentials (Access Key, Secret, Endpoint, Bucket, Custom Domain) and press **Test Connection**.
+1. Upload the `omnioffloader` folder to the `/wp-content/plugins/` directory, or install via the WordPress Plugins screen.
+2. Activate the plugin through the 'Plugins' menu in WordPress.
+3. Navigate to **OmniOffloader** in the WordPress admin menu.
+4. Enter your storage provider credentials (Access Key, Secret, Endpoint, Bucket, Custom Domain / CDN URL) and click **Test Connection**.
 
 == Frequently Asked Questions ==
 
-= Where do I get Cloudflare R2 credentials? =
+= What storage providers are currently supported? =
 
-In the Cloudflare dashboard, open R2, create a bucket, then create an R2 API token (Access Key ID + Secret Access Key). Your endpoint is `https://<account-id>.r2.cloudflarestorage.com`.
+OmniOffloader currently supports Cloudflare R2 and any S3-compatible object storage provider (including Amazon S3, DigitalOcean Spaces, Wasabi, and Backblaze B2). Additional dedicated configuration presets are released continuously.
 
-= Why is a custom domain required? =
+= Can I bring all my files back to my local server? =
 
-R2 buckets have no public URL by default. Connect a custom domain (or the public r2.dev URL) to the bucket so media can be served publicly.
+Yes! The **Bring Back** feature downloads all your media from cloud storage back to your local server and seamlessly restores all WordPress URLs back to local paths.
 
-= Can I undo offloading? =
+= Why is a custom domain / CDN URL required? =
 
-Yes — the Bring Back feature downloads your files from the cloud back to the server and switches URLs back to local, per attachment or in bulk.
+Cloud storage buckets often do not expose public HTTP endpoints by default. Connecting a custom domain or CDN URL (such as a Cloudflare custom domain or CDN edge) ensures your images and media are served fast and publicly to your visitors.
 
 == Changelog ==
 
 = 0.1.0 =
-* Pre-release: Cloudflare R2 provider, React admin panel, credentials + connection test.
-* Offload pipeline: new uploads are automatically offloaded to Cloudflare R2 (original, thumbnails, scaled original, WebP/AVIF sources).
-* URL rewriting: attachment URLs, srcset sources, and content image tags serve from your custom domain.
-* Retention policies enforced after verified uploads: retain local, smart cleanup, or full cloud migration.
-* Mirror Delete: deleting an attachment also removes its cloud objects (including editor backups).
-* Filename collision protection when local copies were removed.
-* Bulk offload: move the whole library to the cloud in the background, with live progress and cancel in the admin panel.
-* Media Library: "Offloaded / Local only" filter, offload status in attachment details, "Offload now" row action.
-* Bring Back: restore offloaded media from the cloud to your server — per attachment ("Bring Back" row action) or in bulk, with live progress and cancel.
-* Disk-space preflight: see how much a full restore would download and whether your disk has room, before starting.
-* Optional cloud cleanup: choose to delete cloud objects after each restore is verified on your server (off by default).
-* Restores are atomic and verified, confined to the uploads directory, and resolve each attachment's original provider — they keep working after switching providers.
-* WP-CLI: `wp smowp offload --all|--ids=… [--dry-run]`, `wp smowp restore --all|--ids=… [--delete-cloud] [--dry-run]`, and `wp smowp status`.
+* Initial release of OmniOffloader.
+* Multi-cloud offload engine with Cloudflare R2 provider support.
+* Modern React-based settings and control dashboard.
+* Background bulk offload and bulk restore with real-time progress indicators.
+* URL rewriting for post content, attachment URLs, and responsive srcset attributes.
+* Media library filters and individual attachment action controls.
+* Complete WP-CLI commands: `wp omnioffloader offload`, `wp omnioffloader restore`, and `wp omnioffloader status`.

@@ -2,14 +2,14 @@
 /**
  * Offloads new uploads once their metadata is generated.
  *
- * @package SmartMediaOffloader
+ * @package OmniOffloader
  */
 
-namespace SmartMediaOffloader\Offload\Observers;
+namespace OmniOffloader\Offload\Observers;
 
-use SmartMediaOffloader\Offload\ObserverInterface;
-use SmartMediaOffloader\Providers\ProviderInterface;
-use SmartMediaOffloader\Services\AttachmentUploader;
+use OmniOffloader\Offload\ObserverInterface;
+use OmniOffloader\Providers\ProviderInterface;
+use OmniOffloader\Services\AttachmentUploader;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;

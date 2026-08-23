@@ -2,16 +2,16 @@
 /**
  * "Offload now" / "Bring Back" row actions in the media list.
  *
- * @package SmartMediaOffloader
+ * @package OmniOffloader
  */
 
-namespace SmartMediaOffloader\Offload\Observers;
+namespace OmniOffloader\Offload\Observers;
 
-use SmartMediaOffloader\Offload\ObserverInterface;
-use SmartMediaOffloader\Providers\ProviderInterface;
-use SmartMediaOffloader\Services\AttachmentRestorer;
-use SmartMediaOffloader\Services\AttachmentUploader;
-use SmartMediaOffloader\Traits\AttachmentHelper;
+use OmniOffloader\Offload\ObserverInterface;
+use OmniOffloader\Providers\ProviderInterface;
+use OmniOffloader\Services\AttachmentRestorer;
+use OmniOffloader\Services\AttachmentUploader;
+use OmniOffloader\Traits\AttachmentHelper;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -27,12 +27,12 @@ class RowActionsObserver implements ObserverInterface {
 	/**
 	 * Admin-post action name.
 	 */
-	private const ACTION = 'smowp_offload_single';
+	private const ACTION = 'omnioffloader_offload_single';
 
 	/**
 	 * Admin-post action name for Bring Back.
 	 */
-	private const RESTORE_ACTION = 'smowp_restore_single';
+	private const RESTORE_ACTION = 'omnioffloader_restore_single';
 
 	/**
 	 * Cloud provider.
@@ -81,19 +81,19 @@ class RowActionsObserver implements ObserverInterface {
 		$attachment_id = (int) $post->ID;
 
 		if ( ! self::is_offloaded( $attachment_id ) ) {
-			$actions['smowp_offload'] = sprintf(
+			$actions['omnioffloader_offload'] = sprintf(
 				'<a href="%s">%s</a>',
 				esc_url( $this->action_url( self::ACTION, $attachment_id ) ),
-				esc_html__( 'Offload now', 'smart-media-offloader' )
+				esc_html__( 'Offload now', 'omnioffloader' )
 			);
 
 			return $actions;
 		}
 
-		$actions['smowp_restore'] = sprintf(
+		$actions['omnioffloader_restore'] = sprintf(
 			'<a href="%s">%s</a>',
 			esc_url( $this->action_url( self::RESTORE_ACTION, $attachment_id ) ),
-			esc_html__( 'Bring Back', 'smart-media-offloader' )
+			esc_html__( 'Bring Back', 'omnioffloader' )
 		);
 
 		return $actions;
@@ -130,7 +130,7 @@ class RowActionsObserver implements ObserverInterface {
 		check_admin_referer( self::ACTION . '_' . $attachment_id );
 
 		if ( ! current_user_can( 'upload_files' ) || 'attachment' !== get_post_type( $attachment_id ) ) {
-			wp_die( esc_html__( 'Sorry, you are not allowed to do that.', 'smart-media-offloader' ) );
+			wp_die( esc_html__( 'Sorry, you are not allowed to do that.', 'omnioffloader' ) );
 		}
 
 		$uploader = new AttachmentUploader( $this->provider );
@@ -138,7 +138,7 @@ class RowActionsObserver implements ObserverInterface {
 
 		wp_safe_redirect(
 			add_query_arg(
-				'smowp_offloaded',
+				'omnioffloader_offloaded',
 				$ok ? '1' : '0',
 				wp_get_referer() ? wp_get_referer() : admin_url( 'upload.php' )
 			)
@@ -160,17 +160,17 @@ class RowActionsObserver implements ObserverInterface {
 		check_admin_referer( self::RESTORE_ACTION . '_' . $attachment_id );
 
 		if ( ! current_user_can( 'upload_files' ) || 'attachment' !== get_post_type( $attachment_id ) ) {
-			wp_die( esc_html__( 'Sorry, you are not allowed to do that.', 'smart-media-offloader' ) );
+			wp_die( esc_html__( 'Sorry, you are not allowed to do that.', 'omnioffloader' ) );
 		}
 
-		$settings = \SmartMediaOffloader\Core\Plugin::get_settings();
+		$settings = \OmniOffloader\Core\Plugin::get_settings();
 
 		$restorer = new AttachmentRestorer();
 		$ok       = $restorer->restore( $attachment_id, ! empty( $settings['bring_back_delete_cloud'] ) );
 
 		wp_safe_redirect(
 			add_query_arg(
-				'smowp_restored',
+				'omnioffloader_restored',
 				$ok ? '1' : '0',
 				wp_get_referer() ? wp_get_referer() : admin_url( 'upload.php' )
 			)
@@ -185,35 +185,35 @@ class RowActionsObserver implements ObserverInterface {
 	 */
 	public function maybe_notice() {
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only notice flags.
-		if ( isset( $_GET['smowp_offloaded'] ) ) {
+		if ( isset( $_GET['omnioffloader_offloaded'] ) ) {
 			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only notice flag.
-			$ok = '1' === sanitize_key( wp_unslash( $_GET['smowp_offloaded'] ) );
+			$ok = '1' === sanitize_key( wp_unslash( $_GET['omnioffloader_offloaded'] ) );
 
 			printf(
 				'<div class="notice notice-%s is-dismissible"><p>%s</p></div>',
 				$ok ? 'success' : 'error',
 				$ok
-					? esc_html__( 'Attachment offloaded to the cloud.', 'smart-media-offloader' )
-					: esc_html__( 'Offload failed — see the attachment details for the error.', 'smart-media-offloader' )
+					? esc_html__( 'Attachment offloaded to the cloud.', 'omnioffloader' )
+					: esc_html__( 'Offload failed — see the attachment details for the error.', 'omnioffloader' )
 			);
 
 			return;
 		}
 
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only notice flag.
-		if ( ! isset( $_GET['smowp_restored'] ) ) {
+		if ( ! isset( $_GET['omnioffloader_restored'] ) ) {
 			return;
 		}
 
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only notice flag.
-		$ok = '1' === sanitize_key( wp_unslash( $_GET['smowp_restored'] ) );
+		$ok = '1' === sanitize_key( wp_unslash( $_GET['omnioffloader_restored'] ) );
 
 		printf(
 			'<div class="notice notice-%s is-dismissible"><p>%s</p></div>',
 			$ok ? 'success' : 'error',
 			$ok
-				? esc_html__( 'Attachment restored to the server.', 'smart-media-offloader' )
-				: esc_html__( 'Bring Back failed — see the attachment details for the error.', 'smart-media-offloader' )
+				? esc_html__( 'Attachment restored to the server.', 'omnioffloader' )
+				: esc_html__( 'Bring Back failed — see the attachment details for the error.', 'omnioffloader' )
 		);
 	}
 }

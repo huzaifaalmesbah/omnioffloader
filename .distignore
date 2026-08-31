@@ -9,6 +9,7 @@
 .vscode
 .idea
 .DS_Store
+Thumbs.db
 .wordpress-org
 node_modules
 src
@@ -30,3 +31,18 @@ composer.lock
 phpstan.neon.dist
 phpcs.xml.dist
 *.zip
+*.py
+*.sh
+*.bat
+*.cmd
+*.so
+*.dll
+*.dylib
+*.exe
+*.neon
+*.dist
+*.fixed
+*.diff
+*.inc
+*.sample
+*.editorconfig

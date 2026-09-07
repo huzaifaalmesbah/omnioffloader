@@ -4,7 +4,7 @@ Tags: media, offload, cloud storage, backup, cdn
 Requires at least: 6.6
 Tested up to: 7.1
 Requires PHP: 8.1
-Stable tag: 0.1.1
+Stable tag: 0.1.0
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -54,9 +54,6 @@ Yes! The **Bring Back** feature downloads all your media from cloud storage back
 Cloud storage buckets often do not expose public HTTP endpoints by default. Connecting a custom domain or CDN URL (such as a Cloudflare custom domain or CDN edge) ensures your images and media are served fast and publicly to your visitors.
 
 == Changelog ==
-
-= 0.1.1 =
-* Fix: Ensure vendor dependency source files are included in the distribution package.
 
 = 0.1.0 =
 * Initial release of OmniOffloader.

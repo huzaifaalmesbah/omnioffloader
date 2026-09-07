@@ -1,6 +1,6 @@
 {
 	"name": "omnioffloader",
-	"version": "0.1.1",
+	"version": "0.1.0",
 	"description": "Offload WordPress media to any cloud storage, serve via CDN, and backup files to Google Drive.",
 	"author": "Huzaifa Al Mesbah",
 	"license": "GPL-2.0-or-later",

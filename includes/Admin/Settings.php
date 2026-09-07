@@ -135,8 +135,7 @@ class Settings {
 
 		wp_set_script_translations(
 			'omnioffloader-admin-app',
-			'omnioffloader',
-			OMNIOFFLOADER_DIR . 'languages'
+			'omnioffloader'
 		);
 	}
 

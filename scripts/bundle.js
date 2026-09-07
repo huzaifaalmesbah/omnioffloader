@@ -11,9 +11,9 @@ const zipFile = path.join(rootDir, `${pluginSlug}.zip`);
 
 console.log(`\n🚀 Starting ${isOrg ? 'WordPress.org submission' : 'Production'} packaging for ${pluginSlug}...`);
 
-// 1. Build frontend & i18n
-console.log('📦 Step 1: Building production assets and languages...');
-execSync('npm run build:release', { cwd: rootDir, stdio: 'inherit' });
+// 1. Build frontend
+console.log('📦 Step 1: Building production assets...');
+execSync('npm run build', { cwd: rootDir, stdio: 'inherit' });
 
 // 2. Install production-only composer dependencies (no dev tools in autoloader)
 console.log('🐘 Step 2: Preparing production Composer autoloader (--no-dev)...');
@@ -36,7 +36,6 @@ const copyList = [
 	'readme.txt',
 	'uninstall.php',
 	'includes',
-	'languages',
 	'build',
 	'vendor',
 ];

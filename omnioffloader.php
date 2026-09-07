@@ -11,7 +11,7 @@
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
  * Requires at least: 6.6
  * Requires PHP: 8.1
- * Version: 0.1.0
+ * Version: 0.1.1
  *
  * @package OmniOffloader
  */
@@ -26,7 +26,7 @@ if ( ! defined( 'WPINC' ) ) {
  *
  * @since 0.1.0
  */
-define( 'OMNIOFFLOADER_VERSION', '0.1.0' );
+define( 'OMNIOFFLOADER_VERSION', '0.1.1' );
 define( 'OMNIOFFLOADER_DIR', plugin_dir_path( __FILE__ ) );
 define( 'OMNIOFFLOADER_URL', plugin_dir_url( __FILE__ ) );
 define( 'OMNIOFFLOADER_ASSETS_URL', OMNIOFFLOADER_URL . 'assets/' );

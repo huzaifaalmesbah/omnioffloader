@@ -5,6 +5,8 @@ on:
     types:
       - published
 
+permissions: {}
+
 jobs:
   deploy:
     name: Deploy to WordPress.org
@@ -24,17 +26,17 @@ jobs:
       - name: Install Composer dependencies (Production)
         run: |
           composer install --no-dev --optimize-autoloader
-          rm -f vendor/aws/aws-crt-php/format-check.py
           find vendor -name "*.py" -delete || true
           find vendor -name ".DS_Store" -delete || true
+          rm -rf vendor/bin vendor/**/docs vendor/**/tests
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '24'
 
       - name: Install dependencies
-        run: npm install
+        run: npm install --no-audit --no-fund
 
       - name: Setup WP-CLI
         run: |

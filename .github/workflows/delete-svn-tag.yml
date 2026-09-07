@@ -1,0 +1,31 @@
+name: Delete SVN Tag
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to remove from WordPress.org SVN (e.g. 0.1.0)'
+        required: true
+        default: '0.1.0'
+
+jobs:
+  delete-tag:
+    name: Delete SVN Tag
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install Subversion
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y subversion
+
+      - name: Delete tag from WordPress.org SVN
+        env:
+          SVN_USERNAME: ${{ secrets.SVN_USERNAME }}
+          SVN_PASSWORD: ${{ secrets.SVN_PASSWORD }}
+        run: |
+          SLUG="${GITHUB_REPOSITORY#*/}"
+          TAG="${{ github.event.inputs.tag }}"
+          TAG_URL="https://plugins.svn.wordpress.org/${SLUG}/tags/${TAG}"
+          echo "Removing ${TAG_URL}..."
+          svn rm "${TAG_URL}" -m "Remove broken tag ${TAG} from SVN" --no-auth-cache --non-interactive --username "$SVN_USERNAME" --password "$SVN_PASSWORD"
+          echo "✓ Successfully removed tag ${TAG} from WordPress.org SVN!"

@@ -41,10 +41,6 @@ const copyList = [
 	'vendor',
 ];
 
-if (isOrg) {
-	copyList.push('src', 'package.json', 'composer.json', 'tsconfig.json');
-}
-
 for (const item of copyList) {
 	const srcPath = path.join(rootDir, item);
 	const destPath = path.join(targetDir, item);

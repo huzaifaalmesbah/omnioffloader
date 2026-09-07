@@ -1,0 +1,23 @@
+{
+    "$schema": "https://playground.wordpress.net/blueprint-schema.json",
+    "landingPage": "/wp-admin/admin.php?page=omnioffloader",
+    "plugins": [
+        "omnioffloader"
+    ],
+    "login": true,
+    "features": {
+        "networking": true
+    },
+    "preferredVersions": {
+        "php": "8.1",
+        "wp": "latest"
+    },
+    "steps": [
+        {
+            "step": "setSiteOptions",
+            "options": {
+                "blogname": "Testing OmniOffloader"
+            }
+        }
+    ]
+}

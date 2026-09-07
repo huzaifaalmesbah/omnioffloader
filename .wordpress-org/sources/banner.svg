@@ -1,0 +1,82 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1544" height="500" viewBox="0 0 1544 500" role="img" aria-label="OmniOffloader banner">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0b1c44"/><stop offset=".45" stop-color="#123a94"/><stop offset="1" stop-color="#1a5fd6"/>
+    </linearGradient>
+    <radialGradient id="glowR" cx=".78" cy=".38" r=".55">
+      <stop offset="0" stop-color="#5ea0ff" stop-opacity=".55"/><stop offset="1" stop-color="#5ea0ff" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glowL" cx=".08" cy=".05" r=".6">
+      <stop offset="0" stop-color="#ffffff" stop-opacity=".14"/><stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="markG" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#3b86ee"/><stop offset="1" stop-color="#0e3f9e"/>
+    </linearGradient>
+    <linearGradient id="cl" gradientUnits="userSpaceOnUse" x1="128" y1="36" x2="128" y2="215">
+      <stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#d5e6ff"/>
+    </linearGradient>
+    <mask id="maskMark"><rect width="256" height="256" fill="#ffffff"/>
+      <g fill="#000000" transform="translate(128,62) scale(0.84) translate(-128,-78)"><circle cx="100" cy="84" r="24"/><circle cx="128" cy="72" r="32"/><circle cx="156" cy="88" r="24"/><rect x="76" y="88" width="104" height="28" rx="14"/></g></mask>
+    <mask id="maskHero"><rect width="256" height="256" fill="#ffffff"/>
+      <g fill="#000000" transform="translate(128,62) scale(0.84) translate(-128,-78)"><circle cx="100" cy="84" r="24"/><circle cx="128" cy="72" r="32"/><circle cx="156" cy="88" r="24"/><rect x="76" y="88" width="104" height="28" rx="14"/></g></mask>
+    <clipPath id="frame"><rect width="1544" height="500"/></clipPath>
+  </defs>
+
+  <g clip-path="url(#frame)">
+    <rect width="1544" height="500" fill="url(#bg)"/>
+    <rect width="1544" height="500" fill="url(#glowR)"/>
+    <rect width="1544" height="500" fill="url(#glowL)"/>
+
+    <g fill="none" stroke="#ffffff" stroke-opacity=".09" stroke-width="2">
+      <circle cx="1191" cy="250" r="232"/><circle cx="1191" cy="250" r="312"/>
+    </g>
+
+    <!-- ===== left: mark + wordmark ===== -->
+    <g transform="translate(96,120)">
+      <rect width="104" height="104" rx="26" fill="url(#markG)"/>
+      <g transform="scale(0.40625)"><circle cx="128" cy="144" r="66" fill="none" stroke="#ffffff" stroke-width="20" mask="url(#maskMark)"/>
+      <g fill="url(#cl)" transform="translate(128,62) scale(0.70) translate(-128,-78)"><circle cx="100" cy="84" r="24"/><circle cx="128" cy="72" r="32"/><circle cx="156" cy="88" r="24"/><rect x="76" y="88" width="104" height="28" rx="14"/></g>
+      <g fill="#ffffff">
+        <path d="M107 108 L127 139.9 H87 Z"/><rect x="99" y="135.9" width="16" height="48.1" rx="8"/>
+        <path d="M149 184 L129 152.1 H169 Z"/><rect x="141" y="108" width="16" height="48.1" rx="8"/>
+      </g></g>
+    </g>
+
+    <g font-family="'Inter','Helvetica Neue',Helvetica,Arial,sans-serif">
+      <text x="232" y="186" fill="#ffffff" font-size="76" font-weight="700" letter-spacing="-1.5">OmniOffloader</text>
+      <text x="234" y="240" fill="#ffffff" fill-opacity=".72" font-size="29" letter-spacing=".1">Offload your media to the cloud — and bring it back anytime.</text>
+      <g transform="translate(96,296)" font-size="23" font-weight="600">
+        <g>
+          <rect width="248" height="52" rx="26" fill="#ffffff" fill-opacity=".10" stroke="#ffffff" stroke-opacity=".18"/>
+          <circle cx="34" cy="26" r="6" fill="#7fb2ff"/><text x="56" y="34" fill="#ffffff" fill-opacity=".92">Multi-Cloud S3</text>
+        </g>
+        <g transform="translate(268,0)">
+          <rect width="230" height="52" rx="26" fill="#ffffff" fill-opacity=".10" stroke="#ffffff" stroke-opacity=".18"/>
+          <circle cx="34" cy="26" r="6" fill="#7fb2ff"/><text x="56" y="34" fill="#ffffff" fill-opacity=".92">CDN Delivery</text>
+        </g>
+        <g transform="translate(518,0)">
+          <rect width="212" height="52" rx="26" fill="#ffffff" fill-opacity=".10" stroke="#ffffff" stroke-opacity=".18"/>
+          <circle cx="34" cy="26" r="6" fill="#7fb2ff"/><text x="56" y="34" fill="#ffffff" fill-opacity=".92">Bring Back</text>
+        </g>
+      </g>
+    </g>
+
+    <!-- ===== right: hero ===== -->
+    <g transform="translate(1191,250) scale(1.9) translate(-128,-127.5)"><circle cx="128" cy="144" r="66" fill="none" stroke="#ffffff" stroke-width="20" mask="url(#maskHero)"/>
+      <g fill="url(#cl)" transform="translate(128,62) scale(0.70) translate(-128,-78)"><circle cx="100" cy="84" r="24"/><circle cx="128" cy="72" r="32"/><circle cx="156" cy="88" r="24"/><rect x="76" y="88" width="104" height="28" rx="14"/></g>
+      <g fill="#ffffff">
+        <path d="M107 108 L127 139.9 H87 Z"/><rect x="99" y="135.9" width="16" height="48.1" rx="8"/>
+        <path d="M149 184 L129 152.1 H169 Z"/><rect x="141" y="108" width="16" height="48.1" rx="8"/>
+      </g></g>
+
+    <!-- floating media tiles -->
+    <g fill="#ffffff">
+      <rect x="928" y="124" width="52" height="52" rx="14" fill-opacity=".20"/>
+      <rect x="958" y="286" width="38" height="38" rx="11" fill-opacity=".15"/>
+      <rect x="1402" y="152" width="46" height="46" rx="13" fill-opacity=".18"/>
+      <rect x="1428" y="300" width="34" height="34" rx="10" fill-opacity=".13"/>
+      <rect x="988" y="36" width="34" height="34" rx="10" fill-opacity=".11"/>
+      <rect x="1372" y="44" width="30" height="30" rx="9" fill-opacity=".11"/>
+    </g>
+  </g>
+</svg>

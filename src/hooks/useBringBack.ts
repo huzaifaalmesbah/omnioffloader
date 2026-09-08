@@ -10,7 +10,9 @@ import { useCore } from '../context/CoreContext';
 import { errorMessage } from '../utils/errorHelper';
 import type { RestoreBulkState, RestorePreflight } from '../types';
 
-const POLL_INTERVAL = 2000;
+const POLL_MIN = 2000;
+const POLL_MAX = 6000;
+const POLL_STEP = 250;
 
 /**
  * Polling state machine for the bulk restore (Bring Back) queue,
@@ -28,12 +30,26 @@ export function useBringBack() {
 	const [ sessionRun, setSessionRun ] = useState( false );
 	const [ dismissed, setDismissed ] = useState( false );
 	const timer = useRef< number | null >( null );
+	// Each poll can make the server process a batch, so requests are chained
+	// rather than fired on an interval — an interval would stack them up
+	// whenever a poll outlasts its own period.
+	const delay = useRef( POLL_MIN );
+	const inFlight = useRef( false );
+	const tick = useRef< () => void >( () => {} );
 
 	const stopPolling = useCallback( () => {
 		if ( timer.current !== null ) {
-			window.clearInterval( timer.current );
+			window.clearTimeout( timer.current );
 			timer.current = null;
 		}
+		delay.current = POLL_MIN;
+	}, [] );
+
+	const schedule = useCallback( () => {
+		timer.current = window.setTimeout(
+			() => tick.current(),
+			delay.current
+		);
 	}, [] );
 
 	const refreshPreflight = useCallback( () => {
@@ -45,6 +61,13 @@ export function useBringBack() {
 	}, [] );
 
 	const poll = useCallback( () => {
+		if ( inFlight.current ) {
+			schedule();
+			return;
+		}
+
+		inFlight.current = true;
+
 		fetchRestoreProgress()
 			.then( ( fresh ) => {
 				setState( fresh );
@@ -53,17 +76,31 @@ export function useBringBack() {
 					stopPolling();
 					refreshStats();
 					refreshPreflight();
+					return;
 				}
+
+				// Ease off as the run settles in: a multi-hour job does not
+				// need second-by-second updates.
+				delay.current = Math.min( POLL_MAX, delay.current + POLL_STEP );
+				schedule();
 			} )
 			.catch( () => {
-				// Transient polling failures are ignored; next tick retries.
+				// Transient polling failures are ignored; the next tick retries.
+				schedule();
+			} )
+			.finally( () => {
+				inFlight.current = false;
 			} );
-	}, [ stopPolling, refreshStats, refreshPreflight ] );
+	}, [ schedule, stopPolling, refreshStats, refreshPreflight ] );
+
+	useEffect( () => {
+		tick.current = poll;
+	}, [ poll ] );
 
 	const startPolling = useCallback( () => {
 		stopPolling();
-		timer.current = window.setInterval( poll, POLL_INTERVAL );
-	}, [ poll, stopPolling ] );
+		schedule();
+	}, [ schedule, stopPolling ] );
 
 	// Initial load; resume polling when a run is already in flight.
 	useEffect( () => {

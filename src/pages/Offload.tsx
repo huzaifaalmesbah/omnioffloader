@@ -1,4 +1,4 @@
-import { Button, Tooltip } from '@wordpress/components';
+import { Button, Notice, Tooltip } from '@wordpress/components';
 import { __, sprintf } from '@wordpress/i18n';
 
 import { ActivityLog } from '../components/ui/ActivityLog';
@@ -213,6 +213,9 @@ export function OffloadPage() {
 										: '' ) +
 									( state.status === 'cancelled'
 										? ' is-cancelled'
+										: '' ) +
+									( state.status === 'failed'
+										? ' is-failed'
 										: '' )
 								}
 							>
@@ -239,6 +242,14 @@ export function OffloadPage() {
 											<span className="smowp-badge smowp-badge--fail">
 												{ __(
 													'Cancelled',
+													'omnioffloader'
+												) }
+											</span>
+										) }
+										{ state.status === 'failed' && (
+											<span className="smowp-badge smowp-badge--fail">
+												{ __(
+													'Stopped',
 													'omnioffloader'
 												) }
 											</span>
@@ -276,6 +287,17 @@ export function OffloadPage() {
 									max={ state.total }
 									showPercentage={ false }
 								/>
+
+								{ state.status === 'failed' &&
+									state.message && (
+										<Notice
+											status="error"
+											isDismissible={ false }
+											className="smowp-progress-card__notice"
+										>
+											{ state.message }
+										</Notice>
+									) }
 
 								<div className="smowp-progress-card__footer">
 									<span className="smowp-progress-card__errors">

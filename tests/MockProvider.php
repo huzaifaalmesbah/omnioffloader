@@ -6,12 +6,12 @@
  * directory so the offload pipeline can be exercised end-to-end
  * without cloud credentials.
  *
- * @package SmartMediaOffloader
+ * @package OmniOffloader
  */
 
-namespace SmartMediaOffloader\Tests;
+namespace OmniOffloader\Tests;
 
-use SmartMediaOffloader\Providers\ProviderInterface;
+use OmniOffloader\Providers\ProviderInterface;
 
 /**
  * Class MockProvider
@@ -40,6 +40,13 @@ class MockProvider implements ProviderInterface {
 	 */
 	public function get_key() {
 		return 'mock';
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	public function get_role() {
+		return 'primary';
 	}
 
 	/**

@@ -462,7 +462,7 @@ abstract class WP_Background_Process extends WP_Async_Request
     /**
      * Get batch.
      *
-     * @return stdClass Return the first batch of queued items.
+     * @return \stdClass Return the first batch of queued items.
      */
     protected function get_batch()
     {
@@ -480,7 +480,7 @@ abstract class WP_Background_Process extends WP_Async_Request
      *
      * @param int $limit Number of batches to return, defaults to all.
      *
-     * @return array of stdClass
+     * @return \stdClass[]
      */
     public function get_batches($limit = 0)
     {

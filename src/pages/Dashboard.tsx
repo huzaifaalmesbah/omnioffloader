@@ -24,6 +24,10 @@ export function DashboardPage( { onNavigate }: DashboardProps ) {
 		( provider ) => provider.key === settings?.provider
 	)?.name;
 
+	const secondaryProviderName = providers.find(
+		( provider ) => provider.key === settings?.secondary_provider
+	)?.name;
+
 	const total = stats?.total ?? 0;
 	const offloaded = stats?.offloaded ?? 0;
 	const local = stats?.local ?? 0;
@@ -55,6 +59,28 @@ export function DashboardPage( { onNavigate }: DashboardProps ) {
 								) }
 							</span>
 						) }
+						{ stats?.secondary_active &&
+							( stats?.secondary_configured ? (
+								<span className="smowp-hero__live-badge">
+									<span className="smowp-badge-pulse" />
+									{ sprintf(
+										/* translators: %s: secondary provider name */
+										__(
+											'Backup: %s Active',
+											'omnioffloader'
+										),
+										secondaryProviderName ||
+											__( 'Secondary', 'omnioffloader' )
+									) }
+								</span>
+							) : (
+								<span className="smowp-hero__setup-badge">
+									{ __(
+										'Backup: Setup Required',
+										'omnioffloader'
+									) }
+								</span>
+							) ) }
 					</div>
 					<h2>
 						{ stats?.configured && providerName
@@ -73,12 +99,31 @@ export function DashboardPage( { onNavigate }: DashboardProps ) {
 					</h2>
 					<p>
 						{ stats?.configured
-							? __(
-									'New uploads are offloaded automatically and served from your custom domain.',
-									'omnioffloader'
-							  )
+							? ( stats?.secondary_active &&
+							    stats?.secondary_configured
+									? sprintf(
+											/* translators: 1: primary provider, 2: secondary provider */
+											__(
+												'New uploads are offloaded to %1$s and mirrored to %2$s for redundancy.',
+												'omnioffloader'
+											),
+											providerName ||
+												__(
+													'primary cloud',
+													'omnioffloader'
+												),
+											secondaryProviderName ||
+												__(
+													'backup storage',
+													'omnioffloader'
+												)
+									  )
+									: __(
+											'New uploads are offloaded automatically and served from your custom domain.',
+											'omnioffloader'
+									  ) )
 							: __(
-									'Add your Cloudflare R2 credentials to get started.',
+									'Add your cloud storage credentials to get started.',
 									'omnioffloader'
 							  ) }
 					</p>

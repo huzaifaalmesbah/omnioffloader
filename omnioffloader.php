@@ -1,8 +1,8 @@
 <?php
 /**
- * Plugin Name: OmniOffloader — Multi-Cloud Media Storage, CDN & Backup
+ * Plugin Name: OmniOffloader — Multi-Cloud Media Offload & CDN
  * Plugin URI: https://wordpress.org/plugins/omnioffloader/
- * Description: Offload WordPress media to any cloud storage (AWS S3, Cloudflare R2, DigitalOcean Spaces), deliver via CDN, and backup files to Google Drive with instant Bring Back restoration.
+ * Description: Offload your media library to Amazon S3, Cloudflare R2, DigitalOcean Spaces, Backblaze B2, Wasabi or any S3-compatible storage, serve it from a CDN, and restore it anytime with Bring Back.
  * Author: Huzaifa Al Mesbah
  * Author URI: https://profiles.wordpress.org/huzaifaalmesbah/
  * Text Domain: omnioffloader
@@ -10,7 +10,7 @@
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
  * Requires at least: 6.6
  * Requires PHP: 8.1
- * Version: 0.1.0
+ * Version: 0.1.1
  *
  * @package OmniOffloader
  */
@@ -25,7 +25,7 @@ if ( ! defined( 'WPINC' ) ) {
  *
  * @since 0.1.0
  */
-define( 'OMNIOFFLOADER_VERSION', '0.1.0' );
+define( 'OMNIOFFLOADER_VERSION', '0.1.1' );
 define( 'OMNIOFFLOADER_DIR', plugin_dir_path( __FILE__ ) );
 define( 'OMNIOFFLOADER_URL', plugin_dir_url( __FILE__ ) );
 define( 'OMNIOFFLOADER_ASSETS_URL', OMNIOFFLOADER_URL . 'assets/' );

@@ -1,6 +1,6 @@
 {
 	"name": "huzaifaalmesbah/omnioffloader",
-	"description": "Offload WordPress media to any cloud storage, serve via CDN, and backup files to Google Drive.",
+	"description": "Offload WordPress media to any S3-compatible cloud storage, serve it via CDN, and restore it anytime with Bring Back.",
 	"type": "wordpress-plugin",
 	"license": "GPL-2.0-or-later",
 	"authors": [

@@ -28,6 +28,8 @@ trait OptionsHelper {
 	public static function get_default_settings() {
 		return array(
 			'provider'                 => '',
+			'secondary_active'         => false,
+			'secondary_provider'       => '',
 			'retention_policy'         => 0,
 			'mirror_delete'            => false,
 			'path_prefix_active'       => false,
@@ -65,6 +67,8 @@ trait OptionsHelper {
 		$current   = self::get_settings();
 		$sanitized = array(
 			'provider'                 => sanitize_key( $settings['provider'] ?? $current['provider'] ),
+			'secondary_active'         => ! empty( $settings['secondary_active'] ?? $current['secondary_active'] ),
+			'secondary_provider'       => sanitize_key( $settings['secondary_provider'] ?? $current['secondary_provider'] ),
 			'retention_policy'         => self::sanitize_retention_policy( $settings['retention_policy'] ?? $current['retention_policy'] ),
 			'mirror_delete'            => ! empty( $settings['mirror_delete'] ?? $current['mirror_delete'] ),
 			'path_prefix_active'       => ! empty( $settings['path_prefix_active'] ?? $current['path_prefix_active'] ),
@@ -103,14 +107,27 @@ trait OptionsHelper {
 	}
 
 	/**
+	 * Get the secondary backup provider key.
+	 *
+	 * @return string Empty string when not selected.
+	 */
+	public static function get_secondary_provider_key() {
+		$settings = self::get_settings();
+
+		return (string) ( $settings['secondary_provider'] ?? '' );
+	}
+
+	/**
 	 * Get all stored credentials (all providers).
 	 *
 	 * Never expose this raw via REST.
 	 *
+	 * @param string $role Storage role ('primary' or 'secondary').
 	 * @return array<string, array<string, string>>
 	 */
-	public static function get_all_credentials() {
-		$credentials = get_option( 'omnioffloader_credentials', array() );
+	public static function get_all_credentials( $role = 'primary' ) {
+		$option_name = 'secondary' === $role ? 'omnioffloader_secondary_credentials' : 'omnioffloader_credentials';
+		$credentials = get_option( $option_name, array() );
 
 		return is_array( $credentials ) ? $credentials : array();
 	}
@@ -119,10 +136,11 @@ trait OptionsHelper {
 	 * Get stored credentials for one provider.
 	 *
 	 * @param string $provider_key Provider key.
+	 * @param string $role         Storage role ('primary' or 'secondary').
 	 * @return array<string, string>
 	 */
-	public static function get_provider_credentials( $provider_key ) {
-		$all = self::get_all_credentials();
+	public static function get_provider_credentials( $provider_key, $role = 'primary' ) {
+		$all = self::get_all_credentials( $role );
 
 		$creds = $all[ $provider_key ] ?? array();
 
@@ -137,10 +155,11 @@ trait OptionsHelper {
 	 *
 	 * @param string                $provider_key Provider key.
 	 * @param array<string, string> $values       Field name => value map.
+	 * @param string                $role         Storage role ('primary' or 'secondary').
 	 * @return void
 	 */
-	public static function update_provider_credentials( $provider_key, array $values ) {
-		$all = self::get_all_credentials();
+	public static function update_provider_credentials( $provider_key, array $values, $role = 'primary' ) {
+		$all = self::get_all_credentials( $role );
 
 		$existing = $all[ $provider_key ] ?? array();
 		if ( ! is_array( $existing ) ) {
@@ -153,8 +172,9 @@ trait OptionsHelper {
 
 		$all[ $provider_key ] = $existing;
 
+		$option_name = 'secondary' === $role ? 'omnioffloader_secondary_credentials' : 'omnioffloader_credentials';
 		// Credentials are only needed on our admin page / REST calls: no autoload.
-		update_option( 'omnioffloader_credentials', $all, false );
+		update_option( $option_name, $all, false );
 	}
 
 	/**
@@ -169,8 +189,32 @@ trait OptionsHelper {
 			return false;
 		}
 
-		$key    = Helpers::get_credential( $provider_key, 'key' );
-		$bucket = Helpers::get_credential( $provider_key, 'bucket' );
+		$key    = Helpers::get_credential( $provider_key, 'key', 'primary' );
+		$bucket = Helpers::get_credential( $provider_key, 'bucket', 'primary' );
+
+		return ! empty( $key ) && ! empty( $bucket );
+	}
+
+	/**
+	 * Whether secondary backup storage is enabled and minimally configured.
+	 *
+	 * @return bool
+	 */
+	public static function is_secondary_configured() {
+		$settings = self::get_settings();
+
+		if ( empty( $settings['secondary_active'] ) ) {
+			return false;
+		}
+
+		$provider_key = self::get_secondary_provider_key();
+
+		if ( '' === $provider_key ) {
+			return false;
+		}
+
+		$key    = Helpers::get_credential( $provider_key, 'key', 'secondary' );
+		$bucket = Helpers::get_credential( $provider_key, 'bucket', 'secondary' );
 
 		return ! empty( $key ) && ! empty( $bucket );
 	}

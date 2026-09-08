@@ -203,9 +203,7 @@ class BringBackController extends BaseController {
 			return $engine;
 		}
 
-		$engine->cancel();
-
-		BulkRestoreProcessor::update_state( array( 'status' => 'cancelled' ) );
+		$engine->cancel_now();
 
 		return rest_ensure_response( BulkRestoreProcessor::get_state() );
 	}

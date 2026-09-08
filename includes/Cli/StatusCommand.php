@@ -53,6 +53,21 @@ class StatusCommand {
 			}
 		}
 
+		$secondary = $plugin->get_secondary_provider();
+		if ( null !== $secondary ) {
+			WP_CLI::log( '' );
+			WP_CLI::log( 'Secondary Backup Storage (Active Mirror):' );
+			WP_CLI::log( 'Provider:   ' . $secondary->get_name() . ' (' . $secondary->get_key() . ')' );
+			WP_CLI::log( 'Bucket:     ' . (string) $secondary->get_bucket() );
+
+			$sec_connection = $secondary->check_connection();
+			if ( true === $sec_connection ) {
+				WP_CLI::log( 'Connection: OK' );
+			} else {
+				WP_CLI::warning( 'Connection: ' . $sec_connection->get_error_message() );
+			}
+		}
+
 		$stats = Helpers::get_media_stats();
 		WP_CLI::log( '' );
 		WP_CLI::log( sprintf( 'Media: %d total — %d offloaded, %d local', $stats['total'], $stats['offloaded'], $stats['local'] ) );

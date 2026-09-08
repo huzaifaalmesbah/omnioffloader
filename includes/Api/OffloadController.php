@@ -188,9 +188,7 @@ class OffloadController extends BaseController {
 			return $engine;
 		}
 
-		$engine->cancel();
-
-		BulkOffloadProcessor::update_state( array( 'status' => 'cancelled' ) );
+		$engine->cancel_now();
 
 		return rest_ensure_response( BulkOffloadProcessor::get_state() );
 	}

@@ -28,11 +28,58 @@ abstract class AbstractS3Provider implements ProviderInterface {
 	protected const MAX_DELETE_OBJECTS = 1000;
 
 	/**
+	 * File size at or above which a multipart upload is used, in bytes.
+	 *
+	 * A single PutObject is capped at 5 GB by the S3 API, and a failure part
+	 * way through one restarts the whole transfer — which is how a large video
+	 * on a host with a short time limit becomes an unfinishable item.
+	 */
+	protected const MULTIPART_THRESHOLD = 67108864;
+
+	/**
+	 * Size of each multipart chunk, in bytes (S3 minimum is 5 MB).
+	 */
+	protected const MULTIPART_PART_SIZE = 8388608;
+
+	/**
+	 * Seconds to wait for a connection before giving up.
+	 *
+	 * The SDK sets no timeout by default, so an unreachable endpoint can hold
+	 * a PHP worker — and the queue's process lock — indefinitely.
+	 */
+	protected const CONNECT_TIMEOUT = 10;
+
+	/**
 	 * Cached client instance.
 	 *
 	 * @var \Aws\S3\S3Client|null
 	 */
 	protected $client = null;
+
+	/**
+	 * Storage role ('primary' or 'secondary').
+	 *
+	 * @var string
+	 */
+	protected $role = 'primary';
+
+	/**
+	 * Constructor.
+	 *
+	 * @param string $role Storage role ('primary' or 'secondary').
+	 */
+	public function __construct( $role = 'primary' ) {
+		$this->role = 'secondary' === $role ? 'secondary' : 'primary';
+	}
+
+	/**
+	 * Get the storage role.
+	 *
+	 * @return string
+	 */
+	public function get_role() {
+		return $this->role;
+	}
 
 	/**
 	 * Build a configured S3 client for this provider.
@@ -48,7 +95,7 @@ abstract class AbstractS3Provider implements ProviderInterface {
 	 * @return string
 	 */
 	protected function credential( $field ) {
-		return Helpers::get_credential( $this->get_key(), $field );
+		return Helpers::get_credential( $this->get_key(), $field, $this->role );
 	}
 
 	/**
@@ -103,18 +150,28 @@ abstract class AbstractS3Provider implements ProviderInterface {
 		 */
 		$acl = apply_filters( 'omnioffloader_object_acl', '', $file, $key );
 
-		$params = array(
-			'Bucket'     => $this->get_bucket(),
-			'Key'        => $key,
-			'SourceFile' => $file,
-		);
-
-		if ( ! empty( $acl ) ) {
-			$params['ACL'] = $acl;
-		}
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.filesystem_read_filesize -- local file size, not a filesystem abstraction concern.
+		$size = (int) @filesize( $file ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- false/0 simply means "use a single PUT".
 
 		try {
-			$client->putObject( $params );
+			if ( $size >= $this->multipart_threshold() ) {
+				$this->upload_multipart( $file, $key, (string) $acl );
+			} else {
+				$params = array(
+					'Bucket'     => $this->get_bucket(),
+					'Key'        => $key,
+					'SourceFile' => $file,
+					'@http'      => array(
+						'connect_timeout' => static::CONNECT_TIMEOUT,
+					),
+				);
+
+				if ( ! empty( $acl ) ) {
+					$params['ACL'] = $acl;
+				}
+
+				$client->putObject( $params );
+			}
 
 			return $client->getObjectUrl( (string) $this->get_bucket(), $key );
 		} catch ( \Exception $e ) {
@@ -122,6 +179,70 @@ abstract class AbstractS3Provider implements ProviderInterface {
 
 			return false;
 		}
+	}
+
+	/**
+	 * Upload a large file in parts.
+	 *
+	 * Each part is retried on its own, so a dropped connection costs one chunk
+	 * instead of the whole transfer, and objects above the 5 GB single-PUT
+	 * ceiling become possible.
+	 *
+	 * @param string $file Absolute path of the local file.
+	 * @param string $key  Object key.
+	 * @param string $acl  ACL value, empty to omit.
+	 * @return void
+	 * @throws \Exception When the upload fails.
+	 */
+	protected function upload_multipart( $file, $key, $acl ) {
+		$config = array(
+			'bucket'    => $this->get_bucket(),
+			'key'       => $key,
+			'part_size' => static::MULTIPART_PART_SIZE,
+			'params'    => array(
+				'@http' => array(
+					'connect_timeout' => static::CONNECT_TIMEOUT,
+				),
+			),
+		);
+
+		// Only send an ACL when one was asked for — R2 rejects the header.
+		if ( '' !== $acl ) {
+			$config['acl'] = $acl;
+		}
+
+		$uploader = new \Aws\S3\MultipartUploader( $this->get_client(), $file, $config );
+
+		try {
+			$uploader->upload();
+		} catch ( \Aws\Exception\MultipartUploadException $e ) {
+			// Leave no half-assembled upload paying storage in the bucket.
+			try {
+				$this->get_client()->abortMultipartUpload( $e->getState()->getId() );
+			} catch ( \Exception $abort_error ) {
+				$this->log_error( sprintf( 'Could not abort multipart upload for "%s": %s', $key, $abort_error->getMessage() ) );
+			}
+
+			throw $e;
+		}
+	}
+
+	/**
+	 * File size at which uploads switch to multipart.
+	 *
+	 * @return int Bytes.
+	 */
+	protected function multipart_threshold() {
+		/**
+		 * Filter the multipart upload threshold.
+		 *
+		 * @param int    $threshold    Size in bytes.
+		 * @param string $provider_key Provider key.
+		 */
+		$threshold = (int) apply_filters( 'omnioffloader_multipart_threshold', static::MULTIPART_THRESHOLD, $this->get_key() );
+
+		// Below the S3 minimum part size a multipart upload is not valid.
+		return max( 5242880, $threshold );
 	}
 
 	/**
@@ -158,6 +279,9 @@ abstract class AbstractS3Provider implements ProviderInterface {
 					'Bucket' => $this->get_bucket(),
 					'Key'    => $key,
 					'SaveAs' => $tmp,
+					'@http'  => array(
+						'connect_timeout' => static::CONNECT_TIMEOUT,
+					),
 				)
 			);
 		} catch ( \Exception $e ) {
@@ -220,6 +344,9 @@ abstract class AbstractS3Provider implements ProviderInterface {
 							'Objects' => $objects,
 							'Quiet'   => true,
 						),
+						'@http'  => array(
+							'connect_timeout' => static::CONNECT_TIMEOUT,
+						),
 					)
 				);
 
@@ -264,6 +391,10 @@ abstract class AbstractS3Provider implements ProviderInterface {
 				array(
 					'Bucket' => $this->get_bucket(),
 					'Key'    => $key,
+					'@http'  => array(
+						'connect_timeout' => static::CONNECT_TIMEOUT,
+						'timeout'         => 30,
+					),
 				)
 			);
 
@@ -285,6 +416,10 @@ abstract class AbstractS3Provider implements ProviderInterface {
 				array(
 					'Bucket' => $this->get_bucket(),
 					'Key'    => $key,
+					'@http'  => array(
+						'connect_timeout' => static::CONNECT_TIMEOUT,
+						'timeout'         => 30,
+					),
 				)
 			);
 
@@ -314,7 +449,8 @@ abstract class AbstractS3Provider implements ProviderInterface {
 				array(
 					'Bucket' => $this->get_bucket(),
 					'@http'  => array(
-						'timeout' => 5,
+						'connect_timeout' => 5,
+						'timeout'         => 5,
 					),
 				)
 			);

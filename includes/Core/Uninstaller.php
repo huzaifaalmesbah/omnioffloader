@@ -7,6 +7,10 @@
 
 namespace OmniOffloader\Core;
 
+use OmniOffloader\Services\AbstractBulkProcessor;
+use OmniOffloader\Services\BulkOffloadProcessor;
+use OmniOffloader\Services\BulkRestoreProcessor;
+
 if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
 	exit;
 }
@@ -33,14 +37,18 @@ class Uninstaller {
 		// Options.
 		delete_option( 'omnioffloader_settings' );
 		delete_option( 'omnioffloader_credentials' );
+		delete_option( 'omnioffloader_secondary_credentials' );
 		delete_option( 'omnioffloader_version' );
 		delete_option( 'omnioffloader_first_activated_version' );
-		delete_option( 'omnioffloader_bulk_offload_state' );
-		delete_option( 'omnioffloader_bulk_restore_state' );
+
+		// Bulk queues: batch rows, run status, process lock, cron and state.
+		AbstractBulkProcessor::purge_stored_data( 'bulk_offload', BulkOffloadProcessor::STATE_OPTION );
+		AbstractBulkProcessor::purge_stored_data( 'bulk_restore', BulkRestoreProcessor::STATE_OPTION );
 
 		// Transients.
 		delete_transient( 'omnioffloader_activation_redirect' );
 		delete_transient( 'omnioffloader_media_stats' );
+		delete_transient( 'omnioffloader_restore_preflight' );
 
 		// Attachment meta (offload state markers).
 		delete_post_meta_by_key( 'omnioffloader_offloaded' );
@@ -51,5 +59,10 @@ class Uninstaller {
 		delete_post_meta_by_key( 'omnioffloader_object_version' );
 		delete_post_meta_by_key( 'omnioffloader_retention' );
 		delete_post_meta_by_key( 'omnioffloader_error_log' );
+		delete_post_meta_by_key( 'omnioffloader_secondary_offloaded' );
+		delete_post_meta_by_key( 'omnioffloader_secondary_offloaded_at' );
+		delete_post_meta_by_key( 'omnioffloader_secondary_provider' );
+		delete_post_meta_by_key( 'omnioffloader_secondary_bucket' );
+		delete_post_meta_by_key( 'omnioffloader_secondary_path' );
 	}
 }

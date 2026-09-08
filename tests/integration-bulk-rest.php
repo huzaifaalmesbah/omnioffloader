@@ -7,51 +7,51 @@
  * queues by processing short batches inline when the async loopback
  * dispatch cannot reach the site.
  *
- * @package SmartMediaOffloader
+ * @package OmniOffloader
  */
 
-use SmartMediaOffloader\Services\BulkOffloadProcessor;
+use OmniOffloader\Services\BulkOffloadProcessor;
 
 wp_set_current_user( 1 );
 
 // Start (or resume a queue that is already active).
-$smowp_request  = new WP_REST_Request( 'POST', '/smowp/v1/offload/bulk' );
-$smowp_response = rest_do_request( $smowp_request );
+$omnioffloader_request  = new WP_REST_Request( 'POST', '/omnioffloader/v1/offload/bulk' );
+$omnioffloader_response = rest_do_request( $omnioffloader_request );
 
-if ( $smowp_response->is_error() ) {
-	$smowp_data = $smowp_response->get_data();
-	if ( isset( $smowp_data['code'] ) && 'smowp_bulk_running' === $smowp_data['code'] ) {
+if ( $omnioffloader_response->is_error() ) {
+	$omnioffloader_data = $omnioffloader_response->get_data();
+	if ( isset( $omnioffloader_data['code'] ) && 'omnioffloader_bulk_running' === $omnioffloader_data['code'] ) {
 		echo "resuming already-active queue\n";
 	} else {
-		echo 'START ERROR: ' . wp_json_encode( $smowp_data ) . "\n";
+		echo 'START ERROR: ' . wp_json_encode( $omnioffloader_data ) . "\n";
 		exit( 1 );
 	}
 } else {
-	echo 'queued: ' . $smowp_response->get_data()['queued'] . "\n";
+	echo 'queued: ' . $omnioffloader_response->get_data()['queued'] . "\n";
 }
 
 // Poll the REST endpoint until the queue finishes.
-$smowp_deadline = time() + 120;
+$omnioffloader_deadline = time() + 120;
 
 do {
 	wp_cache_delete( BulkOffloadProcessor::STATE_OPTION, 'options' );
 
-	$smowp_poll  = new WP_REST_Request( 'GET', '/smowp/v1/offload/bulk/progress' );
-	$smowp_state = rest_do_request( $smowp_poll )->get_data();
+	$omnioffloader_poll  = new WP_REST_Request( 'GET', '/omnioffloader/v1/offload/bulk/progress' );
+	$omnioffloader_state = rest_do_request( $omnioffloader_poll )->get_data();
 
-	echo "poll: {$smowp_state['status']} {$smowp_state['processed']}/{$smowp_state['total']} errors={$smowp_state['errors']}\n";
+	echo "poll: {$omnioffloader_state['status']} {$omnioffloader_state['processed']}/{$omnioffloader_state['total']} errors={$omnioffloader_state['errors']}\n";
 
-	if ( 'running' !== $smowp_state['status'] ) {
+	if ( 'running' !== $omnioffloader_state['status'] ) {
 		break;
 	}
 
 	sleep( 1 );
-} while ( time() < $smowp_deadline );
+} while ( time() < $omnioffloader_deadline );
 
-if ( 'done' === $smowp_state['status'] && 0 === (int) $smowp_state['errors'] ) {
-	echo "RESULT: PASS — {$smowp_state['processed']}/{$smowp_state['total']} processed\n";
+if ( 'done' === $omnioffloader_state['status'] && 0 === (int) $omnioffloader_state['errors'] ) {
+	echo "RESULT: PASS — {$omnioffloader_state['processed']}/{$omnioffloader_state['total']} processed\n";
 	exit( 0 );
 }
 
-echo "RESULT: FAIL — status={$smowp_state['status']} errors={$smowp_state['errors']}\n";
+echo "RESULT: FAIL — status={$omnioffloader_state['status']} errors={$omnioffloader_state['errors']}\n";
 exit( 1 );

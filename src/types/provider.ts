@@ -2,7 +2,7 @@
  * Mirrors ProviderController / CoreController provider payloads.
  */
 
-export type CredentialFieldType = 'text' | 'password';
+export type CredentialFieldType = 'text' | 'password' | 'checkbox';
 
 /** Static field definition from ProviderInterface::credential_fields(). */
 export interface CredentialFieldDef {
@@ -30,6 +30,7 @@ export interface ProviderInfo {
 /** GET/POST /provider/credentials response. */
 export interface CredentialsResponse {
 	provider: string;
+	role?: string;
 	fields: CredentialField[];
 }
 

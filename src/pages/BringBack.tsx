@@ -1,4 +1,4 @@
-import { Button, Tooltip } from '@wordpress/components';
+import { Button, Notice, Tooltip } from '@wordpress/components';
 import { useState } from '@wordpress/element';
 import { __, sprintf } from '@wordpress/i18n';
 
@@ -100,10 +100,7 @@ export function BringBackPage() {
 							</div>
 							<div className="smowp-media-chip smowp-media-chip--local">
 								<span className="smowp-media-chip__label">
-									{ __(
-										'Already Local',
-										'omnioffloader'
-									) }
+									{ __( 'Already Local', 'omnioffloader' ) }
 								</span>
 								<strong className="smowp-media-chip__value">
 									{ localCount }
@@ -406,6 +403,9 @@ export function BringBackPage() {
 										: '' ) +
 									( state.status === 'cancelled'
 										? ' is-cancelled'
+										: '' ) +
+									( state.status === 'failed'
+										? ' is-failed'
 										: '' )
 								}
 							>
@@ -432,6 +432,14 @@ export function BringBackPage() {
 											<span className="smowp-badge smowp-badge--fail">
 												{ __(
 													'Cancelled',
+													'omnioffloader'
+												) }
+											</span>
+										) }
+										{ state.status === 'failed' && (
+											<span className="smowp-badge smowp-badge--fail">
+												{ __(
+													'Stopped',
 													'omnioffloader'
 												) }
 											</span>
@@ -469,6 +477,17 @@ export function BringBackPage() {
 									max={ state.total }
 									showPercentage={ false }
 								/>
+
+								{ state.status === 'failed' &&
+									state.message && (
+										<Notice
+											status="error"
+											isDismissible={ false }
+											className="smowp-progress-card__notice"
+										>
+											{ state.message }
+										</Notice>
+									) }
 
 								<div className="smowp-progress-card__footer">
 									<span className="smowp-progress-card__errors">

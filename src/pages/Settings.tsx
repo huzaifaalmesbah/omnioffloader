@@ -23,9 +23,9 @@ export function SettingsPage() {
 	return (
 		<div className="smowp-page">
 			<Card
-				title={ __( 'Cloud Provider', 'omnioffloader' ) }
+				title={ __( 'Primary Storage Provider', 'omnioffloader' ) }
 				description={ __(
-					'Choose where your media is stored. More providers are coming — each release adds one.',
+					'Choose your primary cloud storage provider where your WordPress media library is offloaded.',
 					'omnioffloader'
 				) }
 			>
@@ -41,7 +41,7 @@ export function SettingsPage() {
 							className="smowp-provider-selector-grid"
 							role="radiogroup"
 							aria-label={ __(
-								'Cloud Storage Provider',
+								'Primary Cloud Storage Provider',
 								'omnioffloader'
 							) }
 						>
@@ -109,8 +109,146 @@ export function SettingsPage() {
 
 					{ settings.provider && (
 						<>
-							<CredentialFields provider={ settings.provider } />
-							<TestConnection provider={ settings.provider } />
+							<CredentialFields
+								provider={ settings.provider }
+								role="primary"
+							/>
+							<TestConnection
+								provider={ settings.provider }
+								role="primary"
+							/>
+						</>
+					) }
+				</div>
+			</Card>
+
+			<Card
+				title={ __(
+					'Secondary / Backup Storage (Redundancy)',
+					'omnioffloader'
+				) }
+				description={ __(
+					'Safely mirror media to an independent backup storage server for redundancy and disaster recovery. Even if your primary cloud provider experiences downtime or account issues, your media remains safe.',
+					'omnioffloader'
+				) }
+			>
+				<div className="smowp-form-layout">
+					<ToggleControl
+						label={ __(
+							'Enable Secondary Backup Storage',
+							'omnioffloader'
+						) }
+						help={ __(
+							'Automatically replicate all offloaded media files to a secondary cloud account or provider.',
+							'omnioffloader'
+						) }
+						checked={ settings.secondary_active }
+						onChange={ ( secondary_active: boolean ) =>
+							updateSettings( { secondary_active } )
+						}
+						__nextHasNoMarginBottom
+					/>
+
+					{ settings.secondary_active && (
+						<>
+							<div className="smowp-provider-selector-wrap">
+								<span className="smowp-provider-selector-label">
+									{ __(
+										'Backup Storage Provider',
+										'omnioffloader'
+									) }
+								</span>
+								<div
+									className="smowp-provider-selector-grid"
+									role="radiogroup"
+									aria-label={ __(
+										'Backup Cloud Storage Provider',
+										'omnioffloader'
+									) }
+								>
+									{ providers.map( ( provider ) => {
+										const isSelected =
+											settings.secondary_provider ===
+											provider.key;
+										return (
+											<div
+												key={ `secondary-${ provider.key }` }
+												role="radio"
+												aria-checked={ isSelected }
+												tabIndex={ 0 }
+												className={
+													'smowp-provider-card' +
+													( isSelected
+														? ' is-selected'
+														: '' )
+												}
+												onClick={ () =>
+													updateSettings( {
+														secondary_provider:
+															provider.key,
+													} )
+												}
+												onKeyDown={ ( e ) => {
+													if (
+														e.key === ' ' ||
+														e.key === 'Enter'
+													) {
+														e.preventDefault();
+														updateSettings( {
+															secondary_provider:
+																provider.key,
+														} );
+													}
+												} }
+											>
+												<div className="smowp-provider-card__head">
+													<div className="smowp-provider-card__icon">
+														<Icon
+															icon={ cloudUpload }
+															size={ 22 }
+														/>
+													</div>
+													<div className="smowp-provider-card__title-wrap">
+														<strong>
+															{ provider.name }
+														</strong>
+														<span className="smowp-provider-card__sub">
+															{ __(
+																'S3-compatible Object Storage',
+																'omnioffloader'
+															) }
+														</span>
+													</div>
+													<div className="smowp-provider-card__check">
+														<span className="smowp-radio-circle">
+															{ isSelected && (
+																<span className="smowp-radio-dot" />
+															) }
+														</span>
+													</div>
+												</div>
+											</div>
+										);
+									} ) }
+								</div>
+							</div>
+
+							{ settings.secondary_provider && (
+								<>
+									<CredentialFields
+										provider={
+											settings.secondary_provider
+										}
+										role="secondary"
+									/>
+									<TestConnection
+										provider={
+											settings.secondary_provider
+										}
+										role="secondary"
+									/>
+								</>
+							) }
 						</>
 					) }
 				</div>

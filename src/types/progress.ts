@@ -2,7 +2,13 @@
  * Mirrors BulkOffloadProcessor::get_state() and OffloadController payloads.
  */
 
-export type BulkStatus = 'idle' | 'running' | 'done' | 'cancelled';
+export type BulkStatus =
+	| 'idle'
+	| 'running'
+	| 'done'
+	| 'cancelled'
+	/** Stopped early by the consecutive-failure circuit breaker. */
+	| 'failed';
 
 export interface ProcessedMediaItem {
 	id: number;
@@ -19,6 +25,10 @@ export interface BulkState {
 	processed: number;
 	errors: number;
 	updated_at: number;
+	/** Why the run stopped early; empty otherwise. */
+	message?: string;
+	/** Attachment in flight, 0 when idle. */
+	current?: number;
 	recent?: ProcessedMediaItem[];
 }
 

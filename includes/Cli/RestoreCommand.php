@@ -7,6 +7,8 @@
 
 namespace OmniOffloader\Cli;
 
+use OmniOffloader\Core\Helpers;
+use OmniOffloader\Core\Plugin;
 use OmniOffloader\Services\AttachmentRestorer;
 use OmniOffloader\Traits\AttachmentHelper;
 use WP_CLI;
@@ -21,6 +23,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 class RestoreCommand {
 
 	use AttachmentHelper;
+
+	/**
+	 * Attachments processed between process-lock renewals.
+	 */
+	private const LOCK_RENEW_EVERY = 20;
 
 	/**
 	 * Restore attachments from the cloud (Bring Back).
@@ -48,6 +55,9 @@ class RestoreCommand {
 	 * [--dry-run]
 	 * : List what would be restored without downloading anything.
 	 *
+	 * [--force]
+	 * : Run even when a bulk restore started from the admin screen is active.
+	 *
 	 * ## EXAMPLES
 	 *
 	 *     wp omnioffloader restore --all
@@ -61,6 +71,16 @@ class RestoreCommand {
 	 */
 	public function __invoke( $args, $assoc_args ) {
 		unset( $args );
+
+		$queue     = Plugin::get_instance()->get_bulk_restore();
+		$has_queue = null !== $queue;
+		$is_dry    = isset( $assoc_args['dry-run'] );
+
+		// Restoring the same attachment from two processes races over the same
+		// destination files; the admin queue owns them until it is done.
+		if ( ! $is_dry && $has_queue && $queue->is_active() && ! isset( $assoc_args['force'] ) ) {
+			WP_CLI::error( 'A bulk restore is already running. Wait for it to finish, cancel it in the admin screen, or pass --force.' );
+		}
 
 		$ids = $this->resolve_ids( $assoc_args );
 
@@ -94,11 +114,26 @@ class RestoreCommand {
 			);
 		}
 
+		// Hold the queue's lock so the loopback worker, the cron healthcheck
+		// and the admin poll all stand down for the duration.
+		if ( $has_queue ) {
+			$queue->claim_lock();
+			register_shutdown_function(
+				static function () use ( $queue ) {
+					$queue->release_lock();
+				}
+			);
+		}
+
+		// One stats flush at the end instead of ~8 queries per attachment.
+		Helpers::defer_media_stats_flush( true );
+
 		$restorer = new AttachmentRestorer();
 		$progress = \WP_CLI\Utils\make_progress_bar( 'Restoring', count( $ids ) );
 
-		$done   = 0;
-		$failed = 0;
+		$done      = 0;
+		$failed    = 0;
+		$processed = 0;
 
 		foreach ( $ids as $id ) {
 			if ( $restorer->restore( $id, $delete_cloud ) ) {
@@ -107,9 +142,21 @@ class RestoreCommand {
 				++$failed;
 			}
 			$progress->tick();
+			clean_post_cache( $id );
+			++$processed;
+
+			if ( $has_queue && 0 === $processed % self::LOCK_RENEW_EVERY ) {
+				$queue->claim_lock();
+			}
 		}
 
 		$progress->finish();
+
+		Helpers::defer_media_stats_flush( false );
+
+		if ( $has_queue ) {
+			$queue->release_lock();
+		}
 
 		if ( $failed > 0 ) {
 			WP_CLI::warning( sprintf( '%d restored, %d failed (see omnioffloader_error_log meta).', $done, $failed ) );

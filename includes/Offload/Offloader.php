@@ -38,6 +38,13 @@ class Offloader {
 	private $provider;
 
 	/**
+	 * Secondary backup cloud provider.
+	 *
+	 * @var ProviderInterface|null
+	 */
+	private $secondary_provider;
+
+	/**
 	 * Attached observers.
 	 *
 	 * @var ObserverInterface[]
@@ -47,10 +54,12 @@ class Offloader {
 	/**
 	 * Constructor.
 	 *
-	 * @param ProviderInterface $provider Cloud provider.
+	 * @param ProviderInterface      $provider           Primary cloud provider.
+	 * @param ProviderInterface|null $secondary_provider Optional secondary backup provider.
 	 */
-	public function __construct( ProviderInterface $provider ) {
-		$this->provider = $provider;
+	public function __construct( ProviderInterface $provider, ?ProviderInterface $secondary_provider = null ) {
+		$this->provider           = $provider;
+		$this->secondary_provider = $secondary_provider;
 	}
 
 	/**
@@ -69,11 +78,11 @@ class Offloader {
 	 * @return void
 	 */
 	public function register_observers() {
-		$this->attach( new UploadObserver( $this->provider ) );
+		$this->attach( new UploadObserver( $this->provider, $this->secondary_provider ) );
 		$this->attach( new UrlRewriteObserver( $this->provider ) );
 		$this->attach( new SrcsetObserver( $this->provider ) );
 		$this->attach( new ContentImageTagObserver( $this->provider ) );
-		$this->attach( new DeleteObserver( $this->provider ) );
+		$this->attach( new DeleteObserver( $this->provider, $this->secondary_provider ) );
 		$this->attach( new UniqueFilenameObserver() );
 		$this->attach( new MediaLibraryFilterObserver() );
 		$this->attach( new OffloadStatusObserver( $this->provider ) );

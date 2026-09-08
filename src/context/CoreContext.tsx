@@ -14,9 +14,9 @@ import {
 	fetchStats,
 	saveSettings,
 } from '../api/core';
-import { saveCredentials } from '../api/provider';
+import { fetchCredentials, saveCredentials } from '../api/provider';
 import { errorMessage } from '../utils/errorHelper';
-import type { MediaStats, ProviderInfo, Settings } from '../types';
+import type { CredentialField, MediaStats, ProviderInfo, Settings } from '../types';
 
 export interface Notice {
 	id: number;
@@ -35,6 +35,18 @@ interface CoreContextValue {
 	updateSettings: ( partial: Partial< Settings > ) => void;
 	updateCredentialValues: ( values: Record< string, string > ) => void;
 	credentialDraft: Record< string, string >;
+	updateSecondaryCredentialValues: ( values: Record< string, string > ) => void;
+	secondaryCredentialDraft: Record< string, string >;
+	credentialsFields: Record< string, CredentialField[] >;
+	loadProviderCredentials: (
+		provider: string,
+		role?: 'primary' | 'secondary'
+	) => Promise< CredentialField[] >;
+	setProviderFields: (
+		role: 'primary' | 'secondary',
+		provider: string,
+		fields: CredentialField[]
+	) => void;
 	save: () => Promise< void >;
 	addNotice: ( status: Notice[ 'status' ], message: string ) => void;
 	removeNotice: ( id: number ) => void;
@@ -55,7 +67,39 @@ export function CoreProvider( { children }: { children: React.ReactNode } ) {
 	const [ credentialDraft, setCredentialDraft ] = useState<
 		Record< string, string >
 	>( {} );
+	const [ secondaryCredentialDraft, setSecondaryCredentialDraft ] = useState<
+		Record< string, string >
+	>( {} );
 	const [ isSaving, setIsSaving ] = useState( false );
+	const [ credentialsFields, setCredentialsFields ] = useState<
+		Record< string, CredentialField[] >
+	>( {} );
+
+	const setProviderFields = useCallback(
+		(
+			role: 'primary' | 'secondary',
+			provider: string,
+			fields: CredentialField[]
+		) => {
+			setCredentialsFields( ( current ) => ( {
+				...current,
+				[ `${ role }:${ provider }` ]: fields,
+			} ) );
+		},
+		[]
+	);
+
+	const loadProviderCredentials = useCallback(
+		async (
+			provider: string,
+			role: 'primary' | 'secondary' = 'primary'
+		): Promise< CredentialField[] > => {
+			const res = await fetchCredentials( provider, role );
+			setProviderFields( role, provider, res.fields );
+			return res.fields;
+		},
+		[ setProviderFields ]
+	);
 
 	const addNotice = useCallback(
 		( status: Notice[ 'status' ], message: string ) => {
@@ -94,15 +138,34 @@ export function CoreProvider( { children }: { children: React.ReactNode } ) {
 	}, [ addNotice ] );
 
 	const updateSettings = useCallback( ( partial: Partial< Settings > ) => {
-		setSettings( ( current ) =>
-			current ? { ...current, ...partial } : current
-		);
+		setSettings( ( current ) => {
+			if ( ! current ) {
+				return current;
+			}
+			if ( partial.provider && partial.provider !== current.provider ) {
+				setCredentialDraft( {} );
+			}
+			if (
+				partial.secondary_provider &&
+				partial.secondary_provider !== current.secondary_provider
+			) {
+				setSecondaryCredentialDraft( {} );
+			}
+			return { ...current, ...partial };
+		} );
 		setSettingsDirty( true );
 	}, [] );
 
 	const updateCredentialValues = useCallback(
 		( values: Record< string, string > ) => {
 			setCredentialDraft( ( current ) => ( { ...current, ...values } ) );
+		},
+		[]
+	);
+
+	const updateSecondaryCredentialValues = useCallback(
+		( values: Record< string, string > ) => {
+			setSecondaryCredentialDraft( ( current ) => ( { ...current, ...values } ) );
 		},
 		[]
 	);
@@ -115,7 +178,10 @@ export function CoreProvider( { children }: { children: React.ReactNode } ) {
 			} );
 	}, [] );
 
-	const isDirty = settingsDirty || Object.keys( credentialDraft ).length > 0;
+	const isDirty =
+		settingsDirty ||
+		Object.keys( credentialDraft ).length > 0 ||
+		Object.keys( secondaryCredentialDraft ).length > 0;
 
 	const save = useCallback( async () => {
 		if ( ! settings ) {
@@ -135,8 +201,34 @@ export function CoreProvider( { children }: { children: React.ReactNode } ) {
 				Object.keys( credentialDraft ).length > 0 &&
 				settings.provider
 			) {
-				await saveCredentials( settings.provider, credentialDraft );
+				const response = await saveCredentials(
+					settings.provider,
+					credentialDraft,
+					'primary'
+				);
+				setProviderFields(
+					'primary',
+					settings.provider,
+					response.fields
+				);
 				setCredentialDraft( {} );
+			}
+
+			if (
+				Object.keys( secondaryCredentialDraft ).length > 0 &&
+				settings.secondary_provider
+			) {
+				const response = await saveCredentials(
+					settings.secondary_provider,
+					secondaryCredentialDraft,
+					'secondary'
+				);
+				setProviderFields(
+					'secondary',
+					settings.secondary_provider,
+					response.fields
+				);
+				setSecondaryCredentialDraft( {} );
 			}
 
 			addNotice(
@@ -149,7 +241,15 @@ export function CoreProvider( { children }: { children: React.ReactNode } ) {
 		} finally {
 			setIsSaving( false );
 		}
-	}, [ settings, settingsDirty, credentialDraft, addNotice, refreshStats ] );
+	}, [
+		settings,
+		settingsDirty,
+		credentialDraft,
+		secondaryCredentialDraft,
+		setProviderFields,
+		addNotice,
+		refreshStats,
+	] );
 
 	const value = useMemo(
 		() => ( {
@@ -163,6 +263,11 @@ export function CoreProvider( { children }: { children: React.ReactNode } ) {
 			updateSettings,
 			updateCredentialValues,
 			credentialDraft,
+			updateSecondaryCredentialValues,
+			secondaryCredentialDraft,
+			credentialsFields,
+			loadProviderCredentials,
+			setProviderFields,
 			save,
 			addNotice,
 			removeNotice,
@@ -179,6 +284,11 @@ export function CoreProvider( { children }: { children: React.ReactNode } ) {
 			updateSettings,
 			updateCredentialValues,
 			credentialDraft,
+			updateSecondaryCredentialValues,
+			secondaryCredentialDraft,
+			credentialsFields,
+			loadProviderCredentials,
+			setProviderFields,
 			save,
 			addNotice,
 			removeNotice,

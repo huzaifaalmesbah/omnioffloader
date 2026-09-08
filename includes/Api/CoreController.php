@@ -81,6 +81,14 @@ class CoreController extends BaseController {
 			);
 		}
 
+		if ( isset( $settings['secondary_provider'] ) && '' !== $settings['secondary_provider'] && ! ProviderRegistry::has( (string) $settings['secondary_provider'] ) ) {
+			return new \WP_Error(
+				'omnioffloader_invalid_secondary_provider',
+				__( 'Unknown secondary cloud provider.', 'omnioffloader' ),
+				array( 'status' => 400 )
+			);
+		}
+
 		$saved = self::update_settings( $settings );
 
 		return rest_ensure_response( $saved );
@@ -120,10 +128,14 @@ class CoreController extends BaseController {
 	 * @return \WP_REST_Response
 	 */
 	public function get_stats_response() {
-		$stats = Helpers::get_media_stats();
+		$stats    = Helpers::get_media_stats();
+		$settings = self::get_settings();
 
-		$stats['configured'] = self::is_configured();
-		$stats['provider']   = self::get_provider_key();
+		$stats['configured']           = self::is_configured();
+		$stats['provider']             = self::get_provider_key();
+		$stats['secondary_configured'] = self::is_secondary_configured();
+		$stats['secondary_active']     = ! empty( $settings['secondary_active'] );
+		$stats['secondary_provider']   = self::get_secondary_provider_key();
 
 		return rest_ensure_response( $stats );
 	}

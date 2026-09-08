@@ -7,6 +7,7 @@
 
 namespace OmniOffloader\Cli;
 
+use OmniOffloader\Core\Helpers;
 use OmniOffloader\Core\Plugin;
 use OmniOffloader\Services\AttachmentUploader;
 use OmniOffloader\Traits\AttachmentHelper;
@@ -24,6 +25,11 @@ class OffloadCommand {
 	use AttachmentHelper;
 
 	/**
+	 * Attachments processed between process-lock renewals.
+	 */
+	private const LOCK_RENEW_EVERY = 20;
+
+	/**
 	 * Offload attachments to the cloud.
 	 *
 	 * Runs synchronously with a progress bar. Local files are handled
@@ -37,13 +43,21 @@ class OffloadCommand {
 	 * [--ids=<ids>]
 	 * : Comma-separated attachment IDs to offload.
 	 *
+	 * [--limit=<number>]
+	 * : Stop after this many attachments. Useful for working through a large
+	 * library in scheduled chunks.
+	 *
 	 * [--dry-run]
 	 * : List what would be offloaded without uploading anything.
+	 *
+	 * [--force]
+	 * : Run even when a bulk offload started from the admin screen is active.
 	 *
 	 * ## EXAMPLES
 	 *
 	 *     wp omnioffloader offload --all
 	 *     wp omnioffloader offload --ids=12,15,42
+	 *     wp omnioffloader offload --all --limit=500
 	 *     wp omnioffloader offload --all --dry-run
 	 *
 	 * @param string[]              $args       Positional args (unused).
@@ -53,10 +67,23 @@ class OffloadCommand {
 	public function __invoke( $args, $assoc_args ) {
 		unset( $args );
 
-		$provider = Plugin::get_instance()->get_provider();
+		$plugin   = Plugin::get_instance();
+		$provider = $plugin->get_provider();
 
 		if ( null === $provider ) {
 			WP_CLI::error( 'No cloud provider is configured (or the AWS SDK is missing).' );
+		}
+
+		$queue     = $plugin->get_bulk_offload();
+		$is_dry    = isset( $assoc_args['dry-run'] );
+		$has_queue = null !== $queue;
+
+		// The admin bulk queue and this command would otherwise offload the
+		// same attachments at once: with a cleanup retention policy one side
+		// deletes local files the other is still reading, which fails uploads
+		// and fills the error log for no reason.
+		if ( ! $is_dry && $has_queue && $queue->is_active() && ! isset( $assoc_args['force'] ) ) {
+			WP_CLI::error( 'A bulk offload is already running. Wait for it to finish, cancel it in the admin screen, or pass --force.' );
 		}
 
 		$ids = $this->resolve_ids( $assoc_args );
@@ -67,7 +94,7 @@ class OffloadCommand {
 			return;
 		}
 
-		if ( isset( $assoc_args['dry-run'] ) ) {
+		if ( $is_dry ) {
 			WP_CLI::log( sprintf( 'Would offload %d attachment(s):', count( $ids ) ) );
 			foreach ( $ids as $id ) {
 				WP_CLI::log( sprintf( '  %d  %s', $id, get_the_title( $id ) ) );
@@ -76,22 +103,74 @@ class OffloadCommand {
 			return;
 		}
 
-		$uploader = new AttachmentUploader( $provider );
+		// Hold the queue's lock for the duration so the loopback worker, the
+		// cron healthcheck and the admin poll all stand down.
+		if ( $has_queue ) {
+			$queue->claim_lock();
+			register_shutdown_function(
+				static function () use ( $queue ) {
+					$queue->release_lock();
+				}
+			);
+		}
+
+		// One stats flush at the end instead of ~8 queries per attachment.
+		Helpers::defer_media_stats_flush( true );
+
+		$uploader = new AttachmentUploader( $provider, $plugin->get_secondary_provider() );
 		$progress = \WP_CLI\Utils\make_progress_bar( 'Offloading', count( $ids ) );
 
-		$done   = 0;
-		$failed = 0;
+		$done      = 0;
+		$failed    = 0;
+		$streak    = 0;
+		$processed = 0;
+		$aborted   = false;
+		$last_fail = 0;
 
 		foreach ( $ids as $id ) {
 			if ( $uploader->upload( $id ) ) {
 				++$done;
+				$streak = 0;
 			} else {
 				++$failed;
+				++$streak;
+				$last_fail = $id;
 			}
+
 			$progress->tick();
+			clean_post_cache( $id );
+			++$processed;
+
+			if ( $has_queue && 0 === $processed % self::LOCK_RENEW_EVERY ) {
+				$queue->claim_lock();
+			}
+
+			// Bad credentials or an unreachable bucket fail identically for
+			// every attachment; stop rather than grind through the library.
+			if ( $streak >= 10 ) {
+				$aborted = true;
+				break;
+			}
 		}
 
 		$progress->finish();
+
+		Helpers::defer_media_stats_flush( false );
+
+		if ( $has_queue ) {
+			$queue->release_lock();
+		}
+
+		if ( $aborted ) {
+			WP_CLI::error(
+				sprintf(
+					'Stopped after %d failures in a row (%d offloaded first). Last error: %s',
+					$streak,
+					$done,
+					$this->last_error( $last_fail )
+				)
+			);
+		}
 
 		if ( $failed > 0 ) {
 			WP_CLI::warning( sprintf( '%d offloaded, %d failed (see omnioffloader_error_log meta).', $done, $failed ) );
@@ -102,16 +181,36 @@ class OffloadCommand {
 	}
 
 	/**
+	 * The most recent error recorded against an attachment.
+	 *
+	 * @param int $attachment_id Attachment ID.
+	 * @return string
+	 */
+	private function last_error( $attachment_id ) {
+		$log = get_post_meta( $attachment_id, 'omnioffloader_error_log', true );
+
+		if ( ! is_array( $log ) || empty( $log ) ) {
+			return 'unknown';
+		}
+
+		$last = end( $log );
+
+		return is_array( $last ) && isset( $last['message'] ) ? (string) $last['message'] : 'unknown';
+	}
+
+	/**
 	 * Resolve the target attachment IDs from CLI args.
 	 *
 	 * @param array<string, string> $assoc_args Named args.
 	 * @return int[]
 	 */
 	private function resolve_ids( array $assoc_args ) {
+		$limit = isset( $assoc_args['limit'] ) ? absint( $assoc_args['limit'] ) : 0;
+
 		if ( isset( $assoc_args['ids'] ) ) {
 			$ids = array_filter( array_map( 'absint', explode( ',', (string) $assoc_args['ids'] ) ) );
 
-			return array_values(
+			$ids = array_values(
 				array_filter(
 					$ids,
 					static function ( $id ) {
@@ -119,6 +218,8 @@ class OffloadCommand {
 					}
 				)
 			);
+
+			return $limit > 0 ? array_slice( $ids, 0, $limit ) : $ids;
 		}
 
 		if ( ! isset( $assoc_args['all'] ) ) {
@@ -127,13 +228,19 @@ class OffloadCommand {
 
 		global $wpdb;
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- CLI batch IDs query.
-		$ids = $wpdb->get_col(
-			"SELECT p.ID FROM {$wpdb->posts} p
+		$sql = "SELECT DISTINCT p.ID FROM {$wpdb->posts} p
+			 INNER JOIN {$wpdb->postmeta} f ON f.post_id = p.ID AND f.meta_key = '_wp_attached_file'
 			 LEFT JOIN {$wpdb->postmeta} m ON m.post_id = p.ID AND m.meta_key = 'omnioffloader_offloaded'
-			 WHERE p.post_type = 'attachment' AND m.post_id IS NULL
-			 ORDER BY p.ID ASC"
-		);
+			 WHERE p.post_type = 'attachment' AND p.post_status != 'trash' AND m.post_id IS NULL
+			 ORDER BY p.ID ASC";
+
+		if ( $limit > 0 ) {
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared -- CLI batch IDs query; only the integer limit is interpolated.
+			$ids = $wpdb->get_col( $wpdb->prepare( $sql . ' LIMIT %d', $limit ) );
+		} else {
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared -- CLI batch IDs query, no user input.
+			$ids = $wpdb->get_col( $sql );
+		}
 
 		return array_map( 'intval', $ids );
 	}

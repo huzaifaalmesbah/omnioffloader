@@ -7,6 +7,10 @@
 
 namespace OmniOffloader\Core;
 
+use OmniOffloader\Services\AbstractBulkProcessor;
+use OmniOffloader\Services\BulkOffloadProcessor;
+use OmniOffloader\Services\BulkRestoreProcessor;
+
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
@@ -25,16 +29,16 @@ class Deactivator {
 	 * @return void
 	 */
 	public static function deactivate() {
-		// Bulk-queue cron healthcheck (WP_Background_Process).
-		wp_clear_scheduled_hook( 'omnioffloader_bulk_offload_cron' );
-		wp_clear_scheduled_hook( 'omnioffloader_bulk_restore_cron' );
+		// Everything the bulk queues store: batch rows, run status, process
+		// lock, cron healthcheck and progress heartbeat. Deactivating during a
+		// run used to strand one option row per fifty queued attachments in
+		// wp_options with nothing left to consume them.
+		AbstractBulkProcessor::purge_stored_data( 'bulk_offload', BulkOffloadProcessor::STATE_OPTION );
+		AbstractBulkProcessor::purge_stored_data( 'bulk_restore', BulkRestoreProcessor::STATE_OPTION );
 
 		// Transient state.
 		delete_transient( 'omnioffloader_activation_redirect' );
 		delete_transient( 'omnioffloader_media_stats' );
-
-		// Bulk progress heartbeats.
-		delete_option( 'omnioffloader_bulk_offload_state' );
-		delete_option( 'omnioffloader_bulk_restore_state' );
+		delete_transient( 'omnioffloader_restore_preflight' );
 	}
 }

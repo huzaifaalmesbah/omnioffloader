@@ -17,16 +17,34 @@ if ( ! defined( 'ABSPATH' ) ) {
 class Helpers {
 
 	/**
+	 * Whether stats-cache flushes are being batched for a bulk run.
+	 *
+	 * @var bool
+	 */
+	private static $defer_stats_flush = false;
+
+	/**
+	 * Whether a deferred flush is owed.
+	 *
+	 * @var bool
+	 */
+	private static $stats_flush_pending = false;
+
+	/**
 	 * Build the wp-config constant name for a credential field.
 	 *
-	 * E.g. ( 'cloudflare_r2', 'key' ) => 'OMNIOFFLOADER_CLOUDFLARE_R2_KEY'.
+	 * E.g. ( 'cloudflare_r2', 'key', 'primary' ) => 'OMNIOFFLOADER_CLOUDFLARE_R2_KEY'.
+	 * E.g. ( 'cloudflare_r2', 'key', 'secondary' ) => 'OMNIOFFLOADER_SECONDARY_CLOUDFLARE_R2_KEY'.
 	 *
 	 * @param string $provider_key Provider key.
 	 * @param string $field        Field name.
+	 * @param string $role         Storage role ('primary' or 'secondary').
 	 * @return string
 	 */
-	public static function credential_constant_name( $provider_key, $field ) {
-		return 'OMNIOFFLOADER_' . strtoupper( $provider_key ) . '_' . strtoupper( $field );
+	public static function credential_constant_name( $provider_key, $field, $role = 'primary' ) {
+		$prefix = 'secondary' === $role ? 'OMNIOFFLOADER_SECONDARY_' : 'OMNIOFFLOADER_';
+
+		return $prefix . strtoupper( $provider_key ) . '_' . strtoupper( $field );
 	}
 
 	/**
@@ -34,10 +52,11 @@ class Helpers {
 	 *
 	 * @param string $provider_key Provider key.
 	 * @param string $field        Field name.
+	 * @param string $role         Storage role ('primary' or 'secondary').
 	 * @return bool
 	 */
-	public static function is_credential_locked( $provider_key, $field ) {
-		return defined( self::credential_constant_name( $provider_key, $field ) );
+	public static function is_credential_locked( $provider_key, $field, $role = 'primary' ) {
+		return defined( self::credential_constant_name( $provider_key, $field, $role ) );
 	}
 
 	/**
@@ -45,16 +64,18 @@ class Helpers {
 	 *
 	 * @param string $provider_key Provider key.
 	 * @param string $field        Field name.
+	 * @param string $role         Storage role ('primary' or 'secondary').
 	 * @return string
 	 */
-	public static function get_credential( $provider_key, $field ) {
-		$constant = self::credential_constant_name( $provider_key, $field );
+	public static function get_credential( $provider_key, $field, $role = 'primary' ) {
+		$constant = self::credential_constant_name( $provider_key, $field, $role );
 
 		if ( defined( $constant ) ) {
 			return (string) constant( $constant );
 		}
 
-		$credentials = get_option( 'omnioffloader_credentials', array() );
+		$option_name = 'secondary' === $role ? 'omnioffloader_secondary_credentials' : 'omnioffloader_credentials';
+		$credentials = get_option( $option_name, array() );
 
 		if ( ! is_array( $credentials ) ) {
 			return '';
@@ -158,8 +179,36 @@ class Helpers {
 	 * @return void
 	 */
 	public static function flush_media_stats() {
+		if ( self::$defer_stats_flush ) {
+			self::$stats_flush_pending = true;
+
+			return;
+		}
+
 		delete_transient( 'omnioffloader_media_stats' );
 		delete_transient( 'omnioffloader_restore_preflight' );
+	}
+
+	/**
+	 * Batch the stats-cache flushes of a bulk run into a single flush.
+	 *
+	 * Each flush is four delete_option() calls, and every one of those costs a
+	 * SELECT plus a DELETE — around eight queries per attachment to invalidate
+	 * a value nothing reads until the run ends. Over a 15,000 item library
+	 * that is six figures of pure overhead.
+	 *
+	 * Turning deferral off flushes once if anything asked for it meanwhile.
+	 *
+	 * @param bool $defer True to start batching, false to stop and flush.
+	 * @return void
+	 */
+	public static function defer_media_stats_flush( $defer ) {
+		self::$defer_stats_flush = (bool) $defer;
+
+		if ( ! self::$defer_stats_flush && self::$stats_flush_pending ) {
+			self::$stats_flush_pending = false;
+			self::flush_media_stats();
+		}
 	}
 
 	/**
@@ -191,25 +240,33 @@ class Helpers {
 
 		$estimated = 0;
 
-		foreach ( $ids as $id ) {
-			$metadata = wp_get_attachment_metadata( (int) $id );
+		// Prime the meta cache in chunks. Reading metadata one attachment at a
+		// time is a query per attachment, which times the page out on a large
+		// library; the cache is dropped again after each chunk so a 15,000
+		// item run does not hold every meta row in memory at once.
+		foreach ( array_chunk( array_map( 'intval', $ids ), 200 ) as $chunk ) {
+			update_meta_cache( 'post', $chunk );
 
-			if ( ! is_array( $metadata ) ) {
-				continue;
-			}
+			foreach ( $chunk as $id ) {
+				$metadata = wp_get_attachment_metadata( $id );
 
-			// phpcs:ignore Generic.Commenting.DocComment.MissingShort -- inline @var for PHPStan.
-			/** @var array<string, mixed> $metadata */
-			if ( isset( $metadata['filesize'] ) && is_numeric( $metadata['filesize'] ) ) {
-				$estimated += (int) $metadata['filesize'];
-			}
+				if ( is_array( $metadata ) ) {
+					// phpcs:ignore Generic.Commenting.DocComment.MissingShort -- inline @var for PHPStan.
+					/** @var array<string, mixed> $metadata */
+					if ( isset( $metadata['filesize'] ) && is_numeric( $metadata['filesize'] ) ) {
+						$estimated += (int) $metadata['filesize'];
+					}
 
-			if ( ! empty( $metadata['sizes'] ) && is_array( $metadata['sizes'] ) ) {
-				foreach ( $metadata['sizes'] as $size_data ) {
-					if ( is_array( $size_data ) && isset( $size_data['filesize'] ) && is_numeric( $size_data['filesize'] ) ) {
-						$estimated += (int) $size_data['filesize'];
+					if ( ! empty( $metadata['sizes'] ) && is_array( $metadata['sizes'] ) ) {
+						foreach ( $metadata['sizes'] as $size_data ) {
+							if ( is_array( $size_data ) && isset( $size_data['filesize'] ) && is_numeric( $size_data['filesize'] ) ) {
+								$estimated += (int) $size_data['filesize'];
+							}
+						}
 					}
 				}
+
+				wp_cache_delete( $id, 'post_meta' );
 			}
 		}
 

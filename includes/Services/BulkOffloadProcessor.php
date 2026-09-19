@@ -53,11 +53,25 @@ class BulkOffloadProcessor extends AbstractBulkProcessor {
 	}
 
 	/**
-	 * Queue every non-offloaded attachment and start processing.
+	 * Queue attachments and start processing.
 	 *
+	 * @param int[]|null $ids Optional specific attachment IDs to queue.
 	 * @return int Number of queued attachments.
 	 */
-	public function start() {
+	public function start( ?array $ids = null ) {
+		if ( null !== $ids ) {
+			$valid_ids = array();
+			foreach ( $ids as $id ) {
+				$id = (int) $id;
+				if ( 'attachment' === get_post_type( $id ) && ! self::is_offloaded( $id ) ) {
+					update_post_meta( $id, 'omnioffloader_status', 'queued' );
+					$valid_ids[] = $id;
+				}
+			}
+
+			return $this->start_queue( array(), $valid_ids );
+		}
+
 		return $this->start_queue();
 	}
 

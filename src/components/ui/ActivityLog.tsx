@@ -5,18 +5,29 @@ import type { ProcessedMediaItem } from '../../types';
 
 interface ActivityLogProps {
 	items?: ProcessedMediaItem[];
+	currentItem?: ProcessedMediaItem | null;
 	actionType: 'offload' | 'restore';
 	running?: boolean;
+	total?: number;
+	processed?: number;
 }
 
 export function ActivityLog( {
 	items = [],
+	currentItem = null,
 	actionType,
 	running = false,
+	total = 0,
+	processed = 0,
 }: ActivityLogProps ) {
-	if ( items.length === 0 && ! running ) {
+	if ( items.length === 0 && ! running && ! currentItem ) {
 		return null;
 	}
+
+	const percentage =
+		total > 0
+			? Math.min( 100, Math.round( ( processed / total ) * 100 ) )
+			: 0;
 
 	const successLabel =
 		actionType === 'offload'
@@ -28,6 +39,11 @@ export function ActivityLog( {
 			? __( 'Offloaded Media Log', 'omnioffloader' )
 			: __( 'Restored Media Log', 'omnioffloader' );
 
+	// Filter out any duplicate if an item just transitioned
+	const displayItems = currentItem
+		? items.filter( ( item ) => item.id !== currentItem.id )
+		: items;
+
 	return (
 		<div className="smowp-activity-log">
 			<div className="smowp-activity-log__header">
@@ -36,21 +52,86 @@ export function ActivityLog( {
 					{ running && (
 						<span className="smowp-activity-log__live-pill">
 							<span className="smowp-badge-pulse" />
-							{ __( 'Live', 'omnioffloader' ) }
+							{ total > 0
+								? sprintf(
+										/* translators: %d: percentage complete */
+										__( 'Live · %d%%', 'omnioffloader' ),
+										percentage
+								  )
+								: __( 'Live', 'omnioffloader' ) }
 						</span>
 					) }
 				</div>
 				<span className="smowp-activity-log__count">
-					{ sprintf(
-						/* translators: %d: count of processed media items. */
-						__( '%d item(s)', 'omnioffloader' ),
-						items.length
-					) }
+					{ total > 0 && running
+						? sprintf(
+								actionType === 'restore'
+									? /* translators: 1: brought back count, 2: total count. */
+									  __(
+											'%1$d of %2$d brought back',
+											'omnioffloader'
+									  )
+									: /* translators: 1: uploaded count, 2: total count. */
+									  __(
+											'%1$d of %2$d uploaded',
+											'omnioffloader'
+									  ),
+								processed,
+								total
+						  )
+						: sprintf(
+								/* translators: %d: count of processed media items. */
+								__( '%d item(s)', 'omnioffloader' ),
+								items.length
+						  ) }
 				</span>
 			</div>
 
 			<div className="smowp-activity-log__list">
-				{ items.length === 0 && running && (
+				{ running && currentItem && (
+					<div className="smowp-activity-log__item is-processing">
+						<div className="smowp-activity-log__thumb">
+							{ currentItem.thumb ? (
+								<img
+									src={ currentItem.thumb }
+									alt=""
+									loading="lazy"
+								/>
+							) : (
+								<Icon icon={ image } size={ 20 } />
+							) }
+						</div>
+
+						<div className="smowp-activity-log__meta">
+							<span
+								className="smowp-activity-log__filename"
+								title={ currentItem.title }
+							>
+								{ currentItem.title }
+							</span>
+							<span className="smowp-activity-log__sub">
+								<span className="smowp-activity-log__status-now">
+									{ actionType === 'restore'
+										? __( 'Restoring…', 'omnioffloader' )
+										: __( 'Uploading…', 'omnioffloader' ) }
+								</span>
+							</span>
+						</div>
+
+						<div className="smowp-activity-log__badge-wrap">
+							<span className="smowp-badge smowp-badge--processing">
+								<span className="smowp-spinner-dot" />
+								<span>
+									{ actionType === 'restore'
+										? __( 'Restoring…', 'omnioffloader' )
+										: __( 'Uploading…', 'omnioffloader' ) }
+								</span>
+							</span>
+						</div>
+					</div>
+				) }
+
+				{ displayItems.length === 0 && running && ! currentItem && (
 					<div className="smowp-activity-log__empty">
 						<span className="smowp-badge-pulse" />
 						<p>
@@ -62,7 +143,7 @@ export function ActivityLog( {
 					</div>
 				) }
 
-				{ items.map( ( item ) => {
+				{ displayItems.map( ( item ) => {
 					const isOk = item.status === 'success';
 					const timeStr = item.timestamp
 						? new Date( item.timestamp * 1000 ).toLocaleTimeString()

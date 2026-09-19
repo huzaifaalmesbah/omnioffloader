@@ -92,9 +92,10 @@ class AttachmentUploader {
 			return false;
 		}
 
-		$all_ok = true;
+		$all_files = array_merge( $files['main'], $files['sizes'] );
+		$all_ok    = true;
 
-		foreach ( array_merge( $files['main'], $files['sizes'] ) as $entry ) {
+		foreach ( $all_files as $entry ) {
 			// Metadata can reference files that never existed on disk
 			// (e.g. cleaned up by another plugin); skip those quietly.
 			if ( ! file_exists( $entry['file'] ) ) {

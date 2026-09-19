@@ -58,7 +58,7 @@ abstract class AbstractBulkProcessor extends WP_Background_Process {
 	/**
 	 * Seconds of no progress before a poll takes over the queue itself.
 	 */
-	protected const STALL_SECONDS = 20;
+	protected const STALL_SECONDS = 2;
 
 	/**
 	 * Seconds an inline (poll-driven) pass may spend working.
@@ -110,16 +110,17 @@ abstract class AbstractBulkProcessor extends WP_Background_Process {
 	 */
 	protected static function default_state() {
 		return array(
-			'status'     => 'idle',
-			'total'      => 0,
-			'processed'  => 0,
-			'errors'     => 0,
-			'updated_at' => 0,
-			'message'    => '',
+			'status'       => 'idle',
+			'total'        => 0,
+			'processed'    => 0,
+			'errors'       => 0,
+			'updated_at'   => 0,
+			'message'      => '',
 			// Attachment currently in flight, 0 when idle. Used to detect a
 			// worker that was killed mid-transfer.
-			'current'    => 0,
-			'recent'     => array(),
+			'current'      => 0,
+			'current_item' => null,
+			'recent'       => array(),
 		);
 	}
 
@@ -153,33 +154,93 @@ abstract class AbstractBulkProcessor extends WP_Background_Process {
 	}
 
 	/**
+	 * Whether a bulk process is currently active.
+	 *
+	 * A run is active only if its state is 'running' and has items in queue
+	 * or is actively processing.
+	 *
+	 * @return bool
+	 */
+	public function is_active() {
+		$state = static::get_state();
+
+		if ( 'running' !== ( $state['status'] ?? 'idle' ) ) {
+			return false;
+		}
+
+		return ! $this->is_queue_empty() || $this->is_processing();
+	}
+
+	/**
 	 * Queue every matching attachment and start processing.
 	 *
 	 * @param array<string, mixed> $extra_state Extra state keys for this run.
+	 * @param int[]|null           $custom_ids  Optional specific attachment IDs to queue.
 	 * @return int Number of queued attachments.
 	 */
-	protected function start_queue( array $extra_state = array() ) {
-		$ids   = $this->queue_ids();
+	protected function start_queue( array $extra_state = array(), ?array $custom_ids = null ) {
+		$ids   = ( null !== $custom_ids ) ? array_values( array_unique( array_filter( array_map( 'intval', $custom_ids ) ) ) ) : $this->queue_ids();
 		$total = count( $ids );
 
 		if ( 0 === $total ) {
+			static::update_state(
+				array_merge(
+					static::default_state(),
+					$extra_state,
+					array(
+						'status'    => 'idle',
+						'total'     => 0,
+						'processed' => 0,
+					)
+				)
+			);
+
 			return 0;
+		}
+
+		// If a bulk queue is already active, append these items to the queue.
+		if ( $this->is_active() ) {
+			$current_state          = static::get_state();
+			$current_state['total'] = (int) ( $current_state['total'] ?? 0 ) + $total;
+			static::update_state( $current_state );
+
+			$count = 0;
+
+			foreach ( $ids as $id ) {
+				$this->push_to_queue( (int) $id );
+				++$count;
+
+				if ( 0 === $count % static::QUEUE_BATCH_SIZE ) {
+					$this->save();
+				}
+			}
+
+			$this->save();
+			$this->dispatch();
+
+			return $total;
 		}
 
 		// Publish the run before writing the queue. Queueing a large library
 		// is hundreds of option writes; if that request dies part-way, a
 		// half-written queue with no state leaves the UI unable to show
 		// progress *or* cancel, because is_active() already returns true.
-		static::update_state(
-			array_merge(
-				static::default_state(),
-				$extra_state,
-				array(
-					'status' => 'running',
-					'total'  => $total,
-				)
+		// A fresh run must always start with an empty log and zero counts.
+		$initial_state = array_merge(
+			static::default_state(),
+			$extra_state,
+			array(
+				'status'       => 'running',
+				'total'        => $total,
+				'processed'    => 0,
+				'errors'       => 0,
+				'current'      => 0,
+				'current_item' => null,
+				'recent'       => array(),
+				'updated_at'   => time(),
 			)
 		);
+		update_option( static::STATE_OPTION, $initial_state, false );
 
 		$count = 0;
 
@@ -352,7 +413,28 @@ abstract class AbstractBulkProcessor extends WP_Background_Process {
 	private function run_item( $attachment_id ) {
 		// Record the in-flight item so a worker killed mid-transfer is
 		// detectable on the next pass (see recover_lost_item()).
-		static::update_state( array( 'current' => $attachment_id ) );
+		$attached_file = get_attached_file( $attachment_id );
+		$filename      = $attached_file ? wp_basename( $attached_file ) : '';
+
+		if ( '' === $filename ) {
+			$post_title = get_the_title( $attachment_id );
+			$filename   = '' !== $post_title ? $post_title : sprintf( 'Attachment #%d', $attachment_id );
+		}
+
+		$thumb_url = wp_get_attachment_image_url( $attachment_id, 'thumbnail' );
+
+		static::update_state(
+			array(
+				'current'      => $attachment_id,
+				'current_item' => array(
+					'id'        => $attachment_id,
+					'title'     => $filename,
+					'thumb'     => $thumb_url ? $thumb_url : '',
+					'status'    => 'processing',
+					'timestamp' => time(),
+				),
+			)
+		);
 
 		$ok = $this->process_item( $attachment_id );
 
@@ -441,10 +523,11 @@ abstract class AbstractBulkProcessor extends WP_Background_Process {
 
 		static::update_state(
 			array(
-				'processed' => (int) $state['processed'] + 1,
-				'errors'    => (int) $state['errors'] + ( $ok ? 0 : 1 ),
-				'current'   => 0,
-				'recent'    => array_slice( $recent, 0, static::RECENT_LIMIT ),
+				'processed'    => (int) $state['processed'] + 1,
+				'errors'       => (int) $state['errors'] + ( $ok ? 0 : 1 ),
+				'current'      => 0,
+				'current_item' => null,
+				'recent'       => array_slice( $recent, 0, static::RECENT_LIMIT ),
 			)
 		);
 
@@ -497,9 +580,10 @@ abstract class AbstractBulkProcessor extends WP_Background_Process {
 	protected function trip_breaker( $streak ) {
 		static::update_state(
 			array(
-				'status'  => 'failed',
-				'current' => 0,
-				'message' => sprintf(
+				'status'       => 'failed',
+				'current'      => 0,
+				'current_item' => null,
+				'message'      => sprintf(
 					/* translators: %d: number of consecutive failures. */
 					_n(
 						'Stopped after %d failure in a row. Check the connection to your storage provider, then try again.',
@@ -589,8 +673,9 @@ abstract class AbstractBulkProcessor extends WP_Background_Process {
 
 		static::update_state(
 			array(
-				'status'  => 'done',
-				'current' => 0,
+				'status'       => 'done',
+				'current'      => 0,
+				'current_item' => null,
 			)
 		);
 
@@ -615,6 +700,9 @@ abstract class AbstractBulkProcessor extends WP_Background_Process {
 		$this->clear_scheduled_event();
 		$this->purge_queue();
 		$this->cancelled();
+
+		delete_site_option( $this->get_status_key() );
+		delete_site_transient( $this->identifier . '_process_lock' );
 	}
 
 	/**
@@ -627,8 +715,9 @@ abstract class AbstractBulkProcessor extends WP_Background_Process {
 
 		static::update_state(
 			array(
-				'status'  => 'cancelled',
-				'current' => 0,
+				'status'       => 'cancelled',
+				'current'      => 0,
+				'current_item' => null,
 			)
 		);
 

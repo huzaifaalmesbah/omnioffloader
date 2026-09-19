@@ -631,6 +631,7 @@ class OffloadStatusObserver implements ObserverInterface {
 			'omnioffloaderMedia',
 			array(
 				'restUrl'     => esc_url_raw( rest_url( 'omnioffloader/v1/offload/attachment-status' ) ),
+				'bulkUrl'     => esc_url_raw( rest_url( 'omnioffloader/v1/bulk/action' ) ),
 				'offloadUrl'  => esc_url_raw( rest_url( 'omnioffloader/v1/offload/attachment/' ) ),
 				'restoreUrl'  => esc_url_raw( rest_url( 'omnioffloader/v1/bring-back/attachment/' ) ),
 				'nonce'       => wp_create_nonce( 'wp_rest' ),
@@ -646,6 +647,7 @@ class OffloadStatusObserver implements ObserverInterface {
 					'retry'      => __( 'Retry Offload', 'omnioffloader' ),
 					'offloadNow' => __( 'Offload now', 'omnioffloader' ),
 					'bringBack'  => __( 'Bring Back', 'omnioffloader' ),
+					'queued'     => __( 'Queued...', 'omnioffloader' ),
 				),
 			)
 		);

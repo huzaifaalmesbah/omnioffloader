@@ -1552,6 +1552,12 @@
 			border-color: #fca5a5;
 			background: #fffafa;
 		}
+
+		&.is-processing {
+			border-color: #38bdf8;
+			background: #f0f9ff;
+			box-shadow: 0 0 0 1px #38bdf8;
+		}
 	}
 
 	&__thumb {
@@ -1605,6 +1611,11 @@
 		text-overflow: ellipsis;
 	}
 
+	&__status-now {
+		color: #0284c7;
+		font-weight: 600;
+	}
+
 	&__error-text {
 		color: #b32d2e;
 		font-weight: 500;
@@ -1616,6 +1627,25 @@
 		.smowp-badge {
 			padding: 2px 8px;
 			font-size: 11px;
+
+			&--processing {
+				background: #e0f2fe;
+				color: #0369a1;
+				border: 1px solid #bae6fd;
+				font-weight: 600;
+				display: inline-flex;
+				align-items: center;
+				gap: 5px;
+			}
+		}
+
+		.smowp-spinner-dot {
+			display: inline-block;
+			width: 6px;
+			height: 6px;
+			border-radius: 50%;
+			background-color: #0284c7;
+			animation: smowp-badge-pulse 1.2s ease-in-out infinite;
 		}
 	}
 

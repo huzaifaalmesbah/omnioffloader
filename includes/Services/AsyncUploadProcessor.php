@@ -107,14 +107,58 @@ class AsyncUploadProcessor extends WP_Background_Process {
 	}
 
 	/**
+	 * Save the queued items and flag the queue as active.
+	 *
+	 * @return $this
+	 */
+	public function save() {
+		set_site_transient( 'omnioffloader_async_has_queue', 1, DAY_IN_SECONDS );
+
+		return parent::save();
+	}
+
+	/**
+	 * Whether the async processor has pending items in queue.
+	 *
+	 * Uses a transient flag to avoid querying the database with LIKE queries
+	 * during routine REST status checks.
+	 *
+	 * @return bool
+	 */
+	public function has_pending_items() {
+		if ( ! get_site_transient( 'omnioffloader_async_has_queue' ) ) {
+			return false;
+		}
+
+		if ( $this->is_queue_empty() ) {
+			delete_site_transient( 'omnioffloader_async_has_queue' );
+			return false;
+		}
+
+		return true;
+	}
+
+	/**
 	 * Process pending items inline if loopback dispatch is delayed.
 	 *
 	 * @return void
 	 */
 	public function process_queue_now() {
-		if ( ! $this->is_processing() && ! $this->is_queue_empty() ) {
-			$this->handle();
+		if ( ! $this->has_pending_items() || $this->is_processing() ) {
+			return;
 		}
+
+		$this->handle();
+	}
+
+	/**
+	 * Complete processing and clean up active flag.
+	 *
+	 * @return void
+	 */
+	protected function complete() {
+		delete_site_transient( 'omnioffloader_async_has_queue' );
+		parent::complete();
 	}
 
 	/**
@@ -137,6 +181,7 @@ class AsyncUploadProcessor extends WP_Background_Process {
 		}
 
 		delete_site_transient( $identifier . '_process_lock' );
+		delete_site_transient( 'omnioffloader_async_has_queue' );
 		wp_clear_scheduled_hook( $identifier . '_cron' );
 	}
 }

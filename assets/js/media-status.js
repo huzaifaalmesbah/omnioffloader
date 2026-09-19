@@ -20,21 +20,32 @@
 	function scheduleInFlightPoll(delay) {
 		if (pollTimer) {
 			clearTimeout(pollTimer);
+			pollTimer = null;
 		}
+
+		if (document.hidden) {
+			// If tab is hidden, only poll if bulk job is active, at a slow 12s rate.
+			if (!isBulkRunning) {
+				return;
+			}
+			delay = Math.max(delay || 0, 12000);
+		}
+
 		pollTimer = setTimeout(checkInFlight, delay || 2000);
 	}
 
 	// 1. AJAX Row Actions in Media Library List View
 	$(document).on('click', '.omnioffloader-row-action', function(e) {
-		e.preventDefault();
-
 		var $link = $(this);
-		var attachmentId = $link.data('attachment-id');
 		var action = $link.data('action'); // 'offload' or 'restore'
 
-		if ($link.hasClass('is-busy')) {
+		if ($link.hasClass('is-busy') || !$link.is('a') || !action) {
 			return;
 		}
+
+		e.preventDefault();
+
+		var attachmentId = $link.data('attachment-id');
 		$link.addClass('is-busy');
 
 		var $row = $link.closest('tr');
@@ -73,7 +84,7 @@
 			}
 
 			if (response && response.row_action_html) {
-				var $container = $link.closest('.omnioffloader_offload, .omnioffloader_restore');
+				var $container = $link.closest('.omnioffloader_offload, .omnioffloader_restore, .omnioffloader_action, .omnioffloader_processing, .omnioffloader_queued');
 				if ($container.length) {
 					$container.replaceWith(response.row_action_html);
 				} else {
@@ -187,8 +198,11 @@
 			}
 
 			if (response && response.row_action_html) {
-				var $rowAction = $('.omnioffloader-row-action[data-attachment-id="' + attachmentId + '"]').closest('.omnioffloader_offload, .omnioffloader_restore');
-				if ($rowAction.length) {
+				var $rowAction = $('.omnioffloader-row-action[data-attachment-id="' + attachmentId + '"]');
+				var $container = $rowAction.closest('.omnioffloader_offload, .omnioffloader_restore, .omnioffloader_action, .omnioffloader_processing, .omnioffloader_queued');
+				if ($container.length) {
+					$container.replaceWith(response.row_action_html);
+				} else if ($rowAction.length) {
 					$rowAction.replaceWith(response.row_action_html);
 				}
 			}
@@ -222,60 +236,127 @@
 		});
 	});
 
-	// 3. In-flight Background Queue Poller (Checks cells, details badges & Meta Boxes)
-	function checkInFlight() {
-		if (!config.restUrl) {
-			return;
-		}
+	// 3. Helper to collect all visible attachment states on screen
+	function getVisibleAttachmentStates() {
+		var items = [];
+		var seen = {};
 
-		var $cells = $('.omnioffloader-status-cell--processing, .omnioffloader-status-cell--queued');
-		var $badges = $('.omnioffloader-details-badge--processing, .omnioffloader-details-badge--queued');
-
-		if (!$cells.length && !$badges.length) {
-			return;
-		}
-
-		var ids = [];
-		$cells.each(function() {
+		// Media library list view cells
+		$('.omnioffloader-status-cell').each(function() {
 			var id = $(this).data('attachment-id');
-			if (id && ids.indexOf(id) === -1) {
-				ids.push(id);
-			}
-		});
-		$badges.each(function() {
-			var id = $(this).data('attachment-id');
-			if (id && ids.indexOf(id) === -1) {
-				ids.push(id);
+			var status = $(this).attr('data-status') || '';
+			if (id && !seen[id]) {
+				seen[id] = true;
+				items.push({ id: id, status: status });
 			}
 		});
 
-		if (!ids.length) {
+		// Meta Box on post.php
+		$('.omnioffloader-meta-box-wrap').each(function() {
+			var id = $(this).data('attachment-id');
+			var status = $(this).attr('data-status') || '';
+			if (id && !seen[id]) {
+				seen[id] = true;
+				items.push({ id: id, status: status });
+			}
+		});
+
+		// Modal details badges
+		$('.omnioffloader-details-badge').each(function() {
+			var id = $(this).data('attachment-id');
+			var status = $(this).attr('data-status') || '';
+			if (id && !seen[id]) {
+				seen[id] = true;
+				items.push({ id: id, status: status });
+			}
+		});
+
+		return items;
+	}
+
+	var isBulkRunning = false;
+	var inFlightCheckRunning = false;
+
+	// 4. In-flight Background Queue Poller (Checks visible cells, details badges & Meta Boxes)
+	function checkInFlight(force) {
+		if (!config.restUrl || inFlightCheckRunning) {
 			return;
+		}
+
+		var visibleItems = getVisibleAttachmentStates();
+
+		if (!visibleItems.length && !force) {
+			return;
+		}
+
+		var queryItems = visibleItems.slice(0, 100);
+		var queryIds = [];
+		var knownPairs = [];
+
+		for (var i = 0; i < queryItems.length; i++) {
+			queryIds.push(queryItems[i].id);
+			if (queryItems[i].status) {
+				knownPairs.push(queryItems[i].id + ':' + queryItems[i].status);
+			}
+		}
+
+		inFlightCheckRunning = true;
+
+		var url = config.restUrl;
+		var params = [];
+		if (queryIds.length) {
+			params.push('ids=' + queryIds.join(','));
+		}
+		if (knownPairs.length) {
+			params.push('known=' + encodeURIComponent(knownPairs.join(',')));
+		}
+		if (params.length) {
+			url += (url.indexOf('?') === -1 ? '?' : '&') + params.join('&');
 		}
 
 		$.ajax({
-			url: config.restUrl + '?ids=' + ids.join(','),
+			url: url,
 			method: 'GET',
 			headers: { 'X-WP-Nonce': config.nonce },
 			dataType: 'json'
-		}).done(function(statuses) {
-			var stillBusy = 0;
+		}).done(function(response) {
+			var bulk = (response && response.bulk) ? response.bulk : null;
+			var statuses = (response && response.statuses) ? response.statuses : response;
 
-			$.each(statuses, function(id, data) {
-				if (data.status === 'processing' || data.status === 'queued') {
-					stillBusy++;
-				} else {
+			isBulkRunning = (bulk && bulk.active) ? true : false;
+			var hasProcessingItems = false;
+
+			if (statuses && typeof statuses === 'object') {
+				$.each(statuses, function(id, data) {
+					if (!data || typeof data !== 'object') {
+						return;
+					}
+
+					var statusKey = data.status;
+					if (statusKey === 'processing' || statusKey === 'queued') {
+						hasProcessingItems = true;
+					}
+
 					// Update list view cell
 					var $cell = $('.omnioffloader-status-cell[data-attachment-id="' + id + '"]');
 					if ($cell.length && data.column_html) {
-						$cell.replaceWith(data.column_html);
-						$('.omnioffloader-status-cell[data-attachment-id="' + id + '"]').addClass('omnioffloader-updated');
+						var currentStatus = $cell.attr('data-status');
+						if (currentStatus !== statusKey) {
+							$cell.replaceWith(data.column_html);
+							var $newCell = $('.omnioffloader-status-cell[data-attachment-id="' + id + '"]');
+							if (statusKey !== 'processing' && statusKey !== 'queued') {
+								$newCell.addClass('omnioffloader-updated');
+							}
+						}
 					}
 
 					// Update list view row action
 					if (data.row_action_html) {
-						var $rowAction = $('.omnioffloader-row-action[data-attachment-id="' + id + '"]').closest('.omnioffloader_offload, .omnioffloader_restore');
-						if ($rowAction.length) {
+						var $rowAction = $('.omnioffloader-row-action[data-attachment-id="' + id + '"]');
+						var $container = $rowAction.closest('.omnioffloader_offload, .omnioffloader_restore, .omnioffloader_action, .omnioffloader_processing, .omnioffloader_queued');
+						if ($container.length) {
+							$container.replaceWith(data.row_action_html);
+						} else if ($rowAction.length) {
 							$rowAction.replaceWith(data.row_action_html);
 						}
 					}
@@ -283,49 +364,179 @@
 					// Update Meta Box on post.php
 					var $metaBox = $('.omnioffloader-meta-box-wrap[data-attachment-id="' + id + '"]');
 					if ($metaBox.length && data.meta_box_html) {
-						$metaBox.replaceWith(data.meta_box_html);
+						var currentMetaStatus = $metaBox.attr('data-status');
+						if (currentMetaStatus !== statusKey) {
+							$metaBox.replaceWith(data.meta_box_html);
+						}
 					}
 
 					// Update modal details badge
 					var $badge = $('.omnioffloader-details-badge[data-attachment-id="' + id + '"]:not(.omnioffloader-meta-box-wrap)');
 					if ($badge.length && data.badge_html) {
-						$badge.replaceWith(data.badge_html);
-						$('.omnioffloader-details-badge[data-attachment-id="' + id + '"]:not(.omnioffloader-meta-box-wrap)').addClass('omnioffloader-updated');
+						var currentBadgeStatus = $badge.attr('data-status');
+						if (currentBadgeStatus !== statusKey) {
+							$badge.replaceWith(data.badge_html);
+							if (statusKey !== 'processing' && statusKey !== 'queued') {
+								$('.omnioffloader-details-badge[data-attachment-id="' + id + '"]:not(.omnioffloader-meta-box-wrap)').addClass('omnioffloader-updated');
+							}
+						}
 					}
 
 					// Update Backbone media model if available
 					if (window.wp && wp.media && wp.media.attachment) {
 						var m = wp.media.attachment(id);
 						if (m && m.get('omnioffloader')) {
-							m.set('omnioffloader', $.extend({}, m.get('omnioffloader'), {
-								status: data.status,
-								is_offloaded: (data.status === 'offloaded'),
-								badge_html: data.badge_html,
-								column_html: data.column_html
-							}));
+							var prev = m.get('omnioffloader');
+							if (prev && prev.status !== statusKey) {
+								m.set('omnioffloader', $.extend({}, prev, {
+									status: statusKey,
+									is_offloaded: (statusKey === 'offloaded'),
+									badge_html: data.badge_html,
+									column_html: data.column_html
+								}));
+							}
 						}
 					}
-				}
-			});
+				});
+			}
 
-			if (stillBusy > 0) {
-				pollTimer = setTimeout(checkInFlight, 2500);
+			// If a bulk job is running, mark the current active item as busy if visible
+			if (bulk && bulk.active && bulk.current_id) {
+				var curId = bulk.current_id;
+				var curType = bulk.type || 'offload';
+				var curText = (curType === 'restore')
+					? (config.i18n && config.i18n.restoring ? config.i18n.restoring : 'Restoring...')
+					: (config.i18n && config.i18n.offloading ? config.i18n.offloading : 'Offloading...');
+				var $curAction = $('.omnioffloader-row-action[data-attachment-id="' + curId + '"]');
+				if ($curAction.length && !$curAction.hasClass('is-busy')) {
+					$curAction.addClass('is-busy').text(curText);
+				}
+			}
+
+			// Keep polling if a bulk job is running or any items on screen are in flight
+			if (isBulkRunning || hasProcessingItems) {
+				scheduleInFlightPoll(1800);
+			}
+		}).always(function() {
+			inFlightCheckRunning = false;
+		});
+	}
+
+	// 5. Intercept Media Library Bulk Action Dropdown for Instant AJAX Execution
+	$(document).on('click', '#doaction, #doaction2', function(e) {
+		var isTop = (this.id === 'doaction');
+		var actionValue = isTop
+			? $('#bulk-action-selector-top').val()
+			: $('#bulk-action-selector-bottom').val();
+
+		if (actionValue !== 'omnioffloader_bulk_offload' && actionValue !== 'omnioffloader_bulk_restore') {
+			return;
+		}
+
+		var $checkedBoxes = $('tbody th.check-column input[type="checkbox"]:checked');
+		if (!$checkedBoxes.length) {
+			return;
+		}
+
+		e.preventDefault();
+
+		var actionType = (actionValue === 'omnioffloader_bulk_offload') ? 'offload' : 'restore';
+		var loadingText = (actionType === 'restore')
+			? (config.i18n && config.i18n.restoring ? config.i18n.restoring : 'Restoring...')
+			: (config.i18n && config.i18n.offloading ? config.i18n.offloading : 'Offloading...');
+
+		var selectedIds = [];
+		$checkedBoxes.each(function() {
+			var val = parseInt($(this).val(), 10);
+			if (val) {
+				selectedIds.push(val);
+			}
+		});
+
+		if (!selectedIds.length) {
+			return;
+		}
+
+		// Immediately update all eligible selected rows to processing spinners and row action text
+		$.each(selectedIds, function(idx, id) {
+			var $cell = $('.omnioffloader-status-cell[data-attachment-id="' + id + '"]');
+			var currentStatus = $cell.length ? $cell.attr('data-status') : '';
+
+			// Skip items already in target state
+			if (actionType === 'offload' && currentStatus === 'offloaded') {
+				return;
+			}
+			if (actionType === 'restore' && (currentStatus === 'local' || currentStatus === 'failed')) {
+				return;
+			}
+
+			if ($cell.length) {
+				$cell.attr('class', 'omnioffloader-status-cell omnioffloader-status-cell--processing')
+					.attr('data-status', 'processing')
+					.html(
+						'<span class="omnioffloader-status-icon omnioffloader-status-icon--processing" title="' + loadingText + '">' +
+						spinnerIcon +
+						'<span class="screen-reader-text">' + loadingText + '</span></span>'
+					);
+			}
+
+			var $rowAction = $('.omnioffloader-row-action[data-attachment-id="' + id + '"]');
+			if ($rowAction.length) {
+				$rowAction.addClass('is-busy').text(loadingText);
+			}
+		});
+
+		// Uncheck all selected checkboxes and reset dropdown
+		$checkedBoxes.prop('checked', false);
+		$('#cb-select-all-1, #cb-select-all-2').prop('checked', false);
+		$('#bulk-action-selector-top, #bulk-action-selector-bottom').val('-1');
+
+		var bulkEndpoint = config.bulkUrl || (config.restUrl ? config.restUrl.replace('offload/attachment-status', 'bulk/action') : '');
+		if (bulkEndpoint) {
+			$.ajax({
+				url: bulkEndpoint,
+				method: 'POST',
+				headers: { 'X-WP-Nonce': config.nonce },
+				contentType: 'application/json',
+				data: JSON.stringify({
+					action: actionType,
+					ids: selectedIds
+				}),
+				dataType: 'json'
+			}).done(function() {
+				isBulkRunning = true;
+				scheduleInFlightPoll(1000);
+			}).fail(function() {
+				scheduleInFlightPoll(1500);
+			});
+		}
+	});
+
+	$(document).ready(function() {
+		// Run initial check on page load to detect running bulk jobs or in-flight items
+		checkInFlight(true);
+	});
+
+	// Wake up poller when user returns to this browser tab
+	$(window).on('focus', function() {
+		checkInFlight(true);
+	});
+
+	if (typeof document.addEventListener === 'function') {
+		document.addEventListener('visibilitychange', function() {
+			if (!document.hidden) {
+				checkInFlight(true);
+			} else if (!isBulkRunning && pollTimer) {
+				clearTimeout(pollTimer);
+				pollTimer = null;
 			}
 		});
 	}
 
-	$(document).ready(function() {
-		if ($('.omnioffloader-status-cell--processing, .omnioffloader-status-cell--queued, .omnioffloader-details-badge--processing, .omnioffloader-details-badge--queued').length) {
-			scheduleInFlightPoll(1500);
-		}
-	});
-
 	// Trigger in-flight check when an attachment modal is opened in Grid View
 	$(document).on('click', '.attachments .attachment', function() {
 		setTimeout(function() {
-			if ($('.omnioffloader-details-badge--processing, .omnioffloader-details-badge--queued').length) {
-				scheduleInFlightPoll(800);
-			}
+			checkInFlight(true);
 		}, 300);
 	});
 

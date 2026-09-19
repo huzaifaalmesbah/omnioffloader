@@ -55,12 +55,26 @@ class BulkRestoreProcessor extends AbstractBulkProcessor {
 	}
 
 	/**
-	 * Queue every offloaded attachment and start processing.
+	 * Queue offloaded attachments and start processing.
 	 *
-	 * @param bool $delete_cloud Also delete cloud objects after each verified restore.
+	 * @param bool       $delete_cloud Also delete cloud objects after each verified restore.
+	 * @param int[]|null $ids          Optional specific attachment IDs to queue.
 	 * @return int Number of queued attachments.
 	 */
-	public function start( $delete_cloud = false ) {
+	public function start( $delete_cloud = false, ?array $ids = null ) {
+		if ( null !== $ids ) {
+			$valid_ids = array();
+			foreach ( $ids as $id ) {
+				$id = (int) $id;
+				if ( 'attachment' === get_post_type( $id ) && self::is_offloaded( $id ) ) {
+					update_post_meta( $id, 'omnioffloader_status', 'queued' );
+					$valid_ids[] = $id;
+				}
+			}
+
+			return $this->start_queue( array( 'delete_cloud' => (bool) $delete_cloud ), $valid_ids );
+		}
+
 		return $this->start_queue( array( 'delete_cloud' => (bool) $delete_cloud ) );
 	}
 

@@ -10,6 +10,7 @@ namespace OmniOffloader\Api;
 use OmniOffloader\Core\Plugin;
 use OmniOffloader\Services\AttachmentUploader;
 use OmniOffloader\Services\BulkOffloadProcessor;
+use OmniOffloader\Services\BulkRestoreProcessor;
 use OmniOffloader\Traits\AttachmentHelper;
 use WP_REST_Request;
 
@@ -67,15 +68,47 @@ class OffloadController extends BaseController {
 
 		register_rest_route(
 			$this->namespace,
+			'/bulk/action',
+			array(
+				'methods'             => \WP_REST_Server::CREATABLE,
+				'callback'            => array( $this, 'bulk_action_response' ),
+				'permission_callback' => array( $this, 'media_permissions_check' ),
+				'args'                => array(
+					'action' => array(
+						'type'              => 'string',
+						'required'          => true,
+						'enum'              => array( 'offload', 'restore' ),
+						'sanitize_callback' => 'sanitize_key',
+					),
+					'ids'    => array(
+						'type'     => 'array',
+						'required' => true,
+						'items'    => array(
+							'type' => 'integer',
+						),
+					),
+				),
+			)
+		);
+
+		register_rest_route(
+			$this->namespace,
 			'/offload/attachment-status',
 			array(
 				'methods'             => \WP_REST_Server::READABLE,
 				'callback'            => array( $this, 'attachment_status_response' ),
 				'permission_callback' => array( $this, 'media_permissions_check' ),
 				'args'                => array(
-					'ids' => array(
+					'ids'   => array(
 						'type'              => 'string',
-						'required'          => true,
+						'required'          => false,
+						'default'           => '',
+						'sanitize_callback' => 'sanitize_text_field',
+					),
+					'known' => array(
+						'type'              => 'string',
+						'required'          => false,
+						'default'           => '',
 						'sanitize_callback' => 'sanitize_text_field',
 					),
 				),
@@ -280,45 +313,173 @@ class OffloadController extends BaseController {
 	}
 
 	/**
+	 * POST /bulk/action
+	 *
+	 * Triggers bulk offload or bulk restore on selected attachment IDs.
+	 *
+	 * @param WP_REST_Request $request Request.
+	 * @return \WP_REST_Response|\WP_Error
+	 */
+	public function bulk_action_response( WP_REST_Request $request ) {
+		$action  = (string) $request->get_param( 'action' );
+		$raw_ids = (array) $request->get_param( 'ids' );
+		$ids     = array_filter( array_map( 'absint', $raw_ids ) );
+
+		if ( empty( $ids ) ) {
+			return new \WP_Error(
+				'omnioffloader_no_ids',
+				__( 'No attachment IDs provided.', 'omnioffloader' ),
+				array( 'status' => 400 )
+			);
+		}
+
+		if ( 'offload' === $action ) {
+			$engine = $this->require_engine();
+			if ( is_wp_error( $engine ) ) {
+				return $engine;
+			}
+
+			$queued = $engine->start( $ids );
+
+			return rest_ensure_response(
+				array(
+					'success' => true,
+					'action'  => 'offload',
+					'queued'  => $queued,
+					'ids'     => $ids,
+				)
+			);
+		}
+
+		$restore_engine = Plugin::get_instance()->get_bulk_restore();
+		if ( null === $restore_engine ) {
+			return new \WP_Error(
+				'omnioffloader_not_configured',
+				__( 'Bulk restore engine is not available.', 'omnioffloader' ),
+				array( 'status' => 409 )
+			);
+		}
+
+		$queued = $restore_engine->start( false, $ids );
+
+		return rest_ensure_response(
+			array(
+				'success' => true,
+				'action'  => 'restore',
+				'queued'  => $queued,
+				'ids'     => $ids,
+			)
+		);
+	}
+
+	/**
 	 * GET /offload/attachment-status?ids=139,140
 	 *
-	 * Returns current offload status for requested attachment IDs.
+	 * Returns current offload status for requested attachment IDs and active bulk state.
 	 *
 	 * @param WP_REST_Request $request Request.
 	 * @return \WP_REST_Response
 	 */
 	public function attachment_status_response( WP_REST_Request $request ) {
+		// Self-healing: if loopback was delayed, process queued items inline during poll.
+		$async = Plugin::get_instance()->get_async_upload();
+		if ( null !== $async && $async->has_pending_items() ) {
+			$async->process_queue_now();
+		}
+
+		$bulk_offload = Plugin::get_instance()->get_bulk_offload();
+		if ( null !== $bulk_offload && $bulk_offload->is_active() ) {
+			$bulk_offload->process_queue_now();
+		}
+
+		$bulk_restore = Plugin::get_instance()->get_bulk_restore();
+		if ( null !== $bulk_restore && $bulk_restore->is_active() ) {
+			$bulk_restore->process_queue_now();
+		}
+
+		$offload_state = BulkOffloadProcessor::get_state();
+		$restore_state = BulkRestoreProcessor::get_state();
+
+		$is_offload_active = ( null !== $bulk_offload && $bulk_offload->is_active() && 'running' === ( $offload_state['status'] ?? '' ) );
+		$is_restore_active = ( null !== $bulk_restore && $bulk_restore->is_active() && 'running' === ( $restore_state['status'] ?? '' ) );
+
+		$bulk_active = $is_offload_active || $is_restore_active;
+		$bulk_type   = $is_offload_active ? 'offload' : ( $is_restore_active ? 'restore' : '' );
+		$current_id  = $is_offload_active ? (int) ( $offload_state['current'] ?? 0 ) : (int) ( $restore_state['current'] ?? 0 );
+
 		$raw_ids = (string) $request->get_param( 'ids' );
 		$id_list = array_filter( array_map( 'absint', explode( ',', $raw_ids ) ) );
 
 		// Cap requested IDs to 100 per request.
 		$id_list = array_slice( array_unique( $id_list ), 0, 100 );
 
-		// Self-healing: if loopback was delayed, process queued item inline during poll.
-		$async = Plugin::get_instance()->get_async_upload();
-		if ( null !== $async ) {
-			$async->process_queue_now();
+		// Parse known status map if supplied by client (e.g. known=123:offloaded,124:local).
+		// When known status matches current status for a non-transitional item, HTML snippets
+		// are omitted to reduce response payload by ~95% and avoid redundant rendering.
+		$raw_known = (string) $request->get_param( 'known' );
+		$known_map = array();
+		if ( '' !== $raw_known ) {
+			foreach ( explode( ',', $raw_known ) as $pair ) {
+				$parts = explode( ':', trim( $pair ), 2 );
+				if ( 2 === count( $parts ) ) {
+					$known_map[ (int) $parts[0] ] = sanitize_key( $parts[1] );
+				}
+			}
 		}
 
 		$statuses     = array();
 		$provider     = Plugin::get_instance()->get_provider();
-		$observer     = new \OmniOffloader\Offload\Observers\OffloadStatusObserver( $provider );
-		$row_observer = new \OmniOffloader\Offload\Observers\RowActionsObserver( $provider );
+		$observer     = null;
+		$row_observer = null;
 
 		foreach ( $id_list as $attachment_id ) {
 			if ( 'attachment' !== get_post_type( $attachment_id ) ) {
 				continue;
 			}
 
-			$status_data                    = self::get_attachment_status( $attachment_id );
-			$status_data['column_html']     = $observer->render_column_icon( $attachment_id );
-			$status_data['badge_html']      = $observer->render_details_badge( $attachment_id );
-			$status_data['meta_box_html']   = $observer->render_meta_box_content( $attachment_id );
-			$status_data['row_action_html'] = $row_observer->render_action_link( $attachment_id );
+			$status_data = self::get_attachment_status( $attachment_id );
+
+			if ( $bulk_active && $current_id > 0 && $current_id === $attachment_id && 'processing' !== ( $status_data['status'] ?? '' ) ) {
+				$status_data['status'] = 'processing';
+				$status_data['label']  = 'restore' === $bulk_type ? __( 'Restoring...', 'omnioffloader' ) : __( 'Offloading...', 'omnioffloader' );
+			}
+
+			$current_status = (string) ( $status_data['status'] ?? '' );
+			$known_status   = $known_map[ $attachment_id ] ?? null;
+
+			// If client already knows this exact status, and item is not in an active
+			// transitional state (processing/queued), omit HTML snippets.
+			$is_unchanged = ( null !== $known_status && $known_status === $current_status );
+			$is_active    = ( 'processing' === $current_status || 'queued' === $current_status );
+
+			if ( ! $is_unchanged || $is_active ) {
+				if ( null === $observer && null !== $provider ) {
+					$observer     = new \OmniOffloader\Offload\Observers\OffloadStatusObserver( $provider );
+					$row_observer = new \OmniOffloader\Offload\Observers\RowActionsObserver( $provider );
+				}
+
+				if ( null !== $observer && null !== $row_observer ) {
+					$status_data['column_html']     = $observer->render_column_icon( $attachment_id );
+					$status_data['badge_html']      = $observer->render_details_badge( $attachment_id );
+					$status_data['meta_box_html']   = $observer->render_meta_box_content( $attachment_id );
+					$status_data['row_action_html'] = $row_observer->render_action_link( $attachment_id );
+				}
+			}
 
 			$statuses[ (string) $attachment_id ] = $status_data;
 		}
 
-		return rest_ensure_response( $statuses );
+		return rest_ensure_response(
+			array(
+				'bulk'     => array(
+					'active'     => $bulk_active,
+					'type'       => $bulk_type,
+					'current_id' => $current_id,
+					'total'      => $is_offload_active ? (int) ( $offload_state['total'] ?? 0 ) : (int) ( $restore_state['total'] ?? 0 ),
+					'processed'  => $is_offload_active ? (int) ( $offload_state['processed'] ?? 0 ) : (int) ( $restore_state['processed'] ?? 0 ),
+				),
+				'statuses' => $statuses,
+			)
+		);
 	}
 }

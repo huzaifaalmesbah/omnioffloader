@@ -48,7 +48,7 @@ export function BringBackPage() {
 			__( '%d error(s) encountered', 'omnioffloader' ),
 			state.errors
 		);
-	} else if ( state?.delete_cloud ) {
+	} else if ( state?.delete_cloud && running ) {
 		statusDetail = __(
 			'Cloud objects deleting after restore',
 			'omnioffloader'
@@ -445,15 +445,20 @@ export function BringBackPage() {
 											</span>
 										) }
 										<span className="smowp-progress-card__count">
-											{ sprintf(
-												/* translators: 1: processed count, 2: total count. */
-												__(
-													'%1$d of %2$d processed',
-													'omnioffloader'
-												),
-												state.processed,
-												state.total
-											) }
+											{ state.total === 0 && running
+												? __(
+														'Preparing restore…',
+														'omnioffloader'
+												  )
+												: sprintf(
+														/* translators: 1: brought back count, 2: total count. */
+														__(
+															'%1$d of %2$d brought back',
+															'omnioffloader'
+														),
+														state.processed,
+														state.total
+												  ) }
 										</span>
 									</div>
 
@@ -525,8 +530,11 @@ export function BringBackPage() {
 
 								<ActivityLog
 									items={ state.recent }
+									currentItem={ state.current_item }
 									actionType="restore"
 									running={ running }
+									total={ state.total }
+									processed={ state.processed }
 								/>
 							</div>
 						) }

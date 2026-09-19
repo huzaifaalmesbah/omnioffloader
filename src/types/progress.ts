@@ -13,7 +13,7 @@ export type BulkStatus =
 export interface ProcessedMediaItem {
 	id: number;
 	title: string;
-	status: 'success' | 'error';
+	status: 'success' | 'error' | 'processing';
 	timestamp: number;
 	thumb?: string;
 	error?: string;
@@ -29,6 +29,8 @@ export interface BulkState {
 	message?: string;
 	/** Attachment in flight, 0 when idle. */
 	current?: number;
+	/** Current item details in flight. */
+	current_item?: ProcessedMediaItem | null;
 	recent?: ProcessedMediaItem[];
 }
 

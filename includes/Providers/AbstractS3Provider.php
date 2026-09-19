@@ -347,6 +347,10 @@ abstract class AbstractS3Provider implements ProviderInterface {
 							array(
 								'Bucket' => $bucket,
 								'Key'    => $key,
+								'@http'  => array(
+									'connect_timeout' => static::CONNECT_TIMEOUT,
+									'timeout'         => 5,
+								),
 							)
 						);
 					} catch ( \Exception $inner ) {

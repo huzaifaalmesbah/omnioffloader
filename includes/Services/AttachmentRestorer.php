@@ -86,9 +86,10 @@ class AttachmentRestorer {
 			return false;
 		}
 
-		$all_ok = true;
+		$all_files = array_merge( $files['main'], $files['sizes'] );
+		$all_ok    = true;
 
-		foreach ( array_merge( $files['main'], $files['sizes'] ) as $entry ) {
+		foreach ( $all_files as $entry ) {
 			if ( ! $this->restore_file( $attachment_id, $provider, $entry['key'], $entry['file'], $base_real ) ) {
 				$all_ok = false;
 			}

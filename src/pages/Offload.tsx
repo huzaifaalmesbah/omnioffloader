@@ -255,15 +255,20 @@ export function OffloadPage() {
 											</span>
 										) }
 										<span className="smowp-progress-card__count">
-											{ sprintf(
-												/* translators: 1: processed count, 2: total count. */
-												__(
-													'%1$d of %2$d processed',
-													'omnioffloader'
-												),
-												state.processed,
-												state.total
-											) }
+											{ state.total === 0 && running
+												? __(
+														'Preparing offload…',
+														'omnioffloader'
+												  )
+												: sprintf(
+														/* translators: 1: uploaded count, 2: total count. */
+														__(
+															'%1$d of %2$d uploaded',
+															'omnioffloader'
+														),
+														state.processed,
+														state.total
+												  ) }
 										</span>
 									</div>
 
@@ -347,8 +352,11 @@ export function OffloadPage() {
 
 								<ActivityLog
 									items={ state.recent }
+									currentItem={ state.current_item }
 									actionType="offload"
 									running={ running }
+									total={ state.total }
+									processed={ state.processed }
 								/>
 							</div>
 						) }

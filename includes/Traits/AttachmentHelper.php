@@ -382,6 +382,14 @@ trait AttachmentHelper {
 				);
 			}
 
+			if ( 'queued' === $status ) {
+				return array(
+					'status'       => 'queued',
+					'is_offloaded' => true,
+					'label'        => __( 'Queued for restore', 'omnioffloader' ),
+				);
+			}
+
 			$provider_key = (string) get_post_meta( $attachment_id, 'omnioffloader_provider', true );
 			$bucket       = (string) get_post_meta( $attachment_id, 'omnioffloader_bucket', true );
 			$offloaded_at = (int) get_post_meta( $attachment_id, 'omnioffloader_offloaded_at', true );

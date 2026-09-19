@@ -82,6 +82,9 @@ export function useBringBack() {
 				// Ease off as the run settles in: a multi-hour job does not
 				// need second-by-second updates.
 				delay.current = Math.min( POLL_MAX, delay.current + POLL_STEP );
+				if ( document.hidden ) {
+					delay.current = Math.max( delay.current, 12000 );
+				}
 				schedule();
 			} )
 			.catch( () => {
@@ -97,10 +100,28 @@ export function useBringBack() {
 		tick.current = poll;
 	}, [ poll ] );
 
+	useEffect( () => {
+		const handleVisibility = () => {
+			if ( ! document.hidden && state?.status === 'running' ) {
+				delay.current = POLL_MIN;
+				if ( timer.current !== null ) {
+					window.clearTimeout( timer.current );
+				}
+				timer.current = window.setTimeout( () => tick.current(), 100 );
+			}
+		};
+
+		document.addEventListener( 'visibilitychange', handleVisibility );
+		return () => {
+			document.removeEventListener( 'visibilitychange', handleVisibility );
+		};
+	}, [ state?.status ] );
+
 	const startPolling = useCallback( () => {
 		stopPolling();
-		schedule();
-	}, [ schedule, stopPolling ] );
+		// Poll immediately on start (100ms) so the UI responds without a 2s delay.
+		timer.current = window.setTimeout( () => tick.current(), 100 );
+	}, [ stopPolling ] );
 
 	// Initial load; resume polling when a run is already in flight.
 	useEffect( () => {
@@ -125,14 +146,17 @@ export function useBringBack() {
 		async ( deleteCloud: boolean ) => {
 			setBusy( true );
 			setDismissed( false );
-			// Reset state optimistically so stale 100% from a previous run never flashes.
+			// Clean slate optimistically so previous run logs and counts do not flash.
 			setState( {
 				status: 'running',
 				total: 0,
 				processed: 0,
 				errors: 0,
-				delete_cloud: deleteCloud,
 				updated_at: Math.floor( Date.now() / 1000 ),
+				current: 0,
+				current_item: null,
+				recent: [],
+				delete_cloud: deleteCloud,
 			} );
 			setSessionRun( true );
 
@@ -142,15 +166,23 @@ export function useBringBack() {
 
 				if ( response.queued > 0 ) {
 					startPolling();
+				} else {
+					setSessionRun( false );
+					refreshStats();
+					refreshPreflight();
 				}
 			} catch ( error: unknown ) {
 				addNotice( 'error', errorMessage( error ) );
 				setSessionRun( false );
+				// Re-sync with actual server state so optimistic state never stays frozen.
+				fetchRestoreProgress()
+					.then( ( fresh ) => setState( fresh ) )
+					.catch( () => setState( null ) );
 			} finally {
 				setBusy( false );
 			}
 		},
-		[ addNotice, startPolling ]
+		[ addNotice, refreshPreflight, refreshStats, startPolling ]
 	);
 
 	const cancel = useCallback( async () => {

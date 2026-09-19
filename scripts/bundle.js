@@ -36,6 +36,7 @@ const copyList = [
 	'readme.txt',
 	'uninstall.php',
 	'includes',
+	'assets',
 	'build',
 	'vendor',
 ];

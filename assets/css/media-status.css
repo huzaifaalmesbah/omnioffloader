@@ -1,0 +1,338 @@
+/**
+ * OmniOffloader Media Status Styles
+ *
+ * Minimal icons for Media Library list view, grid view badges, and edit screens.
+ */
+
+/* Column Header & Sizing (List View) */
+.fixed .column-omnioffloader_status,
+.manage-column.column-omnioffloader_status {
+	width: 55px;
+	text-align: center;
+}
+
+td.column-omnioffloader_status {
+	text-align: center;
+	vertical-align: middle;
+}
+
+.omnioffloader-col-head {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	color: #50575e;
+}
+
+.omnioffloader-col-head .omnioffloader-icon {
+	width: 17px;
+	height: 17px;
+}
+
+/* Status Cell in List View */
+.omnioffloader-status-cell {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-height: 24px;
+	width: 100%;
+}
+
+/* Minimal Status Icon in List View */
+.omnioffloader-status-icon {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	cursor: default;
+	transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.omnioffloader-status-icon svg {
+	width: 18px;
+	height: 18px;
+}
+
+.omnioffloader-status-icon--offloaded {
+	color: #059669;
+}
+
+.omnioffloader-status-icon--processing {
+	color: #2563eb;
+}
+
+.omnioffloader-status-icon--queued {
+	color: #d97706;
+}
+
+.omnioffloader-status-icon--failed {
+	color: #dc2626;
+}
+
+.omnioffloader-status-icon--local {
+	color: #9ca3af;
+	font-size: 16px;
+	line-height: 1;
+}
+
+
+/* Status Badges (Attachment Edit Form / Modal) */
+.omnioffloader-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 3px 8px;
+	border-radius: 4px;
+	font-size: 12px;
+	line-height: 1.4;
+	font-weight: 500;
+	transition: all 0.25s ease-in-out;
+}
+
+.omnioffloader-badge strong {
+	font-weight: 600;
+}
+
+.omnioffloader-badge--offloaded {
+	background-color: #ecfdf5;
+	color: #065f46;
+	border: 1px solid #a7f3d0;
+}
+
+.omnioffloader-badge--offloaded .omnioffloader-icon--cloud {
+	color: #059669;
+}
+
+.omnioffloader-badge--processing {
+	background-color: #eff6ff;
+	color: #1e40af;
+	border: 1px solid #bfdbfe;
+}
+
+.omnioffloader-badge--processing .omnioffloader-icon--spinner {
+	color: #2563eb;
+}
+
+.omnioffloader-badge--queued {
+	background-color: #fffbeb;
+	color: #92400e;
+	border: 1px solid #fde68a;
+}
+
+.omnioffloader-badge--queued .omnioffloader-icon--spinner {
+	color: #d97706;
+}
+
+.omnioffloader-badge--failed {
+	background-color: #fef2f2;
+	color: #991b1b;
+	border: 1px solid #fecaca;
+	max-width: 240px;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.omnioffloader-badge--failed .omnioffloader-icon--warning {
+	color: #dc2626;
+}
+
+.omnioffloader-badge--local {
+	background-color: #f3f4f6;
+	color: #4b5563;
+	border: 1px solid #e5e7eb;
+}
+
+/* Common Icons */
+.omnioffloader-icon {
+	width: 15px;
+	height: 15px;
+	flex-shrink: 0;
+}
+
+.omnioffloader-icon--spinner {
+	animation: omnioffloader-spin 1s linear infinite;
+	transform-origin: center;
+}
+
+@keyframes omnioffloader-spin {
+	from {
+		transform: rotate(0deg);
+	}
+	to {
+		transform: rotate(360deg);
+	}
+}
+
+/* Row Actions in List View */
+.omnioffloader-row-action.is-busy {
+	opacity: 0.6;
+	cursor: not-allowed;
+	pointer-events: none;
+}
+
+@keyframes omnioffloader-pop {
+	0% {
+		transform: scale(0.7);
+		opacity: 0.5;
+	}
+	60% {
+		transform: scale(1.15);
+	}
+	100% {
+		transform: scale(1);
+		opacity: 1;
+	}
+}
+
+.omnioffloader-updated {
+	animation: omnioffloader-pop 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+/* Grid View Badges (Media Library Grid + Gutenberg Modal) */
+.omnioffloader-grid-badge {
+	position: absolute;
+	top: 6px;
+	left: 6px;
+	width: 22px;
+	height: 22px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background: rgba(255, 255, 255, 0.92);
+	border-radius: 50%;
+	padding: 2px;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+	pointer-events: none;
+	z-index: 10;
+	transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.omnioffloader-grid-badge svg {
+	width: 14px;
+	height: 14px;
+}
+
+.omnioffloader-grid-badge--offloaded {
+	color: #059669;
+}
+
+.omnioffloader-grid-badge--processing {
+	color: #2563eb;
+}
+
+.omnioffloader-grid-badge--queued {
+	color: #d97706;
+}
+
+.omnioffloader-grid-badge--failed {
+	color: #dc2626;
+}
+
+/* Details Badges & Action Buttons (Attachment Edit Form / Modal) */
+.omnioffloader-details-badge {
+	display: inline-flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 8px;
+	vertical-align: middle;
+}
+
+.omnioffloader-details-action {
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	vertical-align: middle;
+	line-height: 2 !important;
+	min-height: 26px !important;
+	text-decoration: none !important;
+}
+
+.omnioffloader-details-action:hover,
+.omnioffloader-details-action:focus {
+	text-decoration: none !important;
+}
+
+.omnioffloader-details-action .omnioffloader-icon--spinner {
+	width: 12px;
+	height: 12px;
+}
+
+.omnioffloader-details-action.is-busy {
+	opacity: 0.65;
+	cursor: not-allowed;
+	pointer-events: none;
+}
+
+/* Dedicated Meta Box (Edit Media Screen post.php) */
+.omnioffloader-meta-box-wrap {
+	display: block;
+	padding: 4px 0;
+}
+
+.omnioffloader-meta-box-status {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+
+.omnioffloader-meta-box-info {
+	background: #f6f7f7;
+	border: 1px solid #dcdcde;
+	border-radius: 4px;
+	padding: 8px 14px;
+	margin: 12px 0;
+	font-size: 13px;
+	line-height: 1.5;
+	color: #50575e;
+}
+
+.omnioffloader-meta-box-row {
+	display: flex;
+	align-items: baseline;
+	padding: 6px 0;
+}
+
+.omnioffloader-meta-box-row:not(:last-child) {
+	border-bottom: 1px solid #e2e4e7;
+}
+
+.omnioffloader-meta-box-label {
+	width: 120px;
+	flex-shrink: 0;
+	font-weight: 600;
+	color: #1d2327;
+}
+
+.omnioffloader-meta-box-val {
+	color: #50575e;
+	word-break: break-word;
+}
+
+.omnioffloader-meta-box-info code {
+	background: #ffffff;
+	border: 1px solid #c3c4c7;
+	padding: 2px 6px;
+	font-size: 12px;
+}
+
+/* Meta Box Stability - No bouncy pop animation */
+.omnioffloader-meta-box-wrap,
+.omnioffloader-meta-box-wrap.omnioffloader-updated {
+	animation: none !important;
+	transform: none !important;
+}
+
+.omnioffloader-meta-box-actions {
+	margin-top: 14px;
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+
+.omnioffloader-meta-box-actions .button {
+	font-size: 13px;
+	height: 32px;
+	line-height: 30px;
+	padding: 0 14px;
+}
+
+

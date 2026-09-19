@@ -58,6 +58,12 @@ class AttachmentUploader {
 			return true;
 		}
 
+		wp_raise_memory_limit( 'admin' );
+		if ( function_exists( 'set_time_limit' ) ) {
+			// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- safe timeout extension for large file transfers.
+			@set_time_limit( 0 );
+		}
+
 		/**
 		 * Filter whether an attachment should be offloaded.
 		 *
@@ -75,10 +81,13 @@ class AttachmentUploader {
 		 */
 		do_action( 'omnioffloader_before_offload', $attachment_id );
 
+		update_post_meta( $attachment_id, 'omnioffloader_status', 'processing' );
+
 		$files = self::collect_attachment_files( $attachment_id, $metadata );
 
 		if ( empty( $files['main'] ) ) {
 			self::log_attachment_error( $attachment_id, __( 'No attached file found.', 'omnioffloader' ) );
+			update_post_meta( $attachment_id, 'omnioffloader_status', 'failed' );
 
 			return false;
 		}
@@ -112,6 +121,7 @@ class AttachmentUploader {
 			if ( ! file_exists( $main['file'] ) ) {
 				self::log_attachment_error( $attachment_id, __( 'Main file is missing locally.', 'omnioffloader' ) );
 			}
+			update_post_meta( $attachment_id, 'omnioffloader_status', 'failed' );
 
 			return false;
 		}

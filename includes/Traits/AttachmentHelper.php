@@ -314,6 +314,7 @@ trait AttachmentHelper {
 		update_post_meta( $attachment_id, 'omnioffloader_bucket', $bucket );
 		update_post_meta( $attachment_id, 'omnioffloader_path', $subdir );
 		update_post_meta( $attachment_id, 'omnioffloader_retention', $retention );
+		delete_post_meta( $attachment_id, 'omnioffloader_status' );
 		delete_post_meta( $attachment_id, 'omnioffloader_error_log' );
 	}
 
@@ -333,6 +334,7 @@ trait AttachmentHelper {
 		delete_post_meta( $attachment_id, 'omnioffloader_path' );
 		delete_post_meta( $attachment_id, 'omnioffloader_object_version' );
 		delete_post_meta( $attachment_id, 'omnioffloader_retention' );
+		delete_post_meta( $attachment_id, 'omnioffloader_status' );
 		delete_post_meta( $attachment_id, 'omnioffloader_error_log' );
 	}
 
@@ -359,5 +361,98 @@ trait AttachmentHelper {
 		$log = array_slice( $log, -10 );
 
 		update_post_meta( $attachment_id, 'omnioffloader_error_log', $log );
+	}
+
+	/**
+	 * Get the current offload status and metadata for an attachment.
+	 *
+	 * @param int $attachment_id Attachment ID.
+	 * @return array{status: string, is_offloaded: bool, label: string, provider?: string, bucket?: string, offloaded_at?: int, date?: string, error?: string}
+	 */
+	public static function get_attachment_status( $attachment_id ) {
+		$attachment_id = (int) $attachment_id;
+
+		if ( self::is_offloaded( $attachment_id ) ) {
+			$status = (string) get_post_meta( $attachment_id, 'omnioffloader_status', true );
+			if ( 'processing' === $status ) {
+				return array(
+					'status'       => 'processing',
+					'is_offloaded' => true,
+					'label'        => __( 'Restoring...', 'omnioffloader' ),
+				);
+			}
+
+			$provider_key = (string) get_post_meta( $attachment_id, 'omnioffloader_provider', true );
+			$bucket       = (string) get_post_meta( $attachment_id, 'omnioffloader_bucket', true );
+			$offloaded_at = (int) get_post_meta( $attachment_id, 'omnioffloader_offloaded_at', true );
+			$date_str     = $offloaded_at > 0 ? (string) wp_date( (string) get_option( 'date_format' ), $offloaded_at ) : '';
+
+			$label = sprintf(
+				/* translators: 1: provider key, 2: formatted date */
+				__( 'Offloaded — %1$s%2$s', 'omnioffloader' ),
+				'' !== $provider_key ? $provider_key : __( 'Cloud', 'omnioffloader' ),
+				'' !== $date_str ? ' · ' . $date_str : ''
+			);
+
+			return array(
+				'status'       => 'offloaded',
+				'is_offloaded' => true,
+				'provider'     => $provider_key,
+				'bucket'       => $bucket,
+				'offloaded_at' => $offloaded_at,
+				'date'         => $date_str,
+				'label'        => $label,
+			);
+		}
+
+		$status = (string) get_post_meta( $attachment_id, 'omnioffloader_status', true );
+		$errors = get_post_meta( $attachment_id, 'omnioffloader_error_log', true );
+
+		if ( 'processing' === $status ) {
+			return array(
+				'status'       => 'processing',
+				'is_offloaded' => false,
+				'label'        => __( 'Offloading...', 'omnioffloader' ),
+			);
+		}
+
+		if ( 'queued' === $status ) {
+			return array(
+				'status'       => 'queued',
+				'is_offloaded' => false,
+				'label'        => __( 'Queued for offload', 'omnioffloader' ),
+			);
+		}
+
+		$has_errors = ( 'failed' === $status ) || ( is_array( $errors ) && ! empty( $errors ) );
+
+		if ( $has_errors ) {
+			$last_error = '';
+			if ( is_array( $errors ) && ! empty( $errors ) ) {
+				$last = end( $errors );
+				if ( is_array( $last ) && ! empty( $last['message'] ) ) {
+					$last_error = (string) $last['message'];
+				}
+			}
+
+			return array(
+				'status'       => 'failed',
+				'is_offloaded' => false,
+				'error'        => $last_error,
+				'label'        => '' !== $last_error
+					? sprintf(
+						/* translators: %s: Error message */
+						__( 'Failed — %s', 'omnioffloader' ),
+						$last_error
+					)
+					: __( 'Offload failed', 'omnioffloader' ),
+			);
+		}
+
+		return array(
+			'status'       => 'local',
+			'is_offloaded' => false,
+			'label'        => __( 'Local', 'omnioffloader' ),
+		);
 	}
 }

@@ -61,6 +61,23 @@ abstract class BaseController {
 	}
 
 	/**
+	 * Authorization for media library operations: allowed for users who can upload files.
+	 *
+	 * @return bool|\WP_Error
+	 */
+	public function media_permissions_check() {
+		if ( current_user_can( 'upload_files' ) ) {
+			return true;
+		}
+
+		return new \WP_Error(
+			'omnioffloader_forbidden',
+			__( 'Sorry, you are not allowed to do that.', 'omnioffloader' ),
+			array( 'status' => rest_authorization_required_code() )
+		);
+	}
+
+	/**
 	 * Register a GET route.
 	 *
 	 * @param string               $route    Route path (no namespace).

@@ -10,6 +10,7 @@
 namespace OmniOffloader\Traits;
 
 use OmniOffloader\Core\Helpers;
+use OmniOffloader\Providers\ProviderRegistry;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -33,6 +34,7 @@ trait OptionsHelper {
 			'path_prefix_active'       => false,
 			'path_prefix'              => '',
 			'object_versioning'        => false,
+			'async_upload'             => true,
 			'bring_back_delete_cloud'  => false,
 			'remove_data_on_uninstall' => false,
 		);
@@ -70,6 +72,7 @@ trait OptionsHelper {
 			'path_prefix_active'       => ! empty( $settings['path_prefix_active'] ?? $current['path_prefix_active'] ),
 			'path_prefix'              => Helpers::sanitize_path( (string) ( $settings['path_prefix'] ?? $current['path_prefix'] ) ),
 			'object_versioning'        => ! empty( $settings['object_versioning'] ?? $current['object_versioning'] ),
+			'async_upload'             => ! empty( $settings['async_upload'] ?? $current['async_upload'] ),
 			'bring_back_delete_cloud'  => ! empty( $settings['bring_back_delete_cloud'] ?? $current['bring_back_delete_cloud'] ),
 			'remove_data_on_uninstall' => ! empty( $settings['remove_data_on_uninstall'] ?? $current['remove_data_on_uninstall'] ),
 		);
@@ -98,8 +101,13 @@ trait OptionsHelper {
 	 */
 	public static function get_provider_key() {
 		$settings = self::get_settings();
+		$key      = (string) ( $settings['provider'] ?? '' );
 
-		return (string) $settings['provider'];
+		if ( '' === $key || ! ProviderRegistry::has( $key ) ) {
+			return '';
+		}
+
+		return ProviderRegistry::canonical_key( $key );
 	}
 
 	/**

@@ -30,14 +30,19 @@ class OffloadController extends BaseController {
 	 * @return void
 	 */
 	public function register_routes() {
-		$this->register_post_route(
+		register_rest_route(
+			$this->namespace,
 			'/offload/attachment/(?P<id>\d+)',
-			array( $this, 'offload_attachment_response' ),
 			array(
-				'id' => array(
-					'type'              => 'integer',
-					'required'          => true,
-					'sanitize_callback' => 'absint',
+				'methods'             => \WP_REST_Server::CREATABLE,
+				'callback'            => array( $this, 'offload_attachment_response' ),
+				'permission_callback' => array( $this, 'media_permissions_check' ),
+				'args'                => array(
+					'id' => array(
+						'type'              => 'integer',
+						'required'          => true,
+						'sanitize_callback' => 'absint',
+					),
 				),
 			)
 		);
@@ -56,6 +61,23 @@ class OffloadController extends BaseController {
 					'minimum'           => 1,
 					'maximum'           => 100,
 					'sanitize_callback' => 'absint',
+				),
+			)
+		);
+
+		register_rest_route(
+			$this->namespace,
+			'/offload/attachment-status',
+			array(
+				'methods'             => \WP_REST_Server::READABLE,
+				'callback'            => array( $this, 'attachment_status_response' ),
+				'permission_callback' => array( $this, 'media_permissions_check' ),
+				'args'                => array(
+					'ids' => array(
+						'type'              => 'string',
+						'required'          => true,
+						'sanitize_callback' => 'sanitize_text_field',
+					),
 				),
 			)
 		);
@@ -107,10 +129,19 @@ class OffloadController extends BaseController {
 		$uploader = new AttachmentUploader( $provider );
 		$ok       = $uploader->upload( $attachment_id );
 
+		$observer     = new \OmniOffloader\Offload\Observers\OffloadStatusObserver( $provider );
+		$row_observer = new \OmniOffloader\Offload\Observers\RowActionsObserver( $provider );
+
 		return rest_ensure_response(
 			array(
-				'offloaded' => $ok,
-				'errors'    => get_post_meta( $attachment_id, 'omnioffloader_error_log', true ),
+				'offloaded'       => $ok,
+				'status'          => self::get_attachment_status( $attachment_id ),
+				'column_html'     => $observer->render_column_icon( $attachment_id ),
+				'badge_html'      => $observer->render_details_badge( $attachment_id ),
+				'meta_box_html'   => $observer->render_meta_box_content( $attachment_id ),
+				'row_action_html' => $row_observer->render_action_link( $attachment_id ),
+				'url'             => (string) wp_get_attachment_url( $attachment_id ),
+				'errors'          => get_post_meta( $attachment_id, 'omnioffloader_error_log', true ),
 			)
 		);
 	}
@@ -227,5 +258,67 @@ class OffloadController extends BaseController {
 		}
 
 		return rest_ensure_response( $items );
+	}
+
+	/**
+	 * Authorization for media library status checks.
+	 *
+	 * Allows anyone who can upload files to check status.
+	 *
+	 * @return bool|\WP_Error
+	 */
+	public function media_permissions_check() {
+		if ( current_user_can( 'upload_files' ) ) {
+			return true;
+		}
+
+		return new \WP_Error(
+			'omnioffloader_forbidden',
+			__( 'Sorry, you are not allowed to do that.', 'omnioffloader' ),
+			array( 'status' => rest_authorization_required_code() )
+		);
+	}
+
+	/**
+	 * GET /offload/attachment-status?ids=139,140
+	 *
+	 * Returns current offload status for requested attachment IDs.
+	 *
+	 * @param WP_REST_Request $request Request.
+	 * @return \WP_REST_Response
+	 */
+	public function attachment_status_response( WP_REST_Request $request ) {
+		$raw_ids = (string) $request->get_param( 'ids' );
+		$id_list = array_filter( array_map( 'absint', explode( ',', $raw_ids ) ) );
+
+		// Cap requested IDs to 100 per request.
+		$id_list = array_slice( array_unique( $id_list ), 0, 100 );
+
+		// Self-healing: if loopback was delayed, process queued item inline during poll.
+		$async = Plugin::get_instance()->get_async_upload();
+		if ( null !== $async ) {
+			$async->process_queue_now();
+		}
+
+		$statuses     = array();
+		$provider     = Plugin::get_instance()->get_provider();
+		$observer     = new \OmniOffloader\Offload\Observers\OffloadStatusObserver( $provider );
+		$row_observer = new \OmniOffloader\Offload\Observers\RowActionsObserver( $provider );
+
+		foreach ( $id_list as $attachment_id ) {
+			if ( 'attachment' !== get_post_type( $attachment_id ) ) {
+				continue;
+			}
+
+			$status_data                    = self::get_attachment_status( $attachment_id );
+			$status_data['column_html']     = $observer->render_column_icon( $attachment_id );
+			$status_data['badge_html']      = $observer->render_details_badge( $attachment_id );
+			$status_data['meta_box_html']   = $observer->render_meta_box_content( $attachment_id );
+			$status_data['row_action_html'] = $row_observer->render_action_link( $attachment_id );
+
+			$statuses[ (string) $attachment_id ] = $status_data;
+		}
+
+		return rest_ensure_response( $statuses );
 	}
 }

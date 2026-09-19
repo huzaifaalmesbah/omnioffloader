@@ -82,8 +82,9 @@ class RowActionsObserver implements ObserverInterface {
 
 		if ( ! self::is_offloaded( $attachment_id ) ) {
 			$actions['omnioffloader_offload'] = sprintf(
-				'<a href="%s">%s</a>',
+				'<a href="%s" class="omnioffloader-row-action" data-action="offload" data-attachment-id="%d">%s</a>',
 				esc_url( $this->action_url( self::ACTION, $attachment_id ) ),
+				$attachment_id,
 				esc_html__( 'Offload now', 'omnioffloader' )
 			);
 
@@ -91,12 +92,39 @@ class RowActionsObserver implements ObserverInterface {
 		}
 
 		$actions['omnioffloader_restore'] = sprintf(
-			'<a href="%s">%s</a>',
+			'<a href="%s" class="omnioffloader-row-action" data-action="restore" data-attachment-id="%d">%s</a>',
 			esc_url( $this->action_url( self::RESTORE_ACTION, $attachment_id ) ),
+			$attachment_id,
 			esc_html__( 'Bring Back', 'omnioffloader' )
 		);
 
 		return $actions;
+	}
+
+	/**
+	 * Render the action link HTML (used by AJAX responses).
+	 *
+	 * @param int $attachment_id Attachment ID.
+	 * @return string HTML link element.
+	 */
+	public function render_action_link( $attachment_id ) {
+		$attachment_id = (int) $attachment_id;
+
+		if ( self::is_offloaded( $attachment_id ) ) {
+			return sprintf(
+				'<span class="omnioffloader_restore"><a href="%s" class="omnioffloader-row-action" data-action="restore" data-attachment-id="%d">%s</a></span>',
+				esc_url( $this->action_url( self::RESTORE_ACTION, $attachment_id ) ),
+				$attachment_id,
+				esc_html__( 'Bring Back', 'omnioffloader' )
+			);
+		}
+
+		return sprintf(
+			'<span class="omnioffloader_offload"><a href="%s" class="omnioffloader-row-action" data-action="offload" data-attachment-id="%d">%s</a></span>',
+			esc_url( $this->action_url( self::ACTION, $attachment_id ) ),
+			$attachment_id,
+			esc_html__( 'Offload now', 'omnioffloader' )
+		);
 	}
 
 	/**
@@ -106,7 +134,7 @@ class RowActionsObserver implements ObserverInterface {
 	 * @param int    $attachment_id Attachment ID.
 	 * @return string
 	 */
-	private function action_url( $action, $attachment_id ) {
+	public function action_url( $action, $attachment_id ) {
 		return wp_nonce_url(
 			add_query_arg(
 				array(
@@ -127,20 +155,32 @@ class RowActionsObserver implements ObserverInterface {
 	public function handle() {
 		$attachment_id = isset( $_GET['id'] ) ? absint( $_GET['id'] ) : 0;
 
-		check_admin_referer( self::ACTION . '_' . $attachment_id );
+		$nonce = isset( $_REQUEST['_wpnonce'] ) ? sanitize_text_field( wp_unslash( $_REQUEST['_wpnonce'] ) ) : '';
+		if ( ! wp_verify_nonce( $nonce, self::ACTION . '_' . $attachment_id ) ) {
+			wp_die( esc_html__( 'The link you followed has expired.', 'omnioffloader' ) );
+		}
 
 		if ( ! current_user_can( 'upload_files' ) || 'attachment' !== get_post_type( $attachment_id ) ) {
 			wp_die( esc_html__( 'Sorry, you are not allowed to do that.', 'omnioffloader' ) );
 		}
 
+		wp_raise_memory_limit( 'admin' );
+		if ( function_exists( 'set_time_limit' ) ) {
+			// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- safe timeout extension for large file transfers.
+			@set_time_limit( 0 );
+		}
+
 		$uploader = new AttachmentUploader( $this->provider );
 		$ok       = $uploader->upload( $attachment_id );
+
+		$redirect = wp_get_referer() ? wp_get_referer() : admin_url( 'upload.php' );
+		$redirect = remove_query_arg( array( 'omnioffloader_offloaded', 'omnioffloader_restored' ), $redirect );
 
 		wp_safe_redirect(
 			add_query_arg(
 				'omnioffloader_offloaded',
 				$ok ? '1' : '0',
-				wp_get_referer() ? wp_get_referer() : admin_url( 'upload.php' )
+				$redirect
 			)
 		);
 		exit;
@@ -157,10 +197,19 @@ class RowActionsObserver implements ObserverInterface {
 	public function handle_restore() {
 		$attachment_id = isset( $_GET['id'] ) ? absint( $_GET['id'] ) : 0;
 
-		check_admin_referer( self::RESTORE_ACTION . '_' . $attachment_id );
+		$nonce = isset( $_REQUEST['_wpnonce'] ) ? sanitize_text_field( wp_unslash( $_REQUEST['_wpnonce'] ) ) : '';
+		if ( ! wp_verify_nonce( $nonce, self::RESTORE_ACTION . '_' . $attachment_id ) ) {
+			wp_die( esc_html__( 'The link you followed has expired.', 'omnioffloader' ) );
+		}
 
 		if ( ! current_user_can( 'upload_files' ) || 'attachment' !== get_post_type( $attachment_id ) ) {
 			wp_die( esc_html__( 'Sorry, you are not allowed to do that.', 'omnioffloader' ) );
+		}
+
+		wp_raise_memory_limit( 'admin' );
+		if ( function_exists( 'set_time_limit' ) ) {
+			// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- safe timeout extension for large file transfers.
+			@set_time_limit( 0 );
 		}
 
 		$settings = \OmniOffloader\Core\Plugin::get_settings();
@@ -168,11 +217,14 @@ class RowActionsObserver implements ObserverInterface {
 		$restorer = new AttachmentRestorer();
 		$ok       = $restorer->restore( $attachment_id, ! empty( $settings['bring_back_delete_cloud'] ) );
 
+		$redirect = wp_get_referer() ? wp_get_referer() : admin_url( 'upload.php' );
+		$redirect = remove_query_arg( array( 'omnioffloader_offloaded', 'omnioffloader_restored' ), $redirect );
+
 		wp_safe_redirect(
 			add_query_arg(
 				'omnioffloader_restored',
 				$ok ? '1' : '0',
-				wp_get_referer() ? wp_get_referer() : admin_url( 'upload.php' )
+				$redirect
 			)
 		);
 		exit;

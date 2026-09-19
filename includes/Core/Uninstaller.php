@@ -8,6 +8,7 @@
 namespace OmniOffloader\Core;
 
 use OmniOffloader\Services\AbstractBulkProcessor;
+use OmniOffloader\Services\AsyncUploadProcessor;
 use OmniOffloader\Services\BulkOffloadProcessor;
 use OmniOffloader\Services\BulkRestoreProcessor;
 
@@ -40,7 +41,8 @@ class Uninstaller {
 		delete_option( 'omnioffloader_version' );
 		delete_option( 'omnioffloader_first_activated_version' );
 
-		// Bulk queues: batch rows, run status, process lock, cron and state.
+		// Queues: batch rows, run status, process lock, cron and state.
+		AsyncUploadProcessor::purge_stored_data();
 		AbstractBulkProcessor::purge_stored_data( 'bulk_offload', BulkOffloadProcessor::STATE_OPTION );
 		AbstractBulkProcessor::purge_stored_data( 'bulk_restore', BulkRestoreProcessor::STATE_OPTION );
 
@@ -57,6 +59,7 @@ class Uninstaller {
 		delete_post_meta_by_key( 'omnioffloader_path' );
 		delete_post_meta_by_key( 'omnioffloader_object_version' );
 		delete_post_meta_by_key( 'omnioffloader_retention' );
+		delete_post_meta_by_key( 'omnioffloader_status' );
 		delete_post_meta_by_key( 'omnioffloader_error_log' );
 	}
 }

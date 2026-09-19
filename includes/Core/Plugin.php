@@ -15,6 +15,7 @@ use OmniOffloader\Api\ProviderController;
 use OmniOffloader\Offload\Offloader;
 use OmniOffloader\Providers\ProviderInterface;
 use OmniOffloader\Providers\ProviderRegistry;
+use OmniOffloader\Services\AsyncUploadProcessor;
 use OmniOffloader\Services\BulkOffloadProcessor;
 use OmniOffloader\Services\BulkRestoreProcessor;
 use OmniOffloader\Traits\OptionsHelper;
@@ -47,6 +48,13 @@ class Plugin {
 	private $provider = null;
 
 	/**
+	 * Async upload processor when the engine is on, null otherwise.
+	 *
+	 * @var AsyncUploadProcessor|null
+	 */
+	private $async_upload = null;
+
+	/**
 	 * Bulk offload processor when the engine is on, null otherwise.
 	 *
 	 * @var BulkOffloadProcessor|null
@@ -67,6 +75,15 @@ class Plugin {
 	 */
 	public function get_provider() {
 		return $this->provider;
+	}
+
+	/**
+	 * Get the async upload processor (null when the engine is off).
+	 *
+	 * @return AsyncUploadProcessor|null
+	 */
+	public function get_async_upload() {
+		return $this->async_upload;
 	}
 
 	/**
@@ -198,12 +215,13 @@ class Plugin {
 
 		$this->provider = $provider;
 
-		$offloader = new Offloader( $provider );
-		$offloader->register_observers();
-
 		// Must exist on every request: their constructors register the
 		// async loopback + cron-healthcheck hooks that drive the queues.
+		$this->async_upload = new AsyncUploadProcessor( $provider );
 		$this->bulk_offload = new BulkOffloadProcessor( $provider );
 		$this->bulk_restore = new BulkRestoreProcessor();
+
+		$offloader = new Offloader( $provider, $this->async_upload );
+		$offloader->register_observers();
 	}
 }

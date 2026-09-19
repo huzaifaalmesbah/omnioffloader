@@ -104,12 +104,19 @@ export function SettingsPage() {
 						</div>
 					</div>
 
-					{ settings.provider && (
-						<>
-							<CredentialFields provider={ settings.provider } />
-							<TestConnection provider={ settings.provider } />
-						</>
-					) }
+					{ settings.provider &&
+						providers.some(
+							( p ) => p.key === settings.provider
+						) && (
+							<>
+								<CredentialFields
+									provider={ settings.provider }
+								/>
+								<TestConnection
+									provider={ settings.provider }
+								/>
+							</>
+						) }
 				</div>
 			</Card>
 
@@ -156,6 +163,19 @@ export function SettingsPage() {
 			</Card>
 
 			<Card title={ __( 'Behavior', 'omnioffloader' ) }>
+				<ToggleControl
+					label={ __( 'Background Cloud Offload', 'omnioffloader' ) }
+					help={ __(
+						'Offload newly uploaded media in the background so local uploads finish instantly without waiting for cloud transfers.',
+						'omnioffloader'
+					) }
+					checked={ settings.async_upload }
+					onChange={ ( async_upload: boolean ) =>
+						updateSettings( { async_upload } )
+					}
+					__nextHasNoMarginBottom
+				/>
+
 				<ToggleControl
 					label={ __( 'Mirror Delete', 'omnioffloader' ) }
 					help={ __(

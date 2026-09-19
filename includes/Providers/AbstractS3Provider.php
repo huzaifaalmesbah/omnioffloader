@@ -240,7 +240,13 @@ abstract class AbstractS3Provider implements ProviderInterface {
 			return false;
 		}
 
-		$tmp = wp_tempnam( basename( $dest ), trailingslashit( $dir ) );
+		if ( ! function_exists( 'wp_tempnam' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/file.php';
+		}
+
+		$tmp = function_exists( 'wp_tempnam' )
+			? wp_tempnam( basename( $dest ), trailingslashit( $dir ) )
+			: tempnam( $dir, 'omnioffloader_' );
 
 		if ( ! $tmp ) {
 			$this->log_error( 'Cannot create temp file for download.' );

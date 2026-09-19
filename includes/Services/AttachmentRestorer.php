@@ -47,6 +47,12 @@ class AttachmentRestorer {
 			return false;
 		}
 
+		wp_raise_memory_limit( 'admin' );
+		if ( function_exists( 'set_time_limit' ) ) {
+			// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- safe timeout extension for large file transfers.
+			@set_time_limit( 0 );
+		}
+
 		$provider = $this->resolve_provider( $attachment_id );
 
 		if ( null === $provider ) {
@@ -60,10 +66,13 @@ class AttachmentRestorer {
 		 */
 		do_action( 'omnioffloader_before_restore', $attachment_id );
 
+		update_post_meta( $attachment_id, 'omnioffloader_status', 'processing' );
+
 		$files = self::collect_attachment_files( $attachment_id );
 
 		if ( empty( $files['main'] ) ) {
 			self::log_attachment_error( $attachment_id, __( 'No attached file found.', 'omnioffloader' ) );
+			update_post_meta( $attachment_id, 'omnioffloader_status', 'failed' );
 
 			return false;
 		}
@@ -101,6 +110,8 @@ class AttachmentRestorer {
 		}
 
 		if ( ! $all_ok ) {
+			update_post_meta( $attachment_id, 'omnioffloader_status', 'failed' );
+
 			// Keep cloud copy and offload meta — the attachment still serves
 			// from the cloud, and the error log tells the user what failed.
 			return false;

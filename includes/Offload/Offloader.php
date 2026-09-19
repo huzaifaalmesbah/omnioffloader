@@ -17,6 +17,7 @@ use OmniOffloader\Offload\Observers\UniqueFilenameObserver;
 use OmniOffloader\Offload\Observers\UploadObserver;
 use OmniOffloader\Offload\Observers\UrlRewriteObserver;
 use OmniOffloader\Providers\ProviderInterface;
+use OmniOffloader\Services\AsyncUploadProcessor;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -38,6 +39,13 @@ class Offloader {
 	private $provider;
 
 	/**
+	 * Background async upload processor.
+	 *
+	 * @var AsyncUploadProcessor|null
+	 */
+	private $async_processor;
+
+	/**
 	 * Attached observers.
 	 *
 	 * @var ObserverInterface[]
@@ -47,10 +55,12 @@ class Offloader {
 	/**
 	 * Constructor.
 	 *
-	 * @param ProviderInterface $provider Cloud provider.
+	 * @param ProviderInterface         $provider        Cloud provider.
+	 * @param AsyncUploadProcessor|null $async_processor Optional background async upload processor.
 	 */
-	public function __construct( ProviderInterface $provider ) {
-		$this->provider = $provider;
+	public function __construct( ProviderInterface $provider, ?AsyncUploadProcessor $async_processor = null ) {
+		$this->provider        = $provider;
+		$this->async_processor = $async_processor;
 	}
 
 	/**
@@ -69,7 +79,7 @@ class Offloader {
 	 * @return void
 	 */
 	public function register_observers() {
-		$this->attach( new UploadObserver( $this->provider ) );
+		$this->attach( new UploadObserver( $this->provider, $this->async_processor ) );
 		$this->attach( new UrlRewriteObserver( $this->provider ) );
 		$this->attach( new SrcsetObserver( $this->provider ) );
 		$this->attach( new ContentImageTagObserver( $this->provider ) );

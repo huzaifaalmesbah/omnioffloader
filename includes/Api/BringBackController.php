@@ -33,19 +33,24 @@ class BringBackController extends BaseController {
 	public function register_routes() {
 		$this->register_get_route( '/bring-back/preflight', array( $this, 'preflight_response' ) );
 
-		$this->register_post_route(
+		register_rest_route(
+			$this->namespace,
 			'/bring-back/attachment/(?P<id>\d+)',
-			array( $this, 'restore_attachment_response' ),
 			array(
-				'id'           => array(
-					'type'              => 'integer',
-					'required'          => true,
-					'sanitize_callback' => 'absint',
-				),
-				'delete_cloud' => array(
-					'type'              => 'boolean',
-					'default'           => false,
-					'sanitize_callback' => 'rest_sanitize_boolean',
+				'methods'             => \WP_REST_Server::CREATABLE,
+				'callback'            => array( $this, 'restore_attachment_response' ),
+				'permission_callback' => array( $this, 'media_permissions_check' ),
+				'args'                => array(
+					'id'           => array(
+						'type'              => 'integer',
+						'required'          => true,
+						'sanitize_callback' => 'absint',
+					),
+					'delete_cloud' => array(
+						'type'              => 'boolean',
+						'default'           => false,
+						'sanitize_callback' => 'rest_sanitize_boolean',
+					),
 				),
 			)
 		);
@@ -118,13 +123,22 @@ class BringBackController extends BaseController {
 			);
 		}
 
-		$restorer = new AttachmentRestorer();
-		$ok       = $restorer->restore( $attachment_id, (bool) $request->get_param( 'delete_cloud' ) );
+		$restorer     = new AttachmentRestorer();
+		$ok           = $restorer->restore( $attachment_id, (bool) $request->get_param( 'delete_cloud' ) );
+		$provider     = Plugin::get_instance()->get_provider();
+		$observer     = new \OmniOffloader\Offload\Observers\OffloadStatusObserver( $provider );
+		$row_observer = new \OmniOffloader\Offload\Observers\RowActionsObserver( $provider );
 
 		return rest_ensure_response(
 			array(
-				'restored' => $ok,
-				'errors'   => get_post_meta( $attachment_id, 'omnioffloader_error_log', true ),
+				'restored'        => $ok,
+				'status'          => self::get_attachment_status( $attachment_id ),
+				'column_html'     => $observer->render_column_icon( $attachment_id ),
+				'badge_html'      => $observer->render_details_badge( $attachment_id ),
+				'meta_box_html'   => $observer->render_meta_box_content( $attachment_id ),
+				'row_action_html' => $row_observer->render_action_link( $attachment_id ),
+				'url'             => (string) wp_get_attachment_url( $attachment_id ),
+				'errors'          => get_post_meta( $attachment_id, 'omnioffloader_error_log', true ),
 			)
 		);
 	}

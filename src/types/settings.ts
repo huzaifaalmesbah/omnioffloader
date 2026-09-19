@@ -15,6 +15,7 @@ export interface Settings {
 	path_prefix_active: boolean;
 	path_prefix: string;
 	object_versioning: boolean;
+	async_upload: boolean;
 	bring_back_delete_cloud: boolean;
 	remove_data_on_uninstall: boolean;
 }

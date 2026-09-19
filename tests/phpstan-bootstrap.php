@@ -6,7 +6,7 @@
  * @package OmniOffloader
  */
 
-define( 'OMNIOFFLOADER_VERSION', '0.1.0' );
+define( 'OMNIOFFLOADER_VERSION', '0.1.1' );
 define( 'OMNIOFFLOADER_DIR', dirname( __DIR__ ) . '/' );
 define( 'OMNIOFFLOADER_URL', 'https://example.com/wp-content/plugins/omnioffloader/' );
 define( 'OMNIOFFLOADER_ASSETS_URL', OMNIOFFLOADER_URL . 'assets/' );

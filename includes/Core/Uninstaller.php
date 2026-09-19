@@ -12,7 +12,7 @@ use OmniOffloader\Services\AsyncUploadProcessor;
 use OmniOffloader\Services\BulkOffloadProcessor;
 use OmniOffloader\Services\BulkRestoreProcessor;
 
-if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
+if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 

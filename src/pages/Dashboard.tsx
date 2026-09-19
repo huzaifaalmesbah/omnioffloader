@@ -56,7 +56,7 @@ export function DashboardPage( { onNavigate }: DashboardProps ) {
 									/* translators: %s: cloud provider name. */
 									__( 'Connected to %s', 'omnioffloader' ),
 									providerName
-							  )
+								)
 							: __( 'Not configured yet', 'omnioffloader' ) }
 					</h2>
 					<p>
@@ -64,11 +64,11 @@ export function DashboardPage( { onNavigate }: DashboardProps ) {
 							? __(
 									'New uploads are offloaded automatically and served from your custom domain.',
 									'omnioffloader'
-							  )
+								)
 							: __(
 									'Add your cloud storage credentials to get started.',
 									'omnioffloader'
-							  ) }
+								) }
 					</p>
 					{ ! stats?.configured && (
 						<Button
@@ -146,11 +146,11 @@ export function DashboardPage( { onNavigate }: DashboardProps ) {
 												'omnioffloader'
 											),
 											local
-									  )
+										)
 									: __(
 											'All media is currently offloaded',
 											'omnioffloader'
-									  ) }
+										) }
 							</p>
 						</div>
 						<span className="smowp-quick-action-card__arrow">
@@ -189,11 +189,11 @@ export function DashboardPage( { onNavigate }: DashboardProps ) {
 												'omnioffloader'
 											),
 											offloaded
-									  )
+										)
 									: __(
 											'No offloaded files to restore',
 											'omnioffloader'
-									  ) }
+										) }
 							</p>
 						</div>
 						<span className="smowp-quick-action-card__arrow">
@@ -229,11 +229,11 @@ export function DashboardPage( { onNavigate }: DashboardProps ) {
 												'omnioffloader'
 											),
 											providerName
-									  )
+										)
 									: __(
 											'Configure cloud bucket credentials',
 											'omnioffloader'
-									  ) }
+										) }
 							</p>
 						</div>
 						<span className="smowp-quick-action-card__arrow">

@@ -58,7 +58,7 @@ export function CredentialFields( { provider }: CredentialFieldsProps ) {
 						? __(
 								'•••••••• (saved — leave empty to keep)',
 								'omnioffloader'
-						  )
+							)
 						: field.placeholder;
 
 				const help = field.locked
@@ -69,7 +69,7 @@ export function CredentialFields( { provider }: CredentialFieldsProps ) {
 								'omnioffloader'
 							),
 							`${ constPrefix }${ provider.toUpperCase() }_${ field.name.toUpperCase() }`
-					  )
+						)
 					: field.description;
 
 				if ( field.type === 'checkbox' ) {

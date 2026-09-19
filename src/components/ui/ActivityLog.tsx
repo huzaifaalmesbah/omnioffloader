@@ -57,13 +57,13 @@ export function ActivityLog( {
 						__( '%1$d of %2$d brought back', 'omnioffloader' ),
 						processed,
 						total
-				  )
+					)
 				: sprintf(
 						/* translators: 1: uploaded count, 2: total count. */
 						__( '%1$d of %2$d uploaded', 'omnioffloader' ),
 						processed,
 						total
-				  );
+					);
 	}
 
 	return (
@@ -79,7 +79,7 @@ export function ActivityLog( {
 										/* translators: %d: percentage complete */
 										__( 'Live · %d%%', 'omnioffloader' ),
 										percentage
-								  )
+									)
 								: __( 'Live', 'omnioffloader' ) }
 						</span>
 					) }
@@ -207,7 +207,7 @@ export function ActivityLog( {
 										: `✕ ${ __(
 												'Failed',
 												'omnioffloader'
-										  ) }` }
+											) }` }
 								</span>
 							</div>
 						</div>

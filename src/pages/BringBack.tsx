@@ -357,7 +357,7 @@ export function BringBackPage() {
 														? __(
 																'No Offloaded Media to Restore',
 																'omnioffloader'
-														  )
+															)
 														: sprintf(
 																/* translators: %d: number of offloaded attachments. */
 																__(
@@ -365,7 +365,7 @@ export function BringBackPage() {
 																	'omnioffloader'
 																),
 																offloadedCount
-														  ) }
+															) }
 												</Button>
 											</span>
 										</Tooltip>
@@ -449,7 +449,7 @@ export function BringBackPage() {
 												? __(
 														'Preparing restore…',
 														'omnioffloader'
-												  )
+													)
 												: sprintf(
 														/* translators: 1: brought back count, 2: total count. */
 														__(
@@ -458,7 +458,7 @@ export function BringBackPage() {
 														),
 														state.processed,
 														state.total
-												  ) }
+													) }
 										</span>
 									</div>
 
@@ -471,7 +471,7 @@ export function BringBackPage() {
 															state.total ) *
 															100
 													)
-											  )
+												)
 											: 0 }
 										%
 									</span>

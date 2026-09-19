@@ -169,7 +169,7 @@ export function OffloadPage() {
 														? __(
 																'All Media Offloaded',
 																'omnioffloader'
-														  )
+															)
 														: sprintf(
 																/* translators: %d: number of local attachments. */
 																__(
@@ -177,7 +177,7 @@ export function OffloadPage() {
 																	'omnioffloader'
 																),
 																localCount
-														  ) }
+															) }
 												</Button>
 											</span>
 										</Tooltip>
@@ -259,7 +259,7 @@ export function OffloadPage() {
 												? __(
 														'Preparing offload…',
 														'omnioffloader'
-												  )
+													)
 												: sprintf(
 														/* translators: 1: uploaded count, 2: total count. */
 														__(
@@ -268,7 +268,7 @@ export function OffloadPage() {
 														),
 														state.processed,
 														state.total
-												  ) }
+													) }
 										</span>
 									</div>
 
@@ -281,7 +281,7 @@ export function OffloadPage() {
 															state.total ) *
 															100
 													)
-											  )
+												)
 											: 0 }
 										%
 									</span>
@@ -314,11 +314,11 @@ export function OffloadPage() {
 														'omnioffloader'
 													),
 													state.errors
-											  )
+												)
 											: __(
 													'No errors',
 													'omnioffloader'
-											  ) }
+												) }
 									</span>
 
 									<div className="smowp-progress-card__actions">

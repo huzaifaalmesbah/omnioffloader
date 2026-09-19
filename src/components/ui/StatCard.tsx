@@ -38,7 +38,7 @@ export function StatCard( {
 								e.preventDefault();
 								onClick();
 							}
-					  }
+						}
 					: undefined
 			}
 		>

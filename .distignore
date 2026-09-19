@@ -25,6 +25,9 @@ Thumbs.db
 /eslint.config.cjs
 /package.json
 /package-lock.json
+/.npmrc
+/pnpm-lock.yaml
+/pnpm-workspace.yaml
 /tsconfig.json
 /composer.json
 /composer.lock

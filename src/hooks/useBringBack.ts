@@ -113,7 +113,10 @@ export function useBringBack() {
 
 		document.addEventListener( 'visibilitychange', handleVisibility );
 		return () => {
-			document.removeEventListener( 'visibilitychange', handleVisibility );
+			document.removeEventListener(
+				'visibilitychange',
+				handleVisibility
+			);
 		};
 	}, [ state?.status ] );
 

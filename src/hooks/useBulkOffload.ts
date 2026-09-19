@@ -99,7 +99,10 @@ export function useBulkOffload() {
 
 		document.addEventListener( 'visibilitychange', handleVisibility );
 		return () => {
-			document.removeEventListener( 'visibilitychange', handleVisibility );
+			document.removeEventListener(
+				'visibilitychange',
+				handleVisibility
+			);
 		};
 	}, [ state?.status ] );
 

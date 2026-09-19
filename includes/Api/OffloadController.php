@@ -419,6 +419,15 @@ class OffloadController extends BaseController {
 		// Cap requested IDs to 100 per request.
 		$id_list = array_slice( array_unique( $id_list ), 0, 100 );
 
+		// Prime post and postmeta caches in a single batch query to avoid N+1 queries.
+		if ( ! empty( $id_list ) ) {
+			if ( function_exists( '_prime_post_caches' ) ) {
+				_prime_post_caches( $id_list, false, true );
+			} else {
+				update_postmeta_cache( $id_list );
+			}
+		}
+
 		// Parse known status map if supplied by client (e.g. known=123:offloaded,124:local).
 		// When known status matches current status for a non-transitional item, HTML snippets
 		// are omitted to reduce response payload by ~95% and avoid redundant rendering.

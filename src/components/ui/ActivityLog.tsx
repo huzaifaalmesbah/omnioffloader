@@ -44,6 +44,28 @@ export function ActivityLog( {
 		? items.filter( ( item ) => item.id !== currentItem.id )
 		: items;
 
+	let countMessage: string = sprintf(
+		/* translators: %d: count of processed media items. */
+		__( '%d item(s)', 'omnioffloader' ),
+		items.length
+	);
+	if ( total > 0 && running ) {
+		countMessage =
+			actionType === 'restore'
+				? sprintf(
+						/* translators: 1: brought back count, 2: total count. */
+						__( '%1$d of %2$d brought back', 'omnioffloader' ),
+						processed,
+						total
+				  )
+				: sprintf(
+						/* translators: 1: uploaded count, 2: total count. */
+						__( '%1$d of %2$d uploaded', 'omnioffloader' ),
+						processed,
+						total
+				  );
+	}
+
 	return (
 		<div className="smowp-activity-log">
 			<div className="smowp-activity-log__header">
@@ -63,27 +85,7 @@ export function ActivityLog( {
 					) }
 				</div>
 				<span className="smowp-activity-log__count">
-					{ total > 0 && running
-						? sprintf(
-								actionType === 'restore'
-									? /* translators: 1: brought back count, 2: total count. */
-									  __(
-											'%1$d of %2$d brought back',
-											'omnioffloader'
-									  )
-									: /* translators: 1: uploaded count, 2: total count. */
-									  __(
-											'%1$d of %2$d uploaded',
-											'omnioffloader'
-									  ),
-								processed,
-								total
-						  )
-						: sprintf(
-								/* translators: %d: count of processed media items. */
-								__( '%d item(s)', 'omnioffloader' ),
-								items.length
-						  ) }
+					{ countMessage }
 				</span>
 			</div>
 

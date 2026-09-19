@@ -99,20 +99,22 @@
 
 		$item.attr('data-omnioffloader-status', newStatus);
 
-		// Keep Backbone model in sync if available
+		// Keep Backbone model in sync silently without triggering recursive view renders
 		var rawId = $item.data('id') || $item.attr('data-id');
 		var id = parseInt(rawId, 10);
 		if (id && window.wp && wp.media && wp.media.attachment) {
 			var m = wp.media.attachment(id);
 			if (m) {
 				var prev = m.get('omnioffloader') || {};
-				m.set('omnioffloader', $.extend({}, prev, {
-					status: newStatus,
-					is_offloaded: (data && typeof data === 'object') ? !!data.is_offloaded : (newStatus === 'offloaded'),
-					label: (data && typeof data === 'object') ? (data.label || '') : '',
-					badge_html: (data && typeof data === 'object' && data.badge_html) ? data.badge_html : prev.badge_html,
-					column_html: (data && typeof data === 'object' && data.column_html) ? data.column_html : prev.column_html
-				}));
+				if (prev.status !== newStatus) {
+					m.set('omnioffloader', $.extend({}, prev, {
+						status: newStatus,
+						is_offloaded: (data && typeof data === 'object') ? !!data.is_offloaded : (newStatus === 'offloaded'),
+						label: (data && typeof data === 'object') ? (data.label || '') : '',
+						badge_html: (data && typeof data === 'object' && data.badge_html) ? data.badge_html : prev.badge_html,
+						column_html: (data && typeof data === 'object' && data.column_html) ? data.column_html : prev.column_html
+					}), { silent: true });
+				}
 			}
 		}
 	}
@@ -151,7 +153,7 @@
 		$link.text(loadingText);
 
 		// Optimistically update grid badge if item is in the grid
-		var $gridItem = $('.attachments li.attachment[data-id="' + attachmentId + '"], .attachments-browser li.attachment[data-id="' + attachmentId + '"]');
+		var $gridItem = $('.attachments .attachment[data-id="' + attachmentId + '"]');
 		if ($gridItem.length) {
 			updateGridBadge($gridItem, {
 				status: 'processing',
@@ -204,7 +206,7 @@
 				? response.status.status
 				: (response ? response.status : '');
 
-			var $doneGridItem = $('.attachments li.attachment[data-id="' + attachmentId + '"], .attachments-browser li.attachment[data-id="' + attachmentId + '"]');
+			var $doneGridItem = $('.attachments .attachment[data-id="' + attachmentId + '"]');
 			if ($doneGridItem.length) {
 				updateGridBadge($doneGridItem, {
 					status: statusKey,
@@ -270,7 +272,7 @@
 		}
 
 		// Also update any grid item if present
-		var $gridItem = $('.attachments li.attachment[data-id="' + attachmentId + '"], .attachments-browser li.attachment[data-id="' + attachmentId + '"]');
+		var $gridItem = $('.attachments .attachment[data-id="' + attachmentId + '"]');
 		if ($gridItem.length) {
 			updateGridBadge($gridItem, {
 				status: 'processing',
@@ -328,7 +330,7 @@
 				? response.status.status
 				: (response ? response.status : '');
 
-			var $doneGridItem = $('.attachments li.attachment[data-id="' + attachmentId + '"], .attachments-browser li.attachment[data-id="' + attachmentId + '"]');
+			var $doneGridItem = $('.attachments .attachment[data-id="' + attachmentId + '"]');
 			if ($doneGridItem.length) {
 				updateGridBadge($doneGridItem, {
 					status: statusKey,
@@ -345,7 +347,7 @@
 						is_offloaded: (statusKey === 'offloaded'),
 						badge_html: response.badge_html,
 						column_html: response.column_html
-					}));
+					}), { silent: true });
 				}
 			}
 
@@ -373,7 +375,7 @@
 		});
 
 		// Media library grid view items
-		$('.attachments li.attachment, .attachments-browser li.attachment').each(function() {
+		$('.attachments .attachment').each(function() {
 			var rawId = $(this).data('id') || $(this).attr('data-id');
 			if (!rawId) {
 				return;
@@ -442,7 +444,18 @@
 			return;
 		}
 
-		var queryItems = visibleItems.slice(0, 100);
+		// Prioritize transitional items (processing/queued) so in-flight tasks are never starved
+		var activeItems = [];
+		var inactiveItems = [];
+		for (var j = 0; j < visibleItems.length; j++) {
+			var itemStatus = visibleItems[j].status;
+			if (itemStatus === 'processing' || itemStatus === 'queued') {
+				activeItems.push(visibleItems[j]);
+			} else {
+				inactiveItems.push(visibleItems[j]);
+			}
+		}
+		var queryItems = activeItems.concat(inactiveItems).slice(0, 100);
 		var queryIds = [];
 		var knownPairs = [];
 
@@ -536,7 +549,7 @@
 					}
 
 					// Update grid view item
-					var $gridItem = $('.attachments li.attachment[data-id="' + id + '"], .attachments-browser li.attachment[data-id="' + id + '"]');
+					var $gridItem = $('.attachments .attachment[data-id="' + id + '"]');
 					if ($gridItem.length) {
 						var currentGridStatus = $gridItem.attr('data-omnioffloader-status');
 						if (currentGridStatus !== statusKey) {
@@ -544,7 +557,7 @@
 						}
 					}
 
-					// Update Backbone media model if available
+					// Update Backbone media model silently if available
 					if (window.wp && wp.media && wp.media.attachment) {
 						var m = wp.media.attachment(id);
 						if (m) {
@@ -556,7 +569,7 @@
 									label: data.label || '',
 									badge_html: data.badge_html || prev.badge_html,
 									column_html: data.column_html || prev.column_html
-								}));
+								}), { silent: true });
 							}
 						}
 					}
@@ -575,7 +588,7 @@
 					$curAction.addClass('is-busy').text(curText);
 				}
 
-				var $curGrid = $('.attachments li.attachment[data-id="' + curId + '"], .attachments-browser li.attachment[data-id="' + curId + '"]');
+				var $curGrid = $('.attachments .attachment[data-id="' + curId + '"]');
 				if ($curGrid.length) {
 					var curGridStatus = $curGrid.attr('data-omnioffloader-status');
 					if (curGridStatus !== 'processing') {
@@ -660,7 +673,7 @@
 				$rowAction.addClass('is-busy').text(loadingText);
 			}
 
-			var $gridItem = $('.attachments li.attachment[data-id="' + id + '"], .attachments-browser li.attachment[data-id="' + id + '"]');
+			var $gridItem = $('.attachments .attachment[data-id="' + id + '"]');
 			if ($gridItem.length) {
 				updateGridBadge($gridItem, {
 					status: 'processing',
@@ -748,7 +761,9 @@
 
 			if (this.model && this.$el) {
 				var data = this.model.get('omnioffloader');
-				updateGridBadge(this.$el, data);
+				if (data) {
+					updateGridBadge(this.$el, data);
+				}
 			}
 
 			return result;
@@ -821,16 +836,18 @@
 	}
 
 	var scrollTimer = null;
-	$(window).on('scroll', function() {
-		if (scrollTimer) {
-			return;
-		}
-		scrollTimer = setTimeout(function() {
-			scrollTimer = null;
-			if (isBulkRunning) {
-				checkInFlight();
+	if (window.addEventListener) {
+		window.addEventListener('scroll', function() {
+			if (!isBulkRunning || scrollTimer) {
+				return;
 			}
-		}, 1000);
-	});
+			scrollTimer = setTimeout(function() {
+				scrollTimer = null;
+				if (isBulkRunning) {
+					checkInFlight();
+				}
+			}, 1500);
+		}, { passive: true });
+	}
 
 })(jQuery);

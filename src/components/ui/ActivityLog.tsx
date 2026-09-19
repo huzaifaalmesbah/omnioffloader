@@ -98,10 +98,7 @@ export function ActivityLog( {
 								<span className="smowp-activity-log__sub">
 									{ sprintf(
 										/* translators: 1: attachment ID, 2: time. */
-										__(
-											'#%1$d · %2$s',
-											'omnioffloader'
-										),
+										__( '#%1$d · %2$s', 'omnioffloader' ),
 										item.id,
 										timeStr
 									) }

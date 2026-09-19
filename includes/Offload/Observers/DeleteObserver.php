@@ -33,21 +33,12 @@ class DeleteObserver implements ObserverInterface {
 	private $provider;
 
 	/**
-	 * Secondary backup provider.
-	 *
-	 * @var ProviderInterface|null
-	 */
-	private $secondary_provider;
-
-	/**
 	 * Constructor.
 	 *
-	 * @param ProviderInterface      $provider           Cloud provider.
-	 * @param ProviderInterface|null $secondary_provider Optional secondary backup provider.
+	 * @param ProviderInterface $provider Cloud provider.
 	 */
-	public function __construct( ProviderInterface $provider, ?ProviderInterface $secondary_provider = null ) {
-		$this->provider           = $provider;
-		$this->secondary_provider = $secondary_provider;
+	public function __construct( ProviderInterface $provider ) {
+		$this->provider = $provider;
 	}
 
 	/**
@@ -83,30 +74,11 @@ class DeleteObserver implements ObserverInterface {
 
 		$keys = self::collect_delete_keys( $attachment_id );
 
-		// Delete from primary provider.
+		// Delete from cloud provider.
 		$stored_provider = (string) get_post_meta( $attachment_id, 'omnioffloader_provider', true );
 
 		if ( '' === $stored_provider || $stored_provider === $this->provider->get_key() ) {
 			$this->provider->delete_objects( $keys );
-		}
-
-		// Also delete from secondary backup provider if offloaded.
-		$secondary_offloaded = get_post_meta( $attachment_id, 'omnioffloader_secondary_offloaded', true );
-		if ( $secondary_offloaded ) {
-			$secondary = $this->secondary_provider;
-			if ( null === $secondary ) {
-				$sec_key = (string) get_post_meta( $attachment_id, 'omnioffloader_secondary_provider', true );
-				if ( '' !== $sec_key ) {
-					try {
-						$secondary = \OmniOffloader\Providers\ProviderRegistry::create( $sec_key, 'secondary' );
-					} catch ( \Exception $e ) {
-						$secondary = null;
-					}
-				}
-			}
-			if ( null !== $secondary ) {
-				$secondary->delete_objects( $keys );
-			}
 		}
 	}
 }

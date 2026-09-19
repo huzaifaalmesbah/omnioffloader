@@ -36,21 +36,12 @@ class AttachmentUploader {
 	private $provider;
 
 	/**
-	 * Secondary/backup cloud provider.
-	 *
-	 * @var ProviderInterface|null
-	 */
-	private $secondary_provider;
-
-	/**
 	 * Constructor.
 	 *
-	 * @param ProviderInterface      $provider           Primary cloud provider.
-	 * @param ProviderInterface|null $secondary_provider Optional secondary backup provider.
+	 * @param ProviderInterface $provider Cloud provider.
 	 */
-	public function __construct( ProviderInterface $provider, ?ProviderInterface $secondary_provider = null ) {
-		$this->provider           = $provider;
-		$this->secondary_provider = $secondary_provider;
+	public function __construct( ProviderInterface $provider ) {
+		$this->provider = $provider;
 	}
 
 	/**
@@ -137,81 +128,11 @@ class AttachmentUploader {
 			$retention
 		);
 
-		// Mirror to secondary backup storage if configured.
-		$this->maybe_upload_to_secondary( $attachment_id, $files, $subdir );
-
-		/**
-		 * Fires after an attachment was fully offloaded.
-		 *
-		 * @param int    $attachment_id Attachment ID.
-		 * @param string $subdir        Key prefix used in the bucket.
-		 */
-		do_action( 'omnioffloader_after_offload', $attachment_id, $subdir );
-
 		// Apply the retention policy now that the upload is verified.
 		LocalCleaner::clean( $attachment_id, $retention, $metadata );
 
 		Helpers::flush_media_stats();
 
 		return true;
-	}
-
-	/**
-	 * Mirror attachment files to secondary backup storage if active.
-	 *
-	 * @param int                                                                                                            $attachment_id Attachment ID.
-	 * @param array{main: array<int, array{file: string, key: string}>, sizes: array<int, array{file: string, key: string}>} $files Collected files.
-	 * @param string                                                                                                         $subdir        Bucket subdirectory prefix.
-	 * @return bool True if mirrored successfully or if secondary is not configured.
-	 */
-	protected function maybe_upload_to_secondary( $attachment_id, array $files, $subdir ) {
-		$secondary = $this->secondary_provider;
-
-		if ( null === $secondary && self::is_secondary_configured() ) {
-			try {
-				$secondary = \OmniOffloader\Providers\ProviderRegistry::create( self::get_secondary_provider_key(), 'secondary' );
-			} catch ( \Exception $e ) {
-				$secondary = null;
-			}
-		}
-
-		if ( null === $secondary ) {
-			return true;
-		}
-
-		$secondary_ok = true;
-
-		foreach ( array_merge( $files['main'], $files['sizes'] ) as $entry ) {
-			if ( ! file_exists( $entry['file'] ) ) {
-				continue;
-			}
-
-			if ( false === $secondary->upload_file( $entry['file'], $entry['key'] ) ) {
-				$secondary_ok = false;
-				self::log_attachment_error(
-					$attachment_id,
-					sprintf(
-						/* translators: 1: provider name, 2: object key. */
-						__( '[Backup Server %1$s] Upload failed for "%2$s".', 'omnioffloader' ),
-						$secondary->get_name(),
-						$entry['key']
-					)
-				);
-			}
-		}
-
-		$main = $files['main'][0];
-
-		if ( $secondary_ok && file_exists( $main['file'] ) && $secondary->object_exists( $main['key'] ) ) {
-			update_post_meta( $attachment_id, 'omnioffloader_secondary_offloaded', 1 );
-			update_post_meta( $attachment_id, 'omnioffloader_secondary_offloaded_at', time() );
-			update_post_meta( $attachment_id, 'omnioffloader_secondary_provider', $secondary->get_key() );
-			update_post_meta( $attachment_id, 'omnioffloader_secondary_bucket', (string) $secondary->get_bucket() );
-			update_post_meta( $attachment_id, 'omnioffloader_secondary_path', $subdir );
-
-			return true;
-		}
-
-		return false;
 	}
 }

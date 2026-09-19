@@ -43,22 +43,13 @@ class BulkOffloadProcessor extends AbstractBulkProcessor {
 	private $provider;
 
 	/**
-	 * Secondary backup cloud provider.
-	 *
-	 * @var ProviderInterface|null
-	 */
-	private $secondary_provider;
-
-	/**
 	 * Constructor.
 	 *
-	 * @param ProviderInterface      $provider           Primary cloud provider.
-	 * @param ProviderInterface|null $secondary_provider Optional secondary backup provider.
+	 * @param ProviderInterface $provider Cloud provider.
 	 */
-	public function __construct( ProviderInterface $provider, ?ProviderInterface $secondary_provider = null ) {
+	public function __construct( ProviderInterface $provider ) {
 		parent::__construct( array() );
-		$this->provider           = $provider;
-		$this->secondary_provider = $secondary_provider;
+		$this->provider = $provider;
 	}
 
 	/**
@@ -100,7 +91,7 @@ class BulkOffloadProcessor extends AbstractBulkProcessor {
 	 * @return bool
 	 */
 	protected function process_item( $attachment_id ) {
-		$uploader = new AttachmentUploader( $this->provider, $this->secondary_provider );
+		$uploader = new AttachmentUploader( $this->provider );
 
 		return $uploader->upload( $attachment_id );
 	}

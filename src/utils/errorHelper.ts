@@ -14,8 +14,5 @@ export function errorMessage( error: unknown ): string {
 		return ( error as { message: string } ).message;
 	}
 
-	return __(
-		'Something went wrong. Please try again.',
-		'omnioffloader'
-	);
+	return __( 'Something went wrong. Please try again.', 'omnioffloader' );
 }

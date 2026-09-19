@@ -28,21 +28,12 @@ class UploadObserver implements ObserverInterface {
 	private $provider;
 
 	/**
-	 * Secondary backup provider.
-	 *
-	 * @var ProviderInterface|null
-	 */
-	private $secondary_provider;
-
-	/**
 	 * Constructor.
 	 *
-	 * @param ProviderInterface      $provider           Cloud provider.
-	 * @param ProviderInterface|null $secondary_provider Optional secondary backup provider.
+	 * @param ProviderInterface $provider Cloud provider.
 	 */
-	public function __construct( ProviderInterface $provider, ?ProviderInterface $secondary_provider = null ) {
-		$this->provider           = $provider;
-		$this->secondary_provider = $secondary_provider;
+	public function __construct( ProviderInterface $provider ) {
+		$this->provider = $provider;
 	}
 
 	/**
@@ -67,7 +58,7 @@ class UploadObserver implements ObserverInterface {
 		// The filter fires again for regenerations and edits; the uploader
 		// is a no-op for already-offloaded attachments. Pass the in-flight
 		// metadata through — the DB copy may not be saved yet on first upload.
-		$uploader = new AttachmentUploader( $this->provider, $this->secondary_provider );
+		$uploader = new AttachmentUploader( $this->provider );
 		$uploader->upload( (int) $attachment_id, is_array( $metadata ) ? $metadata : null );
 
 		return $metadata;

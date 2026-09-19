@@ -57,31 +57,6 @@ abstract class AbstractS3Provider implements ProviderInterface {
 	protected $client = null;
 
 	/**
-	 * Storage role ('primary' or 'secondary').
-	 *
-	 * @var string
-	 */
-	protected $role = 'primary';
-
-	/**
-	 * Constructor.
-	 *
-	 * @param string $role Storage role ('primary' or 'secondary').
-	 */
-	public function __construct( $role = 'primary' ) {
-		$this->role = 'secondary' === $role ? 'secondary' : 'primary';
-	}
-
-	/**
-	 * Get the storage role.
-	 *
-	 * @return string
-	 */
-	public function get_role() {
-		return $this->role;
-	}
-
-	/**
 	 * Build a configured S3 client for this provider.
 	 *
 	 * @return \Aws\S3\S3Client
@@ -95,7 +70,7 @@ abstract class AbstractS3Provider implements ProviderInterface {
 	 * @return string
 	 */
 	protected function credential( $field ) {
-		return Helpers::get_credential( $this->get_key(), $field, $this->role );
+		return Helpers::get_credential( $this->get_key(), $field );
 	}
 
 	/**

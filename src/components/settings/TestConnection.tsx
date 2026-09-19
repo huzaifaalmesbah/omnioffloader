@@ -8,10 +8,9 @@ import { errorMessage } from '../../utils/errorHelper';
 
 interface TestConnectionProps {
 	provider: string;
-	role?: 'primary' | 'secondary';
 }
 
-export function TestConnection( { provider, role = 'primary' }: TestConnectionProps ) {
+export function TestConnection( { provider }: TestConnectionProps ) {
 	const { isDirty, save, addNotice } = useCore();
 	const [ testing, setTesting ] = useState( false );
 	const [ result, setResult ] = useState< 'ok' | 'fail' | null >( null );
@@ -26,7 +25,7 @@ export function TestConnection( { provider, role = 'primary' }: TestConnectionPr
 				await save();
 			}
 
-			const response = await testConnection( provider, role );
+			const response = await testConnection( provider );
 			setResult( response.connected ? 'ok' : 'fail' );
 			addNotice(
 				response.connected ? 'success' : 'error',

@@ -16,7 +16,12 @@ import {
 } from '../api/core';
 import { fetchCredentials, saveCredentials } from '../api/provider';
 import { errorMessage } from '../utils/errorHelper';
-import type { CredentialField, MediaStats, ProviderInfo, Settings } from '../types';
+import type {
+	CredentialField,
+	MediaStats,
+	ProviderInfo,
+	Settings,
+} from '../types';
 
 export interface Notice {
 	id: number;
@@ -35,18 +40,11 @@ interface CoreContextValue {
 	updateSettings: ( partial: Partial< Settings > ) => void;
 	updateCredentialValues: ( values: Record< string, string > ) => void;
 	credentialDraft: Record< string, string >;
-	updateSecondaryCredentialValues: ( values: Record< string, string > ) => void;
-	secondaryCredentialDraft: Record< string, string >;
 	credentialsFields: Record< string, CredentialField[] >;
 	loadProviderCredentials: (
-		provider: string,
-		role?: 'primary' | 'secondary'
+		provider: string
 	) => Promise< CredentialField[] >;
-	setProviderFields: (
-		role: 'primary' | 'secondary',
-		provider: string,
-		fields: CredentialField[]
-	) => void;
+	setProviderFields: ( provider: string, fields: CredentialField[] ) => void;
 	save: () => Promise< void >;
 	addNotice: ( status: Notice[ 'status' ], message: string ) => void;
 	removeNotice: ( id: number ) => void;
@@ -67,35 +65,25 @@ export function CoreProvider( { children }: { children: React.ReactNode } ) {
 	const [ credentialDraft, setCredentialDraft ] = useState<
 		Record< string, string >
 	>( {} );
-	const [ secondaryCredentialDraft, setSecondaryCredentialDraft ] = useState<
-		Record< string, string >
-	>( {} );
 	const [ isSaving, setIsSaving ] = useState( false );
 	const [ credentialsFields, setCredentialsFields ] = useState<
 		Record< string, CredentialField[] >
 	>( {} );
 
 	const setProviderFields = useCallback(
-		(
-			role: 'primary' | 'secondary',
-			provider: string,
-			fields: CredentialField[]
-		) => {
+		( provider: string, fields: CredentialField[] ) => {
 			setCredentialsFields( ( current ) => ( {
 				...current,
-				[ `${ role }:${ provider }` ]: fields,
+				[ provider ]: fields,
 			} ) );
 		},
 		[]
 	);
 
 	const loadProviderCredentials = useCallback(
-		async (
-			provider: string,
-			role: 'primary' | 'secondary' = 'primary'
-		): Promise< CredentialField[] > => {
-			const res = await fetchCredentials( provider, role );
-			setProviderFields( role, provider, res.fields );
+		async ( provider: string ): Promise< CredentialField[] > => {
+			const res = await fetchCredentials( provider );
+			setProviderFields( provider, res.fields );
 			return res.fields;
 		},
 		[ setProviderFields ]
@@ -145,12 +133,6 @@ export function CoreProvider( { children }: { children: React.ReactNode } ) {
 			if ( partial.provider && partial.provider !== current.provider ) {
 				setCredentialDraft( {} );
 			}
-			if (
-				partial.secondary_provider &&
-				partial.secondary_provider !== current.secondary_provider
-			) {
-				setSecondaryCredentialDraft( {} );
-			}
 			return { ...current, ...partial };
 		} );
 		setSettingsDirty( true );
@@ -163,13 +145,6 @@ export function CoreProvider( { children }: { children: React.ReactNode } ) {
 		[]
 	);
 
-	const updateSecondaryCredentialValues = useCallback(
-		( values: Record< string, string > ) => {
-			setSecondaryCredentialDraft( ( current ) => ( { ...current, ...values } ) );
-		},
-		[]
-	);
-
 	const refreshStats = useCallback( () => {
 		fetchStats()
 			.then( setStats )
@@ -178,10 +153,7 @@ export function CoreProvider( { children }: { children: React.ReactNode } ) {
 			} );
 	}, [] );
 
-	const isDirty =
-		settingsDirty ||
-		Object.keys( credentialDraft ).length > 0 ||
-		Object.keys( secondaryCredentialDraft ).length > 0;
+	const isDirty = settingsDirty || Object.keys( credentialDraft ).length > 0;
 
 	const save = useCallback( async () => {
 		if ( ! settings ) {
@@ -203,38 +175,13 @@ export function CoreProvider( { children }: { children: React.ReactNode } ) {
 			) {
 				const response = await saveCredentials(
 					settings.provider,
-					credentialDraft,
-					'primary'
+					credentialDraft
 				);
-				setProviderFields(
-					'primary',
-					settings.provider,
-					response.fields
-				);
+				setProviderFields( settings.provider, response.fields );
 				setCredentialDraft( {} );
 			}
 
-			if (
-				Object.keys( secondaryCredentialDraft ).length > 0 &&
-				settings.secondary_provider
-			) {
-				const response = await saveCredentials(
-					settings.secondary_provider,
-					secondaryCredentialDraft,
-					'secondary'
-				);
-				setProviderFields(
-					'secondary',
-					settings.secondary_provider,
-					response.fields
-				);
-				setSecondaryCredentialDraft( {} );
-			}
-
-			addNotice(
-				'success',
-				__( 'Changes saved.', 'omnioffloader' )
-			);
+			addNotice( 'success', __( 'Changes saved.', 'omnioffloader' ) );
 			refreshStats();
 		} catch ( error: unknown ) {
 			addNotice( 'error', errorMessage( error ) );
@@ -245,7 +192,6 @@ export function CoreProvider( { children }: { children: React.ReactNode } ) {
 		settings,
 		settingsDirty,
 		credentialDraft,
-		secondaryCredentialDraft,
 		setProviderFields,
 		addNotice,
 		refreshStats,
@@ -263,8 +209,6 @@ export function CoreProvider( { children }: { children: React.ReactNode } ) {
 			updateSettings,
 			updateCredentialValues,
 			credentialDraft,
-			updateSecondaryCredentialValues,
-			secondaryCredentialDraft,
 			credentialsFields,
 			loadProviderCredentials,
 			setProviderFields,
@@ -284,8 +228,6 @@ export function CoreProvider( { children }: { children: React.ReactNode } ) {
 			updateSettings,
 			updateCredentialValues,
 			credentialDraft,
-			updateSecondaryCredentialValues,
-			secondaryCredentialDraft,
 			credentialsFields,
 			loadProviderCredentials,
 			setProviderFields,

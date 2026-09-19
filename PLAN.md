@@ -24,7 +24,6 @@ Offload WordPress media library files to cloud object storage to save server dis
 
 - **Providers:** Amazon S3, Cloudflare R2, Backblaze B2, DigitalOcean Spaces, Wasabi, and a generic S3-compatible option. The provider registry + abstract base class make each one a single new file with **zero JS changes**.
 - **Key differentiator:** **Bring Back** — a first-class restore feature that downloads offloaded media from the cloud back to the server (per-file and bulk), safely reversing an offload.
-- **Secondary backup storage:** optionally mirror every offloaded file to a second, independent provider.
 - **Modern admin:** single-page React app in TypeScript — no PHP settings templates, everything through the REST API.
 - **Works on any host:** bulk jobs are built for a 1-CPU shared plan as much as a 16-core box. See §7.5.
 
@@ -101,7 +100,7 @@ omnioffloader/
 │   ├── Api/                         # REST controllers (extend BaseController)
 │   │   ├── BaseController.php       # register_*_route helpers, permissions_check (manage_options)
 │   │   ├── CoreController.php       # GET/POST settings, GET providers, GET stats
-│   │   ├── ProviderController.php   # GET/POST credentials, POST test-connection (primary+secondary)
+│   │   ├── ProviderController.php   # GET/POST credentials, POST test-connection
 │   │   ├── OffloadController.php    # POST offload/{id}, POST bulk, GET bulk/progress,
 │   │   │                            #   POST bulk/cancel, GET errors
 │   │   └── BringBackController.php  # POST restore/{id}, POST bulk, GET progress,
@@ -113,7 +112,7 @@ omnioffloader/
 │   │   ├── ProviderRegistry.php     # key => class, aliases; omnioffloader_cloud_providers filter
 │   │   └── AmazonS3 · CloudflareR2 · BackblazeB2 · DigitalOceanSpaces · Wasabi · S3Compatible
 │   ├── Services/
-│   │   ├── AttachmentUploader.php   # Offload one attachment (+ all sizes/sources, + secondary)
+│   │   ├── AttachmentUploader.php   # Offload one attachment (+ all sizes/sources)
 │   │   ├── AttachmentRestorer.php   # Bring Back: cloud → server, atomic + verified
 │   │   ├── LocalCleaner.php         # Applies retention policy after verified offload
 │   │   ├── AbstractBulkProcessor.php  # ★ Hardened queue base — see §7.5
@@ -140,8 +139,7 @@ omnioffloader/
 │   │   │                            #   [--dry-run] [--force]
 │   │   └── StatusCommand.php        # status — provider, counts, connection, queue state
 │   ├── Traits/
-│   │   ├── OptionsHelper.php        # settings/credentials get+sanitize, is_configured(),
-│   │   │                            #   is_secondary_configured()
+│   │   ├── OptionsHelper.php        # settings/credentials get+sanitize, is_configured()
 │   │   └── AttachmentHelper.php     # Key collection (sizes/original/sources),
 │   │                                #   subdir/version logic, offload meta read/write
 │   └── templates/admin-app.php      # <div id="omnioffloader-admin-app"></div> mount point
@@ -167,7 +165,7 @@ omnioffloader/
 `Core\Plugin::run()`:
 - `initialize_classes()`:
   - Always: `CoreController`, `ProviderController`, `Admin\Settings`, `OffloadController`, `BringBackController`.
-  - Only when a provider is configured (`OptionsHelper::is_configured()`) **and** `Aws\S3\S3Client` exists: the primary provider, the secondary provider when configured, `Offload\Offloader` (registers all observers), `BulkOffloadProcessor`, `BulkRestoreProcessor`. The two processors must be constructed on every request — their constructors register the async loopback and cron-healthcheck hooks that drive the queues.
+  - Only when a provider is configured (`OptionsHelper::is_configured()`) **and** `Aws\S3\S3Client` exists: the cloud provider, `Offload\Offloader` (registers all observers), `BulkOffloadProcessor`, `BulkRestoreProcessor`. The two processors must be constructed on every request — their constructors register the async loopback and cron-healthcheck hooks that drive the queues.
   - `OMNIOFFLOADER_DISABLE_ENGINE` (wp-config constant) skips all of it — the kill switch used by the integration tests.
 - `maybe_upgrade()` on `init` priority 5 → `Migrator::run()` (version-gated, runs in every context). **This also executes inside the bulk queue's own worker requests** — guard destructive migrations against a live run.
 - Plugin action link (Settings).
@@ -187,7 +185,6 @@ ProviderInterface
 |---|---|
 | `get_key(): string` | e.g. `cloudflare_r2` |
 | `get_name(): string` | e.g. "Cloudflare R2" (`S3Compatible` returns the user's custom name) |
-| `get_role(): string` | `primary` or `secondary` — selects the credential store |
 | `get_bucket(): ?string` | |
 | `get_domain(): string` | Public/CDN base URL for rewrites |
 | `upload_file(string $file, string $key): string\|false` | Single PUT, or multipart above the threshold |
@@ -209,8 +206,8 @@ ProviderInterface
 
 ### 4.3 Credentials
 
-1. **wp-config constants win:** `OMNIOFFLOADER_CLOUDFLARE_R2_KEY`, `…_SECRET`, `…_ENDPOINT`, `…_BUCKET`, `…_DOMAIN` (and `OMNIOFFLOADER_SECONDARY_*` for the backup provider) — reported as `locked: true` to the UI (fields disabled, secrets masked, **never returned raw**).
-2. Otherwise stored in the `omnioffloader_credentials` / `omnioffloader_secondary_credentials` options (per-provider sub-arrays).
+1. **wp-config constants win:** `OMNIOFFLOADER_CLOUDFLARE_R2_KEY`, `…_SECRET`, `…_ENDPOINT`, `…_BUCKET`, `…_DOMAIN` — reported as `locked: true` to the UI (fields disabled, secrets masked, **never returned raw**).
+2. Otherwise stored in the `omnioffloader_credentials` option (per-provider sub-arrays).
 3. REST: `GET` returns fields with secrets masked (`is_set: true`); `POST` ignores masked placeholder values so saving other fields never wipes a secret.
 
 R2 fields: Access Key ID, Secret Access Key, Endpoint URL (`https://<account-id>.r2.cloudflarestorage.com`), Bucket Name, Custom Domain / public bucket URL (required — R2 has no default public URL). Region fixed `auto`. Other providers add region and, for `S3Compatible`, endpoint, path-style toggle and a display name.
@@ -227,15 +224,14 @@ R2 fields: Access Key ID, Secret Access Key, Endpoint URL (`https://<account-id>
 | `omnioffloader_object_version` | version segment when object versioning enabled |
 | `omnioffloader_retention` | retention policy applied (0/1/2) — tells Bring Back what's missing locally |
 | `omnioffloader_error_log` | last offload/restore errors (array of `{time, message}`, capped at 10) |
-| `omnioffloader_secondary_{offloaded,offloaded_at,provider,bucket,path}` | same state for the backup provider |
 
 ### 4.5 Options
 
 | Option | Autoload | Contents |
 |---|---|---|
-| `omnioffloader_settings` | **on** | provider, secondary_active, secondary_provider, retention_policy, mirror_delete, path_prefix(+active), object_versioning, bring_back_delete_cloud, remove_data_on_uninstall |
+| `omnioffloader_settings` | **on** | provider, retention_policy, mirror_delete, path_prefix(+active), object_versioning, bring_back_delete_cloud, remove_data_on_uninstall |
 | `omnioffloader_version` | **on** | for `Migrator` |
-| `omnioffloader_credentials` · `omnioffloader_secondary_credentials` | off | per-provider credentials |
+| `omnioffloader_credentials` | off | per-provider credentials |
 | `omnioffloader_first_activated_version` | off | |
 | `omnioffloader_bulk_offload_state` · `omnioffloader_bulk_restore_state` | off | progress heartbeat (status, total, processed, errors, message, current, recent[]) |
 | `omnioffloader_bulk_{offload,restore}_batch_*` · `_status` | off | queue internals, written by `WP_Background_Process`. **Never leave these behind** — `AbstractBulkProcessor::purge_stored_data()` owns their cleanup on deactivate, uninstall and upgrade. |
@@ -258,11 +254,11 @@ All routes: `permission_callback` → `manage_options` (BaseController), nonce v
 **Core (`CoreController`)**
 - `GET  /core/settings` · `POST /core/settings`
 - `GET  /core/providers` — registry list + each provider's credential field defs
-- `GET  /core/stats` — total / offloaded / local counts, configured/provider flags, secondary status
+- `GET  /core/stats` — total / offloaded / local counts, configured/provider flags
 
 **Provider (`ProviderController`)**
-- `GET  /provider/credentials?provider=…&role=…` (masked) · `POST /provider/credentials`
-- `POST /provider/test-connection` — primary or secondary role
+- `GET  /provider/credentials?provider=…` (masked) · `POST /provider/credentials`
+- `POST /provider/test-connection`
 
 **Offload (`OffloadController`)**
 - `POST /offload/attachment/{id}` — single item (media library row action)
@@ -323,7 +319,7 @@ Layout components: `layout/Sidebar.tsx` (logo + nav), `layout/Header.tsx` (icon 
 - Routing via `view=` query param: `dashboard`, `settings`, `offload`, `bring-back`.
 - Pages:
   - **Dashboard** — stat cards (Total / Offloaded / Local), provider connection badge, links to Offload & Bring Back.
-  - **Settings** — provider select, generic `CredentialFields`, Test Connection, secondary backup storage section, Retention Policy radios, Mirror Delete, Path Prefix, Object Versioning, uninstall cleanup toggle.
+  - **Settings** — provider select, generic `CredentialFields`, Test Connection, Retention Policy radios, Mirror Delete, Path Prefix, Object Versioning, uninstall cleanup toggle.
   - **Offload** — pre-count, Start/Cancel, `ProgressBar`, live processed/error counters, `ActivityLog` of recent items.
   - **★ Bring Back** — preflight summary (items, bytes, free disk) with disk warning, "also delete from cloud" toggle (default OFF), Start/Cancel + progress, per-item results.
 
@@ -334,7 +330,7 @@ Layout components: `layout/Sidebar.tsx` (logo + nav), `layout/Header.tsx` (icon 
 ## 7. Feature Behavior
 
 ### 7.1 Auto-offload on upload
-`UploadObserver` on `wp_generate_attachment_metadata` (late): `AttachmentUploader` uploads original + all sizes (+ `original_image`, modern-format `sources` WebP/AVIF), verifies the main object exists, writes meta, mirrors to the secondary provider when configured, then `LocalCleaner` applies the retention policy.
+`UploadObserver` on `wp_generate_attachment_metadata` (late): `AttachmentUploader` uploads original + all sizes (+ `original_image`, modern-format `sources` WebP/AVIF), verifies the main object exists, writes meta, then `LocalCleaner` applies the retention policy.
 
 ### 7.2 URL rewriting
 When `omnioffloader_offloaded`: rewrite via `UrlRewriteObserver`, `SrcsetObserver`, `ContentImageTagObserver`.
@@ -360,8 +356,8 @@ Radio setting `omnioffloader_settings[retention_policy]`:
 3. Download each to its `wp_upload_dir()` path: temp file + `rename()` (atomic, never half-written), create directories, path-traversal guard (`realpath` inside uploads basedir).
 4. Skip files already present locally with matching size (retention 0/1 — no wasted bandwidth).
 5. Verify all expected files exist locally.
-6. Clear offload meta (primary + secondary) → URLs serve locally again.
-7. If `$delete_cloud` (default OFF): delete cloud objects — from both providers — only after local verification.
+6. Clear offload meta → URLs serve locally again.
+7. If `$delete_cloud` (default OFF): delete cloud objects only after local verification.
 - Any failure: keep cloud copy + meta, log to `omnioffloader_error_log`, report. **Never leave an attachment where neither copy is valid.**
 
 ### 7.5 ★ Bulk processing (offload and Bring Back)
@@ -381,7 +377,7 @@ Both queues extend `Services\AbstractBulkProcessor`; the subclasses supply only 
 
 Queue population skips trashed attachments and rows with no `_wp_attached_file` — each would otherwise burn a task and land in the error log. State is published *before* the queue is written, so a request that dies while queueing a large library still leaves a coherent, cancellable state.
 
-**Throughput is deliberately serial** — one attachment at a time, ~7 round trips each (6 PUT + 1 verifying HEAD; double with a secondary provider). Hardware does not change it; a 16-core box finishes a 15k library in the same time as a 1-core box. Any future parallelism must preserve the safety invariants in §10.
+**Throughput is deliberately serial** — one attachment at a time, ~7 round trips each (6 PUT + 1 verifying HEAD). Hardware does not change it; a 16-core box finishes a 15k library in the same time as a 1-core box. Any future parallelism must preserve the safety invariants in §10.
 
 **CLI:** `wp omnioffloader offload --all [--limit=…]` and `restore --all` run the same services synchronously. They refuse to start against an active queue and hold its process lock while they work (see §10 invariant 8).
 
@@ -512,7 +508,7 @@ Phases 1–4 were **development phases, not release versions** — they shipped 
 | Version | Status | Milestone |
 |---|---|---|
 | `0.1.0` | ✅ released | Phases 1–4 — skeleton + R2 provider + settings UI, offload pipeline + retention, bulk offload + library UX + CLI, ★ Bring Back |
-| `0.1.1` | ✅ released | Five more providers + generic S3-compatible, secondary backup storage, multipart uploads, bulk-queue reliability & performance work (§7.5) |
+| `0.1.1` | ✅ released | Five more providers + generic S3-compatible, multipart uploads, bulk-queue reliability & performance work (§7.5) |
 | `0.9.0` | planned | Phase 5 — polish, compat, release candidate. **← End of planned work.** |
 | `1.0.0` | 🔒 | First stable — **only with owner's explicit permission** |
 
@@ -529,7 +525,7 @@ Bootstrap + Composer autoload + `Core\Plugin`/`Activator`/`Deactivator`/`Migrato
 `download_file()`, `AttachmentRestorer`, `BringBackController` (+ preflight), Bring Back page, `BulkRestoreProcessor`, `wp omnioffloader restore`. Verified by full round-trip: offload with Full Cloud Migration → Bring Back → files byte-identical (md5), URLs local again.
 
 ### Phase 4a — Providers & Reliability (`0.1.1`) ✅
-Originally scoped as "Phase 6+, locked until `1.0.0`" — **that gate was dropped**, because `AbstractS3Provider` made each provider a ~90-line file with no core changes, exactly as §4.2 intended. Shipped: `AmazonS3`, `BackblazeB2`, `DigitalOceanSpaces`, `Wasabi`, `S3Compatible`; secondary backup storage; multipart uploads; and the bulk-queue hardening in §7.5.
+Originally scoped as "Phase 6+, locked until `1.0.0`" — **that gate was dropped**, because `AbstractS3Provider` made each provider a ~90-line file with no core changes, exactly as §4.2 intended. Shipped: `AmazonS3`, `BackblazeB2`, `DigitalOceanSpaces`, `Wasabi`, `S3Compatible`; multipart uploads; and the bulk-queue hardening in §7.5.
 
 ### Phase 5 (v0.9.0) — Polish & Release Candidate
 Error surfacing UI, `readme.txt` + `.wordpress-org` assets polish, compat testing (Elementor, EWWW/Imagify, WebP-uploads), edge cases (scaled images, image editor saves, thumbnail regeneration), finalize `CLAUDE.md`, release zip. **End of planned work — `1.0.0` requires owner permission.**
@@ -545,4 +541,4 @@ Google Cloud Storage; scheduled Zip archives / safety backups to Google Drive; m
 |---|---|
 | Provider abstraction, retention policy (3 modes), observer-per-hook offload engine, key collection (sizes/original/modern sources), wp-config credential constants | advanced-media-offloader |
 | Background queue primitives (`WP_Async_Request`, `WP_Background_Process`) | Delicious Brains' WP Background Processing (GPL), vendored in `includes/Abstracts/` and subclassed — see §7.5 |
-| ★ Bring Back (restore to server), secondary backup storage, provider meta per attachment, credential fields as JSON-driven generic UI, **TypeScript admin app**, the hardened bulk queue, full-page admin design (§6.1) | new in this plugin |
+| ★ Bring Back (restore to server), provider meta per attachment, credential fields as JSON-driven generic UI, **TypeScript admin app**, the hardened bulk queue, full-page admin design (§6.1) | new in this plugin |

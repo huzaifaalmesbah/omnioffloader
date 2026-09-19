@@ -7,7 +7,6 @@ import { errorMessage } from '../../utils/errorHelper';
 
 interface CredentialFieldsProps {
 	provider: string;
-	role?: 'primary' | 'secondary';
 }
 
 /**
@@ -15,48 +14,27 @@ interface CredentialFieldsProps {
  * definitions served over REST — adding a provider needs no JS changes.
  * @param root0
  * @param root0.provider
- * @param root0.role
  */
-export function CredentialFields( {
-	provider,
-	role = 'primary',
-}: CredentialFieldsProps ) {
+export function CredentialFields( { provider }: CredentialFieldsProps ) {
 	const {
 		credentialDraft,
 		updateCredentialValues,
-		secondaryCredentialDraft,
-		updateSecondaryCredentialValues,
 		credentialsFields,
 		loadProviderCredentials,
 		addNotice,
 	} = useCore();
 
-	const cacheKey = `${ role }:${ provider }`;
-	const fields = credentialsFields[ cacheKey ] ?? null;
-
-	const currentDraft =
-		role === 'secondary' ? secondaryCredentialDraft : credentialDraft;
-	const updateValues =
-		role === 'secondary'
-			? updateSecondaryCredentialValues
-			: updateCredentialValues;
+	const fields = credentialsFields[ provider ] ?? null;
+	const currentDraft = credentialDraft;
+	const updateValues = updateCredentialValues;
 
 	useEffect( () => {
-		if ( ! credentialsFields[ cacheKey ] ) {
-			loadProviderCredentials( provider, role ).catch(
-				( error: unknown ) => {
-					addNotice( 'error', errorMessage( error ) );
-				}
-			);
+		if ( ! credentialsFields[ provider ] ) {
+			loadProviderCredentials( provider ).catch( ( error: unknown ) => {
+				addNotice( 'error', errorMessage( error ) );
+			} );
 		}
-	}, [
-		provider,
-		role,
-		cacheKey,
-		credentialsFields,
-		loadProviderCredentials,
-		addNotice,
-	] );
+	}, [ provider, credentialsFields, loadProviderCredentials, addNotice ] );
 
 	if ( ! fields ) {
 		return (
@@ -66,10 +44,7 @@ export function CredentialFields( {
 		);
 	}
 
-	const constPrefix =
-		role === 'secondary'
-			? 'OMNIOFFLOADER_SECONDARY_'
-			: 'OMNIOFFLOADER_';
+	const constPrefix = 'OMNIOFFLOADER_';
 
 	return (
 		<div className="smowp-credential-fields">

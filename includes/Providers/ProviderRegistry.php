@@ -89,12 +89,11 @@ class ProviderRegistry {
 	/**
 	 * Create a provider instance.
 	 *
-	 * @param string $key  Provider key.
-	 * @param string $role Storage role ('primary' or 'secondary').
+	 * @param string $key Provider key.
 	 * @return ProviderInterface
 	 * @throws \InvalidArgumentException When the key is unknown or the class is invalid.
 	 */
-	public static function create( $key, $role = 'primary' ) {
+	public static function create( $key ) {
 		$canonical = self::canonical_key( $key );
 		$providers = self::get_providers();
 
@@ -108,6 +107,6 @@ class ProviderRegistry {
 			throw new \InvalidArgumentException( esc_html( "Invalid cloud provider class for: {$key}" ) );
 		}
 
-		return new $class( $role );
+		return new $class();
 	}
 }

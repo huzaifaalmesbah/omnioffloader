@@ -28,13 +28,6 @@ interface ProviderInterface {
 	public function get_key();
 
 	/**
-	 * Storage role, e.g. 'primary' or 'secondary'.
-	 *
-	 * @return string
-	 */
-	public function get_role();
-
-	/**
 	 * Human name, e.g. 'Cloudflare R2'.
 	 *
 	 * @return string

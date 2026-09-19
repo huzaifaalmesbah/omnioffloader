@@ -47,13 +47,6 @@ class Plugin {
 	private $provider = null;
 
 	/**
-	 * Active secondary backup provider when configured, null otherwise.
-	 *
-	 * @var ProviderInterface|null
-	 */
-	private $secondary_provider = null;
-
-	/**
 	 * Bulk offload processor when the engine is on, null otherwise.
 	 *
 	 * @var BulkOffloadProcessor|null
@@ -74,15 +67,6 @@ class Plugin {
 	 */
 	public function get_provider() {
 		return $this->provider;
-	}
-
-	/**
-	 * Get the active secondary backup provider (null when not configured).
-	 *
-	 * @return ProviderInterface|null
-	 */
-	public function get_secondary_provider() {
-		return $this->secondary_provider;
 	}
 
 	/**
@@ -206,7 +190,7 @@ class Plugin {
 		}
 
 		try {
-			$provider = ProviderRegistry::create( self::get_provider_key(), 'primary' );
+			$provider = ProviderRegistry::create( self::get_provider_key() );
 		} catch ( \InvalidArgumentException $e ) {
 			// Saved provider no longer registered — leave the engine off.
 			return;
@@ -214,20 +198,12 @@ class Plugin {
 
 		$this->provider = $provider;
 
-		if ( self::is_secondary_configured() ) {
-			try {
-				$this->secondary_provider = ProviderRegistry::create( self::get_secondary_provider_key(), 'secondary' );
-			} catch ( \InvalidArgumentException $e ) {
-				$this->secondary_provider = null;
-			}
-		}
-
-		$offloader = new Offloader( $provider, $this->secondary_provider );
+		$offloader = new Offloader( $provider );
 		$offloader->register_observers();
 
 		// Must exist on every request: their constructors register the
 		// async loopback + cron-healthcheck hooks that drive the queues.
-		$this->bulk_offload = new BulkOffloadProcessor( $provider, $this->secondary_provider );
+		$this->bulk_offload = new BulkOffloadProcessor( $provider );
 		$this->bulk_restore = new BulkRestoreProcessor();
 	}
 }

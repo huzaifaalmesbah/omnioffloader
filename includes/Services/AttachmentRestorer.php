@@ -77,11 +77,10 @@ class AttachmentRestorer {
 			return false;
 		}
 
-		$all_ok             = true;
-		$secondary_provider = $this->resolve_secondary_provider( $attachment_id );
+		$all_ok = true;
 
 		foreach ( array_merge( $files['main'], $files['sizes'] ) as $entry ) {
-			if ( ! $this->restore_file( $attachment_id, $provider, $entry['key'], $entry['file'], $base_real, $secondary_provider ) ) {
+			if ( ! $this->restore_file( $attachment_id, $provider, $entry['key'], $entry['file'], $base_real ) ) {
 				$all_ok = false;
 			}
 		}
@@ -111,7 +110,6 @@ class AttachmentRestorer {
 		$delete_keys = $delete_cloud ? self::collect_delete_keys( $attachment_id ) : array();
 
 		self::clear_offload_meta( $attachment_id );
-		$this->clear_secondary_offload_meta( $attachment_id );
 
 		/**
 		 * Fires after an attachment was fully restored to the server.
@@ -129,14 +127,7 @@ class AttachmentRestorer {
 			if ( ! $provider->delete_objects( $delete_keys ) ) {
 				self::log_attachment_error(
 					$attachment_id,
-					__( 'Restored locally, but some primary cloud objects could not be deleted.', 'omnioffloader' )
-				);
-			}
-
-			if ( null !== $secondary_provider && ! $secondary_provider->delete_objects( $delete_keys ) ) {
-				self::log_attachment_error(
-					$attachment_id,
-					__( 'Restored locally, but some secondary cloud objects could not be deleted.', 'omnioffloader' )
+					__( 'Restored locally, but some cloud objects could not be deleted.', 'omnioffloader' )
 				);
 			}
 		}
@@ -147,15 +138,14 @@ class AttachmentRestorer {
 	/**
 	 * Restore a single file of the attachment.
 	 *
-	 * @param int                    $attachment_id      Attachment ID (for error logging).
-	 * @param ProviderInterface      $provider           Provider the attachment was offloaded to.
-	 * @param string                 $key                Object key.
-	 * @param string                 $dest               Absolute local destination path.
-	 * @param string                 $base_real          realpath() of the uploads basedir.
-	 * @param ProviderInterface|null $secondary_provider Optional secondary backup provider.
+	 * @param int               $attachment_id Attachment ID (for error logging).
+	 * @param ProviderInterface $provider      Provider the attachment was offloaded to.
+	 * @param string            $key           Object key.
+	 * @param string            $dest          Absolute local destination path.
+	 * @param string            $base_real     realpath() of the uploads basedir.
 	 * @return bool
 	 */
-	private function restore_file( $attachment_id, ProviderInterface $provider, $key, $dest, $base_real, ?ProviderInterface $secondary_provider = null ) {
+	private function restore_file( $attachment_id, ProviderInterface $provider, $key, $dest, $base_real ) {
 		$dir = dirname( $dest );
 
 		if ( ! wp_mkdir_p( $dir ) ) {
@@ -198,23 +188,15 @@ class AttachmentRestorer {
 			}
 		}
 
-		// 1. Try downloading from the primary provider.
 		if ( $provider->download_file( $key, $dest ) ) {
 			return true;
-		}
-
-		// 2. If primary failed, try falling back to the secondary backup server.
-		if ( null !== $secondary_provider && $secondary_provider->object_exists( $key ) ) {
-			if ( $secondary_provider->download_file( $key, $dest ) ) {
-				return true;
-			}
 		}
 
 		// The offload side quietly skips size files that never existed on
 		// disk, so their objects were never uploaded. Mirror that: a missing
 		// *object* with no local copy is only fatal for main files — and
 		// main files are verified separately by the caller.
-		if ( ! $provider->object_exists( $key ) && ( null === $secondary_provider || ! $secondary_provider->object_exists( $key ) ) ) {
+		if ( ! $provider->object_exists( $key ) ) {
 			return true;
 		}
 
@@ -246,7 +228,7 @@ class AttachmentRestorer {
 		}
 
 		try {
-			return ProviderRegistry::create( $provider_key, 'primary' );
+			return ProviderRegistry::create( $provider_key );
 		} catch ( \InvalidArgumentException $e ) {
 			self::log_attachment_error(
 				$attachment_id,
@@ -259,45 +241,5 @@ class AttachmentRestorer {
 
 			return null;
 		}
-	}
-
-	/**
-	 * Resolve the secondary provider the attachment was backed up to.
-	 *
-	 * @param int $attachment_id Attachment ID.
-	 * @return ProviderInterface|null
-	 */
-	private function resolve_secondary_provider( $attachment_id ) {
-		$secondary_offloaded = get_post_meta( $attachment_id, 'omnioffloader_secondary_offloaded', true );
-
-		if ( ! $secondary_offloaded ) {
-			return null;
-		}
-
-		$provider_key = (string) get_post_meta( $attachment_id, 'omnioffloader_secondary_provider', true );
-
-		if ( '' === $provider_key ) {
-			return null;
-		}
-
-		try {
-			return ProviderRegistry::create( $provider_key, 'secondary' );
-		} catch ( \InvalidArgumentException $e ) {
-			return null;
-		}
-	}
-
-	/**
-	 * Clear secondary backup offload metadata after a verified restore.
-	 *
-	 * @param int $attachment_id Attachment ID.
-	 * @return void
-	 */
-	private function clear_secondary_offload_meta( $attachment_id ) {
-		delete_post_meta( $attachment_id, 'omnioffloader_secondary_offloaded' );
-		delete_post_meta( $attachment_id, 'omnioffloader_secondary_offloaded_at' );
-		delete_post_meta( $attachment_id, 'omnioffloader_secondary_provider' );
-		delete_post_meta( $attachment_id, 'omnioffloader_secondary_bucket' );
-		delete_post_meta( $attachment_id, 'omnioffloader_secondary_path' );
 	}
 }

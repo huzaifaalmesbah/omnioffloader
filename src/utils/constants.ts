@@ -44,10 +44,7 @@ export const DEFAULT_VIEW = 'dashboard';
 
 export const PLUGIN_ICON = cloud;
 
-export const PLUGIN_NAME = __(
-	'OmniOffloader',
-	'omnioffloader'
-);
+export const PLUGIN_NAME = __( 'OmniOffloader', 'omnioffloader' );
 
 export function getRoute( view: string ): RouteMeta {
 	return ROUTES.find( ( route ) => route.view === view ) ?? ROUTES[ 0 ];

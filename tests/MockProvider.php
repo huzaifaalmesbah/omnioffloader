@@ -45,13 +45,6 @@ class MockProvider implements ProviderInterface {
 	/**
 	 * {@inheritDoc}
 	 */
-	public function get_role() {
-		return 'primary';
-	}
-
-	/**
-	 * {@inheritDoc}
-	 */
 	public function get_name() {
 		return 'Mock Provider';
 	}

@@ -33,7 +33,6 @@ And because offloading should never be a one-way door, **Bring Back** downloads 
 * **Serve from your CDN** — media is delivered from your custom domain or CDN edge, not your origin server.
 * **Three retention policies** — keep every local copy, delete only generated thumbnails (smart cleanup), or move everything to the cloud and reclaim the full disk space.
 * **Bring Back restore** — pull media back from the cloud to your server, per file or in bulk, with a disk-space preflight so you know what it needs before it starts.
-* **Secondary backup storage** — mirror every offloaded file to a second, independent provider, so your media lives in two clouds.
 * **Bulk offload with live progress** — background processing with a real-time activity log, cancel at any time, resumes safely if a request is interrupted.
 * **Mirror deletion** — deleting an attachment in WordPress removes its cloud objects too (optional, off by default).
 * **Media library integration** — filter by Offloaded / Local, see status on each attachment, and offload or restore straight from the row actions.
@@ -113,10 +112,6 @@ Every write command supports `--dry-run`, and destructive options ask for confir
 
 Files above 64 MB are uploaded in parts, so a dropped connection costs one chunk rather than the whole transfer, and files larger than 5 GB are supported. If a transfer is still cut short by your host's time limit, that attachment is reported with an explanation and the job continues instead of getting stuck on it.
 
-= Can I store my media in two different clouds? =
-
-Yes. Enable **Secondary Backup Storage** in Settings and pick a second provider with its own credentials. Every offloaded file is mirrored there as well, so a problem with one provider or bucket does not leave you without a copy.
-
 = Does this plugin work on multisite? =
 
 The plugin activates and runs per site. It has not been through a dedicated multisite test pass yet, so treat multisite as unverified for now.
@@ -128,7 +123,6 @@ The plugin activates and runs per site. It has not been through a dedicated mult
 **New**
 
 * Added dedicated provider presets for Amazon S3, DigitalOcean Spaces, Backblaze B2 and Wasabi, plus a generic S3-Compatible option for any other S3 API service.
-* Added optional secondary backup storage: mirror every offloaded file to a second provider.
 * Added `--limit=<number>` to `wp omnioffloader offload` for working through large libraries in chunks.
 * Added multipart uploads for files above 64 MB, lifting the previous 5 GB per-file ceiling.
 
@@ -162,4 +156,4 @@ The plugin activates and runs per site. It has not been through a dedicated mult
 == Upgrade Notice ==
 
 = 0.1.1 =
-Adds Amazon S3, DigitalOcean Spaces, Backblaze B2 and Wasabi presets, secondary backup storage, and multipart uploads for large files. Also fixes several bulk offload issues that could stall a job, duplicate uploads, or slow the site down on large media libraries. Recommended for everyone.
+Adds Amazon S3, DigitalOcean Spaces, Backblaze B2 and Wasabi presets, and multipart uploads for large files. Also fixes several bulk offload issues that could stall a job, duplicate uploads, or slow the site down on large media libraries. Recommended for everyone.

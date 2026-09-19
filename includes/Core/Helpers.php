@@ -33,18 +33,14 @@ class Helpers {
 	/**
 	 * Build the wp-config constant name for a credential field.
 	 *
-	 * E.g. ( 'cloudflare_r2', 'key', 'primary' ) => 'OMNIOFFLOADER_CLOUDFLARE_R2_KEY'.
-	 * E.g. ( 'cloudflare_r2', 'key', 'secondary' ) => 'OMNIOFFLOADER_SECONDARY_CLOUDFLARE_R2_KEY'.
+	 * E.g. ( 'cloudflare_r2', 'key' ) => 'OMNIOFFLOADER_CLOUDFLARE_R2_KEY'.
 	 *
 	 * @param string $provider_key Provider key.
 	 * @param string $field        Field name.
-	 * @param string $role         Storage role ('primary' or 'secondary').
 	 * @return string
 	 */
-	public static function credential_constant_name( $provider_key, $field, $role = 'primary' ) {
-		$prefix = 'secondary' === $role ? 'OMNIOFFLOADER_SECONDARY_' : 'OMNIOFFLOADER_';
-
-		return $prefix . strtoupper( $provider_key ) . '_' . strtoupper( $field );
+	public static function credential_constant_name( $provider_key, $field ) {
+		return 'OMNIOFFLOADER_' . strtoupper( $provider_key ) . '_' . strtoupper( $field );
 	}
 
 	/**
@@ -52,11 +48,10 @@ class Helpers {
 	 *
 	 * @param string $provider_key Provider key.
 	 * @param string $field        Field name.
-	 * @param string $role         Storage role ('primary' or 'secondary').
 	 * @return bool
 	 */
-	public static function is_credential_locked( $provider_key, $field, $role = 'primary' ) {
-		return defined( self::credential_constant_name( $provider_key, $field, $role ) );
+	public static function is_credential_locked( $provider_key, $field ) {
+		return defined( self::credential_constant_name( $provider_key, $field ) );
 	}
 
 	/**
@@ -64,18 +59,16 @@ class Helpers {
 	 *
 	 * @param string $provider_key Provider key.
 	 * @param string $field        Field name.
-	 * @param string $role         Storage role ('primary' or 'secondary').
 	 * @return string
 	 */
-	public static function get_credential( $provider_key, $field, $role = 'primary' ) {
-		$constant = self::credential_constant_name( $provider_key, $field, $role );
+	public static function get_credential( $provider_key, $field ) {
+		$constant = self::credential_constant_name( $provider_key, $field );
 
 		if ( defined( $constant ) ) {
 			return (string) constant( $constant );
 		}
 
-		$option_name = 'secondary' === $role ? 'omnioffloader_secondary_credentials' : 'omnioffloader_credentials';
-		$credentials = get_option( $option_name, array() );
+		$credentials = get_option( 'omnioffloader_credentials', array() );
 
 		if ( ! is_array( $credentials ) ) {
 			return '';

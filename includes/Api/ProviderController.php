@@ -42,15 +42,6 @@ class ProviderController extends BaseController {
 					return ProviderRegistry::has( (string) $value );
 				},
 			),
-			'role'     => array(
-				'type'              => 'string',
-				'required'          => false,
-				'default'           => 'primary',
-				'sanitize_callback' => 'sanitize_key',
-				'validate_callback' => static function ( $value ) {
-					return in_array( (string) $value, array( 'primary', 'secondary' ), true );
-				},
-			),
 		);
 
 		$this->register_get_route( '/provider/credentials', array( $this, 'get_credentials_response' ), $provider_arg );
@@ -70,7 +61,7 @@ class ProviderController extends BaseController {
 	}
 
 	/**
-	 * GET /provider/credentials?provider=…&role=primary|secondary
+	 * GET /provider/credentials?provider=…
 	 *
 	 * Field definitions merged with per-site state: value (masked for
 	 * passwords), locked (wp-config constant) and is_set.
@@ -80,15 +71,14 @@ class ProviderController extends BaseController {
 	 */
 	public function get_credentials_response( WP_REST_Request $request ) {
 		$provider_key = (string) $request->get_param( 'provider' );
-		$role         = 'secondary' === (string) $request->get_param( 'role' ) ? 'secondary' : 'primary';
-		$provider     = ProviderRegistry::create( $provider_key, $role );
+		$provider     = ProviderRegistry::create( $provider_key );
 
 		$fields = array();
 
 		foreach ( $provider->credential_fields() as $field ) {
 			$name   = $field['name'];
-			$value  = Helpers::get_credential( $provider_key, $name, $role );
-			$locked = Helpers::is_credential_locked( $provider_key, $name, $role );
+			$value  = Helpers::get_credential( $provider_key, $name );
+			$locked = Helpers::is_credential_locked( $provider_key, $name );
 			$is_set = '' !== $value;
 
 			// Never return secrets; text values locked by constants are
@@ -108,7 +98,6 @@ class ProviderController extends BaseController {
 		return rest_ensure_response(
 			array(
 				'provider' => $provider_key,
-				'role'     => $role,
 				'fields'   => $fields,
 			)
 		);
@@ -122,7 +111,6 @@ class ProviderController extends BaseController {
 	 */
 	public function update_credentials_response( WP_REST_Request $request ) {
 		$provider_key = (string) $request->get_param( 'provider' );
-		$role         = 'secondary' === (string) $request->get_param( 'role' ) ? 'secondary' : 'primary';
 		$values       = $request->get_param( 'values' );
 
 		if ( ! is_array( $values ) ) {
@@ -133,7 +121,7 @@ class ProviderController extends BaseController {
 			);
 		}
 
-		$provider    = ProviderRegistry::create( $provider_key, $role );
+		$provider    = ProviderRegistry::create( $provider_key );
 		$definitions = array();
 
 		foreach ( $provider->credential_fields() as $field ) {
@@ -146,7 +134,7 @@ class ProviderController extends BaseController {
 			$name = sanitize_key( (string) $name );
 
 			// Only known fields; fields locked by constants are immutable.
-			if ( ! isset( $definitions[ $name ] ) || Helpers::is_credential_locked( $provider_key, $name, $role ) ) {
+			if ( ! isset( $definitions[ $name ] ) || Helpers::is_credential_locked( $provider_key, $name ) ) {
 				continue;
 			}
 
@@ -161,7 +149,7 @@ class ProviderController extends BaseController {
 		}
 
 		if ( ! empty( $to_save ) ) {
-			self::update_provider_credentials( $provider_key, $to_save, $role );
+			self::update_provider_credentials( $provider_key, $to_save );
 		}
 
 		// Return fresh masked state (same shape as GET).
@@ -186,8 +174,7 @@ class ProviderController extends BaseController {
 		}
 
 		$provider_key = (string) $request->get_param( 'provider' );
-		$role         = 'secondary' === (string) $request->get_param( 'role' ) ? 'secondary' : 'primary';
-		$provider     = ProviderRegistry::create( $provider_key, $role );
+		$provider     = ProviderRegistry::create( $provider_key );
 
 		$result = $provider->check_connection();
 

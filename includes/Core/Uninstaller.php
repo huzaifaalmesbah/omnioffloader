@@ -37,7 +37,6 @@ class Uninstaller {
 		// Options.
 		delete_option( 'omnioffloader_settings' );
 		delete_option( 'omnioffloader_credentials' );
-		delete_option( 'omnioffloader_secondary_credentials' );
 		delete_option( 'omnioffloader_version' );
 		delete_option( 'omnioffloader_first_activated_version' );
 
@@ -59,10 +58,5 @@ class Uninstaller {
 		delete_post_meta_by_key( 'omnioffloader_object_version' );
 		delete_post_meta_by_key( 'omnioffloader_retention' );
 		delete_post_meta_by_key( 'omnioffloader_error_log' );
-		delete_post_meta_by_key( 'omnioffloader_secondary_offloaded' );
-		delete_post_meta_by_key( 'omnioffloader_secondary_offloaded_at' );
-		delete_post_meta_by_key( 'omnioffloader_secondary_provider' );
-		delete_post_meta_by_key( 'omnioffloader_secondary_bucket' );
-		delete_post_meta_by_key( 'omnioffloader_secondary_path' );
 	}
 }

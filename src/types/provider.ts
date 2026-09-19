@@ -30,7 +30,6 @@ export interface ProviderInfo {
 /** GET/POST /provider/credentials response. */
 export interface CredentialsResponse {
 	provider: string;
-	role?: string;
 	fields: CredentialField[];
 }
 

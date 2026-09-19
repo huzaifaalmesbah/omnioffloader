@@ -117,7 +117,7 @@ class OffloadCommand {
 		// One stats flush at the end instead of ~8 queries per attachment.
 		Helpers::defer_media_stats_flush( true );
 
-		$uploader = new AttachmentUploader( $provider, $plugin->get_secondary_provider() );
+		$uploader = new AttachmentUploader( $provider );
 		$progress = \WP_CLI\Utils\make_progress_bar( 'Offloading', count( $ids ) );
 
 		$done      = 0;

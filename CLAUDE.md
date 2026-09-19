@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Pre-release, version `0.1.1`.** The full design lives in `PLAN.md` — read it before making architectural decisions. The phase map in PLAN.md §11 (skeleton → offload → bulk → Bring Back → release candidate) describes development phases, not ship versions.
 
-Released so far: `0.1.0` (initial release, Cloudflare R2 only), `0.1.1` (five more providers, secondary backup storage, bulk-queue reliability work). See `readme.txt` for the user-facing changelog — keep it updated in the same commit as any user-visible change.
+Released so far: `0.1.0` (initial release, Cloudflare R2 only), `0.1.1` (five more providers, bulk-queue reliability work). See `readme.txt` for the user-facing changelog — keep it updated in the same commit as any user-visible change.
 
 > ⚠️ **VERSION CEILING: `0.9.0`.** Never bump, tag, or release version `1.0.0` (or anything ≥ 1.0.0) without the owner's explicit permission in that conversation. All planned work ends at 0.9.0.
 
@@ -14,7 +14,7 @@ When bumping the version, three places must move together: the `Version:` header
 
 ## What This Plugin Does
 
-Offloads WordPress media library files to cloud object storage and serves them from a CDN. Three retention policies control what stays on the server. An optional **secondary provider** mirrors every offloaded file to a second cloud. The signature feature is **Bring Back**: restoring offloaded media from the cloud back to the server (per-item and bulk), safely reversing an offload.
+Offloads WordPress media library files to cloud object storage and serves them from a CDN. Three retention policies control what stays on the server. The signature feature is **Bring Back**: restoring offloaded media from the cloud back to the server (per-item and bulk), safely reversing an offload.
 
 Providers shipped (`Providers\ProviderRegistry::$providers`): `amazon_s3`, `cloudflare_r2`, `backblaze_b2`, `digitalocean_spaces`, `wasabi`, and `s3_compatible` (generic, user-supplied endpoint/region, custom display name). `ProviderRegistry::$aliases` maps legacy keys (`aws`, `aws_s3`, `dos`, `digitalocean`, `minio`) onto canonical ones.
 
@@ -143,25 +143,25 @@ Progress polling (`useBulkOffload`, `useBringBack`) uses a **chained `setTimeout
 All mutations via REST; `@wordpress/api-fetch` sends the nonce. Every route: explicit `permission_callback` (`manage_options`), `args` with type/validate/sanitize callbacks, `WP_REST_Server` method constants, `rest_ensure_response()` / `WP_Error` with status + stable `omnioffloader_*` error codes.
 
 - `GET/POST /core/settings` · `GET /core/providers` · `GET /core/stats`
-- `GET/POST /provider/credentials` · `POST /provider/test-connection` — all take a provider arg and a primary/secondary role
+- `GET/POST /provider/credentials` · `POST /provider/test-connection` — all take a provider arg
 - `POST /offload/attachment/{id}` · `POST /offload/bulk` · `GET /offload/bulk/progress` · `POST /offload/bulk/cancel` · `GET /offload/errors`
 - `GET /bring-back/preflight` · `POST /bring-back/attachment/{id}` · `POST /bring-back/bulk` · `GET /bring-back/bulk/progress` · `POST /bring-back/bulk/cancel`
 
 The two `bulk/progress` routes are `GET` but deliberately do work (the stalled-queue self-heal). Keep that in mind before adding caching.
 
-Credentials: `GET` returns secrets masked (`is_set: true`); `POST` ignores masked placeholders so saves never wipe secrets. wp-config constants (`OMNIOFFLOADER_CLOUDFLARE_R2_KEY`, and `OMNIOFFLOADER_SECONDARY_*` for the backup provider) lock fields (`locked: true`).
+Credentials: `GET` returns secrets masked (`is_set: true`); `POST` ignores masked placeholders so saves never wipe secrets. wp-config constants (`OMNIOFFLOADER_CLOUDFLARE_R2_KEY`, etc.) lock fields (`locked: true`).
 
 ## Data Reference
 
 **Options:**
-- `omnioffloader_settings` (autoload on) — provider, secondary_active, secondary_provider, retention_policy (0/1/2), mirror_delete, path_prefix(+active), object_versioning, bring_back_delete_cloud, remove_data_on_uninstall
+- `omnioffloader_settings` (autoload on) — provider, retention_policy (0/1/2), mirror_delete, path_prefix(+active), object_versioning, bring_back_delete_cloud, remove_data_on_uninstall
 - `omnioffloader_version` (autoload on) — for Migrator
-- `omnioffloader_credentials` / `omnioffloader_secondary_credentials` (autoload off) — per-provider credential sub-arrays
+- `omnioffloader_credentials` (autoload off) — per-provider credential sub-arrays
 - `omnioffloader_first_activated_version` (autoload off)
 - `omnioffloader_bulk_offload_state` / `omnioffloader_bulk_restore_state` (autoload off) — progress heartbeats
 - `omnioffloader_bulk_{offload,restore}_batch_*` / `_status` — queue internals, written by `WP_Background_Process` via `update_site_option` (autoload off on single site). Never leave these behind; `purge_stored_data()` owns their cleanup.
 
-**Attachment meta:** `omnioffloader_offloaded`, `omnioffloader_offloaded_at`, `omnioffloader_provider` (provider at offload time — Bring Back resolves this, not the active provider), `omnioffloader_bucket`, `omnioffloader_path`, `omnioffloader_object_version`, `omnioffloader_retention`, `omnioffloader_error_log`, plus `omnioffloader_secondary_{offloaded,offloaded_at,provider,bucket,path}` when a backup provider is configured.
+**Attachment meta:** `omnioffloader_offloaded`, `omnioffloader_offloaded_at`, `omnioffloader_provider` (provider at offload time — Bring Back resolves this, not the active provider), `omnioffloader_bucket`, `omnioffloader_path`, `omnioffloader_object_version`, `omnioffloader_retention`, `omnioffloader_error_log`.
 
 **Retention policy values:** `0` retain local (default) · `1` smart cleanup (delete thumbs, keep original) · `2` full migration (delete all local).
 

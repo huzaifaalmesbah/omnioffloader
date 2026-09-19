@@ -10,8 +10,6 @@ export enum RetentionPolicy {
 
 export interface Settings {
 	provider: string;
-	secondary_active: boolean;
-	secondary_provider: string;
 	retention_policy: RetentionPolicy;
 	mirror_delete: boolean;
 	path_prefix_active: boolean;

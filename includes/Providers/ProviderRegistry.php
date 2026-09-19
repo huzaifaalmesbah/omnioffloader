@@ -50,6 +50,8 @@ class ProviderRegistry {
 	/**
 	 * Resolve a key to its canonical form if it is an alias.
 	 *
+	 * @since 0.1.1
+	 *
 	 * @param string $key Provider key or alias.
 	 * @return string
 	 */

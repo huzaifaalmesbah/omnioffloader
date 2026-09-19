@@ -130,6 +130,8 @@ class RowActionsObserver implements ObserverInterface {
 	/**
 	 * Render the action link HTML (used by AJAX responses).
 	 *
+	 * @since 0.1.1
+	 *
 	 * @param int $attachment_id Attachment ID.
 	 * @return string HTML link element.
 	 */
@@ -177,6 +179,8 @@ class RowActionsObserver implements ObserverInterface {
 
 	/**
 	 * Build a nonced admin-post URL for a row action.
+	 *
+	 * @since 0.1.1
 	 *
 	 * @param string $action        Admin-post action name.
 	 * @param int    $attachment_id Attachment ID.

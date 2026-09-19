@@ -46,6 +46,8 @@ class Migrator {
 	 * A job that is genuinely mid-run is left alone: this also executes inside
 	 * the queue's own worker requests.
 	 *
+	 * @since 0.1.1
+	 *
 	 * @return void
 	 */
 	private static function migrate_to_0_1_1() {

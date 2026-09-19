@@ -192,6 +192,8 @@ class Helpers {
 	 *
 	 * Turning deferral off flushes once if anything asked for it meanwhile.
 	 *
+	 * @since 0.1.1
+	 *
 	 * @param bool $defer True to start batching, false to stop and flush.
 	 * @return void
 	 */

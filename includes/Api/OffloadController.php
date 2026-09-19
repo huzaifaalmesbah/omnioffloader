@@ -298,6 +298,8 @@ class OffloadController extends BaseController {
 	 *
 	 * Allows anyone who can upload files to check status.
 	 *
+	 * @since 0.1.1
+	 *
 	 * @return bool|\WP_Error
 	 */
 	public function media_permissions_check() {

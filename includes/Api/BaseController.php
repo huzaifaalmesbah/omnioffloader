@@ -63,6 +63,8 @@ abstract class BaseController {
 	/**
 	 * Authorization for media library operations: allowed for users who can upload files.
 	 *
+	 * @since 0.1.1
+	 *
 	 * @return bool|\WP_Error
 	 */
 	public function media_permissions_check() {

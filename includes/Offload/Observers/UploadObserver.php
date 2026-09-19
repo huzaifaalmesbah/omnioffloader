@@ -74,6 +74,8 @@ class UploadObserver implements ObserverInterface {
 	/**
 	 * Mark newly created attachment as queued immediately.
 	 *
+	 * @since 0.1.1
+	 *
 	 * @param int $attachment_id Attachment ID.
 	 * @return void
 	 */
@@ -162,6 +164,8 @@ class UploadObserver implements ObserverInterface {
 	 *
 	 * In PHP-FPM, fastcgi_finish_request() releases the client response
 	 * immediately so the user experiences zero waiting time.
+	 *
+	 * @since 0.1.1
 	 *
 	 * @return void
 	 */

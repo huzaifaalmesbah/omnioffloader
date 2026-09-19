@@ -583,6 +583,8 @@ class OffloadStatusObserver implements ObserverInterface {
 	/**
 	 * Expose offload status data to JS attachment models in grid view and modals.
 	 *
+	 * @since 0.1.1
+	 *
 	 * @param array<string, mixed> $response   Attachment JS data.
 	 * @param \WP_Post             $attachment Attachment post.
 	 * @return array<string, mixed> Modified JS data.

@@ -57,6 +57,9 @@ class BulkRestoreProcessor extends AbstractBulkProcessor {
 	/**
 	 * Queue offloaded attachments and start processing.
 	 *
+	 * @since 0.1.0
+	 * @since 0.1.1 Added $ids parameter for partial/selected restore.
+	 *
 	 * @param bool       $delete_cloud Also delete cloud objects after each verified restore.
 	 * @param int[]|null $ids          Optional specific attachment IDs to queue.
 	 * @return int Number of queued attachments.

@@ -163,6 +163,8 @@ abstract class AbstractS3Provider implements ProviderInterface {
 	 * instead of the whole transfer, and objects above the 5 GB single-PUT
 	 * ceiling become possible.
 	 *
+	 * @since 0.1.1
+	 *
 	 * @param string $file Absolute path of the local file.
 	 * @param string $key  Object key.
 	 * @param string $acl  ACL value, empty to omit.
@@ -204,6 +206,8 @@ abstract class AbstractS3Provider implements ProviderInterface {
 
 	/**
 	 * File size at which uploads switch to multipart.
+	 *
+	 * @since 0.1.1
 	 *
 	 * @return int Bytes.
 	 */

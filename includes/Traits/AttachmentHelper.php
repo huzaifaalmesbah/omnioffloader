@@ -366,6 +366,8 @@ trait AttachmentHelper {
 	/**
 	 * Get the current offload status and metadata for an attachment.
 	 *
+	 * @since 0.1.1
+	 *
 	 * @param int $attachment_id Attachment ID.
 	 * @return array{status: string, is_offloaded: bool, label: string, provider?: string, bucket?: string, offloaded_at?: int, date?: string, error?: string}
 	 */

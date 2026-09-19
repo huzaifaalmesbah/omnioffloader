@@ -30,6 +30,7 @@ And because offloading should never be a one-way door, **Bring Back** downloads 
 = Key features =
 
 * **Automatic media offloading** — new uploads go to the cloud on upload, including thumbnails, `-scaled` originals and WebP/AVIF sources.
+* **Content URL rewriting** — rewrites images, videos, audio, and Gutenberg media blocks to cloud storage on the fly without altering post database content.
 * **Serve from your CDN** — media is delivered from your custom domain or CDN edge, not your origin server.
 * **Three retention policies** — keep every local copy, delete only generated thumbnails (smart cleanup), or move everything to the cloud and reclaim the full disk space.
 * **Bring Back restore** — pull media back from the cloud to your server, per file or in bulk, with a disk-space preflight so you know what it needs before it starts.
@@ -128,6 +129,7 @@ The plugin activates and runs per site. It has not been through a dedicated mult
 * Media Library bulk actions: added "Offload to Cloud" and "Bring Back to Server" to bulk action dropdowns with instant real-time UI updates.
 * Dynamic row actions: attachment row actions beneath titles now dynamically reflect live states ("Offloading...", "Restoring...", "Queued...", "Bring Back", "Offload now", "Retry Offload").
 * Non-blocking uploads: introduced `AsyncUploadProcessor` to offload new uploads in the background without delaying server responses.
+* Content URL rewriting expansion: rewrites media URLs inside Gutenberg blocks (Video, Audio, File, Media & Text, Cover), Classic Editor HTML media tags, and WordPress audio/video shortcodes.
 * Added multipart uploads for files above 64 MB, supporting large transfers beyond 5 GB without memory exhaustion.
 * Added `--limit=<number>` to `wp omnioffloader offload` for running bulk jobs in manageable chunks.
 

@@ -83,6 +83,8 @@ class ContentImageTagObserver implements ObserverInterface {
 	/**
 	 * Rewrite offloaded media URLs inside Gutenberg blocks.
 	 *
+	 * @since 0.1.1
+	 *
 	 * @param string               $block_content The block HTML markup.
 	 * @param array<string, mixed> $block         The parsed block array.
 	 * @return string
@@ -108,6 +110,8 @@ class ContentImageTagObserver implements ObserverInterface {
 
 	/**
 	 * Fallback for raw HTML or Classic Editor video/audio tags in post content.
+	 *
+	 * @since 0.1.1
 	 *
 	 * @param string $content Post content.
 	 * @return string
@@ -152,6 +156,8 @@ class ContentImageTagObserver implements ObserverInterface {
 
 	/**
 	 * Rewrite video or audio shortcode HTML.
+	 *
+	 * @since 0.1.1
 	 *
 	 * @param string $html Shortcode output.
 	 * @return string

@@ -55,6 +55,9 @@ class BulkOffloadProcessor extends AbstractBulkProcessor {
 	/**
 	 * Queue attachments and start processing.
 	 *
+	 * @since 0.1.0
+	 * @since 0.1.1 Added $ids parameter for partial/selected offload.
+	 *
 	 * @param int[]|null $ids Optional specific attachment IDs to queue.
 	 * @return int Number of queued attachments.
 	 */

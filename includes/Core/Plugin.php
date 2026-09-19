@@ -80,6 +80,8 @@ class Plugin {
 	/**
 	 * Get the async upload processor (null when the engine is off).
 	 *
+	 * @since 0.1.1
+	 *
 	 * @return AsyncUploadProcessor|null
 	 */
 	public function get_async_upload() {

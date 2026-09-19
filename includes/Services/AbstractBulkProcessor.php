@@ -35,6 +35,8 @@ if ( ! defined( 'ABSPATH' ) ) {
  *    stop the run in seconds instead of grinding through the whole library.
  *  - The inline "self-heal" pass only runs once the queue has actually gone
  *    quiet, so polling stays cheap on hosts where the loopback works.
+ *
+ * @since 0.1.1
  */
 abstract class AbstractBulkProcessor extends WP_Background_Process {
 

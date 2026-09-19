@@ -16,6 +16,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 /**
  * Class DigitalOceanSpaces
+ *
+ * @since 0.1.1
  */
 class DigitalOceanSpaces extends AbstractS3Provider {
 

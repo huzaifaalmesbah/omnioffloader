@@ -35,7 +35,7 @@ And because offloading should never be a one-way door, **Bring Back** downloads 
 * **Bring Back restore** — pull media back from the cloud to your server, per file or in bulk, with a disk-space preflight so you know what it needs before it starts.
 * **Bulk offload with live progress** — background processing with a real-time activity log, cancel at any time, resumes safely if a request is interrupted.
 * **Mirror deletion** — deleting an attachment in WordPress removes its cloud objects too (optional, off by default).
-* **Media library integration** — filter by Offloaded / Local, see status on each attachment, and offload or restore straight from the row actions.
+* **Media library integration** — real-time status column icon, dedicated meta box on the edit screen, grid view badges, bulk actions, and dynamic row actions.
 * **WP-CLI commands** — automate everything from the terminal or a scheduled job.
 * **Credentials in wp-config** — define keys as PHP constants instead of storing them in the database, and the UI locks those fields.
 
@@ -120,27 +120,35 @@ The plugin activates and runs per site. It has not been through a dedicated mult
 
 = 0.1.1 =
 
-**New**
+**New Features & Enhancements**
 
-* Added dedicated provider presets for Amazon S3, DigitalOcean Spaces, Backblaze B2 and Wasabi, plus a generic S3-Compatible option for any other S3 API service.
-* Added `--limit=<number>` to `wp omnioffloader offload` for working through large libraries in chunks.
-* Added multipart uploads for files above 64 MB, lifting the previous 5 GB per-file ceiling.
+* Multi-provider expansion: added dedicated provider presets for Amazon S3, DigitalOcean Spaces, Backblaze B2, and Wasabi, plus a generic S3-Compatible option for MinIO, Cloudflare R2, and custom endpoints.
+* Dedicated OmniOffloader Meta Box on edit attachment screen (`post.php`) with cloud storage status, provider, bucket, offloaded date, CDN status, and one-click actions.
+* Media Library live status integration: added minimal status icon column (cloud, spinner, warning, dash) in list view and live badges in grid view modals.
+* Media Library bulk actions: added "Offload to Cloud" and "Bring Back to Server" to bulk action dropdowns with instant real-time UI updates.
+* Dynamic row actions: attachment row actions beneath titles now dynamically reflect live states ("Offloading...", "Restoring...", "Queued...", "Bring Back", "Offload now", "Retry Offload").
+* Non-blocking uploads: introduced `AsyncUploadProcessor` to offload new uploads in the background without delaying server responses.
+* Added multipart uploads for files above 64 MB, supporting large transfers beyond 5 GB without memory exhaustion.
+* Added `--limit=<number>` to `wp omnioffloader offload` for running bulk jobs in manageable chunks.
 
-**Reliability**
+**Reliability & Fixes**
 
-* Fixed a bulk job stalling permanently on a single file that exceeded the host's time limit. Items are now claimed before they are processed, and an interrupted transfer is reported with an explanation instead of being retried forever.
-* Fixed duplicate uploads caused by the queue's lock expiring during a long transfer, which could let a second worker start on the same files and, on small hosting plans, exhaust the available PHP processes.
-* Bulk jobs now stop after ten consecutive failures and explain why, instead of attempting every remaining attachment with a misconfigured storage connection.
-* Fixed Cancel not taking effect on hosts that block internal loopback requests, which previously left the job flagged as running and blocked any new job from starting.
-* Fixed the error column in the bulk activity log always appearing empty.
-* Deactivating or uninstalling during a bulk job no longer leaves its queue rows behind in the database. Rows stranded by an earlier version are cleaned up automatically on update.
-* Added connection timeouts to all storage requests so an unreachable endpoint can no longer tie up a PHP process indefinitely.
+* Hardened bulk queue worker (`AbstractBulkProcessor`): claims items before processing so a worker killed by host time limits drops the item instead of getting stuck in an infinite retry loop.
+* Extended queue process lock from 60 seconds to 10 minutes (renewed after each item) to prevent duplicate workers from running on small hosting pools.
+* Consecutive failure circuit breaker: bulk jobs halt gracefully with clear error logging after 10 consecutive failures instead of grinding through the whole library.
+* Fixed Bring Back restore logic: verified files are completely restored on disk before updating metadata or pruning cloud copies.
+* Prevented stale activity logs from flashing previous runs when starting a new Offload or Bring Back operation.
+* Fixed Cancel button not taking effect on hosts with blocked internal loopback requests.
+* Fixed stranded queue rows remaining in the database upon deactivation/uninstall.
+* Added connection timeouts to all storage requests to prevent hanging PHP-FPM processes.
 
-**Performance**
+**Performance & Optimizations**
 
-* Greatly reduced the database work of bulk jobs by caching statistics once per run instead of once per attachment — roughly 30,000 fewer queries on a 15,000 item library.
-* Fixed the Bring Back disk-space preflight running one query per offloaded attachment, which could time out on large libraries.
-* Reduced the load of the admin progress display: it now backs off as a job runs, avoids overlapping requests, and only takes over processing when the background worker has actually stalled.
+* Optimized status polling with delta responses, slashing payload size by ~94% and avoiding unnecessary DOM re-renders.
+* Integrated Page Visibility API (`document.hidden`) to pause polling and conserve resources when browser tabs are inactive.
+* Throttled database writes on thumbnail generation during bulk transfers.
+* Cached media library statistics once per bulk run instead of querying on every single item.
+* Fixed Bring Back disk preflight query to run efficiently on large media libraries.
 * Bulk jobs now skip trashed attachments and entries with no file on disk.
 
 = 0.1.0 =
@@ -156,4 +164,4 @@ The plugin activates and runs per site. It has not been through a dedicated mult
 == Upgrade Notice ==
 
 = 0.1.1 =
-Adds Amazon S3, DigitalOcean Spaces, Backblaze B2 and Wasabi presets, and multipart uploads for large files. Also fixes several bulk offload issues that could stall a job, duplicate uploads, or slow the site down on large media libraries. Recommended for everyone.
+Adds presets for Amazon S3, DigitalOcean Spaces, Backblaze B2, and Wasabi; real-time Media Library live status badges, meta box, and bulk actions; multipart uploads for large files; and major background queue stability and performance improvements. Recommended for all users.

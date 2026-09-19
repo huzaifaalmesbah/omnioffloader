@@ -317,6 +317,8 @@ class OffloadController extends BaseController {
 	 *
 	 * Triggers bulk offload or bulk restore on selected attachment IDs.
 	 *
+	 * @since 0.1.1
+	 *
 	 * @param WP_REST_Request $request Request.
 	 * @return \WP_REST_Response|\WP_Error
 	 */
@@ -376,6 +378,8 @@ class OffloadController extends BaseController {
 	 * GET /offload/attachment-status?ids=139,140
 	 *
 	 * Returns current offload status for requested attachment IDs and active bulk state.
+	 *
+	 * @since 0.1.1
 	 *
 	 * @param WP_REST_Request $request Request.
 	 * @return \WP_REST_Response

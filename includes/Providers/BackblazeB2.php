@@ -16,6 +16,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 /**
  * Class BackblazeB2
+ *
+ * @since 0.1.1
  */
 class BackblazeB2 extends AbstractS3Provider {
 

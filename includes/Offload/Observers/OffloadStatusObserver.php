@@ -89,6 +89,8 @@ class OffloadStatusObserver implements ObserverInterface {
 	/**
 	 * Register dedicated OmniOffloader meta box on the attachment edit screen.
 	 *
+	 * @since 0.1.1
+	 *
 	 * @param \WP_Post $post Attachment post object.
 	 * @return void
 	 */
@@ -106,6 +108,8 @@ class OffloadStatusObserver implements ObserverInterface {
 	/**
 	 * Render the OmniOffloader meta box.
 	 *
+	 * @since 0.1.1
+	 *
 	 * @param \WP_Post $post Attachment post object.
 	 * @return void
 	 */
@@ -116,6 +120,8 @@ class OffloadStatusObserver implements ObserverInterface {
 
 	/**
 	 * Add minimal offload status icon column header to media library list view.
+	 *
+	 * @since 0.1.1
 	 *
 	 * @param array<string, string> $columns Existing columns.
 	 * @return array<string, string> Modified columns.
@@ -149,6 +155,8 @@ class OffloadStatusObserver implements ObserverInterface {
 	/**
 	 * Render minimal offload status icon in media library list view column.
 	 *
+	 * @since 0.1.1
+	 *
 	 * @param string $column_name Column name.
 	 * @param int    $post_id     Attachment ID.
 	 * @return void
@@ -164,6 +172,8 @@ class OffloadStatusObserver implements ObserverInterface {
 
 	/**
 	 * Render the minimal status icon HTML for list view column cell.
+	 *
+	 * @since 0.1.1
 	 *
 	 * @param int $post_id Attachment ID.
 	 * @return string HTML icon element with tooltip.
@@ -287,6 +297,8 @@ class OffloadStatusObserver implements ObserverInterface {
 	/**
 	 * Render the status badge and action button HTML for media modals.
 	 *
+	 * @since 0.1.1
+	 *
 	 * @param int $post_id Attachment ID.
 	 * @return string HTML badge.
 	 */
@@ -399,6 +411,8 @@ class OffloadStatusObserver implements ObserverInterface {
 
 	/**
 	 * Render the OmniOffloader meta box content for edit-attachment screen (post.php).
+	 *
+	 * @since 0.1.1
 	 *
 	 * @param int $post_id Attachment ID.
 	 * @return string HTML meta box content.
@@ -592,6 +606,8 @@ class OffloadStatusObserver implements ObserverInterface {
 
 	/**
 	 * Enqueue styles and scripts for media library and post editors.
+	 *
+	 * @since 0.1.1
 	 *
 	 * @param string $hook The current admin page hook.
 	 * @return void

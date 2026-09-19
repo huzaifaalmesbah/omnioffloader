@@ -16,6 +16,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 /**
  * Class AmazonS3
+ *
+ * @since 0.1.1
  */
 class AmazonS3 extends AbstractS3Provider {
 

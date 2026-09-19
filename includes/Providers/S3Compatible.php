@@ -16,6 +16,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 /**
  * Class S3Compatible
+ *
+ * @since 0.1.1
  */
 class S3Compatible extends AbstractS3Provider {
 

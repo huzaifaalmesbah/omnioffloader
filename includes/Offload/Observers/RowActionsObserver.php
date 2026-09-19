@@ -281,6 +281,8 @@ class RowActionsObserver implements ObserverInterface {
 	/**
 	 * Register bulk actions in the Media Library list view.
 	 *
+	 * @since 0.1.1
+	 *
 	 * @param array<string, string> $actions Bulk actions.
 	 * @return array<string, string>
 	 */
@@ -297,6 +299,8 @@ class RowActionsObserver implements ObserverInterface {
 
 	/**
 	 * Handle bulk actions from the Media Library list view.
+	 *
+	 * @since 0.1.1
 	 *
 	 * @param string                 $redirect_to URL to redirect to.
 	 * @param string                 $doaction    Action name.
@@ -352,6 +356,8 @@ class RowActionsObserver implements ObserverInterface {
 
 	/**
 	 * Show the result notice after redirect.
+	 *
+	 * @since 0.1.1
 	 *
 	 * @return void
 	 */

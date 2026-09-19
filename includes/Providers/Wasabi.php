@@ -16,6 +16,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 /**
  * Class Wasabi
+ *
+ * @since 0.1.1
  */
 class Wasabi extends AbstractS3Provider {
 

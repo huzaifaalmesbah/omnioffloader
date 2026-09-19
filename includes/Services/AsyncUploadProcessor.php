@@ -19,6 +19,8 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Class AsyncUploadProcessor
  *
  * Offloads newly uploaded media attachments to the cloud in the background.
+ *
+ * @since 0.1.1
  */
 class AsyncUploadProcessor extends WP_Background_Process {
 

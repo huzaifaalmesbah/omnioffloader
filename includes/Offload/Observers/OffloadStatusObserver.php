@@ -636,10 +636,15 @@ class OffloadStatusObserver implements ObserverInterface {
 
 		wp_enqueue_style( 'omnioffloader-media-status', $css_url, array(), $css_ver );
 
+		$deps = array( 'jquery' );
+		if ( wp_script_is( 'media-views', 'enqueued' ) ) {
+			$deps[] = 'media-views';
+		}
+
 		wp_enqueue_script(
 			'omnioffloader-media-status',
 			$js_url,
-			array( 'jquery' ),
+			$deps,
 			$js_ver,
 			true
 		);

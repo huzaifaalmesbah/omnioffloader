@@ -34,6 +34,89 @@
 		pollTimer = setTimeout(checkInFlight, delay || 2000);
 	}
 
+	/**
+	 * Build HTML for grid view badges.
+	 *
+	 * @param {Object|string} data Attachment status data or status key.
+	 * @return {string} Badge markup.
+	 */
+	function renderGridBadgeHtml(data) {
+		if (!data) {
+			return '';
+		}
+
+		var status = (data && typeof data === 'object') ? (data.status || '') : data;
+		var isOffloaded = (data && typeof data === 'object') ? !!data.is_offloaded : (status === 'offloaded');
+		var label = (data && typeof data === 'object') ? (data.label || '') : '';
+
+		if (isOffloaded && status !== 'processing') {
+			return '<span class="omnioffloader-grid-badge omnioffloader-grid-badge--offloaded" title="' + (label || (config.i18n && config.i18n.offloaded ? config.i18n.offloaded : 'Offloaded')) + '">' + cloudIcon + '</span>';
+		}
+		if (status === 'processing') {
+			return '<span class="omnioffloader-grid-badge omnioffloader-grid-badge--processing" title="' + (label || (config.i18n && config.i18n.offloading ? config.i18n.offloading : 'Offloading...')) + '">' + spinnerIcon + '</span>';
+		}
+		if (status === 'queued') {
+			return '<span class="omnioffloader-grid-badge omnioffloader-grid-badge--queued" title="' + (label || (config.i18n && config.i18n.queued ? config.i18n.queued : 'Queued...')) + '">' + spinnerIcon + '</span>';
+		}
+		if (status === 'failed') {
+			return '<span class="omnioffloader-grid-badge omnioffloader-grid-badge--failed" title="' + (label || (config.i18n && config.i18n.failed ? config.i18n.failed : 'Offload failed')) + '">' + warningIcon + '</span>';
+		}
+
+		return '';
+	}
+
+	/**
+	 * Update grid view attachment item badge and data attribute in the DOM.
+	 *
+	 * @param {jQuery} $item Attachment list element (li.attachment).
+	 * @param {Object|string} data Attachment status data.
+	 */
+	function updateGridBadge($item, data) {
+		if (!$item || !$item.length) {
+			return;
+		}
+
+		var $thumb = $item.find('.thumbnail');
+		if (!$thumb.length) {
+			$thumb = $item.find('.attachment-preview');
+		}
+		if (!$thumb.length) {
+			$thumb = $item;
+		}
+
+		var prevStatus = $item.attr('data-omnioffloader-status') || '';
+		var newStatus = (data && typeof data === 'object') ? (data.status || 'local') : (data || 'local');
+
+		$thumb.find('.omnioffloader-grid-badge').remove();
+		var badgeHtml = renderGridBadgeHtml(data);
+		if (badgeHtml) {
+			var $badge = $(badgeHtml);
+			if (prevStatus && prevStatus !== newStatus && newStatus !== 'processing' && newStatus !== 'queued') {
+				$badge.addClass('omnioffloader-updated');
+			}
+			$thumb.append($badge);
+		}
+
+		$item.attr('data-omnioffloader-status', newStatus);
+
+		// Keep Backbone model in sync if available
+		var rawId = $item.data('id') || $item.attr('data-id');
+		var id = parseInt(rawId, 10);
+		if (id && window.wp && wp.media && wp.media.attachment) {
+			var m = wp.media.attachment(id);
+			if (m) {
+				var prev = m.get('omnioffloader') || {};
+				m.set('omnioffloader', $.extend({}, prev, {
+					status: newStatus,
+					is_offloaded: (data && typeof data === 'object') ? !!data.is_offloaded : (newStatus === 'offloaded'),
+					label: (data && typeof data === 'object') ? (data.label || '') : '',
+					badge_html: (data && typeof data === 'object' && data.badge_html) ? data.badge_html : prev.badge_html,
+					column_html: (data && typeof data === 'object' && data.column_html) ? data.column_html : prev.column_html
+				}));
+			}
+		}
+	}
+
 	// 1. AJAX Row Actions in Media Library List View
 	$(document).on('click', '.omnioffloader-row-action', function(e) {
 		var $link = $(this);
@@ -66,6 +149,16 @@
 		}
 
 		$link.text(loadingText);
+
+		// Optimistically update grid badge if item is in the grid
+		var $gridItem = $('.attachments li.attachment[data-id="' + attachmentId + '"], .attachments-browser li.attachment[data-id="' + attachmentId + '"]');
+		if ($gridItem.length) {
+			updateGridBadge($gridItem, {
+				status: 'processing',
+				is_offloaded: (action === 'restore'),
+				label: loadingText
+			});
+		}
 
 		var endpoint = (action === 'restore')
 			? (config.restoreUrl + attachmentId)
@@ -110,6 +203,15 @@
 			var statusKey = (response && response.status && typeof response.status === 'object')
 				? response.status.status
 				: (response ? response.status : '');
+
+			var $doneGridItem = $('.attachments li.attachment[data-id="' + attachmentId + '"], .attachments-browser li.attachment[data-id="' + attachmentId + '"]');
+			if ($doneGridItem.length) {
+				updateGridBadge($doneGridItem, {
+					status: statusKey,
+					is_offloaded: (statusKey === 'offloaded'),
+					label: (response && response.status && response.status.label) ? response.status.label : (response ? response.label : '')
+				});
+			}
 
 			if (statusKey === 'processing' || statusKey === 'queued') {
 				scheduleInFlightPoll(1500);
@@ -167,6 +269,16 @@
 				);
 		}
 
+		// Also update any grid item if present
+		var $gridItem = $('.attachments li.attachment[data-id="' + attachmentId + '"], .attachments-browser li.attachment[data-id="' + attachmentId + '"]');
+		if ($gridItem.length) {
+			updateGridBadge($gridItem, {
+				status: 'processing',
+				is_offloaded: (action === 'restore'),
+				label: loadingText
+			});
+		}
+
 		var endpoint = (action === 'restore')
 			? (config.restoreUrl + attachmentId)
 			: (config.offloadUrl + attachmentId);
@@ -216,6 +328,15 @@
 				? response.status.status
 				: (response ? response.status : '');
 
+			var $doneGridItem = $('.attachments li.attachment[data-id="' + attachmentId + '"], .attachments-browser li.attachment[data-id="' + attachmentId + '"]');
+			if ($doneGridItem.length) {
+				updateGridBadge($doneGridItem, {
+					status: statusKey,
+					is_offloaded: (statusKey === 'offloaded'),
+					label: (response && response.status && response.status.label) ? response.status.label : (response ? response.label : '')
+				});
+			}
+
 			if (window.wp && wp.media && wp.media.attachment) {
 				var model = wp.media.attachment(attachmentId);
 				if (model && model.get('omnioffloader')) {
@@ -249,6 +370,38 @@
 				seen[id] = true;
 				items.push({ id: id, status: status });
 			}
+		});
+
+		// Media library grid view items
+		$('.attachments li.attachment, .attachments-browser li.attachment').each(function() {
+			var rawId = $(this).data('id') || $(this).attr('data-id');
+			if (!rawId) {
+				return;
+			}
+			var id = parseInt(rawId, 10);
+			if (!id || seen[id]) {
+				return;
+			}
+			seen[id] = true;
+
+			var status = $(this).attr('data-omnioffloader-status');
+			if (!status) {
+				var $badge = $(this).find('.omnioffloader-grid-badge');
+				if ($badge.hasClass('omnioffloader-grid-badge--offloaded')) {
+					status = 'offloaded';
+				} else if ($badge.hasClass('omnioffloader-grid-badge--processing')) {
+					status = 'processing';
+				} else if ($badge.hasClass('omnioffloader-grid-badge--queued')) {
+					status = 'queued';
+				} else if ($badge.hasClass('omnioffloader-grid-badge--failed')) {
+					status = 'failed';
+				} else {
+					status = 'local';
+				}
+				$(this).attr('data-omnioffloader-status', status);
+			}
+
+			items.push({ id: id, status: status });
 		});
 
 		// Meta Box on post.php
@@ -382,17 +535,27 @@
 						}
 					}
 
+					// Update grid view item
+					var $gridItem = $('.attachments li.attachment[data-id="' + id + '"], .attachments-browser li.attachment[data-id="' + id + '"]');
+					if ($gridItem.length) {
+						var currentGridStatus = $gridItem.attr('data-omnioffloader-status');
+						if (currentGridStatus !== statusKey) {
+							updateGridBadge($gridItem, data);
+						}
+					}
+
 					// Update Backbone media model if available
 					if (window.wp && wp.media && wp.media.attachment) {
 						var m = wp.media.attachment(id);
-						if (m && m.get('omnioffloader')) {
-							var prev = m.get('omnioffloader');
-							if (prev && prev.status !== statusKey) {
+						if (m) {
+							var prev = m.get('omnioffloader') || {};
+							if (prev.status !== statusKey) {
 								m.set('omnioffloader', $.extend({}, prev, {
 									status: statusKey,
 									is_offloaded: (statusKey === 'offloaded'),
-									badge_html: data.badge_html,
-									column_html: data.column_html
+									label: data.label || '',
+									badge_html: data.badge_html || prev.badge_html,
+									column_html: data.column_html || prev.column_html
 								}));
 							}
 						}
@@ -410,6 +573,18 @@
 				var $curAction = $('.omnioffloader-row-action[data-attachment-id="' + curId + '"]');
 				if ($curAction.length && !$curAction.hasClass('is-busy')) {
 					$curAction.addClass('is-busy').text(curText);
+				}
+
+				var $curGrid = $('.attachments li.attachment[data-id="' + curId + '"], .attachments-browser li.attachment[data-id="' + curId + '"]');
+				if ($curGrid.length) {
+					var curGridStatus = $curGrid.attr('data-omnioffloader-status');
+					if (curGridStatus !== 'processing') {
+						updateGridBadge($curGrid, {
+							status: 'processing',
+							is_offloaded: (curType === 'restore'),
+							label: curText
+						});
+					}
 				}
 			}
 
@@ -484,6 +659,15 @@
 			if ($rowAction.length) {
 				$rowAction.addClass('is-busy').text(loadingText);
 			}
+
+			var $gridItem = $('.attachments li.attachment[data-id="' + id + '"], .attachments-browser li.attachment[data-id="' + id + '"]');
+			if ($gridItem.length) {
+				updateGridBadge($gridItem, {
+					status: 'processing',
+					is_offloaded: (actionType === 'restore'),
+					label: loadingText
+				});
+			}
 		});
 
 		// Uncheck all selected checkboxes and reset dropdown
@@ -512,11 +696,6 @@
 		}
 	});
 
-	$(document).ready(function() {
-		// Run initial check on page load to detect running bulk jobs or in-flight items
-		checkInFlight(true);
-	});
-
 	// Wake up poller when user returns to this browser tab
 	$(window).on('focus', function() {
 		checkInFlight(true);
@@ -540,72 +719,118 @@
 		}, 300);
 	});
 
-	// 4. Grid View & Backbone Attachment View Patching
-	if (window.wp && wp.media && wp.media.view && wp.media.view.Attachment) {
-		var AttachmentView = wp.media.view.Attachment;
-		var proto = AttachmentView.prototype;
-
-		if (!proto._omnioffloaderPatched) {
-			var originalRender = proto.render;
-			var originalInitialize = proto.initialize;
-
-			proto.initialize = function() {
-				if (typeof originalInitialize === 'function') {
-					originalInitialize.apply(this, arguments);
-				}
-				if (this.model) {
-					this.listenTo(this.model, 'change:omnioffloader', this.render);
-				}
-			};
-
-			proto.render = function() {
-				var result = originalRender.apply(this, arguments);
-
-				if (!this.model) {
-					return result;
-				}
-
-				var data = this.model.get('omnioffloader');
-				var $thumbnail = this.$el.find('.thumbnail');
-
-				$thumbnail.find('.omnioffloader-grid-badge').remove();
-
-				if (data) {
-					if (data.is_offloaded && data.status !== 'processing') {
-						$thumbnail.append('<span class="omnioffloader-grid-badge omnioffloader-grid-badge--offloaded" title="' + (data.label || 'Offloaded') + '">' + cloudIcon + '</span>');
-					} else if (data.status === 'processing' || data.status === 'queued') {
-						$thumbnail.append('<span class="omnioffloader-grid-badge omnioffloader-grid-badge--processing" title="' + (data.label || 'Offloading...') + '">' + spinnerIcon + '</span>');
-					} else if (data.status === 'failed') {
-						$thumbnail.append('<span class="omnioffloader-grid-badge omnioffloader-grid-badge--failed" title="' + (data.label || 'Offload failed') + '">' + warningIcon + '</span>');
-					}
-				}
-
-				return result;
-			};
-
-			proto._omnioffloaderPatched = true;
+	// 6. Grid View & Backbone Attachment View Patching
+	function patchAttachmentView(ViewClass) {
+		if (!ViewClass || !ViewClass.prototype || ViewClass.prototype._omnioffloaderPatched) {
+			return;
 		}
 
-		// Patch Details view if available to live-update sidebar badge
-		if (wp.media.view.Attachment.Details) {
-			var DetailsView = wp.media.view.Attachment.Details;
-			var detailsProto = DetailsView.prototype;
+		var proto = ViewClass.prototype;
+		var originalRender = proto.render;
+		var originalInitialize = proto.initialize;
 
-			if (!detailsProto._omnioffloaderPatched) {
-				var origDetailsRender = detailsProto.render;
-				detailsProto.render = function() {
-					var res = origDetailsRender.apply(this, arguments);
-					if (this.model) {
-						var data = this.model.get('omnioffloader');
-						if (data && data.badge_html) {
-							this.$el.find('.omnioffloader-details-badge:not(.omnioffloader-meta-box-wrap)').replaceWith(data.badge_html);
-						}
-					}
-					return res;
-				};
-				detailsProto._omnioffloaderPatched = true;
+		proto.initialize = function() {
+			if (typeof originalInitialize === 'function') {
+				originalInitialize.apply(this, arguments);
 			}
+			if (this.model) {
+				this.listenTo(this.model, 'change:omnioffloader', function() {
+					if (this.$el) {
+						var data = this.model.get('omnioffloader');
+						updateGridBadge(this.$el, data);
+					}
+				});
+			}
+		};
+
+		proto.render = function() {
+			var result = originalRender.apply(this, arguments);
+
+			if (this.model && this.$el) {
+				var data = this.model.get('omnioffloader');
+				updateGridBadge(this.$el, data);
+			}
+
+			return result;
+		};
+
+		proto._omnioffloaderPatched = true;
+	}
+
+	function patchDetailsView(DetailsClass) {
+		if (!DetailsClass || !DetailsClass.prototype || DetailsClass.prototype._omnioffloaderPatched) {
+			return;
+		}
+
+		var detailsProto = DetailsClass.prototype;
+		var origDetailsRender = detailsProto.render;
+
+		detailsProto.render = function() {
+			var res = origDetailsRender.apply(this, arguments);
+			if (this.model) {
+				var data = this.model.get('omnioffloader');
+				if (data && data.badge_html) {
+					this.$el.find('.omnioffloader-details-badge:not(.omnioffloader-meta-box-wrap)').replaceWith(data.badge_html);
+				}
+			}
+			return res;
+		};
+
+		detailsProto._omnioffloaderPatched = true;
+	}
+
+	function initGridPatching() {
+		if (!window.wp || !wp.media || !wp.media.view) {
+			return;
+		}
+
+		if (wp.media.view.Attachment) {
+			patchAttachmentView(wp.media.view.Attachment);
+		}
+		if (wp.media.view.Attachment && wp.media.view.Attachment.Library) {
+			patchAttachmentView(wp.media.view.Attachment.Library);
+		}
+		if (wp.media.view.Attachment && wp.media.view.Attachment.EditLibrary) {
+			patchAttachmentView(wp.media.view.Attachment.EditLibrary);
+		}
+		if (wp.media.view.Attachment && wp.media.view.Attachment.Details) {
+			patchDetailsView(wp.media.view.Attachment.Details);
 		}
 	}
+
+	// Run patching immediately and on document ready
+	initGridPatching();
+	$(document).ready(function() {
+		initGridPatching();
+		checkInFlight(true);
+	});
+
+	// Trigger in-flight check when media uploader finishes an upload in Grid View
+	$(document).ajaxComplete(function(event, xhr, settings) {
+		if (settings && settings.data && typeof settings.data === 'string') {
+			if (settings.data.indexOf('action=upload-attachment') !== -1) {
+				scheduleInFlightPoll(1000);
+			}
+		}
+	});
+
+	if (window.wp && wp.Uploader && wp.Uploader.queue) {
+		wp.Uploader.queue.on('add reset', function() {
+			scheduleInFlightPoll(1000);
+		});
+	}
+
+	var scrollTimer = null;
+	$(window).on('scroll', function() {
+		if (scrollTimer) {
+			return;
+		}
+		scrollTimer = setTimeout(function() {
+			scrollTimer = null;
+			if (isBulkRunning) {
+				checkInFlight();
+			}
+		}, 1000);
+	});
 
 })(jQuery);

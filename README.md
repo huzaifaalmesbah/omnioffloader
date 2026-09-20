@@ -81,6 +81,50 @@ Unlike traditional offloaders where moving to the cloud is a one-way trip, OmniO
 
 ---
 
+## ⚙️ Provider Configuration Guide
+
+### 1. Cloudflare R2
+* **Storage Provider:** `Cloudflare R2`
+* **Account ID:** Found on the right sidebar of the Cloudflare Dashboard under Account ID.
+* **Access Key ID & Secret Access Key:** In Cloudflare Dashboard, go to **R2 > Manage R2 API Tokens**, create a token with **Object Read & Write** permissions.
+* **Bucket Name:** Your R2 bucket name.
+* **Custom Domain / CDN URL:** In your R2 bucket settings under **Settings > Public Access**, connect a custom domain (e.g. `https://media.yourdomain.com`) or enable the `r2.dev` public access subdomain. Paste that URL here.
+
+### 2. Backblaze B2
+* **Storage Provider:** `Backblaze B2`
+* **Public Bucket Requirement:** In Backblaze B2 Console under **Bucket Settings**, set **Files in Bucket are:** to **`Public`** so media files can be displayed by web browsers.
+* **S3 Endpoint URL & Region:** Found in bucket details (e.g. Endpoint: `https://s3.us-east-005.backblazeb2.com`, Region: `us-east-005`).
+* **Application Key ID & Key:** In Backblaze Console, go to **Application Keys > Add a New Application Key** with **Read and Write** access to your bucket. Use `keyID` as Key and `applicationKey` as Secret.
+* **Custom Domain / CDN URL:** Leave blank to serve directly from Backblaze, or enter your Cloudflare CDN domain if configured.
+
+### 3. Amazon S3 (AWS)
+* **Storage Provider:** `Amazon S3`
+* **Region:** AWS region where your bucket was created (e.g. `us-east-1`).
+* **Access Key ID & Secret Access Key:** In AWS IAM Console, create an IAM user with programmatic access and attach an S3 policy (e.g. `AmazonS3FullAccess` or scoped bucket policy).
+* **Bucket Name:** Your AWS S3 bucket name.
+* **Public Access / CDN:** Ensure your bucket policy allows public `s3:GetObject` reads (or connect an **Amazon CloudFront** distribution). Enter your CloudFront domain (e.g. `https://d111111abcdef8.cloudfront.net`) or leave blank to serve via AWS default S3 domain.
+
+### 4. Storj (S3-Compatible)
+* **Storage Provider:** `Any S3-Compatible Storage`
+* **Provider Label:** `Storj`
+* **S3 Endpoint URL:** `https://gateway.storjshare.io` (or satellite gateway e.g. `https://gateway.ap1.storjshare.io`).
+* **Region:** `us-east-1`
+* **Use Path-Style Endpoint:** `Enabled`
+* **Access Key & Secret Key:** In Storj Satellite console, go to **Access > Create S3 Credentials**.
+* **Custom Domain / CDN URL:** Create a public linkshare grant via **Objects > [Your Bucket] > Share**, and copy the URL. Replace `/s/` with `/raw/` (e.g. `https://link.storjshare.io/raw/<ACCESS_KEY>/<YOUR_BUCKET>`) and paste it here.
+
+### 5. MinIO (Local & Self-Hosted)
+* **Storage Provider:** `Any S3-Compatible Storage`
+* **Provider Label:** `MinIO Local`
+* **S3 Endpoint URL:** `http://127.0.0.1:9090` (or `http://127.0.0.1:9000`)
+* **Region:** `us-east-1`
+* **Use Path-Style Endpoint:** `Enabled`
+* **Access Key ID & Secret Access Key:** Root credentials (e.g. `minioadmin` / `minioadmin`).
+* **Bucket Name:** Your MinIO bucket name (set bucket policy to `download` / public read via `mc anonymous set download <alias>/<bucket>`).
+* **Custom Domain / CDN URL:** Leave blank or enter `http://127.0.0.1:9090/<bucket>`.
+
+---
+
 ## 🛠️ Development
 
 ### Setup

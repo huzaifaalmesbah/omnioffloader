@@ -70,6 +70,35 @@ This plugin bundles the AWS SDK for PHP (Apache-2.0), which is GPL-compatible un
 
 Amazon S3, Cloudflare R2, DigitalOcean Spaces, Backblaze B2 and Wasabi each have a dedicated setup preset. Anything else that speaks the S3 API — MinIO, Storj, Linode Object Storage, Scaleway and so on — works through the generic S3-Compatible option, where you supply the endpoint and region yourself.
 
+= How do I configure Cloudflare R2? =
+
+1. In Cloudflare Dashboard, navigate to **R2 > Overview** and create a bucket.
+2. Under your bucket settings, connect a **Custom Domain** (e.g., `https://media.yourdomain.com`) or enable the `r2.dev` public access subdomain so your files can be served publicly.
+3. On the R2 overview page, click **Manage R2 API Tokens**, create a token with **Object Read & Write** permissions, and copy the Access Key ID and Secret Access Key.
+4. Note your **Account ID** from the right sidebar of the Cloudflare dashboard.
+5. In OmniOffloader Settings, select **Cloudflare R2**, enter your Account ID, Access Key, Secret Key, Bucket Name, and your Custom Domain / CDN URL, then click **Test Connection**.
+
+= How do I configure Backblaze B2? =
+
+1. In Backblaze B2 Console, create a bucket. Under **Bucket Settings**, set **Files in Bucket are:** to **Public** so uploaded media can be viewed in web browsers.
+2. Note your S3 Endpoint URL (e.g., `https://s3.us-east-005.backblazeb2.com`) and Region (e.g., `us-east-005`) from the bucket details.
+3. Go to **Application Keys**, click **Add a New Application Key**, allow access to your bucket with **Read and Write** permissions, and copy the `keyID` and `applicationKey`.
+4. In OmniOffloader Settings, select **Backblaze B2**, enter your Application Key ID, Application Key, Endpoint URL, Region, and Bucket Name. Leave the CDN URL blank to serve directly from Backblaze, or enter your Cloudflare CDN domain if configured.
+
+= How do I configure Amazon S3? =
+
+1. In the AWS Management Console, create an S3 bucket in your preferred region.
+2. In the AWS IAM Console, create an IAM user with programmatic access and attach an S3 policy granting read/write permissions (e.g., `AmazonS3FullAccess` or a scoped bucket policy). Create and copy the Access Key ID and Secret Access Key.
+3. To serve media publicly, configure a bucket policy granting `s3:GetObject` permission to `*`, or connect an **Amazon CloudFront** distribution pointing to your S3 bucket.
+4. In OmniOffloader Settings, select **Amazon S3**, enter your Access Key, Secret Key, Region (e.g., `us-east-1`), Bucket Name, and your CloudFront/CDN URL (or leave blank to serve directly from AWS).
+
+= How do I configure Storj (or other S3-compatible storage)? =
+
+1. In the Storj Satellite console, create a bucket and navigate to **Access > Create S3 Credentials**. Copy your S3 Access Key and Secret Key.
+2. In Storj, create a public access grant for your bucket via **Objects > [Your Bucket] > Share**, and copy the linksharing URL (e.g., `https://link.storjshare.io/s/<KEY>/<BUCKET>`). Replace `/s/` with `/raw/` (e.g., `https://link.storjshare.io/raw/<KEY>/<BUCKET>`).
+3. In OmniOffloader Settings, select **Any S3-Compatible Storage**.
+4. Set S3 Endpoint URL to `https://gateway.storjshare.io` (or `https://gateway.ap1.storjshare.io`), Region to `us-east-1`, check **Use Path-Style Endpoint**, enter your Access Key, Secret Key, Bucket Name, and paste your `https://link.storjshare.io/raw/...` URL in **Custom Domain / CDN URL**.
+
 = Will offloading break my existing image URLs? =
 
 No. URLs are rewritten as pages render, so your posts, pages, featured images and responsive `srcset` attributes all keep working. Nothing in your post content is edited, and no database search-replace is needed.

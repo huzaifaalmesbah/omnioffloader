@@ -4,7 +4,7 @@ Tags: offload, cloud storage, cdn, media library, s3
 Requires at least: 6.6
 Tested up to: 7.1
 Requires PHP: 8.1
-Stable tag: 0.1.1
+Stable tag: 0.1.2
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -148,6 +148,24 @@ The plugin activates and runs per site. It has not been through a dedicated mult
 
 == Changelog ==
 
+= 0.1.2 =
+
+**Reliability & Caching Fixes**
+
+* LiteSpeed Cache & Breeze compatibility: added strict anti-caching headers (`no-store, no-cache, must-revalidate, max-age=0`, `Pragma: no-cache`, `Expires: 0`, and `X-LiteSpeed-Cache-Control: no-cache`) to all plugin REST endpoints.
+* Added `DONOTCACHEPAGE` constant definition and `litespeed_can_cache` / `breeze_can_cache` bypass filters to prevent web-server level caching of dynamic REST routes.
+* Client-side request cache-busting: added microsecond timestamp query parameters (`_t=${Date.now()}`) and `cache: 'no-store'` to all API polling and data fetch calls, preventing browsers, edge proxies, and reverse proxies from serving stale HTTP 200 responses.
+* Persistent Object Cache synchronization: added automatic cache invalidation (`wp_cache_delete`) for queue state options prior to reading, ensuring multi-worker Redis and Memcached environments observe real-time bulk progress without delay.
+* Multi-layer transient flushing: enhanced stats and preflight cache flushes to clean both object cache groups (`transient`) and fallback options table entries.
+* Added force-refresh support (`?refresh=1`) to `/core/stats` and `/bring-back/preflight`, allowing immediate post-run verification directly from the database.
+
+**UI & Experience Improvements**
+
+* Real-time Bulk Offload & Bring Back logs: Activity log and progress bar now update live with each poll under any caching plugin or proxy configuration.
+* Live-updating summary chips: Offloaded and Local attachment counts now update dynamically in the summary header as items are processed during active bulk runs.
+* Fixed "Start Bring Back (20)" button count remaining frozen after media restoration; the preflight check now automatically refreshes and transitions to "No Offloaded Media to Restore".
+* Fixed "All Media Offloaded" state not displaying immediately upon offload completion; stats refresh now promptly detects 100% completion and renders the success banner.
+
 = 0.1.1 =
 
 **New Features & Enhancements**
@@ -193,6 +211,9 @@ The plugin activates and runs per site. It has not been through a dedicated mult
 * Complete WP-CLI commands: `wp omnioffloader offload`, `wp omnioffloader restore`, and `wp omnioffloader status`.
 
 == Upgrade Notice ==
+
+= 0.1.2 =
+Fixes real-time Bulk Offload and Bring Back progress updates under LiteSpeed Cache, Breeze, and persistent Object Cache (Redis/Memcached). Recommended for all users.
 
 = 0.1.1 =
 Adds presets for Amazon S3, DigitalOcean Spaces, Backblaze B2, and Wasabi; real-time Media Library live status badges, meta box, and bulk actions; multipart uploads for large files; and major background queue stability and performance improvements. Recommended for all users.

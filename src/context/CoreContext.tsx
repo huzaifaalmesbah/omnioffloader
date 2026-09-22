@@ -48,7 +48,7 @@ interface CoreContextValue {
 	save: () => Promise< void >;
 	addNotice: ( status: Notice[ 'status' ], message: string ) => void;
 	removeNotice: ( id: number ) => void;
-	refreshStats: () => void;
+	refreshStats: ( force?: boolean ) => void;
 }
 
 const CoreContext = createContext< CoreContextValue | null >( null );
@@ -145,8 +145,8 @@ export function CoreProvider( { children }: { children: React.ReactNode } ) {
 		[]
 	);
 
-	const refreshStats = useCallback( () => {
-		fetchStats()
+	const refreshStats = useCallback( ( force = true ) => {
+		fetchStats( force )
 			.then( setStats )
 			.catch( () => {
 				// Stats are non-critical; ignore refresh failures.

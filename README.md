@@ -1,6 +1,6 @@
 # OmniOffloader — Multi-Cloud Media Offload & CDN for WordPress
 
-[![Version](https://img.shields.io/badge/version-0.1.1-blue.svg)](https://github.com/huzaifaalmesbah/omnioffloader)
+[![Version](https://img.shields.io/badge/version-0.1.2-blue.svg)](https://github.com/huzaifaalmesbah/omnioffloader)
 [![WordPress](https://img.shields.io/badge/WordPress-6.6%20--%207.1-blue.svg)](https://wordpress.org/)
 [![PHP](https://img.shields.io/badge/PHP-8.1%2B-purple.svg)](https://www.php.net/)
 [![License](https://img.shields.io/badge/license-GPL--2.0--or--later-green.svg)](https://www.gnu.org/licenses/gpl-2.0.html)

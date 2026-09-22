@@ -130,13 +130,16 @@ class Helpers {
 	 *
 	 * One indexed query on postmeta, cached in a short transient.
 	 *
+	 * @param bool $force_refresh Optional. True to bypass transient cache and recompute. Default false.
 	 * @return array{total: int, offloaded: int, local: int}
 	 */
-	public static function get_media_stats() {
-		$cached = get_transient( 'omnioffloader_media_stats' );
+	public static function get_media_stats( $force_refresh = false ) {
+		if ( ! $force_refresh ) {
+			$cached = get_transient( 'omnioffloader_media_stats' );
 
-		if ( is_array( $cached ) && isset( $cached['total'], $cached['offloaded'], $cached['local'] ) ) {
-			return $cached;
+			if ( is_array( $cached ) && isset( $cached['total'], $cached['offloaded'], $cached['local'] ) ) {
+				return $cached;
+			}
 		}
 
 		global $wpdb;
@@ -169,6 +172,9 @@ class Helpers {
 	/**
 	 * Bust the cached media stats (call after offload/restore state changes).
 	 *
+	 * Flushes transients from external object cache (Redis/Memcached) as well
+	 * as fallback options.
+	 *
 	 * @return void
 	 */
 	public static function flush_media_stats() {
@@ -180,6 +186,13 @@ class Helpers {
 
 		delete_transient( 'omnioffloader_media_stats' );
 		delete_transient( 'omnioffloader_restore_preflight' );
+
+		wp_cache_delete( 'omnioffloader_media_stats', 'transient' );
+		wp_cache_delete( 'omnioffloader_restore_preflight', 'transient' );
+		delete_option( '_transient_omnioffloader_media_stats' );
+		delete_option( '_transient_timeout_omnioffloader_media_stats' );
+		delete_option( '_transient_omnioffloader_restore_preflight' );
+		delete_option( '_transient_timeout_omnioffloader_restore_preflight' );
 	}
 
 	/**
@@ -215,13 +228,16 @@ class Helpers {
 	 * locally are skipped during restore. Cached in a short transient; only
 	 * computed on the Bring Back page / preflight endpoint.
 	 *
+	 * @param bool $force_refresh Optional. True to bypass transient cache and recompute. Default false.
 	 * @return array{offloaded: int, estimated_bytes: int, free_bytes: int, disk_ok: bool}
 	 */
-	public static function get_restore_preflight() {
-		$cached = get_transient( 'omnioffloader_restore_preflight' );
+	public static function get_restore_preflight( $force_refresh = false ) {
+		if ( ! $force_refresh ) {
+			$cached = get_transient( 'omnioffloader_restore_preflight' );
 
-		if ( is_array( $cached ) && isset( $cached['offloaded'], $cached['estimated_bytes'], $cached['free_bytes'], $cached['disk_ok'] ) ) {
-			return $cached;
+			if ( is_array( $cached ) && isset( $cached['offloaded'], $cached['estimated_bytes'], $cached['free_bytes'], $cached['disk_ok'] ) ) {
+				return $cached;
+			}
 		}
 
 		global $wpdb;

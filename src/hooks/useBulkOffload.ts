@@ -61,7 +61,7 @@ export function useBulkOffload() {
 
 				if ( fresh.status !== 'running' ) {
 					stopPolling();
-					refreshStats();
+					refreshStats( true );
 					return;
 				}
 
@@ -153,7 +153,7 @@ export function useBulkOffload() {
 				startPolling();
 			} else {
 				setSessionRun( false );
-				refreshStats();
+				refreshStats( true );
 			}
 		} catch ( error: unknown ) {
 			addNotice( 'error', errorMessage( error ) );
@@ -174,7 +174,7 @@ export function useBulkOffload() {
 			const fresh = await cancelBulkOffload();
 			setState( fresh );
 			stopPolling();
-			refreshStats();
+			refreshStats( true );
 		} catch ( error: unknown ) {
 			addNotice( 'error', errorMessage( error ) );
 		} finally {

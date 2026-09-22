@@ -4,9 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Status
 
-**Pre-release, version `0.1.1`.** The full design lives in `PLAN.md` — read it before making architectural decisions. The phase map in PLAN.md §11 (skeleton → offload → bulk → Bring Back → release candidate) describes development phases, not ship versions.
+**Pre-release, version `0.1.2`.** The full design lives in `PLAN.md` — read it before making architectural decisions. The phase map in PLAN.md §11 (skeleton → offload → bulk → Bring Back → release candidate) describes development phases, not ship versions.
 
-Released so far: `0.1.0` (initial release, Cloudflare R2 only), `0.1.1` (five more providers, bulk-queue reliability work). See `readme.txt` for the user-facing changelog — keep it updated in the same commit as any user-visible change.
+Released so far: `0.1.0` (initial release, Cloudflare R2 only), `0.1.1` (five more providers, bulk-queue reliability work), `0.1.2` (LiteSpeed Cache, Breeze, and Object Cache real-time reliability fixes). See `readme.txt` for the user-facing changelog — keep it updated in the same commit as any user-visible change.
 
 > ⚠️ **VERSION CEILING: `0.9.0`.** Never bump, tag, or release version `1.0.0` (or anything ≥ 1.0.0) without the owner's explicit permission in that conversation. All planned work ends at 0.9.0.
 

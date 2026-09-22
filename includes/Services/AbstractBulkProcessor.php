@@ -129,9 +129,17 @@ abstract class AbstractBulkProcessor extends WP_Background_Process {
 	/**
 	 * Read the current progress state.
 	 *
+	 * Explicitly busts the options cache for this key so polling across
+	 * separate PHP processes/workers always observes real-time progress
+	 * under persistent object caching (Redis/Memcached).
+	 *
 	 * @return array<string, mixed>
 	 */
 	public static function get_state() {
+		if ( '' !== static::STATE_OPTION ) {
+			wp_cache_delete( static::STATE_OPTION, 'options' );
+		}
+
 		$state = get_option( static::STATE_OPTION, array() );
 
 		if ( ! is_array( $state ) ) {
@@ -153,6 +161,10 @@ abstract class AbstractBulkProcessor extends WP_Background_Process {
 
 		// Progress heartbeat — never autoloaded.
 		update_option( static::STATE_OPTION, $state, false );
+
+		if ( '' !== static::STATE_OPTION ) {
+			wp_cache_set( static::STATE_OPTION, $state, 'options' );
+		}
 	}
 
 	/**

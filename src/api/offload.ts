@@ -9,7 +9,10 @@ export function startBulkOffload(): Promise< StartBulkResponse > {
 }
 
 export function fetchBulkProgress(): Promise< BulkState > {
-	return apiFetch( { path: `${ BASE }/offload/bulk/progress` } );
+	return apiFetch( {
+		path: `${ BASE }/offload/bulk/progress?_t=${ Date.now() }`,
+		cache: 'no-store',
+	} );
 }
 
 export function cancelBulkOffload(): Promise< BulkState > {
@@ -20,5 +23,8 @@ export function cancelBulkOffload(): Promise< BulkState > {
 }
 
 export function fetchOffloadErrors(): Promise< AttachmentErrors[] > {
-	return apiFetch( { path: `${ BASE }/offload/errors` } );
+	return apiFetch( {
+		path: `${ BASE }/offload/errors?_t=${ Date.now() }`,
+		cache: 'no-store',
+	} );
 }

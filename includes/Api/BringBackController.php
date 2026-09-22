@@ -31,7 +31,18 @@ class BringBackController extends BaseController {
 	 * @return void
 	 */
 	public function register_routes() {
-		$this->register_get_route( '/bring-back/preflight', array( $this, 'preflight_response' ) );
+		$this->register_get_route(
+			'/bring-back/preflight',
+			array( $this, 'preflight_response' ),
+			array(
+				'refresh' => array(
+					'type'              => 'boolean',
+					'required'          => false,
+					'default'           => false,
+					'sanitize_callback' => 'rest_sanitize_boolean',
+				),
+			)
+		);
 
 		register_rest_route(
 			$this->namespace,
@@ -92,10 +103,12 @@ class BringBackController extends BaseController {
 	/**
 	 * GET /bring-back/preflight
 	 *
+	 * @param WP_REST_Request $request Request.
 	 * @return \WP_REST_Response
 	 */
-	public function preflight_response() {
-		return rest_ensure_response( Helpers::get_restore_preflight() );
+	public function preflight_response( WP_REST_Request $request ) {
+		$force = (bool) $request->get_param( 'refresh' );
+		return rest_ensure_response( Helpers::get_restore_preflight( $force ) );
 	}
 
 	/**

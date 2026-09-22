@@ -44,7 +44,18 @@ class CoreController extends BaseController {
 
 		$this->register_get_route( '/core/providers', array( $this, 'get_providers_response' ) );
 
-		$this->register_get_route( '/core/stats', array( $this, 'get_stats_response' ) );
+		$this->register_get_route(
+			'/core/stats',
+			array( $this, 'get_stats_response' ),
+			array(
+				'refresh' => array(
+					'type'              => 'boolean',
+					'required'          => false,
+					'default'           => false,
+					'sanitize_callback' => 'rest_sanitize_boolean',
+				),
+			)
+		);
 	}
 
 	/**
@@ -117,10 +128,12 @@ class CoreController extends BaseController {
 	/**
 	 * GET /core/stats
 	 *
+	 * @param WP_REST_Request $request Request.
 	 * @return \WP_REST_Response
 	 */
-	public function get_stats_response() {
-		$stats    = Helpers::get_media_stats();
+	public function get_stats_response( WP_REST_Request $request ) {
+		$force    = (bool) $request->get_param( 'refresh' );
+		$stats    = Helpers::get_media_stats( $force );
 		$settings = self::get_settings();
 
 		$stats['configured'] = self::is_configured();

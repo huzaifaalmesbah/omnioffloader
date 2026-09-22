@@ -8,8 +8,16 @@ import type {
 
 const BASE = '/omnioffloader/v1';
 
-export function fetchRestorePreflight(): Promise< RestorePreflight > {
-	return apiFetch( { path: `${ BASE }/bring-back/preflight` } );
+export function fetchRestorePreflight(
+	refresh = false
+): Promise< RestorePreflight > {
+	const query = refresh
+		? `?refresh=1&_t=${ Date.now() }`
+		: `?_t=${ Date.now() }`;
+	return apiFetch( {
+		path: `${ BASE }/bring-back/preflight${ query }`,
+		cache: 'no-store',
+	} );
 }
 
 export function startBulkRestore(
@@ -23,7 +31,10 @@ export function startBulkRestore(
 }
 
 export function fetchRestoreProgress(): Promise< RestoreBulkState > {
-	return apiFetch( { path: `${ BASE }/bring-back/bulk/progress` } );
+	return apiFetch( {
+		path: `${ BASE }/bring-back/bulk/progress?_t=${ Date.now() }`,
+		cache: 'no-store',
+	} );
 }
 
 export function cancelBulkRestore(): Promise< RestoreBulkState > {

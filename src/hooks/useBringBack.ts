@@ -52,8 +52,8 @@ export function useBringBack() {
 		);
 	}, [] );
 
-	const refreshPreflight = useCallback( () => {
-		fetchRestorePreflight()
+	const refreshPreflight = useCallback( ( force = true ) => {
+		fetchRestorePreflight( force )
 			.then( setPreflight )
 			.catch( () => {
 				// Preflight is informational; the page shows a fallback.
@@ -74,8 +74,8 @@ export function useBringBack() {
 
 				if ( fresh.status !== 'running' ) {
 					stopPolling();
-					refreshStats();
-					refreshPreflight();
+					refreshStats( true );
+					refreshPreflight( true );
 					return;
 				}
 
@@ -128,7 +128,7 @@ export function useBringBack() {
 
 	// Initial load; resume polling when a run is already in flight.
 	useEffect( () => {
-		refreshPreflight();
+		refreshPreflight( true );
 
 		fetchRestoreProgress()
 			.then( ( fresh ) => {
@@ -171,8 +171,8 @@ export function useBringBack() {
 					startPolling();
 				} else {
 					setSessionRun( false );
-					refreshStats();
-					refreshPreflight();
+					refreshStats( true );
+					refreshPreflight( true );
 				}
 			} catch ( error: unknown ) {
 				addNotice( 'error', errorMessage( error ) );
@@ -195,8 +195,8 @@ export function useBringBack() {
 			const fresh = await cancelBulkRestore();
 			setState( fresh );
 			stopPolling();
-			refreshStats();
-			refreshPreflight();
+			refreshStats( true );
+			refreshPreflight( true );
 		} catch ( error: unknown ) {
 			addNotice( 'error', errorMessage( error ) );
 		} finally {
@@ -213,5 +213,14 @@ export function useBringBack() {
 		( state.status === 'running' ||
 			( state.status !== 'idle' && sessionRun && ! dismissed ) );
 
-	return { preflight, state, busy, start, cancel, showProgress, dismiss };
+	return {
+		preflight,
+		state,
+		busy,
+		start,
+		cancel,
+		showProgress,
+		dismiss,
+		refreshPreflight,
+	};
 }

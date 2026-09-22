@@ -33,6 +33,10 @@ class Migrator {
 		if ( version_compare( $from_version, '0.1.1', '<' ) ) {
 			self::migrate_to_0_1_1();
 		}
+
+		if ( version_compare( $from_version, '0.1.2', '<' ) ) {
+			self::migrate_to_0_1_2();
+		}
 	}
 
 	/**
@@ -65,5 +69,16 @@ class Migrator {
 
 			AbstractBulkProcessor::purge_stored_data( $action, $processor::STATE_OPTION );
 		}
+	}
+
+	/**
+	 * 0.1.2 — flush stale stats and preflight transients.
+	 *
+	 * @since 0.1.2
+	 *
+	 * @return void
+	 */
+	private static function migrate_to_0_1_2() {
+		Helpers::flush_media_stats();
 	}
 }

@@ -36,6 +36,7 @@ export function useBringBack() {
 	const delay = useRef( POLL_MIN );
 	const inFlight = useRef( false );
 	const tick = useRef< () => void >( () => {} );
+	const lastStatsRefresh = useRef( 0 );
 
 	const stopPolling = useCallback( () => {
 		if ( timer.current !== null ) {
@@ -77,6 +78,14 @@ export function useBringBack() {
 					refreshStats( true );
 					refreshPreflight( true );
 					return;
+				}
+
+				// Periodically refresh stats during active run so summary chips stay synchronized.
+				const now = Date.now();
+				if ( now - lastStatsRefresh.current >= 6000 ) {
+					lastStatsRefresh.current = now;
+					refreshStats( true );
+					refreshPreflight( true );
 				}
 
 				// Ease off as the run settles in: a multi-hour job does not
@@ -135,6 +144,8 @@ export function useBringBack() {
 				setState( fresh );
 				if ( fresh.status === 'running' ) {
 					setSessionRun( true );
+					refreshStats( true );
+					refreshPreflight( true );
 					startPolling();
 				}
 			} )
@@ -143,7 +154,7 @@ export function useBringBack() {
 			} );
 
 		return stopPolling;
-	}, [ refreshPreflight, startPolling, stopPolling ] );
+	}, [ refreshPreflight, refreshStats, startPolling, stopPolling ] );
 
 	const start = useCallback(
 		async ( deleteCloud: boolean, limit?: number ) => {
@@ -168,6 +179,9 @@ export function useBringBack() {
 				setState( response.state );
 
 				if ( response.queued > 0 ) {
+					lastStatsRefresh.current = Date.now();
+					refreshStats( true );
+					refreshPreflight( true );
 					startPolling();
 				} else {
 					setSessionRun( false );

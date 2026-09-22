@@ -31,6 +31,7 @@ export function useBulkOffload() {
 	const delay = useRef( POLL_MIN );
 	const inFlight = useRef( false );
 	const tick = useRef< () => void >( () => {} );
+	const lastStatsRefresh = useRef( 0 );
 
 	const stopPolling = useCallback( () => {
 		if ( timer.current !== null ) {
@@ -63,6 +64,13 @@ export function useBulkOffload() {
 					stopPolling();
 					refreshStats( true );
 					return;
+				}
+
+				// Periodically refresh stats during active run so summary chips stay synchronized.
+				const now = Date.now();
+				if ( now - lastStatsRefresh.current >= 6000 ) {
+					lastStatsRefresh.current = now;
+					refreshStats( true );
 				}
 
 				// Ease off as the run settles in: a multi-hour job does not
@@ -119,6 +127,7 @@ export function useBulkOffload() {
 				setState( fresh );
 				if ( fresh.status === 'running' ) {
 					setSessionRun( true );
+					refreshStats( true );
 					startPolling();
 				}
 			} )
@@ -127,7 +136,7 @@ export function useBulkOffload() {
 			} );
 
 		return stopPolling;
-	}, [ startPolling, stopPolling ] );
+	}, [ refreshStats, startPolling, stopPolling ] );
 
 	const start = useCallback(
 		async ( limit?: number ) => {
@@ -151,6 +160,8 @@ export function useBulkOffload() {
 				setState( response.state );
 
 				if ( response.queued > 0 ) {
+					lastStatsRefresh.current = Date.now();
+					refreshStats( true );
 					startPolling();
 				} else {
 					setSessionRun( false );

@@ -23,15 +23,8 @@ export function BringBackPage() {
 
 	const running = state?.status === 'running';
 	const totalCount = stats?.total ?? 0;
-	const baseOffloaded = preflight?.offloaded ?? stats?.offloaded ?? 0;
-	const offloadedCount =
-		running && state
-			? Math.max( 0, baseOffloaded - state.processed )
-			: baseOffloaded;
-	const localCount =
-		running && state
-			? Math.min( totalCount, ( stats?.local ?? 0 ) + state.processed )
-			: ( stats?.local ?? 0 );
+	const offloadedCount = preflight?.offloaded ?? stats?.offloaded ?? 0;
+	const localCount = stats?.local ?? 0;
 	const isAllLocal =
 		stats?.configured && offloadedCount === 0 && totalCount > 0;
 	const freeKnown = ( preflight?.free_bytes ?? 0 ) > 0;

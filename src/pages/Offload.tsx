@@ -19,17 +19,8 @@ export function OffloadPage() {
 
 	const running = state?.status === 'running';
 	const totalCount = stats?.total ?? 0;
-	const offloadedCount =
-		running && state
-			? Math.min(
-					totalCount,
-					( stats?.offloaded ?? 0 ) + state.processed
-				)
-			: ( stats?.offloaded ?? 0 );
-	const localCount =
-		running && state
-			? Math.max( 0, ( stats?.local ?? 0 ) - state.processed )
-			: ( stats?.local ?? 0 );
+	const offloadedCount = stats?.offloaded ?? 0;
+	const localCount = stats?.local ?? 0;
 	const isAllOffloaded =
 		stats?.configured && localCount === 0 && totalCount > 0;
 

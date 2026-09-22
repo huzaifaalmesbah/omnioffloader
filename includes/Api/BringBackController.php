@@ -75,6 +75,11 @@ class BringBackController extends BaseController {
 					'default'           => false,
 					'sanitize_callback' => 'rest_sanitize_boolean',
 				),
+				'limit'        => array(
+					'type'              => 'integer',
+					'minimum'           => 1,
+					'sanitize_callback' => 'absint',
+				),
 			)
 		);
 		$this->register_get_route( '/bring-back/bulk/progress', array( $this, 'progress_response' ) );
@@ -189,7 +194,9 @@ class BringBackController extends BaseController {
 			);
 		}
 
-		$queued = $engine->start( (bool) $request->get_param( 'delete_cloud' ) );
+		$delete_cloud = (bool) $request->get_param( 'delete_cloud' );
+		$limit        = (int) $request->get_param( 'limit' );
+		$queued       = $engine->start( $delete_cloud, null, $limit );
 
 		return rest_ensure_response(
 			array(

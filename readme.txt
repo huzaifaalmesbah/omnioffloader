@@ -35,6 +35,7 @@ And because offloading should never be a one-way door, **Bring Back** downloads 
 * **Three retention policies** — keep every local copy, delete only generated thumbnails (smart cleanup), or move everything to the cloud and reclaim the full disk space.
 * **Bring Back restore** — pull media back from the cloud to your server, per file or in bulk, with a disk-space preflight so you know what it needs before it starts.
 * **Bulk offload with live progress** — background processing with a real-time activity log, cancel at any time, resumes safely if a request is interrupted.
+* **Custom batch processing** — offload or restore your entire library or process a specific custom quantity (e.g. 5, 10, 25, 50, 100, or any number) with quick presets and live progress tracking.
 * **Mirror deletion** — deleting an attachment in WordPress removes its cloud objects too (optional, off by default).
 * **Media library integration** — real-time status column icon, dedicated meta box on the edit screen, grid view badges, bulk actions, and dynamic row actions.
 * **WP-CLI commands** — automate everything from the terminal or a scheduled job.
@@ -150,6 +151,15 @@ The plugin activates and runs per site. It has not been through a dedicated mult
 
 = 0.1.2 =
 
+**New Features & Batch Controls**
+
+* Custom Batch Size & Quantity Limits: users can now choose between processing the entire media library ("All Media") or specifying a custom number of attachments for both Bulk Offload and Bring Back.
+* Interactive Scope Selector: added modern radio card controls with quick preset chips (5, 10, 25, 50, 100, and All) and clean, centered numeric input field with unit labels.
+* Dynamic Action Buttons: buttons on Offload and Bring Back screens dynamically display target batch counts (e.g. "Start Bulk Offload (5 of 10)" / "Start Bring Back (5 of 10)").
+* Proportional Download Estimation: Bring Back calculates and displays the exact disk space required for the selected custom batch size alongside available server free space before starting.
+* REST API `limit` parameter: registered sanitized and validated `limit` parameter on `POST /omnioffloader/v1/offload/bulk` and `POST /omnioffloader/v1/bring-back/bulk`.
+* WP-CLI `--limit=<number>`: added `--limit=<number>` option to `wp omnioffloader restore` matching `wp omnioffloader offload --limit=<number>`, enabling batch restores from the terminal.
+
 **Reliability & Caching Fixes**
 
 * LiteSpeed Cache & Breeze compatibility: added strict anti-caching headers (`no-store, no-cache, must-revalidate, max-age=0`, `Pragma: no-cache`, `Expires: 0`, and `X-LiteSpeed-Cache-Control: no-cache`) to all plugin REST endpoints.
@@ -161,6 +171,8 @@ The plugin activates and runs per site. It has not been through a dedicated mult
 
 **UI & Experience Improvements**
 
+* Standardized badge formatting across option cards to ensure identical phrasing (`%d items` / `%d item`) and consistent badge styling.
+* Active selection badge accent transitions and crisp input alignment.
 * Real-time Bulk Offload & Bring Back logs: Activity log and progress bar now update live with each poll under any caching plugin or proxy configuration.
 * Live-updating summary chips: Offloaded and Local attachment counts now update dynamically in the summary header as items are processed during active bulk runs.
 * Fixed "Start Bring Back (20)" button count remaining frozen after media restoration; the preflight check now automatically refreshes and transitions to "No Offloaded Media to Restore".
@@ -213,7 +225,7 @@ The plugin activates and runs per site. It has not been through a dedicated mult
 == Upgrade Notice ==
 
 = 0.1.2 =
-Fixes real-time Bulk Offload and Bring Back progress updates under LiteSpeed Cache, Breeze, and persistent Object Cache (Redis/Memcached). Recommended for all users.
+Adds custom batch quantity limits and presets for Bulk Offload and Bring Back, proportional Bring Back disk estimation, WP-CLI restore --limit support, and fixes real-time progress updates under LiteSpeed Cache, Breeze, and persistent Object Cache (Redis/Memcached). Recommended for all users.
 
 = 0.1.1 =
 Adds presets for Amazon S3, DigitalOcean Spaces, Backblaze B2, and Wasabi; real-time Media Library live status badges, meta box, and bulk actions; multipart uploads for large files; and major background queue stability and performance improvements. Recommended for all users.

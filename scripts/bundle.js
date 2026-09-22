@@ -164,8 +164,13 @@ if (fs.existsSync(zipFile)) {
 execSync(`find "${distDir}" -name ".DS_Store" -delete || true`);
 execSync(`cd "${distDir}" && zip -r "${zipFile}" "${pluginSlug}"`, { stdio: 'inherit' });
 
-// 6. Cleanup dist directory
+// 6. Cleanup dist directory and restore local dev dependencies
 fs.rmSync(distDir, { recursive: true, force: true });
+try {
+	execSync('composer install', { cwd: rootDir, env: composerEnv, stdio: 'ignore' });
+} catch (e) {
+	// Dev restore optional
+}
 
 // 7. Verification and stats
 const stats = fs.statSync(zipFile);

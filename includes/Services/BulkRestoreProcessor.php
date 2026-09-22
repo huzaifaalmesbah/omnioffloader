@@ -59,13 +59,19 @@ class BulkRestoreProcessor extends AbstractBulkProcessor {
 	 *
 	 * @since 0.1.0
 	 * @since 0.1.1 Added $ids parameter for partial/selected restore.
+	 * @since 0.1.2 Added $limit parameter for custom batch restore.
 	 *
 	 * @param bool       $delete_cloud Also delete cloud objects after each verified restore.
 	 * @param int[]|null $ids          Optional specific attachment IDs to queue.
+	 * @param int        $limit        Optional maximum number of attachments to queue. 0 for all.
 	 * @return int Number of queued attachments.
 	 */
-	public function start( $delete_cloud = false, ?array $ids = null ) {
+	public function start( $delete_cloud = false, ?array $ids = null, int $limit = 0 ) {
 		if ( null !== $ids ) {
+			if ( $limit > 0 ) {
+				$ids = array_slice( $ids, 0, $limit );
+			}
+
 			$valid_ids = array();
 			foreach ( $ids as $id ) {
 				$id = (int) $id;
@@ -76,6 +82,18 @@ class BulkRestoreProcessor extends AbstractBulkProcessor {
 			}
 
 			return $this->start_queue( array( 'delete_cloud' => (bool) $delete_cloud ), $valid_ids );
+		}
+
+		if ( $limit > 0 ) {
+			$all_ids    = $this->queue_ids();
+			$sliced_ids = array_slice( $all_ids, 0, $limit );
+			if ( count( $sliced_ids ) <= 500 ) {
+				foreach ( $sliced_ids as $id ) {
+					update_post_meta( $id, 'omnioffloader_status', 'queued' );
+				}
+			}
+
+			return $this->start_queue( array( 'delete_cloud' => (bool) $delete_cloud ), $sliced_ids );
 		}
 
 		return $this->start_queue( array( 'delete_cloud' => (bool) $delete_cloud ) );

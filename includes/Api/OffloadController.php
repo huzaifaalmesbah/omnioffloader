@@ -48,7 +48,17 @@ class OffloadController extends BaseController {
 			)
 		);
 
-		$this->register_post_route( '/offload/bulk', array( $this, 'start_bulk_response' ) );
+		$this->register_post_route(
+			'/offload/bulk',
+			array( $this, 'start_bulk_response' ),
+			array(
+				'limit' => array(
+					'type'              => 'integer',
+					'minimum'           => 1,
+					'sanitize_callback' => 'absint',
+				),
+			)
+		);
 		$this->register_get_route( '/offload/bulk/progress', array( $this, 'progress_response' ) );
 		$this->register_post_route( '/offload/bulk/cancel', array( $this, 'cancel_bulk_response' ) );
 
@@ -182,9 +192,10 @@ class OffloadController extends BaseController {
 	/**
 	 * POST /offload/bulk
 	 *
+	 * @param WP_REST_Request $request Request.
 	 * @return \WP_REST_Response|\WP_Error
 	 */
-	public function start_bulk_response() {
+	public function start_bulk_response( WP_REST_Request $request ) {
 		$engine = $this->require_engine();
 
 		if ( is_wp_error( $engine ) ) {
@@ -211,7 +222,8 @@ class OffloadController extends BaseController {
 			);
 		}
 
-		$queued = $engine->start();
+		$limit  = (int) $request->get_param( 'limit' );
+		$queued = $engine->start( null, $limit );
 
 		return rest_ensure_response(
 			array(

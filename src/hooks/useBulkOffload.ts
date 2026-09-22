@@ -129,43 +129,46 @@ export function useBulkOffload() {
 		return stopPolling;
 	}, [ startPolling, stopPolling ] );
 
-	const start = useCallback( async () => {
-		setBusy( true );
-		setDismissed( false );
-		// Clean slate optimistically so previous run logs and counts do not flash.
-		setState( {
-			status: 'running',
-			total: 0,
-			processed: 0,
-			errors: 0,
-			updated_at: Math.floor( Date.now() / 1000 ),
-			current: 0,
-			current_item: null,
-			recent: [],
-		} );
-		setSessionRun( true );
+	const start = useCallback(
+		async ( limit?: number ) => {
+			setBusy( true );
+			setDismissed( false );
+			// Clean slate optimistically so previous run logs and counts do not flash.
+			setState( {
+				status: 'running',
+				total: limit && limit > 0 ? limit : 0,
+				processed: 0,
+				errors: 0,
+				updated_at: Math.floor( Date.now() / 1000 ),
+				current: 0,
+				current_item: null,
+				recent: [],
+			} );
+			setSessionRun( true );
 
-		try {
-			const response = await startBulkOffload();
-			setState( response.state );
+			try {
+				const response = await startBulkOffload( limit );
+				setState( response.state );
 
-			if ( response.queued > 0 ) {
-				startPolling();
-			} else {
+				if ( response.queued > 0 ) {
+					startPolling();
+				} else {
+					setSessionRun( false );
+					refreshStats( true );
+				}
+			} catch ( error: unknown ) {
+				addNotice( 'error', errorMessage( error ) );
 				setSessionRun( false );
-				refreshStats( true );
+				// Re-sync with actual server state so optimistic state never stays frozen.
+				fetchBulkProgress()
+					.then( ( fresh ) => setState( fresh ) )
+					.catch( () => setState( null ) );
+			} finally {
+				setBusy( false );
 			}
-		} catch ( error: unknown ) {
-			addNotice( 'error', errorMessage( error ) );
-			setSessionRun( false );
-			// Re-sync with actual server state so optimistic state never stays frozen.
-			fetchBulkProgress()
-				.then( ( fresh ) => setState( fresh ) )
-				.catch( () => setState( null ) );
-		} finally {
-			setBusy( false );
-		}
-	}, [ addNotice, refreshStats, startPolling ] );
+		},
+		[ addNotice, refreshStats, startPolling ]
+	);
 
 	const cancel = useCallback( async () => {
 		setBusy( true );

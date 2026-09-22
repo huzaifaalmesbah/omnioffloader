@@ -146,13 +146,13 @@ export function useBringBack() {
 	}, [ refreshPreflight, startPolling, stopPolling ] );
 
 	const start = useCallback(
-		async ( deleteCloud: boolean ) => {
+		async ( deleteCloud: boolean, limit?: number ) => {
 			setBusy( true );
 			setDismissed( false );
 			// Clean slate optimistically so previous run logs and counts do not flash.
 			setState( {
 				status: 'running',
-				total: 0,
+				total: limit && limit > 0 ? limit : 0,
 				processed: 0,
 				errors: 0,
 				updated_at: Math.floor( Date.now() / 1000 ),
@@ -164,7 +164,7 @@ export function useBringBack() {
 			setSessionRun( true );
 
 			try {
-				const response = await startBulkRestore( deleteCloud );
+				const response = await startBulkRestore( deleteCloud, limit );
 				setState( response.state );
 
 				if ( response.queued > 0 ) {

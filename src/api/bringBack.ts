@@ -21,12 +21,16 @@ export function fetchRestorePreflight(
 }
 
 export function startBulkRestore(
-	deleteCloud: boolean
+	deleteCloud: boolean,
+	limit?: number
 ): Promise< StartBulkRestoreResponse > {
 	return apiFetch( {
 		path: `${ BASE }/bring-back/bulk`,
 		method: 'POST',
-		data: { delete_cloud: deleteCloud },
+		data: {
+			delete_cloud: deleteCloud,
+			...( limit && limit > 0 ? { limit } : {} ),
+		},
 	} );
 }
 

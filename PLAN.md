@@ -1,6 +1,6 @@
 # OmniOffloader — Development Plan
 
-> **Status:** Built and shipped through **`0.1.1`**. This started as a pre-code design document; it is now a living record of the design *and* where the implementation diverged from it. Where the two disagree, **the code wins** — fix this file.
+> **Status:** Built and shipped through **`0.1.2`**. This started as a pre-code design document; it is now a living record of the design *and* where the implementation diverged from it. Where the two disagree, **the code wins** — fix this file.
 > **Reference:** `advanced-media-offloader` (v4.4.4) — offload engine concepts: provider abstraction, retention policy, bulk background processing, key collection. Read-only; the source of the `dirname()` bug class guarded in §10.
 >
 > The plugin's own skeleton, admin UX and conventions are settled. Follow what is in `includes/` and `src/` rather than an outside plugin.
@@ -36,7 +36,7 @@ Offload WordPress media library files to cloud object storage to save server dis
 | Plugin name | OmniOffloader — Multi-Cloud Media Offload & CDN |
 | Folder / slug | `omnioffloader` |
 | Main file | `omnioffloader.php` |
-| **Current version** | **`0.1.1` (pre-release)** — see the §11 version map, including the `0.9.0` ceiling |
+| **Current version** | **`0.1.2` (pre-release)** — see the §11 version map, including the `0.9.0` ceiling |
 | License | `GPL-2.0-or-later` + License URI header (the "or later" also makes bundling the Apache-2.0-licensed AWS SDK compatible — Apache-2.0 is GPLv3-compatible) |
 | Text domain | `omnioffloader` |
 | PHP namespace | `OmniOffloader\` |
@@ -509,6 +509,7 @@ Phases 1–4 were **development phases, not release versions** — they shipped 
 |---|---|---|
 | `0.1.0` | ✅ released | Phases 1–4 — skeleton + R2 provider + settings UI, offload pipeline + retention, bulk offload + library UX + CLI, ★ Bring Back |
 | `0.1.1` | ✅ released | Five more providers + generic S3-compatible, multipart uploads, bulk-queue reliability & performance work (§7.5) |
+| `0.1.2` | ✅ released | Custom batch quantity limits for Bulk Offload & Bring Back, UI consistency, CLI `--limit` restore, plus LiteSpeed Cache, Breeze, and Object Cache real-time reliability fixes |
 | `0.9.0` | planned | Phase 5 — polish, compat, release candidate. **← End of planned work.** |
 | `1.0.0` | 🔒 | First stable — **only with owner's explicit permission** |
 

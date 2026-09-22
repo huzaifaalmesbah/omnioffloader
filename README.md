@@ -25,6 +25,13 @@ Unlike traditional offloaders where moving to the cloud is a one-way trip, OmniO
   - Restore single files, selected batches, or your entire library from the cloud back to your local server.
   - Verifies file integrity (MD5 checksum) before safely clearing offload metadata.
   - Optional cloud cleanup upon verified restore.
+  - Disk-space preflight calculator estimating required space against available server capacity.
+
+- **📦 Custom Batch Size & Quantity Controls**:
+  - Choose between processing the entire media library ("All Media") or a specified custom quantity.
+  - Quick preset buttons (`5`, `10`, `25`, `50`, `100`, and `All`) with direct number input.
+  - Proportional batch download size estimation for Bring Back operations.
+  - Fully integrated with WP-CLI (`--limit=<number>`) for scheduled incremental migrations.
 
 - **⚡ High-Performance Background Queues**:
   - Asynchronous, non-blocking upload handler for instant media uploads without browser waiting.
@@ -52,8 +59,8 @@ Unlike traditional offloaders where moving to the cloud is a one-way trip, OmniO
 
 - **⌨️ Comprehensive WP-CLI Support**:
   - `wp omnioffloader status`: Inspect library status, offloaded file counts, and storage metrics.
-  - `wp omnioffloader offload`: Trigger background or inline media offloading.
-  - `wp omnioffloader restore`: Trigger background or inline Bring Back restoration.
+  - `wp omnioffloader offload`: Trigger background or inline media offloading (supports `--limit=<number>`).
+  - `wp omnioffloader restore`: Trigger background or inline Bring Back restoration (supports `--limit=<number>`).
 
 ---
 

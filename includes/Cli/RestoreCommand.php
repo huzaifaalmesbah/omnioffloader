@@ -45,6 +45,10 @@ class RestoreCommand {
 	 * [--ids=<ids>]
 	 * : Comma-separated attachment IDs to restore.
 	 *
+	 * [--limit=<number>]
+	 * : Stop after this many attachments. Useful for working through a large
+	 * library in scheduled chunks.
+	 *
 	 * [--delete-cloud]
 	 * : Also delete the cloud objects after each verified restore.
 	 *   Destructive — asks for confirmation unless --yes is passed.
@@ -173,10 +177,12 @@ class RestoreCommand {
 	 * @return int[]
 	 */
 	private function resolve_ids( array $assoc_args ) {
+		$limit = isset( $assoc_args['limit'] ) ? absint( $assoc_args['limit'] ) : 0;
+
 		if ( isset( $assoc_args['ids'] ) ) {
 			$ids = array_filter( array_map( 'absint', explode( ',', (string) $assoc_args['ids'] ) ) );
 
-			return array_values(
+			$ids = array_values(
 				array_filter(
 					$ids,
 					static function ( $id ) {
@@ -184,6 +190,8 @@ class RestoreCommand {
 					}
 				)
 			);
+
+			return $limit > 0 ? array_slice( $ids, 0, $limit ) : $ids;
 		}
 
 		if ( ! isset( $assoc_args['all'] ) ) {
@@ -192,13 +200,18 @@ class RestoreCommand {
 
 		global $wpdb;
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- CLI batch IDs query.
-		$ids = $wpdb->get_col(
-			"SELECT p.ID FROM {$wpdb->posts} p
+		$sql = "SELECT p.ID FROM {$wpdb->posts} p
 			 INNER JOIN {$wpdb->postmeta} m ON m.post_id = p.ID AND m.meta_key = 'omnioffloader_offloaded' AND m.meta_value = '1'
 			 WHERE p.post_type = 'attachment'
-			 ORDER BY p.ID ASC"
-		);
+			 ORDER BY p.ID ASC";
+
+		if ( $limit > 0 ) {
+			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- safely prepared with absint.
+			$sql .= $wpdb->prepare( ' LIMIT %d', $limit );
+		}
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared -- CLI batch IDs query.
+		$ids = $wpdb->get_col( $sql );
 
 		return array_map( 'intval', $ids );
 	}

@@ -1,8 +1,12 @@
 import { Button, Notice, Tooltip } from '@wordpress/components';
-import { useState } from '@wordpress/element';
+import { useEffect, useState } from '@wordpress/element';
 import { __, sprintf } from '@wordpress/i18n';
 
 import { ActivityLog } from '../components/ui/ActivityLog';
+import {
+	BatchScopeSelector,
+	type ScopeMode,
+} from '../components/ui/BatchScopeSelector';
 import { Card } from '../components/ui/Card';
 import { ProgressBar } from '../components/ui/ProgressBar';
 import { useCore } from '../context/CoreContext';
@@ -32,7 +36,20 @@ export function BringBackPage() {
 		stats?.configured && offloadedCount === 0 && totalCount > 0;
 	const freeKnown = ( preflight?.free_bytes ?? 0 ) > 0;
 
-	const isDisabled = busy || offloadedCount === 0;
+	const [ scopeMode, setScopeMode ] = useState< ScopeMode >( 'all' );
+	const [ customCount, setCustomCount ] = useState< number >( () =>
+		Math.min( 10, offloadedCount > 0 ? offloadedCount : 10 )
+	);
+
+	useEffect( () => {
+		if ( offloadedCount > 0 && customCount > offloadedCount ) {
+			setCustomCount( offloadedCount );
+		}
+	}, [ offloadedCount, customCount ] );
+
+	const isCustomInvalid =
+		scopeMode === 'custom' && ( ! customCount || customCount < 1 );
+	const isDisabled = busy || offloadedCount === 0 || isCustomInvalid;
 	let disabledReason: string = '';
 	if ( offloadedCount === 0 ) {
 		if ( totalCount === 0 ) {
@@ -46,6 +63,11 @@ export function BringBackPage() {
 				'omnioffloader'
 			);
 		}
+	} else if ( isCustomInvalid ) {
+		disabledReason = __(
+			'Please enter a valid number of attachments to bring back.',
+			'omnioffloader'
+		);
 	}
 
 	let statusDetail: string = __( 'No errors', 'omnioffloader' );
@@ -59,6 +81,30 @@ export function BringBackPage() {
 		statusDetail = __(
 			'Cloud objects deleting after restore',
 			'omnioffloader'
+		);
+	}
+
+	let buttonLabel: string;
+	if ( offloadedCount === 0 ) {
+		buttonLabel = __( 'No Offloaded Media to Restore', 'omnioffloader' );
+	} else if (
+		scopeMode === 'custom' &&
+		customCount > 0 &&
+		customCount < offloadedCount
+	) {
+		buttonLabel = sprintf(
+			/* translators: 1: batch count, 2: total offloaded count */
+			__( 'Start Bring Back (%1$d of %2$d)', 'omnioffloader' ),
+			customCount,
+			offloadedCount
+		);
+	} else {
+		buttonLabel = sprintf(
+			/* translators: %d: number of offloaded attachments. */
+			__( 'Start Bring Back (%d)', 'omnioffloader' ),
+			scopeMode === 'custom' && customCount > 0
+				? customCount
+				: offloadedCount
 		);
 	}
 
@@ -153,14 +199,36 @@ export function BringBackPage() {
 
 							{ preflight && offloadedCount > 0 && (
 								<p className="smowp-muted smowp-preflight-info">
-									{ sprintf(
-										/* translators: %s: formatted byte size. */
-										__(
-											'Estimated download: up to %s (files still on disk are skipped).',
-											'omnioffloader'
-										),
-										formatBytes( preflight.estimated_bytes )
-									) }
+									{ scopeMode === 'custom' &&
+									customCount > 0 &&
+									customCount < offloadedCount
+										? sprintf(
+												/* translators: 1: batch download size, 2: full download size */
+												__(
+													'Estimated download for this batch: ~%1$s (full library: %2$s).',
+													'omnioffloader'
+												),
+												formatBytes(
+													Math.round(
+														( preflight.estimated_bytes /
+															offloadedCount ) *
+															customCount
+													)
+												),
+												formatBytes(
+													preflight.estimated_bytes
+												)
+											)
+										: sprintf(
+												/* translators: %s: formatted byte size. */
+												__(
+													'Estimated download: up to %s (files still on disk are skipped).',
+													'omnioffloader'
+												),
+												formatBytes(
+													preflight.estimated_bytes
+												)
+											) }
 									{ freeKnown &&
 										' · ' +
 											sprintf(
@@ -189,6 +257,33 @@ export function BringBackPage() {
 										'omnioffloader'
 									) }
 								</p>
+							) }
+
+							{ offloadedCount > 0 && (
+								<BatchScopeSelector
+									mode={ scopeMode }
+									onModeChange={ setScopeMode }
+									customCount={ customCount }
+									onCustomCountChange={ setCustomCount }
+									totalEligible={ offloadedCount }
+									disabled={ running || busy }
+									allTitle={ __(
+										'All Offloaded Media',
+										'omnioffloader'
+									) }
+									allDescription={ __(
+										'Restore every cloud attachment back to your server.',
+										'omnioffloader'
+									) }
+									customTitle={ __(
+										'Custom Amount',
+										'omnioffloader'
+									) }
+									customDescription={ __(
+										'Restore a specific number of attachments instead of all.',
+										'omnioffloader'
+									) }
+								/>
 							) }
 
 							<div className="smowp-bringback-options">
@@ -360,19 +455,7 @@ export function BringBackPage() {
 													disabled
 													isBusy={ busy }
 												>
-													{ offloadedCount === 0
-														? __(
-																'No Offloaded Media to Restore',
-																'omnioffloader'
-															)
-														: sprintf(
-																/* translators: %d: number of offloaded attachments. */
-																__(
-																	'Start Bring Back (%d)',
-																	'omnioffloader'
-																),
-																offloadedCount
-															) }
+													{ buttonLabel }
 												</Button>
 											</span>
 										</Tooltip>
@@ -383,17 +466,15 @@ export function BringBackPage() {
 											disabled={ busy }
 											isBusy={ busy }
 											onClick={ () =>
-												void start( deleteCloud )
+												void start(
+													deleteCloud,
+													scopeMode === 'custom'
+														? customCount
+														: undefined
+												)
 											}
 										>
-											{ sprintf(
-												/* translators: %d: number of offloaded attachments. */
-												__(
-													'Start Bring Back (%d)',
-													'omnioffloader'
-												),
-												offloadedCount
-											) }
+											{ buttonLabel }
 										</Button>
 									) }
 								</div>

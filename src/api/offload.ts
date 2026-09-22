@@ -4,8 +4,14 @@ import type { AttachmentErrors, BulkState, StartBulkResponse } from '../types';
 
 const BASE = '/omnioffloader/v1';
 
-export function startBulkOffload(): Promise< StartBulkResponse > {
-	return apiFetch( { path: `${ BASE }/offload/bulk`, method: 'POST' } );
+export function startBulkOffload(
+	limit?: number
+): Promise< StartBulkResponse > {
+	return apiFetch( {
+		path: `${ BASE }/offload/bulk`,
+		method: 'POST',
+		...( limit && limit > 0 ? { data: { limit } } : {} ),
+	} );
 }
 
 export function fetchBulkProgress(): Promise< BulkState > {

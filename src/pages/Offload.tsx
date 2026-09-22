@@ -1,7 +1,12 @@
 import { Button, Notice, Tooltip } from '@wordpress/components';
+import { useEffect, useState } from '@wordpress/element';
 import { __, sprintf } from '@wordpress/i18n';
 
 import { ActivityLog } from '../components/ui/ActivityLog';
+import {
+	BatchScopeSelector,
+	type ScopeMode,
+} from '../components/ui/BatchScopeSelector';
 import { Card } from '../components/ui/Card';
 import { ProgressBar } from '../components/ui/ProgressBar';
 import { useCore } from '../context/CoreContext';
@@ -28,7 +33,20 @@ export function OffloadPage() {
 	const isAllOffloaded =
 		stats?.configured && localCount === 0 && totalCount > 0;
 
-	const isDisabled = busy || localCount === 0;
+	const [ scopeMode, setScopeMode ] = useState< ScopeMode >( 'all' );
+	const [ customCount, setCustomCount ] = useState< number >( () =>
+		Math.min( 10, localCount > 0 ? localCount : 10 )
+	);
+
+	useEffect( () => {
+		if ( localCount > 0 && customCount > localCount ) {
+			setCustomCount( localCount );
+		}
+	}, [ localCount, customCount ] );
+
+	const isCustomInvalid =
+		scopeMode === 'custom' && ( ! customCount || customCount < 1 );
+	const isDisabled = busy || localCount === 0 || isCustomInvalid;
 	let disabledReason: string = '';
 	if ( localCount === 0 ) {
 		if ( totalCount === 0 ) {
@@ -42,6 +60,33 @@ export function OffloadPage() {
 				'omnioffloader'
 			);
 		}
+	} else if ( isCustomInvalid ) {
+		disabledReason = __(
+			'Please enter a valid number of attachments to offload.',
+			'omnioffloader'
+		);
+	}
+
+	let buttonLabel: string;
+	if ( localCount === 0 ) {
+		buttonLabel = __( 'All Media Offloaded', 'omnioffloader' );
+	} else if (
+		scopeMode === 'custom' &&
+		customCount > 0 &&
+		customCount < localCount
+	) {
+		buttonLabel = sprintf(
+			/* translators: 1: batch count, 2: total local count */
+			__( 'Start Bulk Offload (%1$d of %2$d)', 'omnioffloader' ),
+			customCount,
+			localCount
+		);
+	} else {
+		buttonLabel = sprintf(
+			/* translators: %d: number of local attachments. */
+			__( 'Start Bulk Offload (%d)', 'omnioffloader' ),
+			scopeMode === 'custom' && customCount > 0 ? customCount : localCount
+		);
 	}
 
 	return (
@@ -158,6 +203,33 @@ export function OffloadPage() {
 								</p>
 							) }
 
+							{ localCount > 0 && (
+								<BatchScopeSelector
+									mode={ scopeMode }
+									onModeChange={ setScopeMode }
+									customCount={ customCount }
+									onCustomCountChange={ setCustomCount }
+									totalEligible={ localCount }
+									disabled={ running || busy }
+									allTitle={ __(
+										'All Local Media',
+										'omnioffloader'
+									) }
+									allDescription={ __(
+										'Offload every eligible attachment currently on your server.',
+										'omnioffloader'
+									) }
+									customTitle={ __(
+										'Custom Amount',
+										'omnioffloader'
+									) }
+									customDescription={ __(
+										'Offload a specific number of attachments instead of all.',
+										'omnioffloader'
+									) }
+								/>
+							) }
+
 							{ ! running && (
 								<div className="smowp-bulk-action__btn-wrap">
 									{ isDisabled && disabledReason ? (
@@ -174,19 +246,7 @@ export function OffloadPage() {
 													disabled
 													isBusy={ busy }
 												>
-													{ localCount === 0
-														? __(
-																'All Media Offloaded',
-																'omnioffloader'
-															)
-														: sprintf(
-																/* translators: %d: number of local attachments. */
-																__(
-																	'Start Bulk Offload (%d)',
-																	'omnioffloader'
-																),
-																localCount
-															) }
+													{ buttonLabel }
 												</Button>
 											</span>
 										</Tooltip>
@@ -196,16 +256,15 @@ export function OffloadPage() {
 											className="smowp-btn-primary"
 											disabled={ busy }
 											isBusy={ busy }
-											onClick={ () => void start() }
+											onClick={ () =>
+												void start(
+													scopeMode === 'custom'
+														? customCount
+														: undefined
+												)
+											}
 										>
-											{ sprintf(
-												/* translators: %d: number of local attachments. */
-												__(
-													'Start Bulk Offload (%d)',
-													'omnioffloader'
-												),
-												localCount
-											) }
+											{ buttonLabel }
 										</Button>
 									) }
 								</div>

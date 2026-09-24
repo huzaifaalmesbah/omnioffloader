@@ -23,11 +23,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 class RestoreCommand {
 
 	use AttachmentHelper;
-
-	/**
-	 * Attachments processed between process-lock renewals.
-	 */
-	private const LOCK_RENEW_EVERY = 20;
+	use CliJobGuard;
 
 	/**
 	 * Restore attachments from the cloud (Bring Back).
@@ -51,7 +47,7 @@ class RestoreCommand {
 	 *
 	 * [--delete-cloud]
 	 * : Also delete the cloud objects after each verified restore.
-	 *   Destructive — asks for confirmation unless --yes is passed.
+	 * Destructive — asks for confirmation unless --yes is passed.
 	 *
 	 * [--yes]
 	 * : Answer yes to the --delete-cloud confirmation prompt.
@@ -76,17 +72,14 @@ class RestoreCommand {
 	public function __invoke( $args, $assoc_args ) {
 		unset( $args );
 
-		$plugin    = Plugin::get_instance();
-		$queue     = $plugin->get_bulk_restore();
-		$has_queue = null !== $queue;
-		$is_dry    = isset( $assoc_args['dry-run'] );
+		$plugin = Plugin::get_instance();
+		$queue  = $plugin->get_bulk_restore();
+		$is_dry = isset( $assoc_args['dry-run'] );
 
 		// Restoring the same attachment from two processes races over the same
 		// destination files; the admin queue owns them until it is done.
-		$active = $plugin->get_active_bulk_job();
-
-		if ( ! $is_dry && '' !== $active && ! isset( $assoc_args['force'] ) ) {
-			WP_CLI::error( sprintf( 'A bulk %s is already running. Wait for it to finish, cancel it in the admin screen, or pass --force.', $active ) );
+		if ( ! $is_dry ) {
+			$this->refuse_if_busy( $plugin, $assoc_args );
 		}
 
 		$ids = $this->resolve_ids( $assoc_args );
@@ -127,21 +120,11 @@ class RestoreCommand {
 			);
 		}
 
-		// Hold the queue's lock so the loopback worker, the cron healthcheck
-		// and the admin poll all stand down for the duration.
-		if ( $has_queue ) {
-			$queue->claim_lock();
-			register_shutdown_function(
-				static function () use ( $queue ) {
-					$queue->release_lock();
-				}
-			);
-		}
-
 		// One stats flush at the end instead of ~8 queries per attachment.
-		// Admin-started jobs of every type stand down while this runs.
-		$plugin->claim_cli_job( 'restore' );
-		register_shutdown_function( array( $plugin, 'release_cli_job' ) );
+		// Hold the queue's process lock and the CLI claim for the duration, so
+		// the loopback worker, cron healthcheck, admin poll and admin-started
+		// jobs of every type all stand down.
+		$this->begin_job( $plugin, $queue, 'restore' );
 
 		Helpers::defer_media_stats_flush( true );
 
@@ -150,34 +133,39 @@ class RestoreCommand {
 
 		$done      = 0;
 		$failed    = 0;
+		$streak    = 0;
 		$processed = 0;
+		$aborted   = false;
 
 		foreach ( $ids as $id ) {
 			if ( $restorer->restore( $id, $delete_cloud ) ) {
 				++$done;
+				$streak = 0;
 			} else {
 				++$failed;
+				++$streak;
 			}
 			$progress->tick();
 			clean_post_cache( $id );
 			++$processed;
 
-			if ( $has_queue && 0 === $processed % self::LOCK_RENEW_EVERY ) {
-				$queue->claim_lock();
-			}
+			$this->keep_job_alive( $processed );
 
-			if ( 0 === $processed % self::LOCK_RENEW_EVERY ) {
-				$plugin->claim_cli_job( 'restore' );
+			// Bad credentials or an unreachable bucket fail identically for
+			// every attachment; stop rather than grind through the library.
+			if ( $streak >= 10 ) {
+				$aborted = true;
+				break;
 			}
 		}
 
 		$progress->finish();
 
 		Helpers::defer_media_stats_flush( false );
-		$plugin->release_cli_job();
+		$this->end_job();
 
-		if ( $has_queue ) {
-			$queue->release_lock();
+		if ( $aborted ) {
+			WP_CLI::error( sprintf( 'Stopped after %d failures in a row (%d restored first). Check the connection to your storage provider (see omnioffloader_error_log meta).', $streak, $done ) );
 		}
 
 		if ( $failed > 0 ) {
@@ -195,19 +183,22 @@ class RestoreCommand {
 	 * @return int[]
 	 */
 	private function resolve_ids( array $assoc_args ) {
-		$limit = isset( $assoc_args['limit'] ) ? absint( $assoc_args['limit'] ) : 0;
+		$limit     = $this->parse_limit( $assoc_args );
+		$requested = $this->parse_ids( $assoc_args );
 
-		if ( isset( $assoc_args['ids'] ) ) {
-			$ids = array_filter( array_map( 'absint', explode( ',', (string) $assoc_args['ids'] ) ) );
+		if ( null !== $requested ) {
+			_prime_post_caches( $requested, false, true );
 
 			$ids = array_values(
 				array_filter(
-					$ids,
+					$requested,
 					static function ( $id ) {
 						return 'attachment' === get_post_type( $id ) && self::is_offloaded( $id );
 					}
 				)
 			);
+
+			$this->warn_skipped_ids( $requested, $ids, 'not attachments, or not offloaded' );
 
 			return $limit > 0 ? array_slice( $ids, 0, $limit ) : $ids;
 		}

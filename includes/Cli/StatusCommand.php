@@ -26,6 +26,9 @@ class StatusCommand {
 	/**
 	 * Show provider configuration, connection state and media stats.
 	 *
+	 * Exits with status 1 when the offload engine is off or the bucket
+	 * cannot be reached, so it can be used in monitoring.
+	 *
 	 * ## EXAMPLES
 	 *
 	 *     wp omnioffloader status
@@ -39,8 +42,17 @@ class StatusCommand {
 		WP_CLI::log( 'OmniOffloader ' . OMNIOFFLOADER_VERSION );
 		WP_CLI::log( '' );
 
+		// Non-zero exit when the engine is off or the bucket is unreachable,
+		// so monitoring scripts can rely on the exit code.
+		$healthy = true;
+
 		if ( null === $provider ) {
-			WP_CLI::warning( 'No cloud provider configured (or AWS SDK missing) — offload engine is OFF.' );
+			$healthy = false;
+			WP_CLI::warning(
+				defined( 'OMNIOFFLOADER_DISABLE_ENGINE' ) && OMNIOFFLOADER_DISABLE_ENGINE
+					? 'Offload engine is OFF: disabled by OMNIOFFLOADER_DISABLE_ENGINE in wp-config.php.'
+					: 'No cloud provider configured (or AWS SDK missing) — offload engine is OFF.'
+			);
 		} else {
 			WP_CLI::log( 'Provider:   ' . $provider->get_name() . ' (' . $provider->get_key() . ')' );
 			WP_CLI::log( 'Bucket:     ' . (string) $provider->get_bucket() );
@@ -50,6 +62,7 @@ class StatusCommand {
 			if ( true === $connection ) {
 				WP_CLI::log( 'Connection: OK' );
 			} else {
+				$healthy = false;
 				WP_CLI::warning( 'Connection: ' . $connection->get_error_message() );
 			}
 		}
@@ -85,6 +98,10 @@ class StatusCommand {
 					)
 				);
 			}
+		}
+
+		if ( ! $healthy ) {
+			WP_CLI::halt( 1 );
 		}
 	}
 }

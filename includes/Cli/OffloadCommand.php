@@ -23,11 +23,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 class OffloadCommand {
 
 	use AttachmentHelper;
-
-	/**
-	 * Attachments processed between process-lock renewals.
-	 */
-	private const LOCK_RENEW_EVERY = 20;
+	use CliJobGuard;
 
 	/**
 	 * Offload attachments to the cloud.
@@ -71,21 +67,18 @@ class OffloadCommand {
 		$provider = $plugin->get_provider();
 
 		if ( null === $provider ) {
-			WP_CLI::error( 'No cloud provider is configured (or the AWS SDK is missing).' );
+			WP_CLI::error( self::engine_off_reason() );
 		}
 
-		$queue     = $plugin->get_bulk_offload();
-		$is_dry    = isset( $assoc_args['dry-run'] );
-		$has_queue = null !== $queue;
+		$queue  = $plugin->get_bulk_offload();
+		$is_dry = isset( $assoc_args['dry-run'] );
 
 		// The admin bulk queue and this command would otherwise offload the
 		// same attachments at once: with a cleanup retention policy one side
 		// deletes local files the other is still reading, which fails uploads
 		// and fills the error log for no reason.
-		$active = $plugin->get_active_bulk_job();
-
-		if ( ! $is_dry && '' !== $active && ! isset( $assoc_args['force'] ) ) {
-			WP_CLI::error( sprintf( 'A bulk %s is already running. Wait for it to finish, cancel it in the admin screen, or pass --force.', $active ) );
+		if ( ! $is_dry ) {
+			$this->refuse_if_busy( $plugin, $assoc_args );
 		}
 
 		$ids = $this->resolve_ids( $assoc_args );
@@ -111,21 +104,11 @@ class OffloadCommand {
 			return;
 		}
 
-		// Hold the queue's lock for the duration so the loopback worker, the
-		// cron healthcheck and the admin poll all stand down.
-		if ( $has_queue ) {
-			$queue->claim_lock();
-			register_shutdown_function(
-				static function () use ( $queue ) {
-					$queue->release_lock();
-				}
-			);
-		}
-
 		// One stats flush at the end instead of ~8 queries per attachment.
-		// Admin-started jobs of every type stand down while this runs.
-		$plugin->claim_cli_job( 'offload' );
-		register_shutdown_function( array( $plugin, 'release_cli_job' ) );
+		// Hold the queue's process lock and the CLI claim for the duration, so
+		// the loopback worker, cron healthcheck, admin poll and admin-started
+		// jobs of every type all stand down.
+		$this->begin_job( $plugin, $queue, 'offload' );
 
 		Helpers::defer_media_stats_flush( true );
 
@@ -153,13 +136,7 @@ class OffloadCommand {
 			clean_post_cache( $id );
 			++$processed;
 
-			if ( $has_queue && 0 === $processed % self::LOCK_RENEW_EVERY ) {
-				$queue->claim_lock();
-			}
-
-			if ( 0 === $processed % self::LOCK_RENEW_EVERY ) {
-				$plugin->claim_cli_job( 'offload' );
-			}
+			$this->keep_job_alive( $processed );
 
 			// Bad credentials or an unreachable bucket fail identically for
 			// every attachment; stop rather than grind through the library.
@@ -172,11 +149,7 @@ class OffloadCommand {
 		$progress->finish();
 
 		Helpers::defer_media_stats_flush( false );
-		$plugin->release_cli_job();
-
-		if ( $has_queue ) {
-			$queue->release_lock();
-		}
+		$this->end_job();
 
 		if ( $aborted ) {
 			WP_CLI::error(
@@ -222,19 +195,22 @@ class OffloadCommand {
 	 * @return int[]
 	 */
 	private function resolve_ids( array $assoc_args ) {
-		$limit = isset( $assoc_args['limit'] ) ? absint( $assoc_args['limit'] ) : 0;
+		$limit     = $this->parse_limit( $assoc_args );
+		$requested = $this->parse_ids( $assoc_args );
 
-		if ( isset( $assoc_args['ids'] ) ) {
-			$ids = array_filter( array_map( 'absint', explode( ',', (string) $assoc_args['ids'] ) ) );
+		if ( null !== $requested ) {
+			_prime_post_caches( $requested, false, true );
 
 			$ids = array_values(
 				array_filter(
-					$ids,
+					$requested,
 					static function ( $id ) {
 						return 'attachment' === get_post_type( $id ) && ! self::is_offloaded( $id );
 					}
 				)
 			);
+
+			$this->warn_skipped_ids( $requested, $ids, 'not attachments, or already offloaded' );
 
 			return $limit > 0 ? array_slice( $ids, 0, $limit ) : $ids;
 		}

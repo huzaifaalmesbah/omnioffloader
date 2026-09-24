@@ -26,11 +26,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 class RetentionCommand {
 
 	use AttachmentHelper;
-
-	/**
-	 * Attachments processed between process-lock renewals.
-	 */
-	private const LOCK_RENEW_EVERY = 20;
+	use CliJobGuard;
 
 	/**
 	 * Attachments primed per chunk in dry runs and counts.
@@ -102,7 +98,7 @@ class RetentionCommand {
 		$plugin = Plugin::get_instance();
 
 		if ( null === $plugin->get_provider() ) {
-			WP_CLI::error( 'No cloud provider is configured (or the AWS SDK is missing).' );
+			WP_CLI::error( self::engine_off_reason() );
 		}
 
 		$settings = Plugin::get_settings();
@@ -110,12 +106,11 @@ class RetentionCommand {
 		$policy   = isset( $assoc_args['policy'] ) ? Plugin::sanitize_retention_policy( $assoc_args['policy'] ) : $saved;
 		$is_dry   = isset( $assoc_args['dry-run'] );
 		$queue    = $plugin->get_bulk_retention();
-		$active   = $plugin->get_active_bulk_job();
 
 		// With a cleanup policy this command deletes files an admin-started
 		// offload or restore may be reading at the same moment.
-		if ( ! $is_dry && '' !== $active && ! isset( $assoc_args['force'] ) ) {
-			WP_CLI::error( sprintf( 'A bulk %s is running. Wait for it to finish, cancel it in the admin screen, or pass --force.', $active ) );
+		if ( ! $is_dry ) {
+			$this->refuse_if_busy( $plugin, $assoc_args );
 		}
 
 		if ( $policy !== $saved ) {
@@ -157,18 +152,10 @@ class RetentionCommand {
 
 		// Hold the retention queue's lock so its loopback worker, the cron
 		// healthcheck and the admin poll all stand down for the duration.
-		if ( null !== $queue ) {
-			$queue->claim_lock();
-			register_shutdown_function(
-				static function () use ( $queue ) {
-					$queue->release_lock();
-				}
-			);
-		}
-
-		// Admin-started jobs of every type stand down while this runs.
-		$plugin->claim_cli_job( 'retention' );
-		register_shutdown_function( array( $plugin, 'release_cli_job' ) );
+		// Hold the queue's process lock and the CLI claim for the duration, so
+		// the loopback worker, cron healthcheck, admin poll and admin-started
+		// jobs of every type all stand down.
+		$this->begin_job( $plugin, $queue, 'retention' );
 
 		Helpers::defer_media_stats_flush( true );
 
@@ -195,23 +182,13 @@ class RetentionCommand {
 			clean_post_cache( $id );
 			++$processed;
 
-			if ( null !== $queue && 0 === $processed % self::LOCK_RENEW_EVERY ) {
-				$queue->claim_lock();
-			}
-
-			if ( 0 === $processed % self::LOCK_RENEW_EVERY ) {
-				$plugin->claim_cli_job( 'retention' );
-			}
+			$this->keep_job_alive( $processed );
 		}
 
 		$progress->finish();
 
 		Helpers::defer_media_stats_flush( false );
-		$plugin->release_cli_job();
-
-		if ( null !== $queue ) {
-			$queue->release_lock();
-		}
+		$this->end_job();
 
 		if ( $repaired > 0 ) {
 			WP_CLI::log( sprintf( '%d file(s) were missing from cloud storage and were uploaded before cleanup.', $repaired ) );
@@ -335,15 +312,18 @@ class RetentionCommand {
 	 * @return int[]
 	 */
 	private function resolve_ids( array $assoc_args, $policy ) {
-		$limit = isset( $assoc_args['limit'] ) ? absint( $assoc_args['limit'] ) : 0;
+		$limit     = $this->parse_limit( $assoc_args );
+		$requested = $this->parse_ids( $assoc_args );
 
-		if ( ! isset( $assoc_args['ids'] ) ) {
+		if ( null === $requested ) {
 			return RetentionApplier::eligible_ids( $policy, $limit );
 		}
 
+		_prime_post_caches( $requested, false, true );
+
 		$ids = array_values(
 			array_filter(
-				array_filter( array_map( 'absint', explode( ',', (string) $assoc_args['ids'] ) ) ),
+				$requested,
 				static function ( $id ) use ( $policy ) {
 					return 'attachment' === get_post_type( $id )
 						&& self::is_offloaded( $id )
@@ -351,6 +331,8 @@ class RetentionCommand {
 				}
 			)
 		);
+
+		$this->warn_skipped_ids( $requested, $ids, 'not offloaded, or already at this policy' );
 
 		return $limit > 0 ? array_slice( $ids, 0, $limit ) : $ids;
 	}

@@ -7,6 +7,8 @@
 
 namespace OmniOffloader\Core;
 
+use OmniOffloader\Services\RetentionApplier;
+
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
@@ -193,6 +195,9 @@ class Helpers {
 		delete_option( '_transient_timeout_omnioffloader_media_stats' );
 		delete_option( '_transient_omnioffloader_restore_preflight' );
 		delete_option( '_transient_timeout_omnioffloader_restore_preflight' );
+
+		delete_transient( 'omnioffloader_retention_preflight' );
+		wp_cache_delete( 'omnioffloader_retention_preflight', 'transient' );
 	}
 
 	/**
@@ -297,6 +302,110 @@ class Helpers {
 		);
 
 		set_transient( 'omnioffloader_restore_preflight', $preflight, MINUTE_IN_SECONDS );
+
+		return $preflight;
+	}
+
+	/**
+	 * Retention preflight: how many offloaded attachments still follow a
+	 * different policy than the saved one, and roughly how many bytes applying
+	 * it would free or download.
+	 *
+	 * Byte counts come from stored metadata (upper-bound estimates, like the
+	 * restore preflight). No filesystem or network access.
+	 *
+	 * @since 0.1.3
+	 *
+	 * @param bool $force_refresh Optional. True to bypass the transient cache.
+	 * @return array{policy: int, eligible: int, to_clean: int, to_download: int, freed_bytes: int, download_bytes: int, free_bytes: int, disk_ok: bool}
+	 */
+	public static function get_retention_preflight( $force_refresh = false ) {
+		$settings = Plugin::get_settings();
+		$policy   = Plugin::sanitize_retention_policy( $settings['retention_policy'] );
+
+		if ( ! $force_refresh ) {
+			$cached = get_transient( 'omnioffloader_retention_preflight' );
+
+			if ( is_array( $cached ) && isset( $cached['policy'], $cached['eligible'] ) && (int) $cached['policy'] === $policy ) {
+				return $cached;
+			}
+		}
+
+		$ids       = RetentionApplier::eligible_ids( $policy );
+		$new_roles = RetentionApplier::local_roles( $policy );
+
+		$to_clean       = 0;
+		$to_download    = 0;
+		$freed_bytes    = 0;
+		$download_bytes = 0;
+
+		// Chunked meta priming, dropped after each chunk (see get_restore_preflight()).
+		foreach ( array_chunk( $ids, 200 ) as $chunk ) {
+			update_meta_cache( 'post', $chunk );
+
+			foreach ( $chunk as $id ) {
+				$stored    = RetentionApplier::stored_policy( $id );
+				$old_roles = RetentionApplier::local_roles( $stored );
+
+				if ( $policy > $stored ) {
+					++$to_clean;
+				} else {
+					++$to_download;
+				}
+
+				$metadata   = wp_get_attachment_metadata( $id );
+				$main_bytes = 0;
+				$size_bytes = 0;
+
+				if ( is_array( $metadata ) ) {
+					// phpcs:ignore Generic.Commenting.DocComment.MissingShort -- inline @var for PHPStan.
+					/** @var array<string, mixed> $metadata */
+					if ( isset( $metadata['filesize'] ) && is_numeric( $metadata['filesize'] ) ) {
+						$main_bytes = (int) $metadata['filesize'];
+					}
+
+					if ( ! empty( $metadata['sizes'] ) && is_array( $metadata['sizes'] ) ) {
+						foreach ( $metadata['sizes'] as $size_data ) {
+							if ( is_array( $size_data ) && isset( $size_data['filesize'] ) && is_numeric( $size_data['filesize'] ) ) {
+								$size_bytes += (int) $size_data['filesize'];
+							}
+						}
+					}
+				}
+
+				foreach ( array(
+					'main'  => $main_bytes,
+					'sizes' => $size_bytes,
+				) as $role => $bytes ) {
+					if ( $old_roles[ $role ] && ! $new_roles[ $role ] ) {
+						$freed_bytes += $bytes;
+					} elseif ( ! $old_roles[ $role ] && $new_roles[ $role ] ) {
+						$download_bytes += $bytes;
+					}
+				}
+
+				wp_cache_delete( $id, 'post_meta' );
+			}
+		}
+
+		$upload_dir = wp_get_upload_dir();
+		// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- disk_free_space warns on some hosts; false is handled.
+		$free = @disk_free_space( $upload_dir['basedir'] );
+		$free = false === $free ? 0 : (int) $free;
+
+		$preflight = array(
+			'policy'         => $policy,
+			'eligible'       => count( $ids ),
+			'to_clean'       => $to_clean,
+			'to_download'    => $to_download,
+			'freed_bytes'    => $freed_bytes,
+			'download_bytes' => $download_bytes,
+			// 0 means unknown (disk_free_space disabled on the host).
+			'free_bytes'     => $free,
+			'disk_ok'        => 0 === $free || $free > $download_bytes * 1.1,
+		);
+
+		set_transient( 'omnioffloader_retention_preflight', $preflight, MINUTE_IN_SECONDS );
 
 		return $preflight;
 	}

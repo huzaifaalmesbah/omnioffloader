@@ -82,8 +82,10 @@ class OffloadCommand {
 		// same attachments at once: with a cleanup retention policy one side
 		// deletes local files the other is still reading, which fails uploads
 		// and fills the error log for no reason.
-		if ( ! $is_dry && $has_queue && $queue->is_active() && ! isset( $assoc_args['force'] ) ) {
-			WP_CLI::error( 'A bulk offload is already running. Wait for it to finish, cancel it in the admin screen, or pass --force.' );
+		$active = $plugin->get_active_bulk_job();
+
+		if ( ! $is_dry && '' !== $active && ! isset( $assoc_args['force'] ) ) {
+			WP_CLI::error( sprintf( 'A bulk %s is already running. Wait for it to finish, cancel it in the admin screen, or pass --force.', $active ) );
 		}
 
 		$ids = $this->resolve_ids( $assoc_args );

@@ -1,0 +1,307 @@
+<?php
+/**
+ * WP-CLI: apply a retention policy to already-offloaded media.
+ *
+ * @package OmniOffloader
+ */
+
+namespace OmniOffloader\Cli;
+
+use OmniOffloader\Core\Helpers;
+use OmniOffloader\Core\Plugin;
+use OmniOffloader\Services\RetentionApplier;
+use OmniOffloader\Traits\AttachmentHelper;
+use WP_CLI;
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
+/**
+ * Brings offloaded attachments in line with a retention policy chosen after
+ * they were offloaded.
+ *
+ * @since 0.1.3
+ */
+class RetentionCommand {
+
+	use AttachmentHelper;
+
+	/**
+	 * Attachments processed between process-lock renewals.
+	 */
+	private const LOCK_RENEW_EVERY = 20;
+
+	/**
+	 * Policy labels for output.
+	 *
+	 * @var array<int, string>
+	 */
+	private const POLICY_LABELS = array(
+		0 => 'Retain Local Files',
+		1 => 'Smart Local Cleanup',
+		2 => 'Full Cloud Migration',
+	);
+
+	/**
+	 * Apply a retention policy to media that is already offloaded.
+	 *
+	 * Changing the retention setting only affects new uploads. This command
+	 * updates what was offloaded before: a stricter policy deletes local
+	 * files (each one is verified in cloud storage first, and uploaded if it
+	 * is missing there); a looser policy downloads local copies again. The
+	 * attachments stay offloaded either way.
+	 *
+	 * ## OPTIONS
+	 *
+	 * [--policy=<policy>]
+	 * : Target policy. Defaults to the policy saved in Settings.
+	 * ---
+	 * options:
+	 *   - 0
+	 *   - 1
+	 *   - 2
+	 * ---
+	 *
+	 * [--ids=<ids>]
+	 * : Comma-separated attachment IDs. Defaults to every offloaded attachment
+	 * that follows a different policy.
+	 *
+	 * [--limit=<number>]
+	 * : Stop after this many attachments.
+	 *
+	 * [--dry-run]
+	 * : List what would change without deleting or downloading anything.
+	 *
+	 * [--yes]
+	 * : Skip the confirmation prompt before local files are deleted.
+	 *
+	 * [--force]
+	 * : Run even when a bulk job started from the admin screen is active.
+	 *
+	 * ## EXAMPLES
+	 *
+	 *     wp omnioffloader retention --dry-run
+	 *     wp omnioffloader retention
+	 *     wp omnioffloader retention --policy=1 --limit=500
+	 *     wp omnioffloader retention --policy=2 --yes
+	 *     wp omnioffloader retention --policy=0
+	 *
+	 * @param string[]              $args       Positional args (unused).
+	 * @param array<string, string> $assoc_args Named args.
+	 * @return void
+	 */
+	public function __invoke( $args, $assoc_args ) {
+		unset( $args );
+
+		$plugin = Plugin::get_instance();
+
+		if ( null === $plugin->get_provider() ) {
+			WP_CLI::error( 'No cloud provider is configured (or the AWS SDK is missing).' );
+		}
+
+		$settings = Plugin::get_settings();
+		$saved    = Plugin::sanitize_retention_policy( $settings['retention_policy'] );
+		$policy   = isset( $assoc_args['policy'] ) ? Plugin::sanitize_retention_policy( $assoc_args['policy'] ) : $saved;
+		$is_dry   = isset( $assoc_args['dry-run'] );
+		$queue    = $plugin->get_bulk_retention();
+		$active   = $plugin->get_active_bulk_job();
+
+		// With a cleanup policy this command deletes files an admin-started
+		// offload or restore may be reading at the same moment.
+		if ( ! $is_dry && '' !== $active && ! isset( $assoc_args['force'] ) ) {
+			WP_CLI::error( sprintf( 'A bulk %s is running. Wait for it to finish, cancel it in the admin screen, or pass --force.', $active ) );
+		}
+
+		if ( $policy !== $saved ) {
+			WP_CLI::warning(
+				sprintf(
+					'Settings use "%s"; new uploads will keep following it. Update the setting too if this change should be permanent.',
+					self::POLICY_LABELS[ $saved ]
+				)
+			);
+		}
+
+		$ids = $this->resolve_ids( $assoc_args, $policy );
+
+		if ( empty( $ids ) ) {
+			WP_CLI::success( sprintf( 'Every offloaded attachment already follows "%s".', self::POLICY_LABELS[ $policy ] ) );
+
+			return;
+		}
+
+		$to_clean = array_values(
+			array_filter(
+				$ids,
+				static function ( $id ) use ( $policy ) {
+					return RetentionApplier::stored_policy( $id ) < $policy;
+				}
+			)
+		);
+
+		if ( $is_dry ) {
+			$this->dry_run( $ids, $policy );
+
+			return;
+		}
+
+		if ( ! empty( $to_clean ) ) {
+			WP_CLI::confirm(
+				sprintf(
+					'Apply "%s" to %d attachment(s)? Local files of %d attachment(s) will be deleted after each is verified in cloud storage.',
+					self::POLICY_LABELS[ $policy ],
+					count( $ids ),
+					count( $to_clean )
+				),
+				$assoc_args
+			);
+		}
+
+		// Hold the retention queue's lock so its loopback worker, the cron
+		// healthcheck and the admin poll all stand down for the duration.
+		if ( null !== $queue ) {
+			$queue->claim_lock();
+			register_shutdown_function(
+				static function () use ( $queue ) {
+					$queue->release_lock();
+				}
+			);
+		}
+
+		Helpers::defer_media_stats_flush( true );
+
+		$applier  = new RetentionApplier();
+		$progress = \WP_CLI\Utils\make_progress_bar( 'Applying retention policy', count( $ids ) );
+
+		$done      = 0;
+		$failed    = 0;
+		$freed     = 0;
+		$repaired  = 0;
+		$processed = 0;
+
+		foreach ( $ids as $id ) {
+			if ( $applier->apply( $id, $policy ) ) {
+				++$done;
+			} else {
+				++$failed;
+			}
+
+			$freed    += $applier->get_freed_bytes();
+			$repaired += $applier->get_repaired();
+
+			$progress->tick();
+			clean_post_cache( $id );
+			++$processed;
+
+			if ( null !== $queue && 0 === $processed % self::LOCK_RENEW_EVERY ) {
+				$queue->claim_lock();
+			}
+		}
+
+		$progress->finish();
+
+		Helpers::defer_media_stats_flush( false );
+
+		if ( null !== $queue ) {
+			$queue->release_lock();
+		}
+
+		if ( $repaired > 0 ) {
+			WP_CLI::log( sprintf( '%d file(s) were missing from cloud storage and were uploaded before cleanup.', $repaired ) );
+		}
+
+		if ( $freed > 0 ) {
+			WP_CLI::log( sprintf( 'Freed %s of local disk space.', size_format( $freed, 1 ) ) );
+		}
+
+		if ( $failed > 0 ) {
+			WP_CLI::warning( sprintf( '%d updated, %d failed (see omnioffloader_error_log meta). Failed items keep their local files and are retried on the next run.', $done, $failed ) );
+			WP_CLI::halt( 1 );
+		}
+
+		WP_CLI::success( sprintf( '%d attachment(s) now follow "%s".', $done, self::POLICY_LABELS[ $policy ] ) );
+	}
+
+	/**
+	 * Print what a run would do, without touching files or the network.
+	 *
+	 * @param int[] $ids    Attachment IDs.
+	 * @param int   $policy Target policy.
+	 * @return void
+	 */
+	private function dry_run( array $ids, $policy ) {
+		$rows        = array();
+		$total_bytes = 0;
+
+		foreach ( $ids as $id ) {
+			$stored = RetentionApplier::stored_policy( $id );
+
+			if ( $stored < $policy ) {
+				$files  = RetentionApplier::files_to_delete( $id, $policy );
+				$bytes  = 0;
+				$action = 'delete local';
+
+				foreach ( $files as $entry ) {
+					// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- false is treated as 0.
+					$bytes += (int) @filesize( $entry['file'] );
+				}
+
+				$total_bytes += $bytes;
+				$detail       = sprintf( '%d file(s), %s', count( $files ), size_format( $bytes, 1 ) );
+			} else {
+				$action = 'download';
+				$detail = 0 === $policy ? 'original + sizes' : 'original';
+			}
+
+			$rows[] = array(
+				'ID'     => $id,
+				'title'  => get_the_title( $id ),
+				'from'   => $stored,
+				'to'     => $policy,
+				'action' => $action,
+				'detail' => $detail,
+			);
+
+			clean_post_cache( $id );
+		}
+
+		\WP_CLI\Utils\format_items( 'table', $rows, array( 'ID', 'title', 'from', 'to', 'action', 'detail' ) );
+
+		WP_CLI::log(
+			sprintf(
+				'Would apply "%s" to %d attachment(s)%s.',
+				self::POLICY_LABELS[ $policy ],
+				count( $ids ),
+				$total_bytes > 0 ? sprintf( ', freeing about %s', size_format( $total_bytes, 1 ) ) : ''
+			)
+		);
+	}
+
+	/**
+	 * Resolve the target attachment IDs from CLI args.
+	 *
+	 * @param array<string, string> $assoc_args Named args.
+	 * @param int                   $policy     Target policy.
+	 * @return int[]
+	 */
+	private function resolve_ids( array $assoc_args, $policy ) {
+		$limit = isset( $assoc_args['limit'] ) ? absint( $assoc_args['limit'] ) : 0;
+
+		if ( ! isset( $assoc_args['ids'] ) ) {
+			return RetentionApplier::eligible_ids( $policy, $limit );
+		}
+
+		$ids = array_values(
+			array_filter(
+				array_filter( array_map( 'absint', explode( ',', (string) $assoc_args['ids'] ) ) ),
+				static function ( $id ) use ( $policy ) {
+					return 'attachment' === get_post_type( $id )
+						&& self::is_offloaded( $id )
+						&& RetentionApplier::stored_policy( $id ) !== $policy;
+				}
+			)
+		);
+
+		return $limit > 0 ? array_slice( $ids, 0, $limit ) : $ids;
+	}
+}

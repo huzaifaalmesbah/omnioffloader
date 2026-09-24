@@ -26,6 +26,7 @@ class CommandRegistrar {
 	public static function register() {
 		WP_CLI::add_command( 'omnioffloader offload', OffloadCommand::class );
 		WP_CLI::add_command( 'omnioffloader restore', RestoreCommand::class );
+		WP_CLI::add_command( 'omnioffloader retention', RetentionCommand::class );
 		WP_CLI::add_command( 'omnioffloader status', StatusCommand::class );
 	}
 }

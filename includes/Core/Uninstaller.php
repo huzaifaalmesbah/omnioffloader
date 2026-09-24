@@ -11,6 +11,7 @@ use OmniOffloader\Services\AbstractBulkProcessor;
 use OmniOffloader\Services\AsyncUploadProcessor;
 use OmniOffloader\Services\BulkOffloadProcessor;
 use OmniOffloader\Services\BulkRestoreProcessor;
+use OmniOffloader\Services\BulkRetentionProcessor;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -45,11 +46,13 @@ class Uninstaller {
 		AsyncUploadProcessor::purge_stored_data();
 		AbstractBulkProcessor::purge_stored_data( 'bulk_offload', BulkOffloadProcessor::STATE_OPTION );
 		AbstractBulkProcessor::purge_stored_data( 'bulk_restore', BulkRestoreProcessor::STATE_OPTION );
+		AbstractBulkProcessor::purge_stored_data( 'bulk_retention', BulkRetentionProcessor::STATE_OPTION );
 
 		// Transients.
 		delete_transient( 'omnioffloader_activation_redirect' );
 		delete_transient( 'omnioffloader_media_stats' );
 		delete_transient( 'omnioffloader_restore_preflight' );
+		delete_transient( 'omnioffloader_retention_preflight' );
 
 		// Attachment meta (offload state markers).
 		delete_post_meta_by_key( 'omnioffloader_offloaded' );

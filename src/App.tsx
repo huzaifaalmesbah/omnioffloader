@@ -10,6 +10,7 @@ import { BringBackPage } from './pages/BringBack';
 import { DashboardPage } from './pages/Dashboard';
 import { OffloadPage } from './pages/Offload';
 import { SettingsPage } from './pages/Settings';
+import { ToolsPage } from './pages/Tools';
 import { DEFAULT_VIEW, ROUTES } from './utils/constants';
 
 function initialView(): string {
@@ -47,13 +48,16 @@ export function App() {
 
 	switch ( activeView ) {
 		case 'settings':
-			page = <SettingsPage />;
+			page = <SettingsPage onNavigate={ setActiveView } />;
 			break;
 		case 'offload':
 			page = <OffloadPage />;
 			break;
 		case 'bring-back':
 			page = <BringBackPage />;
+			break;
+		case 'tools':
+			page = <ToolsPage onNavigate={ setActiveView } />;
 			break;
 		default:
 			page = <DashboardPage onNavigate={ setActiveView } />;

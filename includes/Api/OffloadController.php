@@ -202,24 +202,12 @@ class OffloadController extends BaseController {
 			return $engine;
 		}
 
-		if ( $engine->is_active() ) {
-			return new \WP_Error(
-				'omnioffloader_bulk_running',
-				__( 'A bulk offload is already running.', 'omnioffloader' ),
-				array( 'status' => 409 )
-			);
-		}
-
-		// One bulk pipeline at a time — a simultaneous offload and restore
+		// One bulk pipeline at a time — offload, restore and retention runs
 		// would race each other over the same files.
-		$restore = Plugin::get_instance()->get_bulk_restore();
+		$conflict = Plugin::get_instance()->bulk_job_conflict( 'offload' );
 
-		if ( null !== $restore && $restore->is_active() ) {
-			return new \WP_Error(
-				'omnioffloader_bulk_running',
-				__( 'A bulk restore is running — wait for it to finish first.', 'omnioffloader' ),
-				array( 'status' => 409 )
-			);
+		if ( null !== $conflict ) {
+			return $conflict;
 		}
 
 		$limit  = (int) $request->get_param( 'limit' );
@@ -347,6 +335,13 @@ class OffloadController extends BaseController {
 				__( 'No attachment IDs provided.', 'omnioffloader' ),
 				array( 'status' => 400 )
 			);
+		}
+
+		$conflict = Plugin::get_instance()->bulk_job_conflict( $action );
+
+		// Appending to a running queue of the same kind is supported.
+		if ( null !== $conflict && Plugin::get_instance()->get_active_bulk_job() !== $action ) {
+			return $conflict;
 		}
 
 		if ( 'offload' === $action ) {

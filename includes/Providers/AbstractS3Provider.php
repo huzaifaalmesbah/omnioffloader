@@ -394,6 +394,66 @@ abstract class AbstractS3Provider implements ProviderInterface {
 	}
 
 	/**
+	 * Sizes of every object under a key prefix, in as few requests as possible.
+	 *
+	 * Lets a caller verify all of an attachment's files (main + every size)
+	 * with one ListObjectsV2 call instead of one HEAD request per file. Not
+	 * part of ProviderInterface, so third-party providers keep working —
+	 * callers check method_exists() and fall back to object_size().
+	 *
+	 * @since 0.1.3
+	 *
+	 * @param string $prefix    Key prefix, e.g. "2024/05/photo".
+	 * @param int    $max_pages Pages of 1,000 keys to read before giving up.
+	 * @return array<string, int>|false Key => size map, or false on error or
+	 *                                  when the prefix matches too many keys.
+	 */
+	public function list_object_sizes( $prefix, $max_pages = 2 ) {
+		$sizes = array();
+		$token = null;
+		$page  = 0;
+
+		try {
+			do {
+				$params = array(
+					'Bucket' => $this->get_bucket(),
+					'Prefix' => $prefix,
+					'@http'  => array(
+						'connect_timeout' => static::CONNECT_TIMEOUT,
+						'timeout'         => 30,
+					),
+				);
+
+				if ( null !== $token ) {
+					$params['ContinuationToken'] = $token;
+				}
+
+				$result = $this->get_client()->listObjectsV2( $params );
+
+				foreach ( (array) ( $result['Contents'] ?? array() ) as $object ) {
+					if ( is_array( $object ) && isset( $object['Key'], $object['Size'] ) ) {
+						$sizes[ (string) $object['Key'] ] = (int) $object['Size'];
+					}
+				}
+
+				$token = ! empty( $result['IsTruncated'] ) ? (string) ( $result['NextContinuationToken'] ?? '' ) : null;
+				++$page;
+			} while ( null !== $token && '' !== $token && $page < $max_pages );
+		} catch ( \Exception $e ) {
+			$this->log_error( sprintf( 'Error listing "%s": %s', $prefix, $e->getMessage() ) );
+
+			return false;
+		}
+
+		// Still truncated: the prefix is too broad to be worth paging through.
+		if ( null !== $token && '' !== $token ) {
+			return false;
+		}
+
+		return $sizes;
+	}
+
+	/**
 	 * Size of an object in bytes.
 	 *
 	 * @param string $key Object key.

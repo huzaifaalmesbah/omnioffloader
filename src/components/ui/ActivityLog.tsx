@@ -6,7 +6,7 @@ import type { ProcessedMediaItem } from '../../types';
 interface ActivityLogProps {
 	items?: ProcessedMediaItem[];
 	currentItem?: ProcessedMediaItem | null;
-	actionType: 'offload' | 'restore';
+	actionType: 'offload' | 'restore' | 'retention';
 	running?: boolean;
 	total?: number;
 	processed?: number;
@@ -29,15 +29,26 @@ export function ActivityLog( {
 			? Math.min( 100, Math.round( ( processed / total ) * 100 ) )
 			: 0;
 
-	const successLabel =
-		actionType === 'offload'
-			? __( 'Offloaded', 'omnioffloader' )
-			: __( 'Restored', 'omnioffloader' );
+	const labels = {
+		offload: {
+			success: __( 'Offloaded', 'omnioffloader' ),
+			title: __( 'Offloaded Media Log', 'omnioffloader' ),
+			working: __( 'Uploading…', 'omnioffloader' ),
+		},
+		restore: {
+			success: __( 'Restored', 'omnioffloader' ),
+			title: __( 'Restored Media Log', 'omnioffloader' ),
+			working: __( 'Restoring…', 'omnioffloader' ),
+		},
+		retention: {
+			success: __( 'Updated', 'omnioffloader' ),
+			title: __( 'Retention Update Log', 'omnioffloader' ),
+			working: __( 'Applying…', 'omnioffloader' ),
+		},
+	}[ actionType ];
 
-	const logTitle =
-		actionType === 'offload'
-			? __( 'Offloaded Media Log', 'omnioffloader' )
-			: __( 'Restored Media Log', 'omnioffloader' );
+	const successLabel = labels.success;
+	const logTitle = labels.title;
 
 	// Filter out any duplicate if an item just transitioned
 	const displayItems = currentItem
@@ -50,20 +61,28 @@ export function ActivityLog( {
 		items.length
 	);
 	if ( total > 0 && running ) {
-		countMessage =
-			actionType === 'restore'
-				? sprintf(
-						/* translators: 1: brought back count, 2: total count. */
-						__( '%1$d of %2$d brought back', 'omnioffloader' ),
-						processed,
-						total
-					)
-				: sprintf(
-						/* translators: 1: uploaded count, 2: total count. */
-						__( '%1$d of %2$d uploaded', 'omnioffloader' ),
-						processed,
-						total
-					);
+		if ( actionType === 'restore' ) {
+			countMessage = sprintf(
+				/* translators: 1: brought back count, 2: total count. */
+				__( '%1$d of %2$d brought back', 'omnioffloader' ),
+				processed,
+				total
+			);
+		} else if ( actionType === 'retention' ) {
+			countMessage = sprintf(
+				/* translators: 1: updated count, 2: total count. */
+				__( '%1$d of %2$d updated', 'omnioffloader' ),
+				processed,
+				total
+			);
+		} else {
+			countMessage = sprintf(
+				/* translators: 1: uploaded count, 2: total count. */
+				__( '%1$d of %2$d uploaded', 'omnioffloader' ),
+				processed,
+				total
+			);
+		}
 	}
 
 	return (
@@ -113,9 +132,7 @@ export function ActivityLog( {
 							</span>
 							<span className="smowp-activity-log__sub">
 								<span className="smowp-activity-log__status-now">
-									{ actionType === 'restore'
-										? __( 'Restoring…', 'omnioffloader' )
-										: __( 'Uploading…', 'omnioffloader' ) }
+									{ labels.working }
 								</span>
 							</span>
 						</div>
@@ -123,11 +140,7 @@ export function ActivityLog( {
 						<div className="smowp-activity-log__badge-wrap">
 							<span className="smowp-badge smowp-badge--processing">
 								<span className="smowp-spinner-dot" />
-								<span>
-									{ actionType === 'restore'
-										? __( 'Restoring…', 'omnioffloader' )
-										: __( 'Uploading…', 'omnioffloader' ) }
-								</span>
+								<span>{ labels.working }</span>
 							</span>
 						</div>
 					</div>

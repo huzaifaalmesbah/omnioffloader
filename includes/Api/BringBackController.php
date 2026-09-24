@@ -174,24 +174,12 @@ class BringBackController extends BaseController {
 			return $engine;
 		}
 
-		if ( $engine->is_active() ) {
-			return new \WP_Error(
-				'omnioffloader_bulk_running',
-				__( 'A bulk restore is already running.', 'omnioffloader' ),
-				array( 'status' => 409 )
-			);
-		}
-
-		// One bulk pipeline at a time — a simultaneous offload and restore
+		// One bulk pipeline at a time — offload, restore and retention runs
 		// would race each other over the same files.
-		$offload = Plugin::get_instance()->get_bulk_offload();
+		$conflict = Plugin::get_instance()->bulk_job_conflict( 'restore' );
 
-		if ( null !== $offload && $offload->is_active() ) {
-			return new \WP_Error(
-				'omnioffloader_bulk_running',
-				__( 'A bulk offload is running — wait for it to finish first.', 'omnioffloader' ),
-				array( 'status' => 409 )
-			);
+		if ( null !== $conflict ) {
+			return $conflict;
 		}
 
 		$delete_cloud = (bool) $request->get_param( 'delete_cloud' );

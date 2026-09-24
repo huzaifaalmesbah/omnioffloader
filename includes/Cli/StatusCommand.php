@@ -11,6 +11,7 @@ use OmniOffloader\Core\Helpers;
 use OmniOffloader\Core\Plugin;
 use OmniOffloader\Services\BulkOffloadProcessor;
 use OmniOffloader\Services\BulkRestoreProcessor;
+use OmniOffloader\Services\BulkRetentionProcessor;
 use WP_CLI;
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -65,6 +66,25 @@ class StatusCommand {
 		$restore = BulkRestoreProcessor::get_state();
 		if ( 'idle' !== $restore['status'] ) {
 			WP_CLI::log( sprintf( 'Bulk restore: %s (%d/%d, %d errors)', $restore['status'], $restore['processed'], $restore['total'], $restore['errors'] ) );
+		}
+
+		$retention = BulkRetentionProcessor::get_state();
+		if ( 'idle' !== $retention['status'] ) {
+			WP_CLI::log( sprintf( 'Retention update: %s (%d/%d, %d errors)', $retention['status'], $retention['processed'], $retention['total'], $retention['errors'] ) );
+		}
+
+		if ( null !== $provider ) {
+			$preflight = Helpers::get_retention_preflight( true );
+
+			if ( $preflight['eligible'] > 0 ) {
+				WP_CLI::log( '' );
+				WP_CLI::log(
+					sprintf(
+						'%d offloaded attachment(s) follow an older retention policy. Run `wp omnioffloader retention --dry-run` to review.',
+						$preflight['eligible']
+					)
+				);
+			}
 		}
 	}
 }

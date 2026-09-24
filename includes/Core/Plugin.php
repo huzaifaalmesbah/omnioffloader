@@ -12,12 +12,14 @@ use OmniOffloader\Api\BringBackController;
 use OmniOffloader\Api\CoreController;
 use OmniOffloader\Api\OffloadController;
 use OmniOffloader\Api\ProviderController;
+use OmniOffloader\Api\RetentionController;
 use OmniOffloader\Offload\Offloader;
 use OmniOffloader\Providers\ProviderInterface;
 use OmniOffloader\Providers\ProviderRegistry;
 use OmniOffloader\Services\AsyncUploadProcessor;
 use OmniOffloader\Services\BulkOffloadProcessor;
 use OmniOffloader\Services\BulkRestoreProcessor;
+use OmniOffloader\Services\BulkRetentionProcessor;
 use OmniOffloader\Traits\OptionsHelper;
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -69,6 +71,13 @@ class Plugin {
 	private $bulk_restore = null;
 
 	/**
+	 * Bulk retention processor when the engine is on, null otherwise.
+	 *
+	 * @var BulkRetentionProcessor|null
+	 */
+	private $bulk_retention = null;
+
+	/**
 	 * Get the active provider (null when the engine is off).
 	 *
 	 * @return ProviderInterface|null
@@ -104,6 +113,75 @@ class Plugin {
 	 */
 	public function get_bulk_restore() {
 		return $this->bulk_restore;
+	}
+
+	/**
+	 * Get the bulk retention processor (null when the engine is off).
+	 *
+	 * @since 0.1.3
+	 *
+	 * @return BulkRetentionProcessor|null
+	 */
+	public function get_bulk_retention() {
+		return $this->bulk_retention;
+	}
+
+	/**
+	 * The bulk job currently running, if any.
+	 *
+	 * Offload, restore and retention runs all read or delete the same local
+	 * files, so only one may run at a time (Safety Invariant #8).
+	 *
+	 * @since 0.1.3
+	 *
+	 * @return string 'offload', 'restore', 'retention', or '' when idle.
+	 */
+	public function get_active_bulk_job() {
+		$jobs = array(
+			'offload'   => $this->bulk_offload,
+			'restore'   => $this->bulk_restore,
+			'retention' => $this->bulk_retention,
+		);
+
+		foreach ( $jobs as $name => $processor ) {
+			if ( null !== $processor && $processor->is_active() ) {
+				return $name;
+			}
+		}
+
+		return '';
+	}
+
+	/**
+	 * Refusal for starting a bulk job while another one runs.
+	 *
+	 * @since 0.1.3
+	 *
+	 * @param string $job The job about to start ('offload', 'restore' or 'retention').
+	 * @return \WP_Error|null
+	 */
+	public function bulk_job_conflict( $job ) {
+		$active = $this->get_active_bulk_job();
+
+		if ( '' === $active ) {
+			return null;
+		}
+
+		$messages = array(
+			'offload'   => __( 'A bulk offload is running — wait for it to finish first.', 'omnioffloader' ),
+			'restore'   => __( 'A bulk restore is running — wait for it to finish first.', 'omnioffloader' ),
+			'retention' => __( 'A retention policy update is running — wait for it to finish first.', 'omnioffloader' ),
+		);
+
+		if ( $active === $job ) {
+			$messages = array(
+				'offload'   => __( 'A bulk offload is already running.', 'omnioffloader' ),
+				'restore'   => __( 'A bulk restore is already running.', 'omnioffloader' ),
+				'retention' => __( 'A retention policy update is already running.', 'omnioffloader' ),
+			);
+		}
+
+		return new \WP_Error( 'omnioffloader_bulk_running', $messages[ $active ], array( 'status' => 409 ) );
 	}
 
 	/**
@@ -191,6 +269,9 @@ class Plugin {
 
 		$bring_back_api = new BringBackController();
 		$bring_back_api->init();
+
+		$retention_api = new RetentionController();
+		$retention_api->init();
 	}
 
 	/**
@@ -219,9 +300,10 @@ class Plugin {
 
 		// Must exist on every request: their constructors register the
 		// async loopback + cron-healthcheck hooks that drive the queues.
-		$this->async_upload = new AsyncUploadProcessor( $provider );
-		$this->bulk_offload = new BulkOffloadProcessor( $provider );
-		$this->bulk_restore = new BulkRestoreProcessor();
+		$this->async_upload   = new AsyncUploadProcessor( $provider );
+		$this->bulk_offload   = new BulkOffloadProcessor( $provider );
+		$this->bulk_restore   = new BulkRestoreProcessor();
+		$this->bulk_retention = new BulkRetentionProcessor();
 
 		$offloader = new Offloader( $provider, $this->async_upload );
 		$offloader->register_observers();

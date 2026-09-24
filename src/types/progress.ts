@@ -2,6 +2,8 @@
  * Mirrors BulkOffloadProcessor::get_state() and OffloadController payloads.
  */
 
+import type { RetentionPolicy } from './settings';
+
 export type BulkStatus =
 	| 'idle'
 	| 'running'
@@ -57,6 +59,44 @@ export interface StartBulkRestoreResponse {
 export interface RestorePreflight {
 	offloaded: number;
 	estimated_bytes: number;
+	/** 0 means unknown (disk_free_space disabled on the host). */
+	free_bytes: number;
+	disk_ok: boolean;
+}
+
+/**
+ * Mirrors BulkRetentionProcessor::get_state().
+ */
+export interface RetentionBulkState extends BulkState {
+	/** Target policy, fixed when the run started. */
+	policy: RetentionPolicy;
+	/** Local bytes deleted so far. */
+	freed_bytes: number;
+	/** Files uploaded because the bucket was missing them. */
+	repaired: number;
+}
+
+export interface StartBulkRetentionResponse {
+	queued: number;
+	state: RetentionBulkState;
+}
+
+/**
+ * Mirrors Helpers::get_retention_preflight().
+ */
+export interface RetentionPreflight {
+	/** The saved policy the run will apply. */
+	policy: RetentionPolicy;
+	/** Offloaded attachments following a different policy. */
+	eligible: number;
+	/** Of those, attachments that will lose local files. */
+	to_clean: number;
+	/** Of those, attachments that will get local files back. */
+	to_download: number;
+	/** Estimated local bytes freed (upper bound). */
+	freed_bytes: number;
+	/** Estimated bytes downloaded (upper bound). */
+	download_bytes: number;
 	/** 0 means unknown (disk_free_space disabled on the host). */
 	free_bytes: number;
 	disk_ok: boolean;

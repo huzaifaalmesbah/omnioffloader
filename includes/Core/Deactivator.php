@@ -10,6 +10,7 @@ namespace OmniOffloader\Core;
 use OmniOffloader\Services\AbstractBulkProcessor;
 use OmniOffloader\Services\BulkOffloadProcessor;
 use OmniOffloader\Services\BulkRestoreProcessor;
+use OmniOffloader\Services\BulkRetentionProcessor;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -35,10 +36,12 @@ class Deactivator {
 		// wp_options with nothing left to consume them.
 		AbstractBulkProcessor::purge_stored_data( 'bulk_offload', BulkOffloadProcessor::STATE_OPTION );
 		AbstractBulkProcessor::purge_stored_data( 'bulk_restore', BulkRestoreProcessor::STATE_OPTION );
+		AbstractBulkProcessor::purge_stored_data( 'bulk_retention', BulkRetentionProcessor::STATE_OPTION );
 
 		// Transient state.
 		delete_transient( 'omnioffloader_activation_redirect' );
 		delete_transient( 'omnioffloader_media_stats' );
 		delete_transient( 'omnioffloader_restore_preflight' );
+		delete_transient( 'omnioffloader_retention_preflight' );
 	}
 }

@@ -4,7 +4,7 @@ Tags: offload, cloud storage, cdn, media library, s3
 Requires at least: 6.6
 Tested up to: 7.1
 Requires PHP: 8.1
-Stable tag: 0.1.2
+Stable tag: 0.1.3
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -128,13 +128,18 @@ Yes. Define them as constants in `wp-config.php` — for example `OMNIOFFLOADER_
 
 Files are uploaded one at a time, so budget roughly one to four seconds per attachment depending on file size and your server's upload speed. Jobs run in the background and keep going after you close the tab. On hosts that block internal loopback requests, the admin screen drives the job instead — there, leave the Offload page open until it finishes.
 
+= I changed the retention policy. Why are old files still on my server? =
+
+A retention policy is applied when a file is offloaded, so a new policy only affects new uploads at first. Go to OmniOffloader → Tools → "Apply Retention Policy to Existing Media" (or run `wp omnioffloader retention`) to update media you offloaded earlier. Before a local file is deleted, its cloud copy is checked by size. Files missing from the cloud are uploaded first, and a file whose cloud copy differs is kept and reported. Moving to a looser policy (for example from Full Cloud Migration back to Retain Local Files) downloads the local copies again.
+
 = Can I run a bulk offload from WP-CLI? =
 
-Yes:
+Yes. The Tools screen lists every command with copy buttons:
 
 `wp omnioffloader offload --all`
 `wp omnioffloader offload --all --limit=500`
 `wp omnioffloader restore --all`
+`wp omnioffloader retention --dry-run`
 `wp omnioffloader status`
 
 Every write command supports `--dry-run`, and destructive options ask for confirmation unless you pass `--yes`. The command refuses to run while a bulk job started from the admin screen is active, so the two can never touch the same files at once.
@@ -148,6 +153,21 @@ Files above 64 MB are uploaded in parts, so a dropped connection costs one chunk
 The plugin activates and runs per site. It has not been through a dedicated multisite test pass yet, so treat multisite as unverified for now.
 
 == Changelog ==
+
+= 0.1.3 =
+
+**Apply Retention Policy to Existing Media**
+
+* New Tools screen: apply the saved retention policy to media that was offloaded under an earlier policy. Switching from Retain Local Files to Smart Local Cleanup or Full Cloud Migration now frees space for existing media too, not just new uploads.
+* Every local file is checked in cloud storage by size before it is deleted. Files missing from the bucket (for example thumbnails regenerated after the offload) are uploaded first; a file whose cloud copy differs is kept and logged. An attachment only counts as updated once every file was handled, so failures are retried on the next run.
+* Moving to a looser policy downloads local copies again while the attachment stays offloaded.
+* Preflight shows how many attachments need updating and roughly how much space will be freed or downloaded. Full Cloud Migration asks for confirmation before originals are removed.
+* Runs in the background with the same progress bar, activity log, batch sizes and cancel button as Bulk Offload and Bring Back.
+* Settings shows a notice after saving a new policy when existing media still follows an older one.
+* New WP-CLI command: `wp omnioffloader retention [--policy=<0|1|2>] [--ids=<ids>] [--limit=<number>] [--dry-run] [--yes] [--force]`. `wp omnioffloader status` now reports media that follows an older policy.
+* New filter `omnioffloader_should_apply_retention` to keep specific attachments' local files.
+* WP-CLI reference on the Tools screen: every command with its options, copy buttons and a link to the matching admin screen.
+* Offload, Bring Back and retention jobs (admin or WP-CLI) can no longer run at the same time.
 
 = 0.1.2 =
 
@@ -223,6 +243,9 @@ The plugin activates and runs per site. It has not been through a dedicated mult
 * Complete WP-CLI commands: `wp omnioffloader offload`, `wp omnioffloader restore`, and `wp omnioffloader status`.
 
 == Upgrade Notice ==
+
+= 0.1.3 =
+Adds a Tools screen to apply a changed retention policy to media you already offloaded (every file is checked in the cloud before its local copy is deleted), a new `wp omnioffloader retention` command, and an in-admin WP-CLI reference. Recommended for all users.
 
 = 0.1.2 =
 Adds custom batch quantity limits and presets for Bulk Offload and Bring Back, proportional Bring Back disk estimation, WP-CLI restore --limit support, and fixes real-time progress updates under LiteSpeed Cache, Breeze, and persistent Object Cache (Redis/Memcached). Recommended for all users.

@@ -76,14 +76,17 @@ class RestoreCommand {
 	public function __invoke( $args, $assoc_args ) {
 		unset( $args );
 
-		$queue     = Plugin::get_instance()->get_bulk_restore();
+		$plugin    = Plugin::get_instance();
+		$queue     = $plugin->get_bulk_restore();
 		$has_queue = null !== $queue;
 		$is_dry    = isset( $assoc_args['dry-run'] );
 
 		// Restoring the same attachment from two processes races over the same
 		// destination files; the admin queue owns them until it is done.
-		if ( ! $is_dry && $has_queue && $queue->is_active() && ! isset( $assoc_args['force'] ) ) {
-			WP_CLI::error( 'A bulk restore is already running. Wait for it to finish, cancel it in the admin screen, or pass --force.' );
+		$active = $plugin->get_active_bulk_job();
+
+		if ( ! $is_dry && '' !== $active && ! isset( $assoc_args['force'] ) ) {
+			WP_CLI::error( sprintf( 'A bulk %s is already running. Wait for it to finish, cancel it in the admin screen, or pass --force.', $active ) );
 		}
 
 		$ids = $this->resolve_ids( $assoc_args );

@@ -1,20 +1,43 @@
 import {
+	Button,
 	Icon,
 	RadioControl,
 	TextControl,
 	ToggleControl,
 } from '@wordpress/components';
-import { __ } from '@wordpress/i18n';
+import { useEffect, useState } from '@wordpress/element';
+import { __, sprintf } from '@wordpress/i18n';
 import { cloudUpload } from '@wordpress/icons';
 
 import { CredentialFields } from '../components/settings/CredentialFields';
 import { TestConnection } from '../components/settings/TestConnection';
 import { Card } from '../components/ui/Card';
+import { fetchRetentionPreflight } from '../api/retention';
 import { useCore } from '../context/CoreContext';
-import { RetentionPolicy } from '../types';
+import { RetentionPolicy, type RetentionPreflight } from '../types';
 
-export function SettingsPage() {
-	const { settings, providers, updateSettings } = useCore();
+interface SettingsProps {
+	onNavigate: ( view: string ) => void;
+}
+
+export function SettingsPage( { onNavigate }: SettingsProps ) {
+	const { settings, providers, updateSettings, isDirty, stats } = useCore();
+	const [ retentionPreflight, setRetentionPreflight ] =
+		useState< RetentionPreflight | null >( null );
+
+	// Re-check once the draft is saved: the preflight describes the saved
+	// policy, which is what the Tools page applies.
+	useEffect( () => {
+		if ( isDirty || ! stats?.configured ) {
+			return;
+		}
+
+		fetchRetentionPreflight()
+			.then( setRetentionPreflight )
+			.catch( () => {
+				// Informational only.
+			} );
+	}, [ isDirty, stats?.configured ] );
 
 	if ( ! settings ) {
 		return null;
@@ -160,6 +183,48 @@ export function SettingsPage() {
 						} )
 					}
 				/>
+
+				<p className="smowp-muted smowp-retention-hint">
+					{ __(
+						'A new policy applies to new uploads. Media you already offloaded keeps its current local files until you apply the policy to it from Tools.',
+						'omnioffloader'
+					) }
+				</p>
+
+				{ ! isDirty &&
+					retentionPreflight &&
+					retentionPreflight.eligible > 0 && (
+						<div className="smowp-notice-banner smowp-notice-banner--info smowp-retention-notice">
+							<span className="smowp-notice-banner__icon">ℹ</span>
+							<div className="smowp-notice-banner__text">
+								<strong>
+									{ sprintf(
+										/* translators: %d: attachment count. */
+										__(
+											'%d offloaded attachment(s) still follow an earlier retention policy.',
+											'omnioffloader'
+										),
+										retentionPreflight.eligible
+									) }
+								</strong>
+								<p>
+									{ __(
+										'Apply the current policy to them to free up server space or get local copies back. Every file is checked in cloud storage before its local copy is deleted.',
+										'omnioffloader'
+									) }
+								</p>
+							</div>
+							<Button
+								variant="secondary"
+								onClick={ () => onNavigate( 'tools' ) }
+							>
+								{ __(
+									'Apply to existing media',
+									'omnioffloader'
+								) }
+							</Button>
+						</div>
+					) }
 			</Card>
 
 			<Card title={ __( 'Behavior', 'omnioffloader' ) }>

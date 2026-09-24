@@ -148,6 +148,93 @@ class AttachmentRestorer {
 	}
 
 	/**
+	 * Download the local copies a looser retention policy expects, while the
+	 * attachment stays offloaded.
+	 *
+	 * Used when the retention policy is relaxed after the fact (e.g. Full
+	 * Cloud Migration → Retain Local Files): the cloud copy stays the one
+	 * that is served, the offload meta is left alone and only the files the
+	 * new policy keeps on the server are brought down. Same safety as a
+	 * restore — atomic downloads, uploads-dir confinement, skip-if-identical.
+	 *
+	 * @since 0.1.3
+	 *
+	 * @param int $attachment_id Attachment ID.
+	 * @param int $policy        Target retention policy (0 or 1).
+	 * @return bool True when every file the policy keeps locally is present.
+	 */
+	public function restore_local_copies( $attachment_id, $policy ) {
+		$attachment_id = (int) $attachment_id;
+		$policy        = (int) $policy;
+
+		if ( ! self::is_offloaded( $attachment_id ) || $policy >= 2 ) {
+			return false;
+		}
+
+		wp_raise_memory_limit( 'admin' );
+		if ( function_exists( 'set_time_limit' ) ) {
+			// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- safe timeout extension for large file transfers.
+			@set_time_limit( 0 );
+		}
+
+		$provider = $this->resolve_provider( $attachment_id );
+
+		if ( null === $provider ) {
+			return false;
+		}
+
+		$files = self::collect_attachment_files( $attachment_id );
+
+		if ( empty( $files['main'] ) ) {
+			self::log_attachment_error( $attachment_id, __( 'No attached file found.', 'omnioffloader' ) );
+
+			return false;
+		}
+
+		$upload_dir = wp_get_upload_dir();
+		$base_real  = realpath( $upload_dir['basedir'] );
+
+		if ( false === $base_real ) {
+			self::log_attachment_error( $attachment_id, __( 'Uploads directory not found.', 'omnioffloader' ) );
+
+			return false;
+		}
+
+		// Smart Cleanup keeps originals only; Retain Local keeps everything.
+		$wanted = 0 === $policy ? array_merge( $files['main'], $files['sizes'] ) : $files['main'];
+		$all_ok = true;
+
+		foreach ( $wanted as $entry ) {
+			if ( ! $this->restore_file( $attachment_id, $provider, $entry['key'], $entry['file'], $base_real ) ) {
+				$all_ok = false;
+			}
+		}
+
+		foreach ( $files['main'] as $entry ) {
+			if ( ! file_exists( $entry['file'] ) ) {
+				$all_ok = false;
+				self::log_attachment_error(
+					$attachment_id,
+					sprintf(
+						/* translators: %s: file name. */
+						__( 'Main file "%s" is missing locally and in cloud storage.', 'omnioffloader' ),
+						wp_basename( $entry['file'] )
+					)
+				);
+			}
+		}
+
+		if ( ! $all_ok ) {
+			// The stored policy stays as it was, so the next run retries.
+			return false;
+		}
+
+		update_post_meta( $attachment_id, 'omnioffloader_retention', $policy );
+
+		return true;
+	}
+
+	/**
 	 * Restore a single file of the attachment.
 	 *
 	 * @param int               $attachment_id Attachment ID (for error logging).

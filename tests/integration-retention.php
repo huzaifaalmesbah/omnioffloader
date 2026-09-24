@@ -47,10 +47,32 @@ class SmowpRetentionMockProvider extends MockProvider {
 	public static $list_calls = 0;
 
 	/**
+	 * Object keys whose upload should fail.
+	 *
+	 * @var string[]
+	 */
+	public static $fail_uploads = array();
+
+	/**
 	 * Constructor.
 	 */
 	public function __construct() {
 		parent::__construct( self::$dir );
+	}
+
+	/**
+	 * Upload, unless the key is marked to fail.
+	 *
+	 * @param string $file Local file.
+	 * @param string $key  Object key.
+	 * @return string|false
+	 */
+	public function upload_file( $file, $key ) {
+		if ( in_array( $key, self::$fail_uploads, true ) ) {
+			return false;
+		}
+
+		return parent::upload_file( $file, $key );
 	}
 
 	/**
@@ -203,8 +225,9 @@ echo "Mock bucket: {$bucket_dir}\n\n";
 $id_a = omnioffloader_make_attachment( 'omnioffloader-retention-a.jpg' );
 $id_b = omnioffloader_make_attachment( 'omnioffloader-retention-b.jpg' );
 $id_c = omnioffloader_make_attachment( 'omnioffloader-retention-c.jpg' );
+$id_d = omnioffloader_make_attachment( 'omnioffloader-retention-d.jpg' );
 
-foreach ( array( $id_a, $id_b, $id_c ) as $id ) {
+foreach ( array( $id_a, $id_b, $id_c, $id_d ) as $id ) {
 	if ( ! get_post_meta( $id, 'omnioffloader_offloaded', true ) ) {
 		echo "ABORT: attachment {$id} was not offloaded during setup.\n";
 		exit( 1 );
@@ -258,21 +281,57 @@ omnioffloader_check( file_exists( $missing_at ), 'missing object now in the buck
 omnioffloader_check( ! file_exists( $missing['file'] ), 'its local copy deleted after upload' );
 
 // ---------------------------------------------------------------------------
-// Test 4 — Size mismatch: local copy kept, policy not advanced.
+// Test 4 — Size mismatch (e.g. an optimizer shrank the local file after the
+// offload): the local file is re-uploaded, verified, then deleted.
 // ---------------------------------------------------------------------------
-echo "\nTest 4: cloud copy of a different size keeps the local file\n";
+echo "\nTest 4: cloud copy of a different size is replaced from the server\n";
 
-$files_c = RetentionApplier::collect_attachment_files( $id_c );
-$bad     = $files_c['sizes'][0];
-file_put_contents( trailingslashit( $bucket_dir ) . $bad['key'], 'truncated' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- test sabotage.
+$files_c    = RetentionApplier::collect_attachment_files( $id_c );
+$stale      = $files_c['sizes'][0];
+$stale_at   = trailingslashit( $bucket_dir ) . $stale['key'];
+$local_size = filesize( $stale['file'] );
+file_put_contents( $stale_at, 'stale' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- test sabotage.
 clearstatcache();
 
-omnioffloader_check( false === $applier->apply( $id_c, 1 ), 'apply() reported failure' );
-omnioffloader_check( file_exists( $bad['file'] ), 'mismatched size kept locally' );
-omnioffloader_check( 0 === RetentionApplier::stored_policy( $id_c ), 'stored policy unchanged (retried next run)' );
+omnioffloader_check( true === $applier->apply( $id_c, 1 ), 'apply() succeeded' );
+omnioffloader_check( $applier->get_repaired() >= 1, 'mismatched file re-uploaded' );
+clearstatcache();
+omnioffloader_check( filesize( $stale_at ) === $local_size, 'cloud copy now matches the server file' );
+omnioffloader_check( ! file_exists( $stale['file'] ), 'local copy deleted after verification' );
+omnioffloader_check( 1 === RetentionApplier::stored_policy( $id_c ), 'stored policy advanced to 1' );
 
-$log_c = get_post_meta( $id_c, 'omnioffloader_error_log', true );
-omnioffloader_check( is_array( $log_c ) && ! empty( $log_c ), 'mismatch logged to omnioffloader_error_log' );
+// ---------------------------------------------------------------------------
+// Test 4b — Mismatch and the re-upload fails: local file kept.
+// ---------------------------------------------------------------------------
+echo "\nTest 4b: re-upload failure keeps the local file\n";
+
+$files_d = RetentionApplier::collect_attachment_files( $id_d );
+$bad     = $files_d['sizes'][0];
+file_put_contents( trailingslashit( $bucket_dir ) . $bad['key'], 'truncated' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- test sabotage.
+SmowpRetentionMockProvider::$fail_uploads = array( $bad['key'] );
+clearstatcache();
+
+omnioffloader_check( false === $applier->apply( $id_d, 1 ), 'apply() reported failure' );
+omnioffloader_check( file_exists( $bad['file'] ), 'mismatched size kept locally' );
+omnioffloader_check( 0 === RetentionApplier::stored_policy( $id_d ), 'stored policy unchanged (retried next run)' );
+
+$log_d = get_post_meta( $id_d, 'omnioffloader_error_log', true );
+omnioffloader_check( is_array( $log_d ) && ! empty( $log_d ), 'failure logged to omnioffloader_error_log' );
+
+SmowpRetentionMockProvider::$fail_uploads = array();
+
+// ---------------------------------------------------------------------------
+// Test 4c — Filtered-out attachments are not reported as needing updates.
+// ---------------------------------------------------------------------------
+echo "\nTest 4c: omnioffloader_should_apply_retention excludes from eligibility\n";
+
+$exclude_d = static function ( $apply, $id ) use ( $id_d ) {
+	return $id === $id_d ? false : $apply;
+};
+add_filter( 'omnioffloader_should_apply_retention', $exclude_d, 10, 2 );
+omnioffloader_check( ! in_array( $id_d, RetentionApplier::eligible_ids( 1 ), true ), 'filtered item not eligible' );
+remove_filter( 'omnioffloader_should_apply_retention', $exclude_d, 10 );
+omnioffloader_check( in_array( $id_d, RetentionApplier::eligible_ids( 1 ), true ), 'eligible again without the filter' );
 
 // ---------------------------------------------------------------------------
 // Test 5 — Full Cloud Migration: originals removed.
@@ -314,6 +373,7 @@ echo "\nCleanup…\n";
 wp_delete_attachment( $id_a, true );
 wp_delete_attachment( $id_b, true );
 wp_delete_attachment( $id_c, true );
+wp_delete_attachment( $id_d, true );
 update_option( 'omnioffloader_settings', $original_settings, true );
 Helpers::flush_media_stats();
 

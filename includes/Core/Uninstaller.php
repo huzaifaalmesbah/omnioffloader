@@ -41,6 +41,8 @@ class Uninstaller {
 		delete_option( 'omnioffloader_credentials' );
 		delete_option( 'omnioffloader_version' );
 		delete_option( 'omnioffloader_first_activated_version' );
+		// Left behind by pre-release builds with secondary storage.
+		delete_option( 'omnioffloader_secondary_credentials' );
 
 		// Queues: batch rows, run status, process lock, cron and state.
 		AsyncUploadProcessor::purge_stored_data();
@@ -54,6 +56,17 @@ class Uninstaller {
 		delete_transient( 'omnioffloader_restore_preflight' );
 		delete_transient( 'omnioffloader_retention_preflight' );
 
+		delete_post_meta_by_key( 'omnioffloader_status' );
+		delete_post_meta_by_key( 'omnioffloader_error_log' );
+
+		// Media whose local files were removed (retention 1/2) now exists
+		// only in the bucket. Its offload markers are the only record of
+		// where it lives, and what lets Bring Back recover it after a
+		// reinstall — so they are kept for as long as such media exists.
+		if ( self::has_cloud_only_media() ) {
+			return;
+		}
+
 		// Attachment meta (offload state markers).
 		delete_post_meta_by_key( 'omnioffloader_offloaded' );
 		delete_post_meta_by_key( 'omnioffloader_offloaded_at' );
@@ -62,7 +75,26 @@ class Uninstaller {
 		delete_post_meta_by_key( 'omnioffloader_path' );
 		delete_post_meta_by_key( 'omnioffloader_object_version' );
 		delete_post_meta_by_key( 'omnioffloader_retention' );
-		delete_post_meta_by_key( 'omnioffloader_status' );
-		delete_post_meta_by_key( 'omnioffloader_error_log' );
+	}
+
+	/**
+	 * Whether any offloaded attachment has had local files removed.
+	 *
+	 * @since 0.1.3
+	 *
+	 * @return bool
+	 */
+	private static function has_cloud_only_media() {
+		global $wpdb;
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- one-off uninstall check.
+		$found = $wpdb->get_var(
+			"SELECT m.post_id FROM {$wpdb->postmeta} m
+			 INNER JOIN {$wpdb->postmeta} r ON r.post_id = m.post_id AND r.meta_key = 'omnioffloader_retention' AND r.meta_value IN ( '1', '2' )
+			 WHERE m.meta_key = 'omnioffloader_offloaded' AND m.meta_value = '1'
+			 LIMIT 1"
+		);
+
+		return null !== $found;
 	}
 }

@@ -37,7 +37,18 @@ export function useRetentionSync() {
 	const delay = useRef( POLL_MIN );
 	const inFlight = useRef( false );
 	const tick = useRef< () => void >( () => {} );
-	const lastRefresh = useRef( 0 );
+	// Bumped whenever polling stops, so a response still in flight from an
+	// earlier chain (e.g. one that lands after Cancel) is ignored instead of
+	// restarting the poll.
+	const generation = useRef( 0 );
+	const mounted = useRef( true );
+
+	useEffect( () => {
+		mounted.current = true;
+		return () => {
+			mounted.current = false;
+		};
+	}, [] );
 
 	const stopPolling = useCallback( () => {
 		if ( timer.current !== null ) {
@@ -45,16 +56,26 @@ export function useRetentionSync() {
 			timer.current = null;
 		}
 		delay.current = POLL_MIN;
+		generation.current += 1;
 	}, [] );
 
 	const schedule = useCallback( () => {
+		if ( ! mounted.current ) {
+			return;
+		}
+		// Never run two timer chains side by side.
+		if ( timer.current !== null ) {
+			window.clearTimeout( timer.current );
+		}
 		timer.current = window.setTimeout(
 			() => tick.current(),
 			delay.current
 		);
 	}, [] );
 
-	const refreshPreflight = useCallback( ( force = true ) => {
+	// Default to the server's short-lived cache: a forced preflight re-reads
+	// the metadata of every offloaded attachment.
+	const refreshPreflight = useCallback( ( force = false ) => {
 		fetchRetentionPreflight( force )
 			.then( setPreflight )
 			.catch( () => {
@@ -63,15 +84,20 @@ export function useRetentionSync() {
 	}, [] );
 
 	const poll = useCallback( () => {
+		// The request in flight schedules the next tick when it settles.
 		if ( inFlight.current ) {
-			schedule();
 			return;
 		}
 
 		inFlight.current = true;
+		const gen = generation.current;
 
 		fetchRetentionProgress()
 			.then( ( fresh ) => {
+				if ( gen !== generation.current || ! mounted.current ) {
+					return;
+				}
+
 				setState( fresh );
 
 				if ( fresh.status !== 'running' ) {
@@ -79,12 +105,6 @@ export function useRetentionSync() {
 					refreshStats( true );
 					refreshPreflight( true );
 					return;
-				}
-
-				const now = Date.now();
-				if ( now - lastRefresh.current >= 6000 ) {
-					lastRefresh.current = now;
-					refreshPreflight( true );
 				}
 
 				// Ease off as the run settles in.
@@ -96,7 +116,9 @@ export function useRetentionSync() {
 			} )
 			.catch( () => {
 				// Transient polling failures are ignored; the next tick retries.
-				schedule();
+				if ( gen === generation.current ) {
+					schedule();
+				}
 			} )
 			.finally( () => {
 				inFlight.current = false;
@@ -129,15 +151,21 @@ export function useRetentionSync() {
 
 	const startPolling = useCallback( () => {
 		stopPolling();
+		if ( ! mounted.current ) {
+			return;
+		}
 		timer.current = window.setTimeout( () => tick.current(), 100 );
 	}, [ stopPolling ] );
 
 	// Initial load; resume polling when a run is already in flight.
 	useEffect( () => {
-		refreshPreflight( true );
+		refreshPreflight();
 
 		fetchRetentionProgress()
 			.then( ( fresh ) => {
+				if ( ! mounted.current ) {
+					return;
+				}
 				setState( fresh );
 				if ( fresh.status === 'running' ) {
 					setSessionRun( true );
@@ -177,7 +205,6 @@ export function useRetentionSync() {
 				setState( response.state );
 
 				if ( response.queued > 0 ) {
-					lastRefresh.current = Date.now();
 					startPolling();
 				} else {
 					setSessionRun( false );

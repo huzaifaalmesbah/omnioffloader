@@ -112,7 +112,7 @@ class BulkRestoreProcessor extends AbstractBulkProcessor {
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- bulk queue population query.
 		$ids = $wpdb->get_col(
-			"SELECT DISTINCT p.ID FROM {$wpdb->posts} p
+			"SELECT p.ID FROM {$wpdb->posts} p
 			 INNER JOIN {$wpdb->postmeta} m ON m.post_id = p.ID AND m.meta_key = 'omnioffloader_offloaded' AND m.meta_value = '1'
 			 WHERE p.post_type = 'attachment'
 			 ORDER BY p.ID ASC"

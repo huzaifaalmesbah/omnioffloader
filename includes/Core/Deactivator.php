@@ -8,6 +8,7 @@
 namespace OmniOffloader\Core;
 
 use OmniOffloader\Services\AbstractBulkProcessor;
+use OmniOffloader\Services\AsyncUploadProcessor;
 use OmniOffloader\Services\BulkOffloadProcessor;
 use OmniOffloader\Services\BulkRestoreProcessor;
 use OmniOffloader\Services\BulkRetentionProcessor;
@@ -34,6 +35,7 @@ class Deactivator {
 		// lock, cron healthcheck and progress heartbeat. Deactivating during a
 		// run used to strand one option row per fifty queued attachments in
 		// wp_options with nothing left to consume them.
+		AsyncUploadProcessor::purge_stored_data();
 		AbstractBulkProcessor::purge_stored_data( 'bulk_offload', BulkOffloadProcessor::STATE_OPTION );
 		AbstractBulkProcessor::purge_stored_data( 'bulk_restore', BulkRestoreProcessor::STATE_OPTION );
 		AbstractBulkProcessor::purge_stored_data( 'bulk_retention', BulkRetentionProcessor::STATE_OPTION );
@@ -43,5 +45,6 @@ class Deactivator {
 		delete_transient( 'omnioffloader_media_stats' );
 		delete_transient( 'omnioffloader_restore_preflight' );
 		delete_transient( 'omnioffloader_retention_preflight' );
+		delete_site_transient( Plugin::CLI_JOB_LOCK );
 	}
 }

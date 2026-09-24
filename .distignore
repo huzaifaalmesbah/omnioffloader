@@ -12,7 +12,6 @@
 Thumbs.db
 /.wordpress-org
 /node_modules
-/src
 /bin
 /tests
 /scripts
@@ -23,13 +22,10 @@ Thumbs.db
 /README.md
 /skills-lock.json
 /eslint.config.cjs
-/package.json
 /package-lock.json
 /.npmrc
 /pnpm-lock.yaml
 /pnpm-workspace.yaml
-/tsconfig.json
-/composer.json
 /composer.lock
 /phpstan.neon.dist
 /phpcs.xml.dist

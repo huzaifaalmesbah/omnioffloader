@@ -37,6 +37,10 @@ class Migrator {
 		if ( version_compare( $from_version, '0.1.2', '<' ) ) {
 			self::migrate_to_0_1_2();
 		}
+
+		if ( version_compare( $from_version, '0.1.3', '<' ) ) {
+			self::migrate_to_0_1_3();
+		}
 	}
 
 	/**
@@ -80,5 +84,27 @@ class Migrator {
 	 */
 	private static function migrate_to_0_1_2() {
 		Helpers::flush_media_stats();
+	}
+
+	/**
+	 * 0.1.3 — autoload the credentials option and drop a stale option.
+	 *
+	 * Credentials are read on every request (OptionsHelper::is_configured()),
+	 * so they now ride along with the other autoloaded options instead of
+	 * costing a query of their own. `omnioffloader_secondary_credentials` was
+	 * written by pre-release builds with secondary storage and is unused.
+	 *
+	 * Idempotent and safe inside a queue worker: neither touches queue data.
+	 *
+	 * @since 0.1.3
+	 *
+	 * @return void
+	 */
+	private static function migrate_to_0_1_3() {
+		if ( false !== get_option( 'omnioffloader_credentials', false ) ) {
+			wp_set_option_autoload( 'omnioffloader_credentials', true );
+		}
+
+		delete_option( 'omnioffloader_secondary_credentials' );
 	}
 }

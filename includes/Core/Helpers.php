@@ -188,16 +188,18 @@ class Helpers {
 
 		delete_transient( 'omnioffloader_media_stats' );
 		delete_transient( 'omnioffloader_restore_preflight' );
-
-		wp_cache_delete( 'omnioffloader_media_stats', 'transient' );
-		wp_cache_delete( 'omnioffloader_restore_preflight', 'transient' );
-		delete_option( '_transient_omnioffloader_media_stats' );
-		delete_option( '_transient_timeout_omnioffloader_media_stats' );
-		delete_option( '_transient_omnioffloader_restore_preflight' );
-		delete_option( '_transient_timeout_omnioffloader_restore_preflight' );
-
 		delete_transient( 'omnioffloader_retention_preflight' );
-		wp_cache_delete( 'omnioffloader_retention_preflight', 'transient' );
+
+		// With a persistent object cache, delete_transient() only clears the
+		// cache; rows written to wp_options before the cache was enabled would
+		// otherwise resurface. Without one, delete_transient() already removed
+		// those rows, so this is skipped (it costs two queries per key).
+		if ( wp_using_ext_object_cache() ) {
+			foreach ( array( 'omnioffloader_media_stats', 'omnioffloader_restore_preflight', 'omnioffloader_retention_preflight' ) as $key ) {
+				delete_option( '_transient_' . $key );
+				delete_option( '_transient_timeout_' . $key );
+			}
+		}
 	}
 
 	/**

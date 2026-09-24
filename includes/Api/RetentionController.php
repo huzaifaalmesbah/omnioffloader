@@ -41,6 +41,7 @@ class RetentionController extends BaseController {
 					'required'          => false,
 					'default'           => false,
 					'sanitize_callback' => 'rest_sanitize_boolean',
+					'validate_callback' => 'rest_validate_request_arg',
 				),
 			)
 		);
@@ -53,6 +54,7 @@ class RetentionController extends BaseController {
 					'type'              => 'integer',
 					'minimum'           => 1,
 					'sanitize_callback' => 'absint',
+					'validate_callback' => 'rest_validate_request_arg',
 				),
 			)
 		);

@@ -109,7 +109,7 @@ class BulkOffloadProcessor extends AbstractBulkProcessor {
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- bulk queue population query.
 		$ids = $wpdb->get_col(
-			"SELECT DISTINCT p.ID FROM {$wpdb->posts} p
+			"SELECT p.ID FROM {$wpdb->posts} p
 			 INNER JOIN {$wpdb->postmeta} f ON f.post_id = p.ID AND f.meta_key = '_wp_attached_file'
 			 LEFT JOIN {$wpdb->postmeta} m ON m.post_id = p.ID AND m.meta_key = 'omnioffloader_offloaded'
 			 WHERE p.post_type = 'attachment' AND p.post_status != 'trash' AND m.post_id IS NULL

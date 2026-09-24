@@ -50,10 +50,12 @@ class UniqueFilenameObserver implements ObserverInterface {
 		// Relative subdir of the destination, e.g. "2026/08".
 		$relative = ltrim( str_replace( $base_dir, '', $dir ), '/' );
 
+		$prefix = '' !== $relative ? trailingslashit( $relative ) : '';
 		$name   = pathinfo( $filename, PATHINFO_FILENAME );
+		$taken  = $this->attached_files_like( $prefix . $name );
 		$number = 0;
 
-		while ( $this->attached_file_exists( ( '' !== $relative ? trailingslashit( $relative ) : '' ) . $filename ) ) {
+		while ( isset( $taken[ $prefix . $filename ] ) ) {
 			++$number;
 			$filename = $name . '-' . $number . $ext;
 		}
@@ -62,22 +64,27 @@ class UniqueFilenameObserver implements ObserverInterface {
 	}
 
 	/**
-	 * Whether any attachment already uses this relative file path.
+	 * Every attached-file path that starts with $stem, as a lookup set.
 	 *
-	 * @param string $relative_path Path relative to the uploads basedir.
-	 * @return bool
+	 * One query per upload, instead of one unindexed meta_value lookup per
+	 * "-N" suffix tried.
+	 *
+	 * @since 0.1.3
+	 *
+	 * @param string $stem Relative path without extension, e.g. "2026/08/photo".
+	 * @return array<string, true>
 	 */
-	private function attached_file_exists( $relative_path ) {
+	private function attached_files_like( $stem ) {
 		global $wpdb;
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- fast single-record indexed lookup during upload.
-		$found = $wpdb->get_var(
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- single lookup during upload.
+		$paths = $wpdb->get_col(
 			$wpdb->prepare(
-				"SELECT post_id FROM {$wpdb->postmeta} WHERE meta_key = '_wp_attached_file' AND meta_value = %s LIMIT 1",
-				$relative_path
+				"SELECT meta_value FROM {$wpdb->postmeta} WHERE meta_key = '_wp_attached_file' AND meta_value LIKE %s",
+				$wpdb->esc_like( $stem ) . '%'
 			)
 		);
 
-		return null !== $found;
+		return array_fill_keys( array_map( 'strval', $paths ), true );
 	}
 }

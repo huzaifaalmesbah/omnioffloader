@@ -43,6 +43,7 @@ class OffloadController extends BaseController {
 						'type'              => 'integer',
 						'required'          => true,
 						'sanitize_callback' => 'absint',
+						'validate_callback' => 'rest_validate_request_arg',
 					),
 				),
 			)
@@ -56,6 +57,7 @@ class OffloadController extends BaseController {
 					'type'              => 'integer',
 					'minimum'           => 1,
 					'sanitize_callback' => 'absint',
+					'validate_callback' => 'rest_validate_request_arg',
 				),
 			)
 		);
@@ -72,6 +74,7 @@ class OffloadController extends BaseController {
 					'minimum'           => 1,
 					'maximum'           => 100,
 					'sanitize_callback' => 'absint',
+					'validate_callback' => 'rest_validate_request_arg',
 				),
 			)
 		);
@@ -89,11 +92,15 @@ class OffloadController extends BaseController {
 						'required'          => true,
 						'enum'              => array( 'offload', 'restore' ),
 						'sanitize_callback' => 'sanitize_key',
+						'validate_callback' => 'rest_validate_request_arg',
 					),
 					'ids'    => array(
-						'type'     => 'array',
-						'required' => true,
-						'items'    => array(
+						'type'              => 'array',
+						'required'          => true,
+						// One Media Library screen at most; bounds the per-ID checks.
+						'maxItems'          => 1000,
+						'validate_callback' => 'rest_validate_request_arg',
+						'items'             => array(
 							'type' => 'integer',
 						),
 					),
@@ -114,12 +121,14 @@ class OffloadController extends BaseController {
 						'required'          => false,
 						'default'           => '',
 						'sanitize_callback' => 'sanitize_text_field',
+						'validate_callback' => 'rest_validate_request_arg',
 					),
 					'known' => array(
 						'type'              => 'string',
 						'required'          => false,
 						'default'           => '',
 						'sanitize_callback' => 'sanitize_text_field',
+						'validate_callback' => 'rest_validate_request_arg',
 					),
 				),
 			)
@@ -165,6 +174,14 @@ class OffloadController extends BaseController {
 				'omnioffloader_not_attachment',
 				__( 'Not a media attachment.', 'omnioffloader' ),
 				array( 'status' => 404 )
+			);
+		}
+
+		if ( ! self::current_user_can_manage( $attachment_id ) ) {
+			return new \WP_Error(
+				'omnioffloader_forbidden',
+				__( 'Sorry, you are not allowed to manage this media item.', 'omnioffloader' ),
+				array( 'status' => rest_authorization_required_code() )
 			);
 		}
 
@@ -325,9 +342,10 @@ class OffloadController extends BaseController {
 	 * @return \WP_REST_Response|\WP_Error
 	 */
 	public function bulk_action_response( WP_REST_Request $request ) {
-		$action  = (string) $request->get_param( 'action' );
-		$raw_ids = (array) $request->get_param( 'ids' );
-		$ids     = array_filter( array_map( 'absint', $raw_ids ) );
+		$action = (string) $request->get_param( 'action' );
+
+		// Only media the user may edit — an Author cannot queue other users' files.
+		$ids = self::filter_manageable_ids( (array) $request->get_param( 'ids' ) );
 
 		if ( empty( $ids ) ) {
 			return new \WP_Error(
@@ -369,6 +387,22 @@ class OffloadController extends BaseController {
 				__( 'Bulk restore engine is not available.', 'omnioffloader' ),
 				array( 'status' => 409 )
 			);
+		}
+
+		// Appending to a running restore inherits its "delete from cloud"
+		// choice, so only append media this user may also delete.
+		$restore_state = BulkRestoreProcessor::get_state();
+
+		if ( ! empty( $restore_state['delete_cloud'] ) && $restore_engine->is_active() ) {
+			$ids = array_values( array_filter( $ids, array( self::class, 'current_user_can_delete_cloud' ) ) );
+
+			if ( empty( $ids ) ) {
+				return new \WP_Error(
+					'omnioffloader_forbidden',
+					__( 'Sorry, you are not allowed to delete these media items from the cloud.', 'omnioffloader' ),
+					array( 'status' => rest_authorization_required_code() )
+				);
+			}
 		}
 
 		$queued = $restore_engine->start( false, $ids );

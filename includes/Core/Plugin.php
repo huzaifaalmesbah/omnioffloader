@@ -127,7 +127,44 @@ class Plugin {
 	}
 
 	/**
-	 * The bulk job currently running, if any.
+	 * Site transient naming the WP-CLI job currently running.
+	 */
+	public const CLI_JOB_LOCK = 'omnioffloader_cli_job';
+
+	/**
+	 * Seconds a WP-CLI job claim lives without renewal.
+	 */
+	private const CLI_JOB_LOCK_TTL = 600;
+
+	/**
+	 * Announce a running WP-CLI job so admin-started jobs of every type wait.
+	 *
+	 * A CLI run never writes queue state, so without this the admin screens
+	 * could start a different job over the same files. Call repeatedly to
+	 * keep the claim alive; it expires on its own if the process dies.
+	 *
+	 * @since 0.1.3
+	 *
+	 * @param string $job 'offload', 'restore' or 'retention'.
+	 * @return void
+	 */
+	public function claim_cli_job( $job ) {
+		set_site_transient( self::CLI_JOB_LOCK, (string) $job, self::CLI_JOB_LOCK_TTL );
+	}
+
+	/**
+	 * Release a claim taken with claim_cli_job().
+	 *
+	 * @since 0.1.3
+	 *
+	 * @return void
+	 */
+	public function release_cli_job() {
+		delete_site_transient( self::CLI_JOB_LOCK );
+	}
+
+	/**
+	 * The bulk job currently running, if any — admin queue or WP-CLI.
 	 *
 	 * Offload, restore and retention runs all read or delete the same local
 	 * files, so only one may run at a time (Safety Invariant #8).
@@ -137,6 +174,12 @@ class Plugin {
 	 * @return string 'offload', 'restore', 'retention', or '' when idle.
 	 */
 	public function get_active_bulk_job() {
+		$cli_job = get_site_transient( self::CLI_JOB_LOCK );
+
+		if ( is_string( $cli_job ) && '' !== $cli_job ) {
+			return $cli_job;
+		}
+
 		$jobs = array(
 			'offload'   => $this->bulk_offload,
 			'restore'   => $this->bulk_restore,

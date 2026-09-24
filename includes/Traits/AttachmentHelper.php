@@ -31,6 +31,65 @@ trait AttachmentHelper {
 	}
 
 	/**
+	 * Whether the current user may offload or bring back an attachment.
+	 *
+	 * Cloud actions follow the attachment's own WordPress permissions: an
+	 * Author manages their own media, Editors and Administrators everyone's.
+	 *
+	 * @since 0.1.3
+	 *
+	 * @param int $attachment_id Attachment ID.
+	 * @return bool
+	 */
+	public static function current_user_can_manage( $attachment_id ) {
+		$attachment_id = (int) $attachment_id;
+
+		return 'attachment' === get_post_type( $attachment_id ) && current_user_can( 'edit_post', $attachment_id );
+	}
+
+	/**
+	 * Whether the current user may delete an attachment's cloud copies.
+	 *
+	 * Mirrors deleting the attachment itself: whoever may delete the media
+	 * in WordPress may also delete it from the bucket.
+	 *
+	 * @since 0.1.3
+	 *
+	 * @param int $attachment_id Attachment ID.
+	 * @return bool
+	 */
+	public static function current_user_can_delete_cloud( $attachment_id ) {
+		$attachment_id = (int) $attachment_id;
+
+		return 'attachment' === get_post_type( $attachment_id ) && current_user_can( 'delete_post', $attachment_id );
+	}
+
+	/**
+	 * Keep only the attachment IDs the current user may manage.
+	 *
+	 * @since 0.1.3
+	 *
+	 * @param array<int|string, mixed> $ids Attachment IDs.
+	 * @return int[]
+	 */
+	public static function filter_manageable_ids( array $ids ) {
+		$ids = array_values( array_unique( array_filter( array_map( 'absint', $ids ) ) ) );
+
+		if ( ! empty( $ids ) && function_exists( '_prime_post_caches' ) ) {
+			_prime_post_caches( $ids, false, false );
+		}
+
+		return array_values(
+			array_filter(
+				$ids,
+				static function ( $id ) {
+					return self::current_user_can_manage( $id );
+				}
+			)
+		);
+	}
+
+	/**
 	 * The stored cloud subdir (key prefix) for an offloaded attachment.
 	 *
 	 * @param int $attachment_id Attachment ID.

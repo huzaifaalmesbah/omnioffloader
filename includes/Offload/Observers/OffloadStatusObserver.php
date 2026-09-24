@@ -306,7 +306,7 @@ class OffloadStatusObserver implements ObserverInterface {
 		$post_id    = (int) $post_id;
 		$status     = self::get_attachment_status( $post_id );
 		$state      = (string) $status['status'];
-		$can_upload = current_user_can( 'upload_files' );
+		$can_upload = self::current_user_can_manage( $post_id );
 
 		$html = sprintf(
 			'<div class="omnioffloader-details-badge omnioffloader-details-badge--%s" data-attachment-id="%d" data-status="%s">',
@@ -421,7 +421,7 @@ class OffloadStatusObserver implements ObserverInterface {
 		$post_id    = (int) $post_id;
 		$status     = self::get_attachment_status( $post_id );
 		$state      = (string) $status['status'];
-		$can_upload = current_user_can( 'upload_files' );
+		$can_upload = self::current_user_can_manage( $post_id );
 
 		$html = sprintf(
 			'<div class="omnioffloader-meta-box-wrap omnioffloader-details-badge omnioffloader-details-badge--%s" data-attachment-id="%d" data-status="%s">',

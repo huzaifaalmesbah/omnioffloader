@@ -40,6 +40,7 @@ class BringBackController extends BaseController {
 					'required'          => false,
 					'default'           => false,
 					'sanitize_callback' => 'rest_sanitize_boolean',
+					'validate_callback' => 'rest_validate_request_arg',
 				),
 			)
 		);
@@ -56,11 +57,13 @@ class BringBackController extends BaseController {
 						'type'              => 'integer',
 						'required'          => true,
 						'sanitize_callback' => 'absint',
+						'validate_callback' => 'rest_validate_request_arg',
 					),
+					// Omitted: use the "delete from cloud" setting, like the row action.
 					'delete_cloud' => array(
 						'type'              => 'boolean',
-						'default'           => false,
 						'sanitize_callback' => 'rest_sanitize_boolean',
+						'validate_callback' => 'rest_validate_request_arg',
 					),
 				),
 			)
@@ -74,11 +77,13 @@ class BringBackController extends BaseController {
 					'type'              => 'boolean',
 					'default'           => false,
 					'sanitize_callback' => 'rest_sanitize_boolean',
+					'validate_callback' => 'rest_validate_request_arg',
 				),
 				'limit'        => array(
 					'type'              => 'integer',
 					'minimum'           => 1,
 					'sanitize_callback' => 'absint',
+					'validate_callback' => 'rest_validate_request_arg',
 				),
 			)
 		);
@@ -133,6 +138,14 @@ class BringBackController extends BaseController {
 			);
 		}
 
+		if ( ! self::current_user_can_manage( $attachment_id ) ) {
+			return new \WP_Error(
+				'omnioffloader_forbidden',
+				__( 'Sorry, you are not allowed to manage this media item.', 'omnioffloader' ),
+				array( 'status' => rest_authorization_required_code() )
+			);
+		}
+
 		if ( ! self::is_offloaded( $attachment_id ) ) {
 			return new \WP_Error(
 				'omnioffloader_not_offloaded',
@@ -141,8 +154,38 @@ class BringBackController extends BaseController {
 			);
 		}
 
+		// A retention run may be deleting this attachment's local files right
+		// now; restoring (and maybe deleting cloud copies) alongside it could
+		// leave no copy at all.
+		if ( 'retention' === Plugin::get_instance()->get_active_bulk_job() ) {
+			return new \WP_Error(
+				'omnioffloader_bulk_running',
+				__( 'A retention policy update is running — wait for it to finish first.', 'omnioffloader' ),
+				array( 'status' => 409 )
+			);
+		}
+
+		$requested    = $request->get_param( 'delete_cloud' );
+		$delete_cloud = null === $requested
+			? ! empty( Plugin::get_settings()['bring_back_delete_cloud'] )
+			: (bool) $requested;
+
+		// Deleting cloud copies follows the same rule as deleting the media:
+		// an Author may do it for their own uploads, never for anyone else's.
+		if ( $delete_cloud && ! self::current_user_can_delete_cloud( $attachment_id ) ) {
+			if ( null !== $requested ) {
+				return new \WP_Error(
+					'omnioffloader_forbidden',
+					__( 'Sorry, you are not allowed to delete this media item from the cloud.', 'omnioffloader' ),
+					array( 'status' => rest_authorization_required_code() )
+				);
+			}
+
+			$delete_cloud = false;
+		}
+
 		$restorer     = new AttachmentRestorer();
-		$ok           = $restorer->restore( $attachment_id, (bool) $request->get_param( 'delete_cloud' ) );
+		$ok           = $restorer->restore( $attachment_id, $delete_cloud );
 		$provider     = Plugin::get_instance()->get_provider();
 		$observer     = new \OmniOffloader\Offload\Observers\OffloadStatusObserver( $provider );
 		$row_observer = new \OmniOffloader\Offload\Observers\RowActionsObserver( $provider );

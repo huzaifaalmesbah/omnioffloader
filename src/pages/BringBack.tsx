@@ -1,6 +1,6 @@
 import { Button, Notice, Tooltip } from '@wordpress/components';
 import { useEffect, useState } from '@wordpress/element';
-import { __, sprintf } from '@wordpress/i18n';
+import { __, sprintf, _n } from '@wordpress/i18n';
 
 import { ActivityLog } from '../components/ui/ActivityLog';
 import {
@@ -23,7 +23,11 @@ export function BringBackPage() {
 
 	const running = state?.status === 'running';
 	const totalCount = stats?.total ?? 0;
-	const offloadedCount = preflight?.offloaded ?? stats?.offloaded ?? 0;
+	// Mid-run the preflight is not refreshed (it is a full-library scan);
+	// the stats count is cheap and kept current by the poll.
+	const offloadedCount = running
+		? ( stats?.offloaded ?? 0 )
+		: ( preflight?.offloaded ?? stats?.offloaded ?? 0 );
 	const localCount = stats?.local ?? 0;
 	const isAllLocal =
 		stats?.configured && offloadedCount === 0 && totalCount > 0;
@@ -67,7 +71,12 @@ export function BringBackPage() {
 	if ( state && state.errors > 0 ) {
 		statusDetail = sprintf(
 			/* translators: %d: error count. */
-			__( '%d error(s) encountered', 'omnioffloader' ),
+			_n(
+				'%d error encountered',
+				'%d errors encountered',
+				state.errors,
+				'omnioffloader'
+			),
 			state.errors
 		);
 	} else if ( state?.delete_cloud && running ) {
@@ -181,8 +190,10 @@ export function BringBackPage() {
 								<p className="smowp-bulk-action__info">
 									{ sprintf(
 										/* translators: %d: number of offloaded attachments. */
-										__(
-											'%d attachment(s) are offloaded and can be brought back.',
+										_n(
+											'%d attachment is offloaded and can be brought back.',
+											'%d attachments are offloaded and can be brought back.',
+											offloadedCount,
 											'omnioffloader'
 										),
 										offloadedCount

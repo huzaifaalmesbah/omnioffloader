@@ -116,7 +116,23 @@ class RetentionApplier {
 			$ids = $wpdb->get_col( $wpdb->prepare( $sql, $policy ) );
 		}
 
-		return array_map( 'intval', $ids );
+		$ids = array_map( 'intval', $ids );
+
+		// Attachments excluded by the filter would otherwise count as
+		// "needs updating" forever. Only paid for when a filter is attached.
+		if ( has_filter( 'omnioffloader_should_apply_retention' ) ) {
+			$ids = array_values(
+				array_filter(
+					$ids,
+					static function ( $id ) use ( $policy ) {
+						/** This filter is documented in includes/Services/RetentionApplier.php */
+						return (bool) apply_filters( 'omnioffloader_should_apply_retention', true, $id, $policy );
+					}
+				)
+			);
+		}
+
+		return $ids;
 	}
 
 	/**
@@ -251,8 +267,13 @@ class RetentionApplier {
 
 			$remote_size = $remote[ $key ] ?? $provider->object_size( $key );
 
-			// Not in the bucket: upload it before the local copy may go.
-			if ( false === $remote_size ) {
+			// Missing from the bucket, or the cloud copy differs (typically an
+			// image optimizer shrank the local file after the offload). The
+			// local file is the current version: upload it, then verify again
+			// before the local copy may go.
+			if ( false === $remote_size || (int) $remote_size !== (int) $local_size ) {
+				$remote_size = false;
+
 				if ( false !== $provider->upload_file( $file, $key ) ) {
 					$remote_size = $provider->object_size( $key );
 
@@ -262,26 +283,13 @@ class RetentionApplier {
 				}
 			}
 
-			if ( false === $remote_size ) {
+			if ( false === $remote_size || (int) $remote_size !== (int) $local_size ) {
 				$all_ok = false;
 				self::log_attachment_error(
 					$attachment_id,
 					sprintf(
 						/* translators: %s: file name. */
-						__( 'Kept "%s" on the server: it is not in cloud storage and could not be uploaded.', 'omnioffloader' ),
-						wp_basename( $file )
-					)
-				);
-				continue;
-			}
-
-			if ( (int) $remote_size !== (int) $local_size ) {
-				$all_ok = false;
-				self::log_attachment_error(
-					$attachment_id,
-					sprintf(
-						/* translators: %s: file name. */
-						__( 'Kept "%s" on the server: the cloud copy is a different size.', 'omnioffloader' ),
+						__( 'Kept "%s" on the server: it could not be uploaded to cloud storage and verified.', 'omnioffloader' ),
 						wp_basename( $file )
 					)
 				);
@@ -289,7 +297,9 @@ class RetentionApplier {
 			}
 
 			// Verified in the bucket, byte count for byte count (invariant #1).
-			wp_delete_file( $file );
+			// Refuses anything that resolves outside the uploads directory.
+			wp_delete_file_from_directory( $file, wp_get_upload_dir()['basedir'] );
+			clearstatcache( true, $file );
 
 			if ( file_exists( $file ) ) {
 				$all_ok = false;

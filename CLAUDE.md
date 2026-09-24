@@ -144,12 +144,13 @@ Progress polling (`useBulkOffload`, `useBringBack`, `useRetentionSync`) uses a *
 
 ## REST API (`omnioffloader/v1`)
 
-All mutations via REST; `@wordpress/api-fetch` sends the nonce. Every route: explicit `permission_callback` (`manage_options`), `args` with type/validate/sanitize callbacks, `WP_REST_Server` method constants, `rest_ensure_response()` / `WP_Error` with status + stable `omnioffloader_*` error codes.
+All mutations via REST; `@wordpress/api-fetch` sends the nonce. Every route: explicit `permission_callback` (`manage_options`, or `upload_files` for the per-item media routes), `args` with type/sanitize callbacks **plus `'validate_callback' => 'rest_validate_request_arg'`** (core skips schema checks — type, enum, min/max — when only a sanitizer is given), `WP_REST_Server` method constants, `rest_ensure_response()` / `WP_Error` with status + stable `omnioffloader_*` error codes.
 
 - `GET/POST /core/settings` · `GET /core/providers` · `GET /core/stats`
 - `GET/POST /provider/credentials` · `POST /provider/test-connection` — all take a provider arg
 - `POST /offload/attachment/{id}` · `POST /offload/bulk` · `GET /offload/bulk/progress` · `POST /offload/bulk/cancel` · `GET /offload/errors`
 - `GET /bring-back/preflight` · `POST /bring-back/attachment/{id}` · `POST /bring-back/bulk` · `GET /bring-back/bulk/progress` · `POST /bring-back/bulk/cancel`
+- `POST /bulk/action` (Media Library bulk offload/restore of selected IDs, `maxItems` 1000) · `GET /offload/attachment-status` (Media Library live badges) — both `upload_files`, filtered per item
 - `GET /retention/preflight` · `POST /retention/bulk` · `GET /retention/bulk/progress` · `POST /retention/bulk/cancel` — apply the **saved** retention policy to already-offloaded media (the client never sends a policy)
 
 The three `bulk/progress` routes are `GET` but deliberately do work (the stalled-queue self-heal). Keep that in mind before adding caching.
@@ -161,7 +162,7 @@ Credentials: `GET` returns secrets masked (`is_set: true`); `POST` ignores maske
 **Options:**
 - `omnioffloader_settings` (autoload on) — provider, retention_policy (0/1/2), mirror_delete, path_prefix(+active), object_versioning, bring_back_delete_cloud, remove_data_on_uninstall
 - `omnioffloader_version` (autoload on) — for Migrator
-- `omnioffloader_credentials` (autoload off) — per-provider credential sub-arrays
+- `omnioffloader_credentials` (autoload **on** since 0.1.3 — `is_configured()` reads it on every request) — per-provider credential sub-arrays. Never returned raw via REST.
 - `omnioffloader_first_activated_version` (autoload off)
 - `omnioffloader_bulk_offload_state` / `omnioffloader_bulk_restore_state` / `omnioffloader_bulk_retention_state` (autoload off) — progress heartbeats
 - `omnioffloader_bulk_{offload,restore,retention}_batch_*` / `_status` — queue internals, written by `WP_Background_Process` via `update_site_option` (autoload off on single site). Never leave these behind; `purge_stored_data()` owns their cleanup.
@@ -180,7 +181,7 @@ The policy is applied once at offload time (`LocalCleaner`). Changing the settin
 
 ## Public Hooks
 
-Filters: `omnioffloader_cloud_providers`, `omnioffloader_object_acl`, `omnioffloader_attachment_key`, `omnioffloader_attachment_delete_keys`, `omnioffloader_should_offload_attachment`, `omnioffloader_should_apply_retention`, `omnioffloader_multipart_threshold`, `omnioffloader_bulk_failure_limit`.
+Filters: `omnioffloader_cloud_providers`, `omnioffloader_object_acl`, `omnioffloader_attachment_key`, `omnioffloader_attachment_delete_keys`, `omnioffloader_should_offload_attachment`, `omnioffloader_should_apply_retention`, `omnioffloader_media_block_names`, `omnioffloader_multipart_threshold`, `omnioffloader_bulk_failure_limit`.
 Actions: `omnioffloader_before_offload`, `omnioffloader_after_offload`, `omnioffloader_before_restore`, `omnioffloader_after_restore`.
 
 ## Safety Invariants (never violate)
@@ -192,11 +193,13 @@ Actions: `omnioffloader_before_offload`, `omnioffloader_after_offload`, `omnioff
 5. Guard `dirname()` returning `'.'` when building object keys (produces broken `./file.jpg` keys — known bug class in the reference plugin).
 6. Never log or echo credentials; REST never returns raw secrets.
 7. CLI destructive paths (`--delete-cloud`) require `WP_CLI::confirm()` or `--yes`; every write command supports `--dry-run`.
-8. Only one bulk job at a time — offload, restore and retention runs (admin queue or CLI) all read or delete the same local files. REST start routes check `Plugin::bulk_job_conflict()`; CLI commands refuse while `Plugin::get_active_bulk_job()` is non-empty (`--force` overrides) and hold their queue's process lock while they work.
+8. Only one bulk job at a time — offload, restore and retention runs (admin queue or CLI) all read or delete the same local files. REST start routes check `Plugin::bulk_job_conflict()`; CLI commands refuse while `Plugin::get_active_bulk_job()` is non-empty (`--force` overrides), hold their queue's process lock, and announce themselves with `Plugin::claim_cli_job()` (site transient `omnioffloader_cli_job`, 10 min, renewed) so admin jobs of every type see them. Single-item Bring Back is refused while a retention run is active.
+9. **Per-item permissions mirror WordPress.** Offload / Bring Back of one attachment needs `edit_post` on it; deleting its cloud copy needs `delete_post` (`AttachmentHelper::current_user_can_manage()` / `current_user_can_delete_cloud()` / `filter_manageable_ids()`). `upload_files` alone is never enough to act on someone else's media. Whole-library jobs and settings stay `manage_options`.
 
 ## Performance Rules
 
-- Frontend (non-admin) footprint is URL-rewrite filters only — no queries, writes, or HTTP.
+- Frontend (non-admin) footprint is URL-rewrite filters only — no queries, writes, or HTTP. `render_block` only looks up IDs for `ContentImageTagObserver::MEDIA_BLOCKS` (filter `omnioffloader_media_block_names`); `<video>/<audio>/<source>` URLs are resolved in one batched `IN (…)` query per content and memoized per request — never `attachment_url_to_postid()` per src.
+- Preflights (`get_restore_preflight`, `get_retention_preflight`) scan every offloaded attachment's metadata. The UI reads the transient by default and forces a refresh only when a run ends — never on a polling interval.
 - No remote calls outside explicit user actions (Test Connection, offload/restore jobs).
 - Stats via one indexed postmeta count query, short-transient cached.
 - **Never bust the stats cache per attachment.** `Helpers::flush_media_stats()` is deferrable — bulk passes and CLI loops wrap their work in `Helpers::defer_media_stats_flush( true/false )` so it fires once. Per-item flushing costs ~2 queries per attachment for a value nothing reads mid-run.

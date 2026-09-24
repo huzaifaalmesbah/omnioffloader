@@ -31,6 +31,18 @@ export function useBulkOffload() {
 	const delay = useRef( POLL_MIN );
 	const inFlight = useRef( false );
 	const tick = useRef< () => void >( () => {} );
+	// Bumped whenever polling stops, so a response still in flight from an
+	// earlier chain (e.g. one that lands after Cancel) is ignored instead of
+	// restarting the poll.
+	const generation = useRef( 0 );
+	const mounted = useRef( true );
+
+	useEffect( () => {
+		mounted.current = true;
+		return () => {
+			mounted.current = false;
+		};
+	}, [] );
 	const lastStatsRefresh = useRef( 0 );
 
 	const stopPolling = useCallback( () => {
@@ -39,9 +51,17 @@ export function useBulkOffload() {
 			timer.current = null;
 		}
 		delay.current = POLL_MIN;
+		generation.current += 1;
 	}, [] );
 
 	const schedule = useCallback( () => {
+		if ( ! mounted.current ) {
+			return;
+		}
+		// Never run two timer chains side by side.
+		if ( timer.current !== null ) {
+			window.clearTimeout( timer.current );
+		}
 		timer.current = window.setTimeout(
 			() => tick.current(),
 			delay.current
@@ -49,15 +69,20 @@ export function useBulkOffload() {
 	}, [] );
 
 	const poll = useCallback( () => {
+		// The request in flight schedules the next tick when it settles.
 		if ( inFlight.current ) {
-			schedule();
 			return;
 		}
 
 		inFlight.current = true;
+		const gen = generation.current;
 
 		fetchBulkProgress()
 			.then( ( fresh ) => {
+				if ( gen !== generation.current || ! mounted.current ) {
+					return;
+				}
+
 				setState( fresh );
 
 				if ( fresh.status !== 'running' ) {
@@ -83,7 +108,9 @@ export function useBulkOffload() {
 			} )
 			.catch( () => {
 				// Transient polling failures are ignored; the next tick retries.
-				schedule();
+				if ( gen === generation.current ) {
+					schedule();
+				}
 			} )
 			.finally( () => {
 				inFlight.current = false;
@@ -116,6 +143,9 @@ export function useBulkOffload() {
 
 	const startPolling = useCallback( () => {
 		stopPolling();
+		if ( ! mounted.current ) {
+			return;
+		}
 		// Poll immediately on start (100ms) so the UI responds without a 2s delay.
 		timer.current = window.setTimeout( () => tick.current(), 100 );
 	}, [ stopPolling ] );
@@ -124,6 +154,9 @@ export function useBulkOffload() {
 	useEffect( () => {
 		fetchBulkProgress()
 			.then( ( fresh ) => {
+				if ( ! mounted.current ) {
+					return;
+				}
 				setState( fresh );
 				if ( fresh.status === 'running' ) {
 					setSessionRun( true );

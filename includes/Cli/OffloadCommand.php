@@ -117,6 +117,10 @@ class OffloadCommand {
 		}
 
 		// One stats flush at the end instead of ~8 queries per attachment.
+		// Admin-started jobs of every type stand down while this runs.
+		$plugin->claim_cli_job( 'offload' );
+		register_shutdown_function( array( $plugin, 'release_cli_job' ) );
+
 		Helpers::defer_media_stats_flush( true );
 
 		$uploader = new AttachmentUploader( $provider );
@@ -147,6 +151,10 @@ class OffloadCommand {
 				$queue->claim_lock();
 			}
 
+			if ( 0 === $processed % self::LOCK_RENEW_EVERY ) {
+				$plugin->claim_cli_job( 'offload' );
+			}
+
 			// Bad credentials or an unreachable bucket fail identically for
 			// every attachment; stop rather than grind through the library.
 			if ( $streak >= 10 ) {
@@ -158,6 +166,7 @@ class OffloadCommand {
 		$progress->finish();
 
 		Helpers::defer_media_stats_flush( false );
+		$plugin->release_cli_job();
 
 		if ( $has_queue ) {
 			$queue->release_lock();
@@ -230,7 +239,7 @@ class OffloadCommand {
 
 		global $wpdb;
 
-		$sql = "SELECT DISTINCT p.ID FROM {$wpdb->posts} p
+		$sql = "SELECT p.ID FROM {$wpdb->posts} p
 			 INNER JOIN {$wpdb->postmeta} f ON f.post_id = p.ID AND f.meta_key = '_wp_attached_file'
 			 LEFT JOIN {$wpdb->postmeta} m ON m.post_id = p.ID AND m.meta_key = 'omnioffloader_offloaded'
 			 WHERE p.post_type = 'attachment' AND p.post_status != 'trash' AND m.post_id IS NULL

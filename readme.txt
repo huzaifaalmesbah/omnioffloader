@@ -144,6 +144,10 @@ Yes. The Tools screen lists every command with copy buttons:
 
 Every write command supports `--dry-run`, and destructive options ask for confirmation unless you pass `--yes`. The command refuses to run while a bulk job started from the admin screen is active, so the two can never touch the same files at once.
 
+= Where is the source code for the admin screen? =
+
+The admin screen ships compiled and minified in `build/`. Its human-readable TypeScript source is included in the plugin's `src/` folder, alongside `package.json` and `tsconfig.json`. To rebuild it, run `npm install` and then `npm run build` in the plugin folder. `composer.json` lists the bundled PHP libraries (the AWS SDK for PHP, trimmed to S3).
+
 = What about very large videos or files? =
 
 Files above 64 MB are uploaded in parts, so a dropped connection costs one chunk rather than the whole transfer, and files larger than 5 GB are supported. If a transfer is still cut short by your host's time limit, that attachment is reported with an explanation and the job continues instead of getting stuck on it.
@@ -167,7 +171,37 @@ The plugin activates and runs per site. It has not been through a dedicated mult
 * New WP-CLI command: `wp omnioffloader retention [--policy=<0|1|2>] [--ids=<ids>] [--limit=<number>] [--dry-run] [--yes] [--force]`. `wp omnioffloader status` now reports media that follows an older policy.
 * New filter `omnioffloader_should_apply_retention` to keep specific attachments' local files.
 * WP-CLI reference on the Tools screen: every command with its options, copy buttons and a link to the matching admin screen.
-* Offload, Bring Back and retention jobs (admin or WP-CLI) can no longer run at the same time.
+* Offload, Bring Back and retention jobs can no longer run at the same time. This applies whether a job was started from the admin screens, the Media Library or WP-CLI.
+
+**Security**
+
+* Cloud actions now follow WordPress's own permissions for each media item. Anyone who can edit an item can offload it or bring it back. Anyone who can delete it can also delete its cloud copy. Authors can manage their own media but not other users' media; Editors and Administrators can manage everything. This applies to the Media Library links, bulk actions and REST routes. Whole-library jobs and settings remain administrator-only.
+* Bring Back from the Media Library screen now follows the "delete from cloud after restore" setting, and only deletes the cloud copy if the user may delete the media.
+* Local files are only deleted inside the uploads folder, and restores refuse paths containing `..` before creating any directory.
+* Error messages no longer include absolute server paths.
+* Media Library status tooltips are escaped.
+* REST parameters are validated against their schema (invalid limits, page sizes or actions now return 400), and the Media Library bulk endpoint accepts at most 1,000 IDs.
+* "Remove all data on uninstall" keeps the offload records of media that exists only in the cloud, so it can still be recovered after reinstalling.
+
+**Performance**
+
+* Front end: media blocks are the only blocks whose IDs are looked up. A navigation menu no longer costs a database query per item.
+* Front end: video and audio links in content are resolved with one query per post instead of one full scan per link, and cached for the rest of the page.
+* The Bring Back and Tools screens reuse the cached preflight instead of rescanning the whole library every 6 seconds during a run.
+* The Media Library status script no longer polls the server on every editor load or window focus when there is nothing to update.
+* Uploading a file whose name is already taken checks all existing names with one query instead of one per "-1", "-2"… suffix.
+* The credentials option is autoloaded, saving a database query on every page. Clearing the stats cache costs half as many queries, and background uploads clear it once per batch instead of once per file.
+* The post-activation redirect check only runs on the Plugins screen instead of on every admin request.
+
+**Fixes**
+
+* Retention: when a cloud copy differs in size from the server file (for example after an image optimizer shrank the thumbnails), the server file is uploaded again and verified, instead of the run stopping with a misleading connection error.
+* Retention: attachments excluded with the `omnioffloader_should_apply_retention` filter no longer show as "needs updating" forever.
+* Progress polling no longer runs two timers at once, keeps polling after you leave the page, or restarts after Cancel.
+* Deactivating the plugin now also clears the background upload queue and its scheduled event.
+* Counts use proper singular/plural translations, and the activity log's "Attachment #" label is translatable.
+* The admin screen's TypeScript source and build configuration now ship with the plugin.
+* New filter `omnioffloader_media_block_names` to register third-party media blocks.
 
 = 0.1.2 =
 

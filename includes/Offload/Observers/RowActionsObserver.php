@@ -76,13 +76,15 @@ class RowActionsObserver implements ObserverInterface {
 	 * @return array<string, string>
 	 */
 	public function add_action_link( $actions, $post ) {
-		if ( ! current_user_can( 'upload_files' ) ) {
+		$attachment_id = (int) $post->ID;
+
+		// Same rule as editing the attachment: Authors act on their own media.
+		if ( ! self::current_user_can_manage( $attachment_id ) ) {
 			return $actions;
 		}
 
-		$attachment_id = (int) $post->ID;
-		$status        = self::get_attachment_status( $attachment_id );
-		$state         = (string) ( $status['status'] ?? '' );
+		$status = self::get_attachment_status( $attachment_id );
+		$state  = (string) ( $status['status'] ?? '' );
 
 		if ( 'processing' === $state ) {
 			$is_restoring                        = ( ! empty( $status['label'] ) && false !== stripos( (string) $status['label'], 'restor' ) );
@@ -137,8 +139,13 @@ class RowActionsObserver implements ObserverInterface {
 	 */
 	public function render_action_link( $attachment_id ) {
 		$attachment_id = (int) $attachment_id;
-		$status        = self::get_attachment_status( $attachment_id );
-		$state         = (string) ( $status['status'] ?? '' );
+
+		if ( ! self::current_user_can_manage( $attachment_id ) ) {
+			return '';
+		}
+
+		$status = self::get_attachment_status( $attachment_id );
+		$state  = (string) ( $status['status'] ?? '' );
 
 		if ( 'processing' === $state ) {
 			$is_restoring = ( ! empty( $status['label'] ) && false !== stripos( (string) $status['label'], 'restor' ) );
@@ -212,7 +219,7 @@ class RowActionsObserver implements ObserverInterface {
 			wp_die( esc_html__( 'The link you followed has expired.', 'omnioffloader' ) );
 		}
 
-		if ( ! current_user_can( 'upload_files' ) || 'attachment' !== get_post_type( $attachment_id ) ) {
+		if ( ! self::current_user_can_manage( $attachment_id ) ) {
 			wp_die( esc_html__( 'Sorry, you are not allowed to do that.', 'omnioffloader' ) );
 		}
 
@@ -254,7 +261,7 @@ class RowActionsObserver implements ObserverInterface {
 			wp_die( esc_html__( 'The link you followed has expired.', 'omnioffloader' ) );
 		}
 
-		if ( ! current_user_can( 'upload_files' ) || 'attachment' !== get_post_type( $attachment_id ) ) {
+		if ( ! self::current_user_can_manage( $attachment_id ) ) {
 			wp_die( esc_html__( 'Sorry, you are not allowed to do that.', 'omnioffloader' ) );
 		}
 
@@ -264,10 +271,18 @@ class RowActionsObserver implements ObserverInterface {
 			@set_time_limit( 0 );
 		}
 
+		// See BringBackController: never restore alongside a retention run.
+		if ( 'retention' === \OmniOffloader\Core\Plugin::get_instance()->get_active_bulk_job() ) {
+			wp_die( esc_html__( 'A retention policy update is running — wait for it to finish first.', 'omnioffloader' ) );
+		}
+
 		$settings = \OmniOffloader\Core\Plugin::get_settings();
 
+		// The cloud copy is only deleted for users who may delete the media.
+		$delete_cloud = ! empty( $settings['bring_back_delete_cloud'] ) && self::current_user_can_delete_cloud( $attachment_id );
+
 		$restorer = new AttachmentRestorer();
-		$ok       = $restorer->restore( $attachment_id, ! empty( $settings['bring_back_delete_cloud'] ) );
+		$ok       = $restorer->restore( $attachment_id, $delete_cloud );
 
 		$redirect = wp_get_referer() ? wp_get_referer() : admin_url( 'upload.php' );
 		$redirect = remove_query_arg( array( 'omnioffloader_offloaded', 'omnioffloader_restored' ), $redirect );
@@ -316,16 +331,29 @@ class RowActionsObserver implements ObserverInterface {
 			return $redirect_to;
 		}
 
-		$post_ids = array_filter( array_map( 'absint', (array) $post_ids ) );
+		// Drop media the user may not edit (core's bulk handler only checks upload_files).
+		$post_ids = self::filter_manageable_ids( (array) $post_ids );
 
 		if ( empty( $post_ids ) ) {
 			return $redirect_to;
 		}
 
 		$redirect_to = remove_query_arg(
-			array( 'omnioffloader_bulk_started', 'omnioffloader_bulk_count', 'omnioffloader_offloaded', 'omnioffloader_restored' ),
+			array( 'omnioffloader_bulk_started', 'omnioffloader_bulk_count', 'omnioffloader_bulk_blocked', 'omnioffloader_offloaded', 'omnioffloader_restored' ),
 			$redirect_to
 		);
+
+		$job = 'omnioffloader_bulk_offload' === $doaction ? 'offload' : ( 'omnioffloader_bulk_restore' === $doaction ? 'restore' : '' );
+
+		// Appending to a running queue of the same kind is fine; starting a
+		// different kind of job alongside it is not (Safety Invariant #8).
+		if ( '' !== $job ) {
+			$active = \OmniOffloader\Core\Plugin::get_instance()->get_active_bulk_job();
+
+			if ( '' !== $active && $active !== $job ) {
+				return add_query_arg( 'omnioffloader_bulk_blocked', rawurlencode( $active ), $redirect_to );
+			}
+		}
 
 		if ( 'omnioffloader_bulk_offload' === $doaction ) {
 			$bulk = \OmniOffloader\Core\Plugin::get_instance()->get_bulk_offload();
@@ -366,6 +394,16 @@ class RowActionsObserver implements ObserverInterface {
 	 * @return void
 	 */
 	public function maybe_notice() {
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only notice flag.
+		if ( isset( $_GET['omnioffloader_bulk_blocked'] ) ) {
+			printf(
+				'<div class="notice notice-warning is-dismissible"><p>%s</p></div>',
+				esc_html__( 'Another OmniOffloader job is running. Wait for it to finish, then try again.', 'omnioffloader' )
+			);
+
+			return;
+		}
+
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only notice flag.
 		if ( isset( $_GET['omnioffloader_bulk_started'] ) ) {
 			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only notice flag.

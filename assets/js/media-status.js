@@ -40,6 +40,24 @@
 	 * @param {Object|string} data Attachment status data or status key.
 	 * @return {string} Badge markup.
 	 */
+	/**
+	 * Escape a value for use inside a double-quoted HTML attribute.
+	 *
+	 * Labels carry error text (file names, object keys) that may come from
+	 * third-party filters, so they are never trusted as markup.
+	 *
+	 * @param {*} value Raw value.
+	 * @return {string} Escaped value.
+	 */
+	function escAttr(value) {
+		return String(value)
+			.replace(/&/g, '&amp;')
+			.replace(/"/g, '&quot;')
+			.replace(/'/g, '&#39;')
+			.replace(/</g, '&lt;')
+			.replace(/>/g, '&gt;');
+	}
+
 	function renderGridBadgeHtml(data) {
 		if (!data) {
 			return '';
@@ -50,16 +68,16 @@
 		var label = (data && typeof data === 'object') ? (data.label || '') : '';
 
 		if (isOffloaded && status !== 'processing') {
-			return '<span class="omnioffloader-grid-badge omnioffloader-grid-badge--offloaded" title="' + (label || (config.i18n && config.i18n.offloaded ? config.i18n.offloaded : 'Offloaded')) + '">' + cloudIcon + '</span>';
+			return '<span class="omnioffloader-grid-badge omnioffloader-grid-badge--offloaded" title="' + escAttr((label || (config.i18n && config.i18n.offloaded ? config.i18n.offloaded : 'Offloaded'))) + '">' + cloudIcon + '</span>';
 		}
 		if (status === 'processing') {
-			return '<span class="omnioffloader-grid-badge omnioffloader-grid-badge--processing" title="' + (label || (config.i18n && config.i18n.offloading ? config.i18n.offloading : 'Offloading...')) + '">' + spinnerIcon + '</span>';
+			return '<span class="omnioffloader-grid-badge omnioffloader-grid-badge--processing" title="' + escAttr((label || (config.i18n && config.i18n.offloading ? config.i18n.offloading : 'Offloading...'))) + '">' + spinnerIcon + '</span>';
 		}
 		if (status === 'queued') {
-			return '<span class="omnioffloader-grid-badge omnioffloader-grid-badge--queued" title="' + (label || (config.i18n && config.i18n.queued ? config.i18n.queued : 'Queued...')) + '">' + spinnerIcon + '</span>';
+			return '<span class="omnioffloader-grid-badge omnioffloader-grid-badge--queued" title="' + escAttr((label || (config.i18n && config.i18n.queued ? config.i18n.queued : 'Queued...'))) + '">' + spinnerIcon + '</span>';
 		}
 		if (status === 'failed') {
-			return '<span class="omnioffloader-grid-badge omnioffloader-grid-badge--failed" title="' + (label || (config.i18n && config.i18n.failed ? config.i18n.failed : 'Offload failed')) + '">' + warningIcon + '</span>';
+			return '<span class="omnioffloader-grid-badge omnioffloader-grid-badge--failed" title="' + escAttr((label || (config.i18n && config.i18n.failed ? config.i18n.failed : 'Offload failed'))) + '">' + warningIcon + '</span>';
 		}
 
 		return '';
@@ -709,15 +727,20 @@
 		}
 	});
 
+	// The media library shows bulk progress even before any item is on
+	// screen; other screens (post editors) only need a check when there is
+	// something visible to update or a run is already known.
+	var isMediaLibrary = !!(document.body && document.body.classList && document.body.classList.contains('upload-php'));
+
 	// Wake up poller when user returns to this browser tab
 	$(window).on('focus', function() {
-		checkInFlight(true);
+		checkInFlight(isBulkRunning);
 	});
 
 	if (typeof document.addEventListener === 'function') {
 		document.addEventListener('visibilitychange', function() {
 			if (!document.hidden) {
-				checkInFlight(true);
+				checkInFlight(isBulkRunning);
 			} else if (!isBulkRunning && pollTimer) {
 				clearTimeout(pollTimer);
 				pollTimer = null;
@@ -817,7 +840,7 @@
 	initGridPatching();
 	$(document).ready(function() {
 		initGridPatching();
-		checkInFlight(true);
+		checkInFlight(isMediaLibrary);
 	});
 
 	// Trigger in-flight check when media uploader finishes an upload in Grid View

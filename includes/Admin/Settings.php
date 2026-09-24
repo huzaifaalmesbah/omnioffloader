@@ -36,7 +36,9 @@ class Settings {
 	public function init() {
 		add_action( 'admin_menu', array( $this, 'add_admin_menu' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_scripts' ) );
-		add_action( 'admin_init', array( $this, 'maybe_activation_redirect' ) );
+		// Activation always lands on plugins.php, so only check there rather
+		// than paying a transient read on every admin, AJAX and heartbeat hit.
+		add_action( 'load-plugins.php', array( $this, 'maybe_activation_redirect' ) );
 	}
 
 	/**

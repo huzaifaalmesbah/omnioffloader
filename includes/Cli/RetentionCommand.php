@@ -168,6 +168,10 @@ class RetentionCommand {
 			);
 		}
 
+		// Admin-started jobs of every type stand down while this runs.
+		$plugin->claim_cli_job( 'retention' );
+		register_shutdown_function( array( $plugin, 'release_cli_job' ) );
+
 		Helpers::defer_media_stats_flush( true );
 
 		$applier  = new RetentionApplier();
@@ -196,11 +200,16 @@ class RetentionCommand {
 			if ( null !== $queue && 0 === $processed % self::LOCK_RENEW_EVERY ) {
 				$queue->claim_lock();
 			}
+
+			if ( 0 === $processed % self::LOCK_RENEW_EVERY ) {
+				$plugin->claim_cli_job( 'retention' );
+			}
 		}
 
 		$progress->finish();
 
 		Helpers::defer_media_stats_flush( false );
+		$plugin->release_cli_job();
 
 		if ( null !== $queue ) {
 			$queue->release_lock();

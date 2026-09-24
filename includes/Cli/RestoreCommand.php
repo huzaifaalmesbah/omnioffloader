@@ -133,6 +133,10 @@ class RestoreCommand {
 		}
 
 		// One stats flush at the end instead of ~8 queries per attachment.
+		// Admin-started jobs of every type stand down while this runs.
+		$plugin->claim_cli_job( 'restore' );
+		register_shutdown_function( array( $plugin, 'release_cli_job' ) );
+
 		Helpers::defer_media_stats_flush( true );
 
 		$restorer = new AttachmentRestorer();
@@ -155,11 +159,16 @@ class RestoreCommand {
 			if ( $has_queue && 0 === $processed % self::LOCK_RENEW_EVERY ) {
 				$queue->claim_lock();
 			}
+
+			if ( 0 === $processed % self::LOCK_RENEW_EVERY ) {
+				$plugin->claim_cli_job( 'restore' );
+			}
 		}
 
 		$progress->finish();
 
 		Helpers::defer_media_stats_flush( false );
+		$plugin->release_cli_job();
 
 		if ( $has_queue ) {
 			$queue->release_lock();

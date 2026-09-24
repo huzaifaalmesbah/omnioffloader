@@ -1,6 +1,6 @@
 import { Button, Notice, Tooltip } from '@wordpress/components';
 import { useEffect, useState } from '@wordpress/element';
-import { __, sprintf } from '@wordpress/i18n';
+import { __, sprintf, _n } from '@wordpress/i18n';
 
 import { ActivityLog } from '../components/ui/ActivityLog';
 import {
@@ -185,8 +185,10 @@ export function OffloadPage() {
 								<p className="smowp-bulk-action__info">
 									{ sprintf(
 										/* translators: %d: number of local attachments. */
-										__(
-											'%d attachment(s) are local-only and ready to be offloaded.',
+										_n(
+											'%d attachment is local-only and ready to be offloaded.',
+											'%d attachments are local-only and ready to be offloaded.',
+											localCount,
 											'omnioffloader'
 										),
 										localCount
@@ -368,8 +370,10 @@ export function OffloadPage() {
 										{ state.errors > 0
 											? sprintf(
 													/* translators: %d: error count. */
-													__(
-														'%d error(s) encountered',
+													_n(
+														'%d error encountered',
+														'%d errors encountered',
+														state.errors,
 														'omnioffloader'
 													),
 													state.errors

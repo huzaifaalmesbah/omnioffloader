@@ -27,11 +27,35 @@ class ContentImageTagObserver implements ObserverInterface {
 	use AttachmentHelper;
 
 	/**
+	 * Core blocks whose `id` / `mediaId` attribute is an attachment ID.
+	 *
+	 * Other blocks reuse those attribute names for unrelated IDs (a
+	 * navigation link stores the linked post's ID in `id`), and looking them
+	 * up would cost a meta query per block on every front-end page.
+	 */
+	private const MEDIA_BLOCKS = array(
+		'core/image',
+		'core/video',
+		'core/audio',
+		'core/file',
+		'core/cover',
+		'core/media-text',
+		'core/gallery',
+	);
+
+	/**
 	 * Cloud provider.
 	 *
 	 * @var ProviderInterface
 	 */
 	private $provider;
+
+	/**
+	 * Local media URL => cloud URL ('' when not offloaded), per request.
+	 *
+	 * @var array<string, string>
+	 */
+	private $media_url_cache = array();
 
 	/**
 	 * Constructor.
@@ -94,6 +118,20 @@ class ContentImageTagObserver implements ObserverInterface {
 			return $block_content;
 		}
 
+		/**
+		 * Filter the block names whose `id` / `mediaId` attribute is an
+		 * attachment ID, for third-party media blocks.
+		 *
+		 * @since 0.1.3
+		 *
+		 * @param string[] $block_names Block names.
+		 */
+		$media_blocks = (array) apply_filters( 'omnioffloader_media_block_names', self::MEDIA_BLOCKS );
+
+		if ( ! isset( $block['blockName'] ) || ! in_array( $block['blockName'], $media_blocks, true ) ) {
+			return $block_content;
+		}
+
 		$attachment_id = 0;
 		if ( isset( $block['attrs']['id'] ) && is_numeric( $block['attrs']['id'] ) ) {
 			$attachment_id = (int) $block['attrs']['id'];
@@ -126,32 +164,95 @@ class ContentImageTagObserver implements ObserverInterface {
 			return $content;
 		}
 
-		$upload_dir = wp_get_upload_dir();
-		$base_url   = $upload_dir['baseurl'];
+		$pattern = '/<(video|audio|source)\b([^>]*?)(\bsrc=["\'])([^"\']+)(["\'])/i';
 
-		// Match src attributes inside video, audio, or source tags.
+		if ( ! preg_match_all( $pattern, $content, $found ) ) {
+			return $content;
+		}
+
+		// Resolve every media URL in this content with one query instead of
+		// an attachment_url_to_postid() lookup (an unindexed meta_value scan)
+		// per src. Results are cached for the rest of the request, so
+		// shortcode output that the_content scans again costs nothing.
+		$this->resolve_media_urls( $found[4] );
+
 		return (string) preg_replace_callback(
-			'/<(video|audio|source)\b([^>]*?)(\bsrc=["\'])([^"\']+)(["\'])/i',
-			function ( $matches ) use ( $base_url ) {
-				$url = $matches[4];
+			$pattern,
+			function ( $matches ) {
+				$cloud_url = $this->media_url_cache[ $matches[4] ] ?? '';
 
-				// Only process local uploads URLs.
-				if ( 0 !== strpos( set_url_scheme( $url, 'http' ), set_url_scheme( $base_url, 'http' ) ) ) {
+				if ( '' === $cloud_url ) {
 					return $matches[0];
 				}
 
-				$attachment_id = attachment_url_to_postid( $url );
-				if ( $attachment_id > 0 && self::is_offloaded( $attachment_id ) ) {
-					$cloud_url = wp_get_attachment_url( $attachment_id );
-					if ( is_string( $cloud_url ) && '' !== $cloud_url ) {
-						return '<' . $matches[1] . $matches[2] . $matches[3] . esc_url( $cloud_url ) . $matches[5];
-					}
-				}
-
-				return $matches[0];
+				return '<' . $matches[1] . $matches[2] . $matches[3] . esc_url( $cloud_url ) . $matches[5];
 			},
 			$content
 		);
+	}
+
+	/**
+	 * Map local upload URLs to cloud URLs in one batched lookup.
+	 *
+	 * @since 0.1.3
+	 *
+	 * @param string[] $urls Media URLs found in content.
+	 * @return void
+	 */
+	private function resolve_media_urls( array $urls ) {
+		$base_url = set_url_scheme( trailingslashit( wp_get_upload_dir()['baseurl'] ), 'http' );
+		$lookup   = array();
+
+		foreach ( array_unique( $urls ) as $url ) {
+			if ( isset( $this->media_url_cache[ $url ] ) ) {
+				continue;
+			}
+
+			// Anything outside the uploads URL is never ours.
+			$this->media_url_cache[ $url ] = '';
+
+			$path = strtok( set_url_scheme( $url, 'http' ), '?#' );
+
+			if ( is_string( $path ) && 0 === strpos( $path, $base_url ) ) {
+				$lookup[ rawurldecode( substr( $path, strlen( $base_url ) ) ) ][] = $url;
+			}
+		}
+
+		if ( empty( $lookup ) ) {
+			return;
+		}
+
+		global $wpdb;
+
+		$files        = array_keys( $lookup );
+		$placeholders = implode( ', ', array_fill( 0, count( $files ), '%s' ) );
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- one batched lookup per content block, memoized per request; placeholders are generated above.
+		$rows = $wpdb->get_results( $wpdb->prepare( "SELECT post_id, meta_value FROM {$wpdb->postmeta} WHERE meta_key = '_wp_attached_file' AND meta_value IN ( {$placeholders} )", $files ) );
+
+		if ( empty( $rows ) ) {
+			return;
+		}
+
+		update_meta_cache( 'post', wp_list_pluck( $rows, 'post_id' ) );
+
+		foreach ( $rows as $row ) {
+			$attachment_id = (int) $row->post_id;
+
+			if ( ! self::is_offloaded( $attachment_id ) ) {
+				continue;
+			}
+
+			$cloud_url = wp_get_attachment_url( $attachment_id );
+
+			if ( ! is_string( $cloud_url ) || '' === $cloud_url ) {
+				continue;
+			}
+
+			foreach ( $lookup[ $row->meta_value ] ?? array() as $url ) {
+				$this->media_url_cache[ $url ] = $cloud_url;
+			}
+		}
 	}
 
 	/**

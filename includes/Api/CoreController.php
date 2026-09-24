@@ -53,6 +53,7 @@ class CoreController extends BaseController {
 					'required'          => false,
 					'default'           => false,
 					'sanitize_callback' => 'rest_sanitize_boolean',
+					'validate_callback' => 'rest_validate_request_arg',
 				),
 			)
 		);
@@ -132,9 +133,8 @@ class CoreController extends BaseController {
 	 * @return \WP_REST_Response
 	 */
 	public function get_stats_response( WP_REST_Request $request ) {
-		$force    = (bool) $request->get_param( 'refresh' );
-		$stats    = Helpers::get_media_stats( $force );
-		$settings = self::get_settings();
+		$force = (bool) $request->get_param( 'refresh' );
+		$stats = Helpers::get_media_stats( $force );
 
 		$stats['configured'] = self::is_configured();
 		$stats['provider']   = self::get_provider_key();

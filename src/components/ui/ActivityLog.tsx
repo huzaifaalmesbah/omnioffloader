@@ -1,5 +1,5 @@
 import { Icon, image } from '@wordpress/icons';
-import { __, sprintf } from '@wordpress/i18n';
+import { __, sprintf, _n } from '@wordpress/i18n';
 
 import type { ProcessedMediaItem } from '../../types';
 
@@ -57,7 +57,7 @@ export function ActivityLog( {
 
 	let countMessage: string = sprintf(
 		/* translators: %d: count of processed media items. */
-		__( '%d item(s)', 'omnioffloader' ),
+		_n( '%d item', '%d items', items.length, 'omnioffloader' ),
 		items.length
 	);
 	if ( total > 0 && running ) {

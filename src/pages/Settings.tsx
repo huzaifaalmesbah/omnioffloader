@@ -6,7 +6,7 @@ import {
 	ToggleControl,
 } from '@wordpress/components';
 import { useEffect, useState } from '@wordpress/element';
-import { __, sprintf } from '@wordpress/i18n';
+import { __, sprintf, _n } from '@wordpress/i18n';
 import { cloudUpload } from '@wordpress/icons';
 
 import { CredentialFields } from '../components/settings/CredentialFields';
@@ -200,8 +200,10 @@ export function SettingsPage( { onNavigate }: SettingsProps ) {
 								<strong>
 									{ sprintf(
 										/* translators: %d: attachment count. */
-										__(
-											'%d offloaded attachment(s) still follow an earlier retention policy.',
+										_n(
+											'%d offloaded attachment still follows an earlier retention policy.',
+											'%d offloaded attachments still follow an earlier retention policy.',
+											retentionPreflight.eligible,
 											'omnioffloader'
 										),
 										retentionPreflight.eligible

@@ -1,6 +1,6 @@
 import { Button, CheckboxControl, Notice } from '@wordpress/components';
 import { useEffect, useState } from '@wordpress/element';
-import { __, sprintf } from '@wordpress/i18n';
+import { __, sprintf, _n } from '@wordpress/i18n';
 
 import { useCore } from '../../context/CoreContext';
 import { useRetentionSync } from '../../hooks/useRetentionSync';
@@ -149,8 +149,10 @@ export function RetentionSyncCard() {
 					<p className="smowp-bulk-action__info">
 						{ sprintf(
 							/* translators: 1: attachment count, 2: retention policy name. */
-							__(
-								'%1$d offloaded attachment(s) were offloaded under a different policy than "%2$s".',
+							_n(
+								'%1$d offloaded attachment was offloaded under a different policy than "%2$s".',
+								'%1$d offloaded attachments were offloaded under a different policy than "%2$s".',
+								eligible,
 								'omnioffloader'
 							),
 							eligible,
@@ -183,21 +185,23 @@ export function RetentionSyncCard() {
 									preflight.to_download,
 									formatBytes( preflight.download_bytes )
 								) }
-								{ freeKnown &&
-									' ' +
-										sprintf(
-											/* translators: %s: formatted byte size. */
-											__(
-												'(Free disk space: %s)',
-												'omnioffloader'
-											),
-											formatBytes( preflight.free_bytes )
-										) }
+							</li>
+						) }
+						{ preflight.to_download > 0 && freeKnown && (
+							<li>
+								{ sprintf(
+									/* translators: %s: formatted byte size. */
+									__(
+										'Free disk space: %s.',
+										'omnioffloader'
+									),
+									formatBytes( preflight.free_bytes )
+								) }
 							</li>
 						) }
 						<li>
 							{ __(
-								'Before a local file is deleted, its cloud copy is checked by size. Files missing from the cloud are uploaded first; a file whose cloud copy differs is kept and logged.',
+								'Before a local file is deleted, its cloud copy is checked by size. Files that are missing from the cloud, or differ from the server copy, are uploaded again first. If that fails, the local file is kept and the error is logged.',
 								'omnioffloader'
 							) }
 						</li>
@@ -376,8 +380,10 @@ export function RetentionSyncCard() {
 								state.repaired > 0
 									? sprintf(
 											/* translators: %d: file count. */
-											__(
-												'%d missing file(s) uploaded',
+											_n(
+												'%d file re-uploaded to the cloud',
+												'%d files re-uploaded to the cloud',
+												state.repaired,
 												'omnioffloader'
 											),
 											state.repaired
@@ -386,8 +392,10 @@ export function RetentionSyncCard() {
 								state.errors > 0
 									? sprintf(
 											/* translators: %d: error count. */
-											__(
-												'%d error(s) — those files were kept',
+											_n(
+												'%d item failed and was left unchanged',
+												'%d items failed and were left unchanged',
+												state.errors,
 												'omnioffloader'
 											),
 											state.errors

@@ -432,7 +432,11 @@ abstract class AbstractBulkProcessor extends WP_Background_Process {
 
 		if ( '' === $filename ) {
 			$post_title = get_the_title( $attachment_id );
-			$filename   = '' !== $post_title ? $post_title : sprintf( 'Attachment #%d', $attachment_id );
+			$filename   = '' !== $post_title ? $post_title : sprintf(
+				/* translators: %d: attachment ID. */
+				__( 'Attachment #%d', 'omnioffloader' ),
+				$attachment_id
+			);
 		}
 
 		$thumb_url = wp_get_attachment_image_url( $attachment_id, 'thumbnail' );
@@ -514,7 +518,11 @@ abstract class AbstractBulkProcessor extends WP_Background_Process {
 
 		if ( '' === $filename ) {
 			$post_title = get_the_title( $attachment_id );
-			$filename   = '' !== $post_title ? $post_title : sprintf( 'Attachment #%d', $attachment_id );
+			$filename   = '' !== $post_title ? $post_title : sprintf(
+				/* translators: %d: attachment ID. */
+				__( 'Attachment #%d', 'omnioffloader' ),
+				$attachment_id
+			);
 		}
 
 		if ( ! $ok && '' === $message ) {
@@ -576,7 +584,7 @@ abstract class AbstractBulkProcessor extends WP_Background_Process {
 		 * Filter how many consecutive failures stop a bulk run.
 		 *
 		 * @param int    $limit  Consecutive failures. 0 disables the breaker.
-		 * @param string $action Queue action ('bulk_offload' or 'bulk_restore').
+		 * @param string $action Queue action ('bulk_offload', 'bulk_restore' or 'bulk_retention').
 		 */
 		return (int) apply_filters( 'omnioffloader_bulk_failure_limit', static::FAILURE_LIMIT, $this->action );
 	}

@@ -8,6 +8,7 @@
 namespace OmniOffloader\Services;
 
 use OmniOffloader\Abstracts\WP_Background_Processing\WP_Background_Process;
+use OmniOffloader\Core\Helpers;
 use OmniOffloader\Providers\ProviderInterface;
 use OmniOffloader\Traits\AttachmentHelper;
 
@@ -48,6 +49,13 @@ class AsyncUploadProcessor extends WP_Background_Process {
 	private $provider;
 
 	/**
+	 * Whether this request already batches stats flushes.
+	 *
+	 * @var bool
+	 */
+	private $deferring_stats = false;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param ProviderInterface $provider Cloud provider.
@@ -77,6 +85,14 @@ class AsyncUploadProcessor extends WP_Background_Process {
 		}
 
 		update_post_meta( $attachment_id, 'omnioffloader_status', 'processing' );
+
+		// One stats flush per worker pass instead of one per upload. A
+		// shutdown function, because the parent's handle() ends in wp_die().
+		if ( ! $this->deferring_stats ) {
+			$this->deferring_stats = true;
+			Helpers::defer_media_stats_flush( true );
+			register_shutdown_function( array( Helpers::class, 'defer_media_stats_flush' ), false );
+		}
 
 		$uploader = new AttachmentUploader( $this->provider );
 		$ok       = $uploader->upload( $attachment_id );
@@ -182,6 +198,7 @@ class AsyncUploadProcessor extends WP_Background_Process {
 			$wpdb->query( $wpdb->prepare( "DELETE FROM {$wpdb->options} WHERE option_name LIKE %s", $like ) );
 		}
 
+		delete_site_option( $identifier . '_status' );
 		delete_site_transient( $identifier . '_process_lock' );
 		delete_site_transient( 'omnioffloader_async_has_queue' );
 		wp_clear_scheduled_hook( $identifier . '_cron' );

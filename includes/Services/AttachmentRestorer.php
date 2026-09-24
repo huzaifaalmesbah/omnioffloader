@@ -247,13 +247,28 @@ class AttachmentRestorer {
 	private function restore_file( $attachment_id, ProviderInterface $provider, $key, $dest, $base_real ) {
 		$dir = dirname( $dest );
 
+		// Refuse ".." segments before anything touches the filesystem, so
+		// crafted metadata cannot even create directories outside uploads.
+		if ( self::has_traversal( $dest ) ) {
+			self::log_attachment_error(
+				$attachment_id,
+				sprintf(
+					/* translators: %s: file name. */
+					__( 'Refused to restore outside the uploads directory: "%s".', 'omnioffloader' ),
+					wp_basename( $dest )
+				)
+			);
+
+			return false;
+		}
+
 		if ( ! wp_mkdir_p( $dir ) ) {
 			self::log_attachment_error(
 				$attachment_id,
 				sprintf(
-					/* translators: %s: directory path. */
+					/* translators: %s: directory path relative to the uploads directory. */
 					__( 'Cannot create directory "%s".', 'omnioffloader' ),
-					$dir
+					self::relative_to_uploads( $dir )
 				)
 			);
 
@@ -268,9 +283,9 @@ class AttachmentRestorer {
 			self::log_attachment_error(
 				$attachment_id,
 				sprintf(
-					/* translators: %s: file path. */
+					/* translators: %s: file name. */
 					__( 'Refused to restore outside the uploads directory: "%s".', 'omnioffloader' ),
-					$dest
+					wp_basename( $dest )
 				)
 			);
 
@@ -309,6 +324,36 @@ class AttachmentRestorer {
 		);
 
 		return false;
+	}
+
+	/**
+	 * Whether a path contains a ".." segment.
+	 *
+	 * @since 0.1.3
+	 *
+	 * @param string $path Absolute path.
+	 * @return bool
+	 */
+	private static function has_traversal( $path ) {
+		return in_array( '..', explode( '/', wp_normalize_path( $path ) ), true );
+	}
+
+	/**
+	 * A path relative to the uploads directory, for user-visible messages.
+	 *
+	 * Error logs are shown to anyone who can manage the media, so they never
+	 * carry absolute server paths.
+	 *
+	 * @since 0.1.3
+	 *
+	 * @param string $path Absolute path.
+	 * @return string
+	 */
+	private static function relative_to_uploads( $path ) {
+		$base = trailingslashit( wp_normalize_path( wp_get_upload_dir()['basedir'] ) );
+		$path = wp_normalize_path( $path );
+
+		return 0 === strpos( $path, $base ) ? substr( $path, strlen( $base ) ) : wp_basename( $path );
 	}
 
 	/**

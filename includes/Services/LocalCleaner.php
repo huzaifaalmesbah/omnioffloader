@@ -55,9 +55,12 @@ class LocalCleaner {
 			$to_delete = array_merge( $files['main'], $files['sizes'] );
 		}
 
+		$base_dir = wp_get_upload_dir()['basedir'];
+
 		foreach ( $to_delete as $entry ) {
 			if ( file_exists( $entry['file'] ) ) {
-				wp_delete_file( $entry['file'] );
+				// Refuses anything that resolves outside the uploads directory.
+				wp_delete_file_from_directory( $entry['file'], $base_dir );
 			}
 		}
 	}

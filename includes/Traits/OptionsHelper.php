@@ -161,8 +161,10 @@ trait OptionsHelper {
 
 		$all[ $provider_key ] = $existing;
 
-		// Credentials are only needed on our admin page / REST calls: no autoload.
-		update_option( 'omnioffloader_credentials', $all, false );
+		// Autoloaded: is_configured() reads it on every request to decide
+		// whether to boot the engine, so a separate query each time costs more
+		// than the few hundred bytes in alloptions. Never exposed via REST.
+		update_option( 'omnioffloader_credentials', $all, true );
 	}
 
 	/**

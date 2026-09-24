@@ -1,3 +1,5 @@
+> **Historical record** — audit of `0.1.0` (August 2026), written when the plugin was still named *Smart Media Offloader* (`smowp` prefix, `smart-media-offloader` slug). Names, routes and some findings no longer match the code. For the current state see [PLAN.md](PLAN.md) and the 0.1.3 audit entries in [security/index.md](security/index.md).
+
 # Plugin Audit Report: Smart Media Offloader
 
 **Audit Date:** August 18, 2026  

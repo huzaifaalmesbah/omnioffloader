@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Status
 
-**Pre-release, version `0.1.3`.** The full design lives in `PLAN.md` — read it before making architectural decisions. The phase map in PLAN.md §11 (skeleton → offload → bulk → Bring Back → release candidate) describes development phases, not ship versions.
+**Pre-release, version `0.1.3`.** The full design lives in `docs/PLAN.md` — read it before making architectural decisions. Project docs (roadmap, future plan, audits) live in `docs/`, which is excluded from the plugin bundle and the WordPress.org deploy. The phase map in docs/PLAN.md §11 (skeleton → offload → bulk → Bring Back → release candidate) describes development phases, not ship versions.
 
 Released so far: `0.1.0` (initial release, Cloudflare R2 only), `0.1.1` (five more providers, bulk-queue reliability work), `0.1.2` (custom batch quantity limit for Bulk Offload & Bring Back, UI consistency, CLI `--limit` restore, plus LiteSpeed Cache, Breeze, and Object Cache real-time reliability fixes), `0.1.3` (apply a changed retention policy to existing media — Tools page + `wp omnioffloader retention` — and an in-admin WP-CLI reference). See `readme.txt` for the user-facing changelog — keep it updated in the same commit as any user-visible change.
 
@@ -133,7 +133,7 @@ src/
                         #   Sidebar and Header render from this one source)
 ```
 
-UI design (PLAN.md §6.1): full-page app, left sidebar with logo top + active-item accent highlight, content header showing current page icon/name/subtitle, **sticky bottom SaveBar** ("All changes saved" / "Save changes"), white rounded cards on light gray background, blue accent (`#135dbe` / `#0e4690`).
+UI design (docs/PLAN.md §6.1): full-page app, left sidebar with logo top + active-item accent highlight, content header showing current page icon/name/subtitle, **sticky bottom SaveBar** ("All changes saved" / "Save changes"), white rounded cards on light gray background, blue accent (`#135dbe` / `#0e4690`).
 
 Progress polling (`useBulkOffload`, `useBringBack`, `useRetentionSync`) uses a **chained `setTimeout` with backoff** (2s → 6s), never `setInterval` — a poll can make the server process a batch, so an interval would stack requests whenever one outlasts its period.
 
@@ -183,7 +183,7 @@ The policy is applied once at offload time (`LocalCleaner`). Changing the settin
 
 ## Public Hooks
 
-Filters: `omnioffloader_cloud_providers`, `omnioffloader_object_acl`, `omnioffloader_attachment_key`, `omnioffloader_attachment_delete_keys`, `omnioffloader_should_offload_attachment`, `omnioffloader_should_apply_retention`, `omnioffloader_media_block_names`, `omnioffloader_log_provider_errors`, `omnioffloader_multipart_threshold`, `omnioffloader_bulk_failure_limit`.
+Filters: `omnioffloader_cloud_providers`, `omnioffloader_object_acl`, `omnioffloader_attachment_key`, `omnioffloader_attachment_delete_keys`, `omnioffloader_should_offload_attachment`, `omnioffloader_use_async_upload`, `omnioffloader_should_apply_retention`, `omnioffloader_media_block_names`, `omnioffloader_log_provider_errors`, `omnioffloader_multipart_threshold`, `omnioffloader_bulk_failure_limit`.
 Actions: `omnioffloader_before_offload`, `omnioffloader_after_offload`, `omnioffloader_before_restore`, `omnioffloader_after_restore`.
 
 ## Safety Invariants (never violate)

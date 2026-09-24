@@ -130,4 +130,29 @@ class BulkOffloadProcessor extends AbstractBulkProcessor {
 
 		return $uploader->upload( $attachment_id );
 	}
+
+	/**
+	 * Attachments claimed and offloaded together.
+	 *
+	 * @since 0.1.3
+	 *
+	 * @return int
+	 */
+	protected function group_size() {
+		return AttachmentUploader::batch_size();
+	}
+
+	/**
+	 * Offload a group of attachments through one shared transfer pool.
+	 *
+	 * @since 0.1.3
+	 *
+	 * @param int[] $ids Attachment IDs.
+	 * @return array<int, bool>
+	 */
+	protected function process_items( array $ids ) {
+		$uploader = new AttachmentUploader( $this->provider );
+
+		return $uploader->upload_many( $ids );
+	}
 }

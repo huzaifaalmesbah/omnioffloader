@@ -10,6 +10,7 @@
 namespace OmniOffloader\Traits;
 
 use OmniOffloader\Core\Helpers;
+use OmniOffloader\Providers\ProviderInterface;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -289,6 +290,49 @@ trait AttachmentHelper {
 		}
 
 		return self::confine_to_uploads( $result );
+	}
+
+	/**
+	 * Object sizes for a set of keys from one listing request, when possible.
+	 *
+	 * An attachment's files share a name stem ("photo.jpg", "photo-300x200.jpg"),
+	 * so listing their common prefix returns them all at once. Keys missing
+	 * from the listing fall back to a HEAD request in the caller, so this is
+	 * purely an optimisation and never decides a delete on its own.
+	 *
+	 * @since 0.1.3
+	 *
+	 * @param ProviderInterface $provider Provider.
+	 * @param string[]          $keys     Object keys.
+	 * @return array<string, int>
+	 */
+	public static function remote_sizes( ProviderInterface $provider, array $keys ) {
+		if ( count( $keys ) < 2 || ! method_exists( $provider, 'list_object_sizes' ) ) {
+			return array();
+		}
+
+		$prefix = (string) array_shift( $keys );
+
+		foreach ( $keys as $key ) {
+			$key = (string) $key;
+			$len = min( strlen( $prefix ), strlen( $key ) );
+			$i   = 0;
+
+			while ( $i < $len && $prefix[ $i ] === $key[ $i ] ) {
+				++$i;
+			}
+
+			$prefix = substr( $prefix, 0, $i );
+		}
+
+		// A prefix ending at a directory would list a whole month of uploads.
+		if ( '' === $prefix || '/' === substr( $prefix, -1 ) ) {
+			return array();
+		}
+
+		$sizes = $provider->list_object_sizes( $prefix );
+
+		return is_array( $sizes ) ? $sizes : array();
 	}
 
 	/**

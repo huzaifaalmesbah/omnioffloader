@@ -264,7 +264,7 @@ export function SettingsPage( { onNavigate }: SettingsProps ) {
 					<SelectControl
 						label={ __( 'Transfer Speed', 'omnioffloader' ) }
 						help={ __(
-							'How many files are uploaded to the cloud at the same time. Faster settings finish bulk offloads sooner and still use a single PHP process; choose Low on small shared hosting plans. WP-CLI offloads use this setting too.',
+							'How many files move between your server and the cloud at the same time. Faster settings finish Bulk Offload and Bring Back sooner and still use a single PHP process; choose Low on small shared hosting plans. WP-CLI uses this setting too.',
 							'omnioffloader'
 						) }
 						value={ settings.transfer_speed }

@@ -11,6 +11,7 @@ use OmniOffloader\Core\Helpers;
 use OmniOffloader\Providers\ProviderInterface;
 use OmniOffloader\Providers\ProviderRegistry;
 use OmniOffloader\Traits\AttachmentHelper;
+use OmniOffloader\Traits\OptionsHelper;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -32,9 +33,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 class AttachmentRestorer {
 
 	use AttachmentHelper;
+	use OptionsHelper;
 
 	/**
 	 * Providers resolved so far in this request, by key.
+	 *
+	 * Static so every restorer in a request — bulk queues build one per
+	 * item — reuses one S3 client and its open connection.
 	 *
 	 * @var array<string, ProviderInterface>
 	 */
@@ -93,14 +98,7 @@ class AttachmentRestorer {
 			return false;
 		}
 
-		$all_files = array_merge( $files['main'], $files['sizes'] );
-		$all_ok    = true;
-
-		foreach ( $all_files as $entry ) {
-			if ( ! $this->restore_file( $attachment_id, $provider, $entry['key'], $entry['file'], $base_real ) ) {
-				$all_ok = false;
-			}
-		}
+		$all_ok = $this->restore_files( $attachment_id, $provider, array_merge( $files['main'], $files['sizes'] ), $base_real );
 
 		// Verify: the main file(s) must exist locally before any meta changes.
 		foreach ( $files['main'] as $entry ) {
@@ -209,13 +207,7 @@ class AttachmentRestorer {
 
 		// Smart Cleanup keeps originals only; Retain Local keeps everything.
 		$wanted = 0 === $policy ? array_merge( $files['main'], $files['sizes'] ) : $files['main'];
-		$all_ok = true;
-
-		foreach ( $wanted as $entry ) {
-			if ( ! $this->restore_file( $attachment_id, $provider, $entry['key'], $entry['file'], $base_real ) ) {
-				$all_ok = false;
-			}
-		}
+		$all_ok = $this->restore_files( $attachment_id, $provider, $wanted, $base_real );
 
 		foreach ( $files['main'] as $entry ) {
 			if ( ! file_exists( $entry['file'] ) ) {
@@ -242,16 +234,121 @@ class AttachmentRestorer {
 	}
 
 	/**
-	 * Restore a single file of the attachment.
+	 * Restore a set of an attachment's files.
 	 *
-	 * @param int               $attachment_id Attachment ID (for error logging).
-	 * @param ProviderInterface $provider      Provider the attachment was offloaded to.
-	 * @param string            $key           Object key.
-	 * @param string            $dest          Absolute local destination path.
-	 * @param string            $base_real     realpath() of the uploads basedir.
+	 * One listing request tells which local copies already match the cloud
+	 * (retention 0/1: nothing to download), then everything else downloads
+	 * side by side at the site's transfer speed. Each file still goes to a
+	 * temp file first and is renamed into place only when complete.
+	 *
+	 * @since 0.1.3
+	 *
+	 * @param int                                          $attachment_id Attachment ID (for error logging).
+	 * @param ProviderInterface                            $provider      Provider the attachment was offloaded to.
+	 * @param array<int, array{file: string, key: string}> $entries       Files to restore.
+	 * @param string                                       $base_real     realpath() of the uploads basedir.
+	 * @return bool True when every file is in place (or legitimately absent).
+	 */
+	private function restore_files( $attachment_id, ProviderInterface $provider, array $entries, $base_real ) {
+		$all_ok   = true;
+		$ready    = array();
+		$existing = array();
+
+		foreach ( $entries as $entry ) {
+			if ( ! $this->prepare_destination( $attachment_id, $entry['file'], $base_real ) ) {
+				$all_ok = false;
+				continue;
+			}
+
+			$ready[] = $entry;
+
+			if ( file_exists( $entry['file'] ) && filesize( $entry['file'] ) > 0 ) {
+				$existing[] = $entry['key'];
+			}
+		}
+
+		$remote   = empty( $existing ) ? array() : self::remote_sizes( $provider, $existing );
+		$download = array();
+
+		foreach ( $ready as $entry ) {
+			// Skip files already present with the same size (retention 0/1 —
+			// no wasted bandwidth). Size unknown remotely → keep the local copy.
+			if ( in_array( $entry['key'], $existing, true ) ) {
+				$remote_size = $remote[ $entry['key'] ] ?? $provider->object_size( $entry['key'] );
+
+				if ( false === $remote_size || (int) filesize( $entry['file'] ) === (int) $remote_size ) {
+					continue;
+				}
+			}
+
+			$download[] = array(
+				'key'  => $entry['key'],
+				'dest' => $entry['file'],
+			);
+		}
+
+		foreach ( $this->download_all( $provider, $download ) as $key => $ok ) {
+			// The offload side quietly skips size files that never existed on
+			// disk, so their objects were never uploaded. Mirror that: a missing
+			// *object* with no local copy is only fatal for main files — and
+			// main files are verified separately by the caller.
+			if ( $ok || ! $provider->object_exists( $key ) ) {
+				continue;
+			}
+
+			$all_ok = false;
+			self::log_attachment_error(
+				$attachment_id,
+				sprintf(
+					/* translators: %s: object key. */
+					__( 'Download failed for "%s".', 'omnioffloader' ),
+					$key
+				)
+			);
+		}
+
+		return $all_ok;
+	}
+
+	/**
+	 * Download objects, several at once when the provider can.
+	 *
+	 * @since 0.1.3
+	 *
+	 * @param ProviderInterface                            $provider Provider.
+	 * @param array<int, array{key: string, dest: string}> $files    Objects to download.
+	 * @return array<string, bool> Object key => whether it is now in place.
+	 */
+	private function download_all( ProviderInterface $provider, array $files ) {
+		if ( empty( $files ) ) {
+			return array();
+		}
+
+		// Optional provider method (see AbstractS3Provider::download_files()).
+		if ( method_exists( $provider, 'download_files' ) ) {
+			return $provider->download_files( $files, self::files_at_once() );
+		}
+
+		$results = array();
+
+		foreach ( $files as $entry ) {
+			$results[ $entry['key'] ] = $provider->download_file( $entry['key'], $entry['dest'] );
+		}
+
+		return $results;
+	}
+
+	/**
+	 * Check a destination is inside uploads and create its directory.
+	 *
+	 * @since 0.1.3 Split out of the former restore_file().
+	 *
+	 * @param int    $attachment_id Attachment ID (for error logging).
+	 * @param string $dest          Absolute local destination path.
+	 * @param string $base_real     realpath() of the uploads basedir.
 	 * @return bool
 	 */
-	private function restore_file( $attachment_id, ProviderInterface $provider, $key, $dest, $base_real ) {
+	private function prepare_destination( $attachment_id, $dest, $base_real ) {
 		$dir = dirname( $dest );
 
 		// Refuse ".." segments before anything touches the filesystem, so
@@ -299,38 +396,7 @@ class AttachmentRestorer {
 			return false;
 		}
 
-		// Skip files already present with the same size (retention 0/1 —
-		// no wasted bandwidth). Size unknown remotely → keep the local copy.
-		if ( file_exists( $dest ) && filesize( $dest ) > 0 ) {
-			$remote_size = $provider->object_size( $key );
-
-			if ( false === $remote_size || (int) filesize( $dest ) === $remote_size ) {
-				return true;
-			}
-		}
-
-		if ( $provider->download_file( $key, $dest ) ) {
-			return true;
-		}
-
-		// The offload side quietly skips size files that never existed on
-		// disk, so their objects were never uploaded. Mirror that: a missing
-		// *object* with no local copy is only fatal for main files — and
-		// main files are verified separately by the caller.
-		if ( ! $provider->object_exists( $key ) ) {
-			return true;
-		}
-
-		self::log_attachment_error(
-			$attachment_id,
-			sprintf(
-				/* translators: %s: object key. */
-				__( 'Download failed for "%s".', 'omnioffloader' ),
-				$key
-			)
-		);
-
-		return false;
+		return true;
 	}
 
 	/**

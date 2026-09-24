@@ -31,7 +31,7 @@ And because offloading should never be a one-way door, **Bring Back** downloads 
 
 * **Automatic offloading** — new uploads go to the cloud in the background, so the upload screen never waits on a cloud transfer.
 * **Bulk offload for existing media** — process the whole library or a set number of attachments (5, 10, 25, 50, 100 or any number), with a live progress bar, activity log and a Cancel button.
-* **Adjustable transfer speed** — offload your existing, not-yet-offloaded media library faster by uploading 1, 3 or 6 files at the same time, or your own number from 1 to 10. Every setting runs inside a single PHP process, so faster never means more server processes.
+* **Adjustable transfer speed** — offload your existing, not-yet-offloaded media library and bring it back faster by moving 1, 3 or 6 files at the same time, or your own number from 1 to 10. Every setting runs inside a single PHP process, so faster never means more server processes.
 * **Content URL rewriting** — images, galleries, video, audio, file, cover and media-text blocks, Classic Editor media tags and audio/video shortcodes are all served from the cloud, without editing post content.
 * **Serve from your CDN** — media is delivered from your custom domain or CDN edge, not your origin server.
 * **Three retention policies** — keep every local copy, delete only generated thumbnails (Smart Local Cleanup), or move everything to the cloud (Full Cloud Migration).
@@ -65,7 +65,7 @@ OmniOffloader is designed to run on a small shared hosting plan just as well as 
 
 = For developers =
 
-Filters: `omnioffloader_cloud_providers`, `omnioffloader_object_acl`, `omnioffloader_attachment_key`, `omnioffloader_attachment_delete_keys`, `omnioffloader_should_offload_attachment`, `omnioffloader_use_async_upload`, `omnioffloader_should_apply_retention`, `omnioffloader_media_block_names`, `omnioffloader_log_provider_errors`, `omnioffloader_multipart_threshold`, `omnioffloader_upload_concurrency`, `omnioffloader_bulk_failure_limit`.
+Filters: `omnioffloader_cloud_providers`, `omnioffloader_object_acl`, `omnioffloader_attachment_key`, `omnioffloader_attachment_delete_keys`, `omnioffloader_should_offload_attachment`, `omnioffloader_use_async_upload`, `omnioffloader_should_apply_retention`, `omnioffloader_media_block_names`, `omnioffloader_log_provider_errors`, `omnioffloader_multipart_threshold`, `omnioffloader_transfer_concurrency`, `omnioffloader_bulk_failure_limit`.
 
 Actions: `omnioffloader_before_offload`, `omnioffloader_after_offload`, `omnioffloader_before_restore`, `omnioffloader_after_restore`.
 
@@ -145,14 +145,14 @@ The same fields work for MinIO, OVHcloud, Linode, Scaleway and other S3-compatib
 
 = Which Transfer Speed should I choose? =
 
-It matters most when you offload media that is already in your library but not in the cloud yet — with Bulk Offload, Media Library bulk actions or WP-CLI. New uploads are offloaded in the background as they arrive, so you rarely notice their speed. The setting chooses how many files are uploaded at the same time:
+It matters most when you offload media that is already in your library but not in the cloud yet — with Bulk Offload, Media Library bulk actions or WP-CLI — and when you use Bring Back. New uploads are offloaded in the background as they arrive, so you rarely notice their speed. The setting chooses how many files are uploaded or downloaded at the same time:
 
 * **Low** — one file at a time. The lightest option for small shared hosting plans.
 * **Balanced** — 3 files at a time. The default, and right for most sites.
 * **Fast** — 6 files at a time, for a VPS or dedicated server.
 * **Custom** — any number from 1 to 10.
 
-All four run in the same single PHP process; a faster setting overlaps the time spent waiting on the network instead of starting more processes. Each extra file only adds a little memory and bandwidth. Bulk offloads, new uploads and WP-CLI all follow this setting.
+All four run in the same single PHP process; a faster setting overlaps the time spent waiting on the network instead of starting more processes. Each extra file only adds a little memory and bandwidth. Bulk Offload, Bring Back, new uploads and WP-CLI all follow this setting.
 
 = How long does a bulk offload take, and can I close the browser tab? =
 
@@ -257,8 +257,9 @@ Depending on the provider you select:
 
 **Faster Offloading**
 
-* Offloading media that is not in the cloud yet is now faster. New uploads were already offloaded instantly in the background; the big win is for your existing library — Bulk Offload, Media Library bulk actions and `wp omnioffloader offload`. An attachment's files (original and every generated size) now upload side by side instead of one after another. Everything still runs inside one PHP process, and an attachment is only marked offloaded once every file uploaded and the main file is confirmed in the bucket.
-* New Transfer Speed setting: Low (one file at a time, lowest resource use), Balanced (3 files, default), Fast (6 files, for VPS and dedicated servers) or Custom (any number from 1 to 10). WP-CLI offloads use the same setting. Large multipart uploads follow the same limit. Developers can override it with the `omnioffloader_upload_concurrency` filter.
+* Offloading media that is not in the cloud yet is now faster. New uploads were already offloaded instantly in the background; the big win is for your existing library — Bulk Offload, Media Library bulk actions and `wp omnioffloader offload`. An attachment's files (original and every generated size) now upload side by side instead of one after another, and at any speed above Low a few attachments share one batch, with their main files confirmed in the bucket together. Everything still runs inside one PHP process, and each attachment is only marked offloaded once every one of its files uploaded and its main file is confirmed in the bucket.
+* New Transfer Speed setting: Low (one file at a time, lowest resource use), Balanced (3 files, default), Fast (6 files, for VPS and dedicated servers) or Custom (any number from 1 to 10). WP-CLI offloads use the same setting. Large multipart uploads follow the same limit. Developers can override it with the `omnioffloader_transfer_concurrency` filter.
+* Bring Back is faster: files that are still on your server are checked against the cloud with one request per attachment instead of one per file, and missing files download side by side at the same Transfer Speed. Each file is still written to a temporary file and moved into place only when complete.
 * Background passes run longer where the host allows it (up to 40 seconds, based on `max_execution_time`), so WordPress reloads less often during a bulk job.
 * Uploads no longer add the optional CRC32 checksum that recent AWS SDK versions send by default. That saves one read of every file, and several S3-compatible services reject the header.
 
@@ -304,6 +305,7 @@ Depending on the provider you select:
 * Deactivating the plugin now also clears the background upload queue and its scheduled event.
 * Counts use proper singular/plural translations, and the activity log's "Attachment #" label is translatable.
 * New filter `omnioffloader_media_block_names` to register third-party media blocks.
+* The `omnioffloader_after_offload` action fires again after an attachment is offloaded and verified.
 
 = 0.1.2 =
 

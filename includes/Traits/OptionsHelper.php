@@ -133,13 +133,13 @@ trait OptionsHelper {
 	}
 
 	/**
-	 * How many files an upload runs at once.
+	 * How many files a transfer (upload or download) moves at once.
 	 *
 	 * @since 0.1.3
 	 *
 	 * @return int Between 1 and 10.
 	 */
-	public static function upload_concurrency() {
+	public static function files_at_once() {
 		$settings = self::get_settings();
 		$speed    = self::sanitize_transfer_speed( $settings['transfer_speed'] );
 		$default  = 'custom' === $speed
@@ -147,17 +147,18 @@ trait OptionsHelper {
 			: self::transfer_speeds()[ $speed ];
 
 		/**
-		 * Filter how many files are uploaded to cloud storage at once.
+		 * Filter how many files are uploaded to or downloaded from cloud
+		 * storage at once.
 		 *
-		 * Uploads run side by side inside one PHP process, so this trades a
-		 * little memory and bandwidth for speed. 1 uploads one file at a time.
+		 * Transfers run side by side inside one PHP process, so this trades a
+		 * little memory and bandwidth for speed. 1 moves one file at a time.
 		 *
 		 * @since 0.1.3
 		 *
 		 * @param int    $concurrency Files in flight at once.
 		 * @param string $speed       Transfer speed setting ('low', 'balanced', 'fast' or 'custom').
 		 */
-		$concurrency = (int) apply_filters( 'omnioffloader_upload_concurrency', $default, $speed );
+		$concurrency = (int) apply_filters( 'omnioffloader_transfer_concurrency', $default, $speed );
 
 		return max( 1, min( 10, $concurrency ) );
 	}

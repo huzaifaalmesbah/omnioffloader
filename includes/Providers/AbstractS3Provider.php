@@ -365,6 +365,138 @@ abstract class AbstractS3Provider implements ProviderInterface {
 	 * @return bool
 	 */
 	public function download_file( $key, $dest ) {
+		$tmp = $this->temp_file_for( $dest );
+
+		if ( false === $tmp ) {
+			return false;
+		}
+
+		try {
+			$this->get_client()->getObject(
+				array(
+					'Bucket' => $this->get_bucket(),
+					'Key'    => $key,
+					'SaveAs' => $tmp,
+					'@http'  => array(
+						'connect_timeout' => static::CONNECT_TIMEOUT,
+					),
+				)
+			);
+		} catch ( \Exception $e ) {
+			wp_delete_file( $tmp );
+			$this->log_error( sprintf( 'Error downloading "%s": %s', $key, $e->getMessage() ) );
+
+			return false;
+		}
+
+		return $this->move_into_place( $tmp, $dest );
+	}
+
+	/**
+	 * Download several objects, up to $concurrency of them at once.
+	 *
+	 * The download counterpart of upload_files(): one curl_multi pool inside
+	 * this PHP process, each object streamed to its own temp file and only
+	 * renamed into place once complete, exactly like download_file().
+	 *
+	 * Not part of ProviderInterface — callers check method_exists().
+	 *
+	 * @since 0.1.3
+	 *
+	 * @param array<int, array{key: string, dest: string}> $files       Objects to download.
+	 * @param int                                          $concurrency Downloads in flight at once.
+	 * @return array<string, bool> Object key => whether it is now at its destination.
+	 */
+	public function download_files( array $files, $concurrency = 1 ) {
+		$results     = array();
+		$concurrency = max( 1, (int) $concurrency );
+		$pending     = array();
+
+		foreach ( $files as $entry ) {
+			$results[ $entry['key'] ] = false;
+
+			if ( 1 === $concurrency ) {
+				$results[ $entry['key'] ] = $this->download_file( $entry['key'], $entry['dest'] );
+				continue;
+			}
+
+			$tmp = $this->temp_file_for( $entry['dest'] );
+
+			if ( false !== $tmp ) {
+				$pending[] = $entry + array( 'tmp' => $tmp );
+			}
+		}
+
+		if ( empty( $pending ) ) {
+			return $results;
+		}
+
+		$client = $this->get_client();
+		$bucket = $this->get_bucket();
+
+		$commands = static function () use ( $client, $bucket, $pending ) {
+			foreach ( $pending as $index => $entry ) {
+				yield $index => $client->getCommand(
+					'GetObject',
+					array(
+						'Bucket' => $bucket,
+						'Key'    => $entry['key'],
+						'SaveAs' => $entry['tmp'],
+						'@http'  => array(
+							'connect_timeout' => static::CONNECT_TIMEOUT,
+						),
+					)
+				);
+			}
+		};
+
+		$done = array();
+
+		try {
+			$pool = new \Aws\CommandPool(
+				$client,
+				$commands(),
+				array(
+					'concurrency' => $concurrency,
+					'fulfilled'   => static function ( $result, $index ) use ( &$done ) {
+						$done[ $index ] = true;
+					},
+					'rejected'    => function ( $reason, $index ) use ( $pending ) {
+						$message = $reason instanceof \Throwable ? $reason->getMessage() : 'unknown error';
+						$this->log_error( sprintf( 'Error downloading "%s": %s', $pending[ $index ]['key'], $message ) );
+					},
+				)
+			);
+
+			$pool->promise()->wait();
+		} catch ( \Exception $e ) {
+			$this->log_error( sprintf( 'Download batch failed: %s', $e->getMessage() ) );
+		}
+
+		// Rename only complete downloads; a failed one never reaches $dest.
+		foreach ( $pending as $index => $entry ) {
+			if ( isset( $done[ $index ] ) ) {
+				$results[ $entry['key'] ] = $this->move_into_place( $entry['tmp'], $entry['dest'] );
+			} else {
+				wp_delete_file( $entry['tmp'] );
+			}
+		}
+
+		return $results;
+	}
+
+	/**
+	 * Create the destination directory and a temp file inside it.
+	 *
+	 * The temp file lives next to $dest so the final rename() stays on one
+	 * filesystem and is atomic.
+	 *
+	 * @since 0.1.3
+	 *
+	 * @param string $dest Absolute destination path.
+	 * @return string|false Temp file path.
+	 */
+	protected function temp_file_for( $dest ) {
 		$dir = dirname( $dest );
 
 		if ( ! wp_mkdir_p( $dir ) ) {
@@ -387,24 +519,19 @@ abstract class AbstractS3Provider implements ProviderInterface {
 			return false;
 		}
 
-		try {
-			$this->get_client()->getObject(
-				array(
-					'Bucket' => $this->get_bucket(),
-					'Key'    => $key,
-					'SaveAs' => $tmp,
-					'@http'  => array(
-						'connect_timeout' => static::CONNECT_TIMEOUT,
-					),
-				)
-			);
-		} catch ( \Exception $e ) {
-			wp_delete_file( $tmp );
-			$this->log_error( sprintf( 'Error downloading "%s": %s', $key, $e->getMessage() ) );
+		return $tmp;
+	}
 
-			return false;
-		}
-
+	/**
+	 * Atomically move a finished download to its destination.
+	 *
+	 * @since 0.1.3
+	 *
+	 * @param string $tmp  Temp file path.
+	 * @param string $dest Absolute destination path.
+	 * @return bool
+	 */
+	protected function move_into_place( $tmp, $dest ) {
 		// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged, WordPress.WP.AlternativeFunctions.rename_rename -- atomic move; failure handled below.
 		if ( ! @rename( $tmp, $dest ) ) {
 			wp_delete_file( $tmp );
@@ -520,6 +647,62 @@ abstract class AbstractS3Provider implements ProviderInterface {
 		} catch ( \Exception $e ) {
 			return false;
 		}
+	}
+
+	/**
+	 * Whether several objects exist, checked up to $concurrency at a time.
+	 *
+	 * Not part of ProviderInterface — callers check method_exists() and fall
+	 * back to object_exists().
+	 *
+	 * @since 0.1.3
+	 *
+	 * @param string[] $keys        Object keys.
+	 * @param int      $concurrency Checks in flight at once.
+	 * @return array<string, bool> Object key => exists.
+	 */
+	public function objects_exist( array $keys, $concurrency = 1 ) {
+		$exists = array_fill_keys( $keys, false );
+		$keys   = array_values( $keys );
+		$client = $this->get_client();
+		$bucket = $this->get_bucket();
+
+		$commands = static function () use ( $client, $bucket, $keys ) {
+			foreach ( $keys as $index => $key ) {
+				yield $index => $client->getCommand(
+					'HeadObject',
+					array(
+						'Bucket' => $bucket,
+						'Key'    => $key,
+						'@http'  => array(
+							'connect_timeout' => static::CONNECT_TIMEOUT,
+							'timeout'         => 30,
+						),
+					)
+				);
+			}
+		};
+
+		try {
+			$pool = new \Aws\CommandPool(
+				$client,
+				$commands(),
+				array(
+					'concurrency' => max( 1, (int) $concurrency ),
+					'fulfilled'   => static function ( $result, $index ) use ( &$exists, $keys ) {
+						$exists[ $keys[ $index ] ] = true;
+					},
+				)
+			);
+
+			$pool->promise()->wait();
+		} catch ( \Exception $e ) {
+			// Anything not confirmed stays false: the attachment is not marked
+			// offloaded and keeps its local files.
+			$this->log_error( sprintf( 'Existence check failed: %s', $e->getMessage() ) );
+		}
+
+		return $exists;
 	}
 
 	/**

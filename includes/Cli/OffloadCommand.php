@@ -122,27 +122,32 @@ class OffloadCommand {
 		$aborted   = false;
 		$last_fail = 0;
 
-		foreach ( $ids as $id ) {
-			if ( $uploader->upload( $id ) ) {
-				++$done;
-				$streak = 0;
-			} else {
-				++$failed;
-				++$streak;
-				$last_fail = $id;
-			}
+		// A few attachments share one transfer pool (see upload_many()).
+		foreach ( array_chunk( $ids, AttachmentUploader::batch_size() ) as $chunk ) {
+			$results = $uploader->upload_many( $chunk );
 
-			$progress->tick();
-			clean_post_cache( $id );
-			++$processed;
+			foreach ( $chunk as $id ) {
+				if ( ! empty( $results[ $id ] ) ) {
+					++$done;
+					$streak = 0;
+				} else {
+					++$failed;
+					++$streak;
+					$last_fail = $id;
+				}
 
-			$this->keep_job_alive( $processed );
+				$progress->tick();
+				clean_post_cache( $id );
+				++$processed;
 
-			// Bad credentials or an unreachable bucket fail identically for
-			// every attachment; stop rather than grind through the library.
-			if ( $streak >= 10 ) {
-				$aborted = true;
-				break;
+				$this->keep_job_alive( $processed );
+
+				// Bad credentials or an unreachable bucket fail identically for
+				// every attachment; stop rather than grind through the library.
+				if ( $streak >= 10 ) {
+					$aborted = true;
+					break 2;
+				}
 			}
 		}
 

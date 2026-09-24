@@ -45,6 +45,20 @@ class AttachmentUploader {
 	}
 
 	/**
+	 * How many attachments a bulk run offloads together (see upload_many()).
+	 *
+	 * One at a time on the Low transfer speed, so the lightest setting
+	 * stays exactly that.
+	 *
+	 * @since 0.1.3
+	 *
+	 * @return int<1, 3>
+	 */
+	public static function batch_size() {
+		return self::files_at_once() > 1 ? 3 : 1;
+	}
+
+	/**
 	 * Offload one attachment (main file, sizes, sources).
 	 *
 	 * @param int                       $attachment_id Attachment ID.
@@ -53,17 +67,96 @@ class AttachmentUploader {
 	 */
 	public function upload( $attachment_id, $metadata = null ) {
 		$attachment_id = (int) $attachment_id;
+		$results       = $this->upload_many( array( $attachment_id ), array( $attachment_id => $metadata ) );
 
-		if ( self::is_offloaded( $attachment_id ) ) {
-			return true;
+		return $results[ $attachment_id ] ?? false;
+	}
+
+	/**
+	 * Offload several attachments through one shared transfer pool.
+	 *
+	 * An attachment's files rarely fill every upload slot, and each one ends
+	 * with a round trip to confirm its main file. Pooling a few attachments
+	 * keeps the slots busy and confirms all their main files at once. Each
+	 * attachment is still judged on its own: it is only marked offloaded —
+	 * and its local files only cleaned up — once every one of its files
+	 * uploaded and its main object is confirmed in the bucket.
+	 *
+	 * @since 0.1.3
+	 *
+	 * @param int[]                                 $ids      Attachment IDs.
+	 * @param array<int, array<string, mixed>|null> $metadata In-flight metadata by ID (see AttachmentHelper).
+	 * @return array<int, bool> Attachment ID => fully offloaded.
+	 */
+	public function upload_many( array $ids, array $metadata = array() ) {
+		$results = array();
+		$jobs    = array();
+		$files   = array();
+		$raised  = false;
+
+		foreach ( $ids as $attachment_id ) {
+			$attachment_id = (int) $attachment_id;
+
+			if ( self::is_offloaded( $attachment_id ) ) {
+				$results[ $attachment_id ] = true;
+				continue;
+			}
+
+			if ( ! $raised ) {
+				wp_raise_memory_limit( 'admin' );
+				if ( function_exists( 'set_time_limit' ) ) {
+					// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- safe timeout extension for large file transfers.
+					@set_time_limit( 0 );
+				}
+				$raised = true;
+			}
+
+			$job = $this->prepare( $attachment_id, $metadata[ $attachment_id ] ?? null );
+
+			if ( null === $job ) {
+				$results[ $attachment_id ] = false;
+				continue;
+			}
+
+			$jobs[ $attachment_id ] = $job;
+			$files                  = array_merge( $files, $job['upload'] );
 		}
 
-		wp_raise_memory_limit( 'admin' );
-		if ( function_exists( 'set_time_limit' ) ) {
-			// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- safe timeout extension for large file transfers.
-			@set_time_limit( 0 );
+		if ( empty( $jobs ) ) {
+			return $results;
 		}
 
+		$uploaded = empty( $files ) ? array() : $this->upload_all( $files );
+
+		// Confirm the main object of every attachment whose files all made it.
+		$verify = array();
+
+		foreach ( $jobs as $job ) {
+			if ( $this->all_uploaded( $job, $uploaded ) && file_exists( $job['main']['file'] ) ) {
+				$verify[] = $job['main']['key'];
+			}
+		}
+
+		$confirmed = $this->confirm_all( $verify );
+
+		foreach ( $jobs as $attachment_id => $job ) {
+			$results[ $attachment_id ] = $this->finish( $attachment_id, $job, $uploaded, $confirmed, $metadata[ $attachment_id ] ?? null );
+		}
+
+		return $results;
+	}
+
+	/**
+	 * Everything that happens before an attachment's files are uploaded.
+	 *
+	 * @since 0.1.3 Split out of upload().
+	 *
+	 * @param int                       $attachment_id Attachment ID.
+	 * @param array<string, mixed>|null $metadata      In-flight metadata.
+	 * @return array{main: array{file: string, key: string}, upload: array<int, array{file: string, key: string}>}|null
+	 *         Null when the attachment will not be offloaded.
+	 */
+	private function prepare( $attachment_id, $metadata ) {
 		/**
 		 * Filter whether an attachment should be offloaded.
 		 *
@@ -71,7 +164,7 @@ class AttachmentUploader {
 		 * @param int  $attachment_id Attachment ID.
 		 */
 		if ( ! apply_filters( 'omnioffloader_should_offload_attachment', true, $attachment_id ) ) {
-			return false;
+			return null;
 		}
 
 		/**
@@ -89,12 +182,12 @@ class AttachmentUploader {
 			self::log_attachment_error( $attachment_id, __( 'No attached file found.', 'omnioffloader' ) );
 			update_post_meta( $attachment_id, 'omnioffloader_status', 'failed' );
 
-			return false;
+			return null;
 		}
 
 		// Metadata can reference files that never existed on disk (e.g.
 		// cleaned up by another plugin); skip those quietly.
-		$all_files = array_values(
+		$upload = array_values(
 			array_filter(
 				array_merge( $files['main'], $files['sizes'] ),
 				static function ( $entry ) {
@@ -103,26 +196,62 @@ class AttachmentUploader {
 			)
 		);
 
+		return array(
+			'main'   => $files['main'][0],
+			'upload' => $upload,
+		);
+	}
+
+	/**
+	 * Whether every file of a prepared attachment uploaded.
+	 *
+	 * @param array{main: array{file: string, key: string}, upload: array<int, array{file: string, key: string}>} $job      Prepared attachment.
+	 * @param array<string, bool>                                                                                 $uploaded Object key => uploaded.
+	 * @return bool
+	 */
+	private function all_uploaded( array $job, array $uploaded ) {
+		foreach ( $job['upload'] as $entry ) {
+			if ( empty( $uploaded[ $entry['key'] ] ) ) {
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+	/**
+	 * Record the outcome of one attachment once its transfers are done.
+	 *
+	 * @since 0.1.3 Split out of upload().
+	 *
+	 * @param int                                                                                                 $attachment_id Attachment ID.
+	 * @param array{main: array{file: string, key: string}, upload: array<int, array{file: string, key: string}>} $job           Prepared attachment.
+	 * @param array<string, bool>                                                                                 $uploaded      Object key => uploaded.
+	 * @param array<string, bool>                                                                                 $confirmed     Main object key => found in the bucket.
+	 * @param array<string, mixed>|null                                                                           $metadata      In-flight metadata.
+	 * @return bool
+	 */
+	private function finish( $attachment_id, array $job, array $uploaded, array $confirmed, $metadata ) {
 		$all_ok = true;
 
-		foreach ( $this->upload_all( $all_files ) as $key => $ok ) {
-			if ( ! $ok ) {
+		foreach ( $job['upload'] as $entry ) {
+			if ( empty( $uploaded[ $entry['key'] ] ) ) {
 				$all_ok = false;
 				self::log_attachment_error(
 					$attachment_id,
 					sprintf(
 						/* translators: %s: object key. */
 						__( 'Upload failed for "%s".', 'omnioffloader' ),
-						$key
+						$entry['key']
 					)
 				);
 			}
 		}
 
 		// The main file must exist locally and in the bucket.
-		$main = $files['main'][0];
+		$main = $job['main'];
 
-		if ( ! $all_ok || ! file_exists( $main['file'] ) || ! $this->provider->object_exists( $main['key'] ) ) {
+		if ( ! $all_ok || ! file_exists( $main['file'] ) || empty( $confirmed[ $main['key'] ] ) ) {
 			if ( ! file_exists( $main['file'] ) ) {
 				self::log_attachment_error( $attachment_id, __( 'Main file is missing locally.', 'omnioffloader' ) );
 			}
@@ -148,7 +277,41 @@ class AttachmentUploader {
 
 		Helpers::flush_media_stats();
 
+		/**
+		 * Fires after an attachment was offloaded and verified in the bucket.
+		 *
+		 * @param int $attachment_id Attachment ID.
+		 */
+		do_action( 'omnioffloader_after_offload', $attachment_id );
+
 		return true;
+	}
+
+	/**
+	 * Confirm objects exist in the bucket, several at once when possible.
+	 *
+	 * @since 0.1.3
+	 *
+	 * @param string[] $keys Object keys.
+	 * @return array<string, bool> Object key => exists.
+	 */
+	private function confirm_all( array $keys ) {
+		if ( empty( $keys ) ) {
+			return array();
+		}
+
+		// Optional provider method (see AbstractS3Provider::objects_exist()).
+		if ( count( $keys ) > 1 && method_exists( $this->provider, 'objects_exist' ) ) {
+			return $this->provider->objects_exist( $keys, self::files_at_once() );
+		}
+
+		$confirmed = array();
+
+		foreach ( $keys as $key ) {
+			$confirmed[ $key ] = $this->provider->object_exists( $key );
+		}
+
+		return $confirmed;
 	}
 
 	/**
@@ -160,7 +323,7 @@ class AttachmentUploader {
 	 * @return array<string, bool> Object key => whether it uploaded.
 	 */
 	private function upload_all( array $files ) {
-		$concurrency = self::upload_concurrency();
+		$concurrency = self::files_at_once();
 
 		// Optional provider method (see AbstractS3Provider::upload_files()).
 		// Used at every speed so "low" also caps multipart parts at one.

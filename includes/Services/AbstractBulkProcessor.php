@@ -140,6 +140,38 @@ abstract class AbstractBulkProcessor extends WP_Background_Process {
 	abstract protected function process_item( $attachment_id );
 
 	/**
+	 * How many queued items one step claims and runs together.
+	 *
+	 * @since 0.1.3
+	 *
+	 * @return int
+	 */
+	protected function group_size() {
+		return 1;
+	}
+
+	/**
+	 * Do the work for a group of attachments.
+	 *
+	 * Subclasses that can share work between items (one transfer pool for
+	 * several attachments) override this; the default runs them one by one.
+	 *
+	 * @since 0.1.3
+	 *
+	 * @param int[] $ids Attachment IDs.
+	 * @return array<int, bool> Attachment ID => success.
+	 */
+	protected function process_items( array $ids ) {
+		$results = array();
+
+		foreach ( $ids as $id ) {
+			$results[ $id ] = (bool) $this->process_item( $id );
+		}
+
+		return $results;
+	}
+
+	/**
 	 * Baseline progress state. Subclasses add their own keys.
 	 *
 	 * @return array<string, mixed>
@@ -155,6 +187,8 @@ abstract class AbstractBulkProcessor extends WP_Background_Process {
 			// Attachment currently in flight, 0 when idle. Used to detect a
 			// worker that was killed mid-transfer.
 			'current'      => 0,
+			// Every attachment of the group in flight (see group_size()).
+			'current_ids'  => array(),
 			'current_item' => null,
 			'recent'       => array(),
 		);
@@ -283,6 +317,7 @@ abstract class AbstractBulkProcessor extends WP_Background_Process {
 				'processed'    => 0,
 				'errors'       => 0,
 				'current'      => 0,
+				'current_ids'  => array(),
 				'current_item' => null,
 				'recent'       => array(),
 				'updated_at'   => time(),
@@ -416,12 +451,15 @@ abstract class AbstractBulkProcessor extends WP_Background_Process {
 				break;
 			}
 
-			foreach ( $batch->data as $key => $value ) {
-				// Claim the item: drop it from the persisted batch *before*
-				// running it. Otherwise a task killed by max_execution_time
-				// leaves the item queued and every later pass retries it, so a
+			$group_size = max( 1, (int) $this->group_size() );
+
+			while ( ! empty( $batch->data ) ) {
+				// Claim the items: drop them from the persisted batch *before*
+				// running them. Otherwise a task killed by max_execution_time
+				// leaves them queued and every later pass retries them, so a
 				// single oversized file wedges the run permanently.
-				unset( $batch->data[ $key ] );
+				$group       = array_map( 'intval', array_values( array_slice( $batch->data, 0, $group_size ) ) );
+				$batch->data = array_slice( $batch->data, count( $group ), null, true );
 
 				if ( empty( $batch->data ) ) {
 					$this->delete( $batch->key );
@@ -429,12 +467,17 @@ abstract class AbstractBulkProcessor extends WP_Background_Process {
 					$this->update( $batch->key, $batch->data );
 				}
 
-				$ok     = $this->run_item( (int) $value );
-				$streak = $ok ? 0 : $streak + 1;
+				foreach ( $this->run_group( $group ) as $ok ) {
+					$streak = $ok ? 0 : $streak + 1;
 
-				if ( $limit > 0 && $streak >= $limit ) {
-					$this->trip_breaker( $streak );
-					$aborted = true;
+					if ( $limit > 0 && $streak >= $limit ) {
+						$this->trip_breaker( $streak );
+						$aborted = true;
+						break;
+					}
+				}
+
+				if ( $aborted ) {
 					break;
 				}
 
@@ -542,15 +585,31 @@ abstract class AbstractBulkProcessor extends WP_Background_Process {
 	 * @return bool
 	 */
 	private function run_item( $attachment_id ) {
-		// Record the in-flight item so a worker killed mid-transfer is
-		// detectable on the next pass (see recover_lost_item()).
-		$label = $this->item_label( $attachment_id );
+		$results = $this->run_group( array( (int) $attachment_id ) );
+
+		return ! empty( $results[ (int) $attachment_id ] );
+	}
+
+	/**
+	 * Run a claimed group of items and record each outcome.
+	 *
+	 * @since 0.1.3
+	 *
+	 * @param int[] $ids Attachment IDs, already claimed out of the batch.
+	 * @return array<int, bool> Attachment ID => success, in $ids order.
+	 */
+	private function run_group( array $ids ) {
+		// Record the in-flight items so a worker killed mid-transfer is
+		// detectable on the next pass (see recover_lost_item()). The
+		// activity log shows the first of them as "processing".
+		$label = $this->item_label( $ids[0] );
 
 		static::update_state(
 			array(
-				'current'      => $attachment_id,
+				'current'      => $ids[0],
+				'current_ids'  => $ids,
 				'current_item' => array(
-					'id'        => $attachment_id,
+					'id'        => $ids[0],
 					'title'     => $label['title'],
 					'thumb'     => $label['thumb'],
 					'status'    => 'processing',
@@ -559,11 +618,15 @@ abstract class AbstractBulkProcessor extends WP_Background_Process {
 			)
 		);
 
-		$ok = $this->process_item( $attachment_id );
+		$results = $this->process_items( $ids );
+		$ordered = array();
 
-		$this->record_result( $attachment_id, $ok );
+		foreach ( $ids as $id ) {
+			$ordered[ $id ] = ! empty( $results[ $id ] );
+			$this->record_result( $id, $ordered[ $id ] );
+		}
 
-		return $ok;
+		return $ordered;
 	}
 
 	/**
@@ -593,16 +656,23 @@ abstract class AbstractBulkProcessor extends WP_Background_Process {
 	 */
 	private function recover_lost_item() {
 		$state = static::get_state();
-		$lost  = isset( $state['current'] ) ? (int) $state['current'] : 0;
+		$lost  = array_values( array_filter( array_map( 'intval', (array) $state['current_ids'] ) ) );
 
-		if ( $lost <= 0 ) {
+		// States written before groups existed only carry 'current'.
+		if ( empty( $lost ) && (int) $state['current'] > 0 ) {
+			$lost = array( (int) $state['current'] );
+		}
+
+		if ( empty( $lost ) ) {
 			return;
 		}
 
 		$message = __( 'The server stopped part-way through this file — it is probably larger than the host allows in one request.', 'omnioffloader' );
 
-		self::log_attachment_error( $lost, $message );
-		$this->record_result( $lost, false, $message );
+		foreach ( $lost as $id ) {
+			self::log_attachment_error( $id, $message );
+			$this->record_result( $id, false, $message );
+		}
 	}
 
 	/**
@@ -643,6 +713,7 @@ abstract class AbstractBulkProcessor extends WP_Background_Process {
 				'processed'    => (int) $state['processed'] + 1,
 				'errors'       => (int) $state['errors'] + ( $ok ? 0 : 1 ),
 				'current'      => 0,
+				'current_ids'  => array(),
 				'current_item' => null,
 				'recent'       => array_slice( $recent, 0, static::RECENT_LIMIT ),
 			)
@@ -738,6 +809,7 @@ abstract class AbstractBulkProcessor extends WP_Background_Process {
 			array(
 				'status'       => 'failed',
 				'current'      => 0,
+				'current_ids'  => array(),
 				'current_item' => null,
 				'message'      => sprintf(
 					/* translators: %d: number of consecutive failures. */
@@ -872,6 +944,7 @@ abstract class AbstractBulkProcessor extends WP_Background_Process {
 			array(
 				'status'       => 'done',
 				'current'      => 0,
+				'current_ids'  => array(),
 				'current_item' => null,
 			)
 		);
@@ -914,6 +987,7 @@ abstract class AbstractBulkProcessor extends WP_Background_Process {
 			array(
 				'status'       => 'cancelled',
 				'current'      => 0,
+				'current_ids'  => array(),
 				'current_item' => null,
 			)
 		);

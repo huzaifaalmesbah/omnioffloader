@@ -76,6 +76,13 @@ class OffloadController extends BaseController {
 					'sanitize_callback' => 'absint',
 					'validate_callback' => 'rest_validate_request_arg',
 				),
+				'page'     => array(
+					'type'              => 'integer',
+					'default'           => 1,
+					'minimum'           => 1,
+					'sanitize_callback' => 'absint',
+					'validate_callback' => 'rest_validate_request_arg',
+				),
 			)
 		);
 
@@ -201,7 +208,8 @@ class OffloadController extends BaseController {
 				'meta_box_html'   => $observer->render_meta_box_content( $attachment_id ),
 				'row_action_html' => $row_observer->render_action_link( $attachment_id ),
 				'url'             => (string) wp_get_attachment_url( $attachment_id ),
-				'errors'          => get_post_meta( $attachment_id, 'omnioffloader_error_log', true ),
+				// Always an array, never '' when the attachment has no errors.
+				'errors'          => self::error_log_of( $attachment_id ),
 			)
 		);
 	}
@@ -282,17 +290,22 @@ class OffloadController extends BaseController {
 	 */
 	public function errors_response( WP_REST_Request $request ) {
 		$per_page = (int) $request->get_param( 'per_page' );
+		$page     = max( 1, (int) $request->get_param( 'page' ) );
 
 		$query = new \WP_Query(
 			array(
 				'post_type'      => 'attachment',
 				'post_status'    => 'inherit',
 				'posts_per_page' => $per_page,
+				'paged'          => $page,
+				'orderby'        => 'ID',
+				'order'          => 'DESC',
 				'meta_key'       => 'omnioffloader_error_log', // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key -- bounded admin query.
 				'fields'         => 'ids',
-				'no_found_rows'  => true,
 			)
 		);
+
+		_prime_post_caches( array_map( 'intval', $query->posts ), false, true );
 
 		$items = array();
 
@@ -307,28 +320,12 @@ class OffloadController extends BaseController {
 			);
 		}
 
-		return rest_ensure_response( $items );
-	}
+		// Standard REST paging headers, like core collections.
+		$response = rest_ensure_response( $items );
+		$response->header( 'X-WP-Total', (string) (int) $query->found_posts );
+		$response->header( 'X-WP-TotalPages', (string) (int) $query->max_num_pages );
 
-	/**
-	 * Authorization for media library status checks.
-	 *
-	 * Allows anyone who can upload files to check status.
-	 *
-	 * @since 0.1.1
-	 *
-	 * @return bool|\WP_Error
-	 */
-	public function media_permissions_check() {
-		if ( current_user_can( 'upload_files' ) ) {
-			return true;
-		}
-
-		return new \WP_Error(
-			'omnioffloader_forbidden',
-			__( 'Sorry, you are not allowed to do that.', 'omnioffloader' ),
-			array( 'status' => rest_authorization_required_code() )
-		);
+		return $response;
 	}
 
 	/**

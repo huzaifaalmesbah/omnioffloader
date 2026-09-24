@@ -35,9 +35,27 @@ class CoreController extends BaseController {
 			'/core/settings',
 			array( $this, 'update_settings_response' ),
 			array(
+				// Mirrors OptionsHelper::get_default_settings(); unknown keys and
+				// wrong types are refused here rather than silently coerced.
 				'settings' => array(
-					'type'     => 'object',
-					'required' => true,
+					'type'                 => 'object',
+					'required'             => true,
+					'properties'           => array(
+						'provider'                 => array( 'type' => 'string' ),
+						'retention_policy'         => array(
+							'type' => 'integer',
+							'enum' => array( 0, 1, 2 ),
+						),
+						'mirror_delete'            => array( 'type' => 'boolean' ),
+						'path_prefix_active'       => array( 'type' => 'boolean' ),
+						'path_prefix'              => array( 'type' => 'string' ),
+						'object_versioning'        => array( 'type' => 'boolean' ),
+						'async_upload'             => array( 'type' => 'boolean' ),
+						'bring_back_delete_cloud'  => array( 'type' => 'boolean' ),
+						'remove_data_on_uninstall' => array( 'type' => 'boolean' ),
+					),
+					'additionalProperties' => false,
+					'validate_callback'    => 'rest_validate_request_arg',
 				),
 			)
 		);
@@ -65,7 +83,9 @@ class CoreController extends BaseController {
 	 * @return \WP_REST_Response
 	 */
 	public function get_settings_response() {
-		return rest_ensure_response( self::get_settings() );
+		// Known keys only: the app posts this object back, and the POST schema
+		// refuses leftovers from older versions still in the stored option.
+		return rest_ensure_response( array_intersect_key( self::get_settings(), self::get_default_settings() ) );
 	}
 
 	/**

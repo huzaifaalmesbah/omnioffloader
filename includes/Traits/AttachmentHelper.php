@@ -467,6 +467,20 @@ trait AttachmentHelper {
 	}
 
 	/**
+	 * An attachment's error log, always as a list (empty when none).
+	 *
+	 * @since 0.1.3
+	 *
+	 * @param int $attachment_id Attachment ID.
+	 * @return array<int, mixed>
+	 */
+	public static function error_log_of( $attachment_id ) {
+		$log = get_post_meta( $attachment_id, 'omnioffloader_error_log', true );
+
+		return is_array( $log ) ? array_values( $log ) : array();
+	}
+
+	/**
 	 * Get the current offload status and metadata for an attachment.
 	 *
 	 * @since 0.1.1

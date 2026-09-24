@@ -39,7 +39,15 @@ class ProviderController extends BaseController {
 				'required'          => true,
 				'sanitize_callback' => 'sanitize_key',
 				'validate_callback' => static function ( $value ) {
-					return ProviderRegistry::has( (string) $value );
+					if ( ProviderRegistry::has( (string) $value ) ) {
+						return true;
+					}
+
+					return new \WP_Error(
+						'omnioffloader_invalid_provider',
+						__( 'Unknown cloud storage provider.', 'omnioffloader' ),
+						array( 'status' => 400 )
+					);
 				},
 			),
 		);
@@ -51,8 +59,10 @@ class ProviderController extends BaseController {
 			array( $this, 'update_credentials_response' ),
 			$provider_arg + array(
 				'values' => array(
-					'type'     => 'object',
-					'required' => true,
+					'type'                 => 'object',
+					'required'             => true,
+					'additionalProperties' => array( 'type' => 'string' ),
+					'validate_callback'    => 'rest_validate_request_arg',
 				),
 			)
 		);

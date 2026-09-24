@@ -198,7 +198,8 @@ class BringBackController extends BaseController {
 				'meta_box_html'   => $observer->render_meta_box_content( $attachment_id ),
 				'row_action_html' => $row_observer->render_action_link( $attachment_id ),
 				'url'             => (string) wp_get_attachment_url( $attachment_id ),
-				'errors'          => get_post_meta( $attachment_id, 'omnioffloader_error_log', true ),
+				// Always an array, never '' when the attachment has no errors.
+				'errors'          => self::error_log_of( $attachment_id ),
 			)
 		);
 	}

@@ -443,7 +443,11 @@ class OffloadController extends BaseController {
 		$offload_state     = BulkOffloadProcessor::get_state();
 		$is_offload_active = null !== $bulk_offload && 'running' === $offload_state['status'] && $bulk_offload->is_active();
 
-		if ( $is_offload_active ) {
+		// Only administrators' polls drive a stalled queue (see the async
+		// queue above); everyone else just reads the state.
+		$can_drive = current_user_can( 'manage_options' );
+
+		if ( $is_offload_active && $can_drive ) {
 			$bulk_offload->process_queue_now();
 			$offload_state     = BulkOffloadProcessor::get_state();
 			$is_offload_active = 'running' === $offload_state['status'];
@@ -453,7 +457,7 @@ class OffloadController extends BaseController {
 		$restore_state     = BulkRestoreProcessor::get_state();
 		$is_restore_active = null !== $bulk_restore && 'running' === $restore_state['status'] && $bulk_restore->is_active();
 
-		if ( $is_restore_active ) {
+		if ( $is_restore_active && $can_drive ) {
 			$bulk_restore->process_queue_now();
 			$restore_state     = BulkRestoreProcessor::get_state();
 			$is_restore_active = 'running' === $restore_state['status'];
@@ -461,7 +465,7 @@ class OffloadController extends BaseController {
 
 		$bulk_active = $is_offload_active || $is_restore_active;
 		$bulk_type   = $is_offload_active ? 'offload' : ( $is_restore_active ? 'restore' : '' );
-		$current_id  = $is_offload_active ? (int) ( $offload_state['current'] ?? 0 ) : (int) ( $restore_state['current'] ?? 0 );
+		$current_id  = $is_offload_active ? (int) $offload_state['current'] : ( $is_restore_active ? (int) $restore_state['current'] : 0 );
 
 		$raw_ids = (string) $request->get_param( 'ids' );
 		$id_list = array_filter( array_map( 'absint', explode( ',', $raw_ids ) ) );
@@ -548,10 +552,12 @@ class OffloadController extends BaseController {
 					'active'     => $bulk_active,
 					'type'       => $bulk_type,
 					'current_id' => $current_id,
-					'total'      => $is_offload_active ? (int) ( $offload_state['total'] ?? 0 ) : (int) ( $restore_state['total'] ?? 0 ),
-					'processed'  => $is_offload_active ? (int) ( $offload_state['processed'] ?? 0 ) : (int) ( $restore_state['processed'] ?? 0 ),
+					// Zero when idle, never a finished run's numbers.
+					'total'      => $is_offload_active ? (int) $offload_state['total'] : ( $is_restore_active ? (int) $restore_state['total'] : 0 ),
+					'processed'  => $is_offload_active ? (int) $offload_state['processed'] : ( $is_restore_active ? (int) $restore_state['processed'] : 0 ),
 				),
-				'statuses' => $statuses,
+				// Always a JSON object, even when empty.
+				'statuses' => (object) $statuses,
 			)
 		);
 	}

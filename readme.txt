@@ -195,6 +195,16 @@ The plugin activates and runs per site. It has not been through a dedicated mult
 
 **Fixes**
 
+* Bulk jobs: two background workers could pick up the same batch at the same moment and process items twice. A database lock now lets only one worker run a queue at a time.
+* Multisite: each site now has its own queues. Before, all sites in a network shared one queue.
+* Only administrators' Media Library views keep bulk jobs moving; other users' views only read their status. Idle status responses no longer repeat the last run's numbers.
+* WP-CLI: locks are renewed after every file and released on Ctrl-C. `--limit` must be a positive number (a typo no longer means "the whole library"), `--ids` and `--all` can't be combined, and skipped IDs are reported. `restore` stops after 10 failures in a row, `status` exits with an error code when the bucket is unreachable, and `retention --dry-run` supports `--format=json|csv`.
+* REST: settings and credentials are validated against their expected shape, the error list supports paging, and responses always use consistent types.
+* Accessibility: card choices support arrow keys, progress bars are labelled, and screen readers hear when a run starts or finishes. The admin screen now loads right-to-left styles for RTL languages and respects reduced motion.
+* The Dashboard only shows saved settings, the Settings page warns before you leave with unsaved changes, and error messages stay until dismissed.
+* Attachment offload records can no longer be edited as custom fields.
+* A missing `vendor` folder shows an admin notice instead of a fatal error.
+* Provider errors are only written to the PHP error log when `WP_DEBUG` is on (filter `omnioffloader_log_provider_errors`); they are always recorded on the attachment.
 * Retention: when a cloud copy differs in size from the server file (for example after an image optimizer shrank the thumbnails), the server file is uploaded again and verified, instead of the run stopping with a misleading connection error.
 * Retention: attachments excluded with the `omnioffloader_should_apply_retention` filter no longer show as "needs updating" forever.
 * Progress polling no longer runs two timers at once, keeps polling after you leave the page, or restarts after Cancel.

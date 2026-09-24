@@ -80,6 +80,16 @@ class RetentionCommand {
 	 * [--force]
 	 * : Run even when a bulk job started from the admin screen is active.
 	 *
+	 * [--format=<format>]
+	 * : Output format for the --dry-run table.
+	 * ---
+	 * default: table
+	 * options:
+	 *   - table
+	 *   - json
+	 *   - csv
+	 * ---
+	 *
 	 * ## EXAMPLES
 	 *
 	 *     wp omnioffloader retention --dry-run
@@ -131,7 +141,7 @@ class RetentionCommand {
 		}
 
 		if ( $is_dry ) {
-			$this->dry_run( $ids, $policy );
+			$this->dry_run( $ids, $policy, $assoc_args['format'] ?? 'table' );
 
 			return;
 		}
@@ -209,11 +219,12 @@ class RetentionCommand {
 	/**
 	 * Print what a run would do, without touching files or the network.
 	 *
-	 * @param int[] $ids    Attachment IDs.
-	 * @param int   $policy Target policy.
+	 * @param int[]  $ids    Attachment IDs.
+	 * @param int    $policy Target policy.
+	 * @param string $format Output format (table, json, csv).
 	 * @return void
 	 */
-	private function dry_run( array $ids, $policy ) {
+	private function dry_run( array $ids, $policy, $format = 'table' ) {
 		$rows        = array();
 		$total_bytes = 0;
 
@@ -228,7 +239,12 @@ class RetentionCommand {
 			}
 		}
 
-		\WP_CLI\Utils\format_items( 'table', $rows, array( 'ID', 'title', 'from', 'to', 'action', 'detail' ) );
+		\WP_CLI\Utils\format_items( $format, $rows, array( 'ID', 'title', 'from', 'to', 'action', 'detail' ) );
+
+		// Machine-readable output stays parseable: no trailing summary line.
+		if ( 'table' !== $format ) {
+			return;
+		}
 
 		WP_CLI::log(
 			sprintf(

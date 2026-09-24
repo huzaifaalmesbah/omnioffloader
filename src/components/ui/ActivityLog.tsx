@@ -64,21 +64,36 @@ export function ActivityLog( {
 		if ( actionType === 'restore' ) {
 			countMessage = sprintf(
 				/* translators: 1: brought back count, 2: total count. */
-				__( '%1$d of %2$d brought back', 'omnioffloader' ),
+				_n(
+					'%1$d of %2$d brought back',
+					'%1$d of %2$d brought back',
+					total,
+					'omnioffloader'
+				),
 				processed,
 				total
 			);
 		} else if ( actionType === 'retention' ) {
 			countMessage = sprintf(
 				/* translators: 1: updated count, 2: total count. */
-				__( '%1$d of %2$d updated', 'omnioffloader' ),
+				_n(
+					'%1$d of %2$d updated',
+					'%1$d of %2$d updated',
+					total,
+					'omnioffloader'
+				),
 				processed,
 				total
 			);
 		} else {
 			countMessage = sprintf(
 				/* translators: 1: uploaded count, 2: total count. */
-				__( '%1$d of %2$d uploaded', 'omnioffloader' ),
+				_n(
+					'%1$d of %2$d uploaded',
+					'%1$d of %2$d uploaded',
+					total,
+					'omnioffloader'
+				),
 				processed,
 				total
 			);

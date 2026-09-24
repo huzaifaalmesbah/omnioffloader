@@ -524,7 +524,23 @@ abstract class AbstractS3Provider implements ProviderInterface {
 	 * @return void
 	 */
 	protected function log_error( $message ) {
-		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- operational logging.
+		/**
+		 * Filter whether provider errors are written to the PHP error log.
+		 *
+		 * Failures are always recorded on the attachment itself
+		 * (omnioffloader_error_log); this only controls the server log,
+		 * which gets one line per failed file — off unless WP_DEBUG.
+		 *
+		 * @since 0.1.3
+		 *
+		 * @param bool   $log     Default WP_DEBUG.
+		 * @param string $message Error message (object keys, SDK text; never secrets).
+		 */
+		if ( ! apply_filters( 'omnioffloader_log_provider_errors', defined( 'WP_DEBUG' ) && WP_DEBUG, $message ) ) {
+			return;
+		}
+
+		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- operational logging, opt-in via WP_DEBUG / filter.
 		error_log( 'OmniOffloader [' . $this->get_key() . ']: ' . $message );
 	}
 }

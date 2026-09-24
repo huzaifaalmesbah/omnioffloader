@@ -183,7 +183,7 @@ The policy is applied once at offload time (`LocalCleaner`). Changing the settin
 
 ## Public Hooks
 
-Filters: `omnioffloader_cloud_providers`, `omnioffloader_object_acl`, `omnioffloader_attachment_key`, `omnioffloader_attachment_delete_keys`, `omnioffloader_should_offload_attachment`, `omnioffloader_should_apply_retention`, `omnioffloader_media_block_names`, `omnioffloader_multipart_threshold`, `omnioffloader_bulk_failure_limit`.
+Filters: `omnioffloader_cloud_providers`, `omnioffloader_object_acl`, `omnioffloader_attachment_key`, `omnioffloader_attachment_delete_keys`, `omnioffloader_should_offload_attachment`, `omnioffloader_should_apply_retention`, `omnioffloader_media_block_names`, `omnioffloader_log_provider_errors`, `omnioffloader_multipart_threshold`, `omnioffloader_bulk_failure_limit`.
 Actions: `omnioffloader_before_offload`, `omnioffloader_after_offload`, `omnioffloader_before_restore`, `omnioffloader_after_restore`.
 
 ## Safety Invariants (never violate)

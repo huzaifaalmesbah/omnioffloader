@@ -144,10 +144,6 @@ Yes. The Tools screen lists every command with copy buttons:
 
 Every write command supports `--dry-run`, and destructive options ask for confirmation unless you pass `--yes`. The command refuses to run while a bulk job started from the admin screen is active, so the two can never touch the same files at once.
 
-= Where is the source code for the admin screen? =
-
-The admin screen ships compiled and minified in `build/`. Its human-readable TypeScript source is included in the plugin's `src/` folder, alongside `package.json` and `tsconfig.json`. To rebuild it, run `npm install` and then `npm run build` in the plugin folder. `composer.json` lists the bundled PHP libraries (the AWS SDK for PHP, trimmed to S3).
-
 = What about very large videos or files? =
 
 Files above 64 MB are uploaded in parts, so a dropped connection costs one chunk rather than the whole transfer, and files larger than 5 GB are supported. If a transfer is still cut short by your host's time limit, that attachment is reported with an explanation and the job continues instead of getting stuck on it.
@@ -204,7 +200,6 @@ The plugin activates and runs per site. It has not been through a dedicated mult
 * Progress polling no longer runs two timers at once, keeps polling after you leave the page, or restarts after Cancel.
 * Deactivating the plugin now also clears the background upload queue and its scheduled event.
 * Counts use proper singular/plural translations, and the activity log's "Attachment #" label is translatable.
-* The admin screen's TypeScript source and build configuration now ship with the plugin.
 * New filter `omnioffloader_media_block_names` to register third-party media blocks.
 
 = 0.1.2 =

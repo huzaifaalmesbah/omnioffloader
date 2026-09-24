@@ -144,13 +144,13 @@ Progress polling (`useBulkOffload`, `useBringBack`, `useRetentionSync`) uses a *
 
 ## REST API (`omnioffloader/v1`)
 
-All mutations via REST; `@wordpress/api-fetch` sends the nonce. Every route: explicit `permission_callback` (`manage_options`, or `upload_files` for the per-item media routes), `args` with type/sanitize callbacks **plus `'validate_callback' => 'rest_validate_request_arg'`** (core skips schema checks — type, enum, min/max — when only a sanitizer is given), `WP_REST_Server` method constants, `rest_ensure_response()` / `WP_Error` with status + stable `omnioffloader_*` error codes.
+All mutations via REST; `@wordpress/api-fetch` sends the nonce. Every route: explicit `permission_callback` (`manage_options`; only the read-only `/offload/attachment-status` uses `upload_files`), `args` with type/sanitize callbacks **plus `'validate_callback' => 'rest_validate_request_arg'`** (core skips schema checks — type, enum, min/max — when only a sanitizer is given), `WP_REST_Server` method constants, `rest_ensure_response()` / `WP_Error` with status + stable `omnioffloader_*` error codes.
 
 - `GET/POST /core/settings` · `GET /core/providers` · `GET /core/stats`
 - `GET/POST /provider/credentials` · `POST /provider/test-connection` — all take a provider arg
 - `POST /offload/attachment/{id}` · `POST /offload/bulk` · `GET /offload/bulk/progress` · `POST /offload/bulk/cancel` · `GET /offload/errors`
 - `GET /bring-back/preflight` · `POST /bring-back/attachment/{id}` · `POST /bring-back/bulk` · `GET /bring-back/bulk/progress` · `POST /bring-back/bulk/cancel`
-- `POST /bulk/action` (Media Library bulk offload/restore of selected IDs, `maxItems` 1000) · `GET /offload/attachment-status` (Media Library live badges) — both `upload_files`, filtered per item
+- `POST /bulk/action` (Media Library bulk offload/restore of selected IDs, `maxItems` 1000, `manage_options`) · `GET /offload/attachment-status` (Media Library live badges, `upload_files`, read-only)
 - `GET /retention/preflight` · `POST /retention/bulk` · `GET /retention/bulk/progress` · `POST /retention/bulk/cancel` — apply the **saved** retention policy to already-offloaded media (the client never sends a policy)
 
 The three `bulk/progress` routes are `GET` but deliberately do work (the stalled-queue self-heal). Keep that in mind before adding caching.
@@ -194,7 +194,7 @@ Actions: `omnioffloader_before_offload`, `omnioffloader_after_offload`, `omnioff
 6. Never log or echo credentials; REST never returns raw secrets.
 7. CLI destructive paths (`--delete-cloud`) require `WP_CLI::confirm()` or `--yes`; every write command supports `--dry-run`.
 8. Only one bulk job at a time — offload, restore and retention runs (admin queue or CLI) all read or delete the same local files. REST start routes check `Plugin::bulk_job_conflict()`; CLI commands refuse while `Plugin::get_active_bulk_job()` is non-empty (`--force` overrides), hold their queue's process lock, and announce themselves with `Plugin::claim_cli_job()` (site transient `omnioffloader_cli_job`, 10 min, renewed) so admin jobs of every type see them. Single-item Bring Back is refused while a retention run is active.
-9. **Per-item permissions mirror WordPress.** Offload / Bring Back of one attachment needs `edit_post` on it; deleting its cloud copy needs `delete_post` (`AttachmentHelper::current_user_can_manage()` / `current_user_can_delete_cloud()` / `filter_manageable_ids()`). `upload_files` alone is never enough to act on someone else's media. Whole-library jobs and settings stay `manage_options`.
+9. **Offload / Bring Back is administrator-only.** Every path that moves media between server and cloud — row actions, detail buttons, Media Library bulk actions, `/offload/attachment/{id}`, `/bring-back/attachment/{id}`, `/bulk/action` — needs `manage_options` (plus `edit_post`; `delete_post` to delete the cloud copy), via `AttachmentHelper::current_user_can_manage()` / `current_user_can_delete_cloud()` / `filter_manageable_ids()`. Non-admins only upload and delete their own media through core; Mirror Delete handles the cloud side of a delete. `/offload/attachment-status` (read-only badges) stays `upload_files`.
 
 ## Performance Rules
 

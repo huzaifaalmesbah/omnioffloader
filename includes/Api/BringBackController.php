@@ -51,7 +51,7 @@ class BringBackController extends BaseController {
 			array(
 				'methods'             => \WP_REST_Server::CREATABLE,
 				'callback'            => array( $this, 'restore_attachment_response' ),
-				'permission_callback' => array( $this, 'media_permissions_check' ),
+				'permission_callback' => array( $this, 'permissions_check' ),
 				'args'                => array(
 					'id'           => array(
 						'type'              => 'integer',
@@ -170,8 +170,7 @@ class BringBackController extends BaseController {
 			? ! empty( Plugin::get_settings()['bring_back_delete_cloud'] )
 			: (bool) $requested;
 
-		// Deleting cloud copies follows the same rule as deleting the media:
-		// an Author may do it for their own uploads, never for anyone else's.
+		// Deleting cloud copies also needs permission to delete the media.
 		if ( $delete_cloud && ! self::current_user_can_delete_cloud( $attachment_id ) ) {
 			if ( null !== $requested ) {
 				return new \WP_Error(

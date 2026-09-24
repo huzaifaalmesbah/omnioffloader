@@ -33,8 +33,11 @@ trait AttachmentHelper {
 	/**
 	 * Whether the current user may offload or bring back an attachment.
 	 *
-	 * Cloud actions follow the attachment's own WordPress permissions: an
-	 * Author manages their own media, Editors and Administrators everyone's.
+	 * Moving media between the server and the cloud is a site-management
+	 * task, so it is limited to administrators (`manage_options`), like the
+	 * plugin's settings and bulk screens. Other users keep what WordPress
+	 * already lets them do with their media — upload and delete it (Mirror
+	 * Delete then removes the cloud copy as part of that delete).
 	 *
 	 * @since 0.1.3
 	 *
@@ -44,14 +47,14 @@ trait AttachmentHelper {
 	public static function current_user_can_manage( $attachment_id ) {
 		$attachment_id = (int) $attachment_id;
 
-		return 'attachment' === get_post_type( $attachment_id ) && current_user_can( 'edit_post', $attachment_id );
+		return 'attachment' === get_post_type( $attachment_id )
+			&& current_user_can( 'manage_options' )
+			&& current_user_can( 'edit_post', $attachment_id );
 	}
 
 	/**
-	 * Whether the current user may delete an attachment's cloud copies.
-	 *
-	 * Mirrors deleting the attachment itself: whoever may delete the media
-	 * in WordPress may also delete it from the bucket.
+	 * Whether the current user may delete an attachment's cloud copies
+	 * outside of deleting the attachment itself (Bring Back + delete cloud).
 	 *
 	 * @since 0.1.3
 	 *
@@ -61,7 +64,7 @@ trait AttachmentHelper {
 	public static function current_user_can_delete_cloud( $attachment_id ) {
 		$attachment_id = (int) $attachment_id;
 
-		return 'attachment' === get_post_type( $attachment_id ) && current_user_can( 'delete_post', $attachment_id );
+		return self::current_user_can_manage( $attachment_id ) && current_user_can( 'delete_post', $attachment_id );
 	}
 
 	/**

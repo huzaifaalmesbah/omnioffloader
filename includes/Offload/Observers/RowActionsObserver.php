@@ -78,7 +78,7 @@ class RowActionsObserver implements ObserverInterface {
 	public function add_action_link( $actions, $post ) {
 		$attachment_id = (int) $post->ID;
 
-		// Same rule as editing the attachment: Authors act on their own media.
+		// Offload / Bring Back is an administrator task (see AttachmentHelper).
 		if ( ! self::current_user_can_manage( $attachment_id ) ) {
 			return $actions;
 		}
@@ -306,7 +306,8 @@ class RowActionsObserver implements ObserverInterface {
 	 * @return array<string, string>
 	 */
 	public function register_bulk_actions( $actions ) {
-		if ( ! current_user_can( 'upload_files' ) ) {
+		// Administrators only, like the Offload and Bring Back screens.
+		if ( ! current_user_can( 'manage_options' ) ) {
 			return $actions;
 		}
 
@@ -327,11 +328,11 @@ class RowActionsObserver implements ObserverInterface {
 	 * @return string
 	 */
 	public function handle_bulk_actions( $redirect_to, $doaction, $post_ids ) {
-		if ( ! current_user_can( 'upload_files' ) ) {
+		if ( ! current_user_can( 'manage_options' ) ) {
 			return $redirect_to;
 		}
 
-		// Drop media the user may not edit (core's bulk handler only checks upload_files).
+		// Keep only attachments the user may manage.
 		$post_ids = self::filter_manageable_ids( (array) $post_ids );
 
 		if ( empty( $post_ids ) ) {

@@ -175,8 +175,8 @@ The plugin activates and runs per site. It has not been through a dedicated mult
 
 **Security**
 
-* Cloud actions now follow WordPress's own permissions for each media item. Anyone who can edit an item can offload it or bring it back. Anyone who can delete it can also delete its cloud copy. Authors can manage their own media but not other users' media; Editors and Administrators can manage everything. This applies to the Media Library links, bulk actions and REST routes. Whole-library jobs and settings remain administrator-only.
-* Bring Back from the Media Library screen now follows the "delete from cloud after restore" setting, and only deletes the cloud copy if the user may delete the media.
+* Offloading and bringing back media, from the Media Library links, bulk actions or REST, is now limited to administrators, like the plugin's settings and bulk screens. Before, any user who could upload files could offload or bring back anyone's media and delete its cloud copies. Other users keep their normal WordPress rights: they upload and delete their own media, and with Mirror Delete on, deleting also removes the cloud copy.
+* Bring Back from the Media Library screen now follows the "delete from cloud after restore" setting.
 * Local files are only deleted inside the uploads folder, and restores refuse paths containing `..` before creating any directory.
 * Error messages no longer include absolute server paths.
 * Media Library status tooltips are escaped.

@@ -37,7 +37,7 @@ class OffloadController extends BaseController {
 			array(
 				'methods'             => \WP_REST_Server::CREATABLE,
 				'callback'            => array( $this, 'offload_attachment_response' ),
-				'permission_callback' => array( $this, 'media_permissions_check' ),
+				'permission_callback' => array( $this, 'permissions_check' ),
 				'args'                => array(
 					'id' => array(
 						'type'              => 'integer',
@@ -85,7 +85,7 @@ class OffloadController extends BaseController {
 			array(
 				'methods'             => \WP_REST_Server::CREATABLE,
 				'callback'            => array( $this, 'bulk_action_response' ),
-				'permission_callback' => array( $this, 'media_permissions_check' ),
+				'permission_callback' => array( $this, 'permissions_check' ),
 				'args'                => array(
 					'action' => array(
 						'type'              => 'string',
@@ -344,7 +344,7 @@ class OffloadController extends BaseController {
 	public function bulk_action_response( WP_REST_Request $request ) {
 		$action = (string) $request->get_param( 'action' );
 
-		// Only media the user may edit — an Author cannot queue other users' files.
+		// Only attachments the user may manage (see AttachmentHelper).
 		$ids = self::filter_manageable_ids( (array) $request->get_param( 'ids' ) );
 
 		if ( empty( $ids ) ) {

@@ -249,7 +249,7 @@ class AttachmentRestorer {
 
 		// Refuse ".." segments before anything touches the filesystem, so
 		// crafted metadata cannot even create directories outside uploads.
-		if ( self::has_traversal( $dest ) ) {
+		if ( self::path_has_traversal( $dest ) ) {
 			self::log_attachment_error(
 				$attachment_id,
 				sprintf(
@@ -324,18 +324,6 @@ class AttachmentRestorer {
 		);
 
 		return false;
-	}
-
-	/**
-	 * Whether a path contains a ".." segment.
-	 *
-	 * @since 0.1.3
-	 *
-	 * @param string $path Absolute path.
-	 * @return bool
-	 */
-	private static function has_traversal( $path ) {
-		return in_array( '..', explode( '/', wp_normalize_path( $path ) ), true );
 	}
 
 	/**

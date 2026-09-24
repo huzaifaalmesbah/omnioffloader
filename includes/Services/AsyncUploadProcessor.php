@@ -166,7 +166,20 @@ class AsyncUploadProcessor extends WP_Background_Process {
 			return;
 		}
 
-		$this->handle();
+		// A poll-driven pass is short, and must survive handle()'s wp_die().
+		$shorten = static function () {
+			return 8;
+		};
+
+		add_filter( $this->identifier . '_wp_die', '__return_false' );
+		add_filter( $this->identifier . '_default_time_limit', $shorten );
+
+		try {
+			$this->handle();
+		} finally {
+			remove_filter( $this->identifier . '_default_time_limit', $shorten );
+			remove_filter( $this->identifier . '_wp_die', '__return_false' );
+		}
 	}
 
 	/**

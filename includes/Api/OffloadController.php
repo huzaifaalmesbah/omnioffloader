@@ -429,8 +429,10 @@ class OffloadController extends BaseController {
 	 */
 	public function attachment_status_response( WP_REST_Request $request ) {
 		// Self-healing: if loopback was delayed, process queued items inline during poll.
+		// Only administrators drive the upload queue from a poll; otherwise any
+		// Author's polling tab would pull network transfers into its requests.
 		$async = Plugin::get_instance()->get_async_upload();
-		if ( null !== $async && $async->has_pending_items() ) {
+		if ( null !== $async && current_user_can( 'manage_options' ) && $async->has_pending_items() ) {
 			$async->process_queue_now();
 		}
 
@@ -495,12 +497,20 @@ class OffloadController extends BaseController {
 		$observer     = null;
 		$row_observer = null;
 
+		$is_admin = current_user_can( 'manage_options' );
+
 		foreach ( $id_list as $attachment_id ) {
-			if ( 'attachment' !== get_post_type( $attachment_id ) ) {
+			// Only media the user may edit — never a way to enumerate others'.
+			if ( 'attachment' !== get_post_type( $attachment_id ) || ! current_user_can( 'edit_post', $attachment_id ) ) {
 				continue;
 			}
 
 			$status_data = self::get_attachment_status( $attachment_id );
+
+			// Storage details are for administrators.
+			if ( ! $is_admin ) {
+				unset( $status_data['bucket'] );
+			}
 
 			if ( $bulk_active && $current_id > 0 && $current_id === $attachment_id && 'processing' !== ( $status_data['status'] ?? '' ) ) {
 				$status_data['status'] = 'processing';

@@ -525,7 +525,7 @@ class OffloadStatusObserver implements ObserverInterface {
 
 			$html .= '<div class="omnioffloader-meta-box-info">';
 			$html .= '<div class="omnioffloader-meta-box-row"><span class="omnioffloader-meta-box-label">' . esc_html__( 'Provider:', 'omnioffloader' ) . '</span><span class="omnioffloader-meta-box-val">' . esc_html( $provider_name ) . '</span></div>';
-			if ( '' !== $bucket ) {
+			if ( '' !== $bucket && current_user_can( 'manage_options' ) ) {
 				$html .= '<div class="omnioffloader-meta-box-row"><span class="omnioffloader-meta-box-label">' . esc_html__( 'Bucket:', 'omnioffloader' ) . '</span><span class="omnioffloader-meta-box-val"><code>' . esc_html( $bucket ) . '</code></span></div>';
 			}
 			if ( '' !== $date_str ) {

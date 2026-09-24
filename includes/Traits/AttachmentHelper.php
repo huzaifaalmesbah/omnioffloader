@@ -241,7 +241,7 @@ trait AttachmentHelper {
 		}
 
 		if ( ! is_array( $metadata ) ) {
-			return $result;
+			return self::confine_to_uploads( $result );
 		}
 
 		// Core's stub shape omits keys like original_image and sources
@@ -286,6 +286,47 @@ trait AttachmentHelper {
 					);
 				}
 			}
+		}
+
+		return self::confine_to_uploads( $result );
+	}
+
+	/**
+	 * Whether a path contains a ".." segment.
+	 *
+	 * @since 0.1.3
+	 *
+	 * @param string $path Path.
+	 * @return bool
+	 */
+	public static function path_has_traversal( $path ) {
+		return in_array( '..', explode( '/', wp_normalize_path( (string) $path ) ), true );
+	}
+
+	/**
+	 * Drop collected files whose local path or object key escapes the
+	 * uploads directory.
+	 *
+	 * Attachment metadata is protected, but if another plugin ever let it be
+	 * written, a size entry of "../../../wp-config.php" would otherwise be
+	 * uploaded to the bucket, deleted by a cleanup, or overwritten by a
+	 * restore. Every consumer of collect_attachment_files() is covered here.
+	 *
+	 * @since 0.1.3
+	 *
+	 * @param array{main: array<int, array{file: string, key: string}>, sizes: array<int, array{file: string, key: string}>} $result Collected files.
+	 * @return array{main: array<int, array{file: string, key: string}>, sizes: array<int, array{file: string, key: string}>}
+	 */
+	private static function confine_to_uploads( array $result ) {
+		foreach ( array( 'main', 'sizes' ) as $role ) {
+			$result[ $role ] = array_values(
+				array_filter(
+					$result[ $role ],
+					static function ( $entry ) {
+						return ! self::path_has_traversal( $entry['file'] ) && ! self::path_has_traversal( $entry['key'] );
+					}
+				)
+			);
 		}
 
 		return $result;

@@ -33,6 +33,22 @@ class Helpers {
 	private static $stats_flush_pending = false;
 
 	/**
+	 * Prefix for background-queue identifiers.
+	 *
+	 * WP_Background_Process keeps batches, run status and the process lock in
+	 * site options / site transients, which on multisite are shared by the
+	 * whole network. Scoping the identifier by blog keeps each site's queue to
+	 * its own attachments. Single sites keep the historical, unscoped names.
+	 *
+	 * @since 0.1.3
+	 *
+	 * @return string
+	 */
+	public static function queue_prefix() {
+		return is_multisite() ? 'omnioffloader_' . get_current_blog_id() : 'omnioffloader';
+	}
+
+	/**
 	 * Build the wp-config constant name for a credential field.
 	 *
 	 * E.g. ( 'cloudflare_r2', 'key' ) => 'OMNIOFFLOADER_CLOUDFLARE_R2_KEY'.

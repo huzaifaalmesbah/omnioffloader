@@ -128,8 +128,16 @@ class Plugin {
 
 	/**
 	 * Site transient naming the WP-CLI job currently running.
+	 *
+	 * Per site on multisite, like the queues (see Helpers::queue_prefix()).
+	 *
+	 * @since 0.1.3
+	 *
+	 * @return string
 	 */
-	public const CLI_JOB_LOCK = 'omnioffloader_cli_job';
+	public static function cli_job_lock_key() {
+		return Helpers::queue_prefix() . '_cli_job';
+	}
 
 	/**
 	 * Seconds a WP-CLI job claim lives without renewal.
@@ -149,7 +157,7 @@ class Plugin {
 	 * @return void
 	 */
 	public function claim_cli_job( $job ) {
-		set_site_transient( self::CLI_JOB_LOCK, (string) $job, self::CLI_JOB_LOCK_TTL );
+		set_site_transient( self::cli_job_lock_key(), (string) $job, self::CLI_JOB_LOCK_TTL );
 	}
 
 	/**
@@ -160,7 +168,7 @@ class Plugin {
 	 * @return void
 	 */
 	public function release_cli_job() {
-		delete_site_transient( self::CLI_JOB_LOCK );
+		delete_site_transient( self::cli_job_lock_key() );
 	}
 
 	/**
@@ -174,7 +182,7 @@ class Plugin {
 	 * @return string 'offload', 'restore', 'retention', or '' when idle.
 	 */
 	public function get_active_bulk_job() {
-		$cli_job = get_site_transient( self::CLI_JOB_LOCK );
+		$cli_job = get_site_transient( self::cli_job_lock_key() );
 
 		if ( is_string( $cli_job ) && '' !== $cli_job ) {
 			return $cli_job;

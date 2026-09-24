@@ -62,6 +62,8 @@ class AsyncUploadProcessor extends WP_Background_Process {
 	 */
 	public function __construct( ProviderInterface $provider ) {
 		$this->provider = $provider;
+		// Per-site on multisite (see Helpers::queue_prefix()).
+		$this->prefix = Helpers::queue_prefix();
 		parent::__construct( array() );
 	}
 
@@ -130,7 +132,7 @@ class AsyncUploadProcessor extends WP_Background_Process {
 	 * @return $this
 	 */
 	public function save() {
-		set_site_transient( 'omnioffloader_async_has_queue', 1, DAY_IN_SECONDS );
+		set_site_transient( $this->identifier . '_has_queue', 1, DAY_IN_SECONDS );
 
 		return parent::save();
 	}
@@ -144,12 +146,12 @@ class AsyncUploadProcessor extends WP_Background_Process {
 	 * @return bool
 	 */
 	public function has_pending_items() {
-		if ( ! get_site_transient( 'omnioffloader_async_has_queue' ) ) {
+		if ( ! get_site_transient( $this->identifier . '_has_queue' ) ) {
 			return false;
 		}
 
 		if ( $this->is_queue_empty() ) {
-			delete_site_transient( 'omnioffloader_async_has_queue' );
+			delete_site_transient( $this->identifier . '_has_queue' );
 			return false;
 		}
 
@@ -188,7 +190,7 @@ class AsyncUploadProcessor extends WP_Background_Process {
 	 * @return void
 	 */
 	protected function complete() {
-		delete_site_transient( 'omnioffloader_async_has_queue' );
+		delete_site_transient( $this->identifier . '_has_queue' );
 		parent::complete();
 	}
 
@@ -200,7 +202,7 @@ class AsyncUploadProcessor extends WP_Background_Process {
 	public static function purge_stored_data() {
 		global $wpdb;
 
-		$identifier = 'omnioffloader_async_upload';
+		$identifier = Helpers::queue_prefix() . '_async_upload';
 		$like       = $wpdb->esc_like( $identifier . '_batch_' ) . '%';
 
 		if ( is_multisite() ) {
@@ -213,6 +215,8 @@ class AsyncUploadProcessor extends WP_Background_Process {
 
 		delete_site_option( $identifier . '_status' );
 		delete_site_transient( $identifier . '_process_lock' );
+		delete_site_transient( $identifier . '_has_queue' );
+		// Flag name used before 0.1.3.
 		delete_site_transient( 'omnioffloader_async_has_queue' );
 		wp_clear_scheduled_hook( $identifier . '_cron' );
 	}

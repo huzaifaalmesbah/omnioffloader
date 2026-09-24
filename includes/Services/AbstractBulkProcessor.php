@@ -91,6 +91,26 @@ abstract class AbstractBulkProcessor extends WP_Background_Process {
 	protected $queue_lock_time = 600;
 
 	/**
+	 * Whether this request holds the worker mutex.
+	 *
+	 * @var bool
+	 */
+	private $holds_mutex = false;
+
+	/**
+	 * Constructor.
+	 *
+	 * @param bool|string[] $allowed_batch_data_classes See WP_Background_Process.
+	 */
+	public function __construct( $allowed_batch_data_classes = true ) {
+		// Per-site on multisite (see Helpers::queue_prefix()); set before the
+		// parent builds the identifier, hooks and option names from it.
+		$this->prefix = Helpers::queue_prefix();
+
+		parent::__construct( $allowed_batch_data_classes );
+	}
+
+	/**
 	 * The attachment IDs this run should process.
 	 *
 	 * @return int[]
@@ -332,6 +352,28 @@ abstract class AbstractBulkProcessor extends WP_Background_Process {
 	 * @return void|mixed
 	 */
 	protected function handle() {
+		// The process lock below is a transient: checking it and setting it
+		// are two separate steps, so the loopback worker, the cron healthcheck
+		// and an admin poll could all pass is_processing() together and run
+		// the same batch twice. A database lock is atomic; whoever does not
+		// get it leaves the queue to the worker that did.
+		if ( ! $this->acquire_worker_mutex() ) {
+			return $this->maybe_wp_die();
+		}
+
+		try {
+			return $this->run_pass();
+		} finally {
+			$this->release_worker_mutex();
+		}
+	}
+
+	/**
+	 * One pass over the queue, run while holding the worker mutex.
+	 *
+	 * @return void|mixed
+	 */
+	private function run_pass() {
 		$this->lock_process();
 
 		// A one-shot flush at the end of the pass is enough; busting the stats
@@ -392,6 +434,10 @@ abstract class AbstractBulkProcessor extends WP_Background_Process {
 
 		$this->unlock_process();
 
+		// Before dispatch(): the next pass's loopback request must be able to
+		// take the mutex while this process is still shutting down.
+		$this->release_worker_mutex();
+
 		Helpers::defer_media_stats_flush( false );
 
 		if ( $aborted ) {
@@ -416,6 +462,59 @@ abstract class AbstractBulkProcessor extends WP_Background_Process {
 		}
 
 		return $this->maybe_wp_die();
+	}
+
+	/**
+	 * Database lock name for this queue (MySQL caps names at 64 chars).
+	 *
+	 * @return string
+	 */
+	private function worker_mutex_name() {
+		global $wpdb;
+
+		return 'omnioffloader:' . md5( $wpdb->prefix . $this->identifier );
+	}
+
+	/**
+	 * Take the queue's worker mutex without waiting.
+	 *
+	 * Session-scoped, so a worker killed mid-pass releases it with its
+	 * database connection. Databases without GET_LOCK() fall back to the
+	 * transient process lock alone.
+	 *
+	 * @return bool False when another worker holds it.
+	 */
+	private function acquire_worker_mutex() {
+		global $wpdb;
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- advisory lock, must hit the server.
+		$got = $wpdb->get_var( $wpdb->prepare( 'SELECT GET_LOCK( %s, 0 )', $this->worker_mutex_name() ) );
+
+		if ( null === $got ) {
+			return true;
+		}
+
+		$this->holds_mutex = '1' === (string) $got;
+
+		return $this->holds_mutex;
+	}
+
+	/**
+	 * Release the worker mutex if this request holds it.
+	 *
+	 * @return void
+	 */
+	private function release_worker_mutex() {
+		global $wpdb;
+
+		if ( ! $this->holds_mutex ) {
+			return;
+		}
+
+		$this->holds_mutex = false;
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- advisory lock, must hit the server.
+		$wpdb->query( $wpdb->prepare( 'SELECT RELEASE_LOCK( %s )', $this->worker_mutex_name() ) );
 	}
 
 	/**
@@ -761,7 +860,7 @@ abstract class AbstractBulkProcessor extends WP_Background_Process {
 	public static function purge_stored_data( $action, $state_option ) {
 		global $wpdb;
 
-		$identifier = 'omnioffloader_' . $action;
+		$identifier = Helpers::queue_prefix() . '_' . $action;
 		$like       = $wpdb->esc_like( $identifier . '_batch_' ) . '%';
 
 		if ( is_multisite() ) {

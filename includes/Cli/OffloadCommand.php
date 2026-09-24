@@ -141,13 +141,14 @@ class OffloadCommand {
 				++$processed;
 
 				$this->keep_job_alive( $processed );
+			}
 
-				// Bad credentials or an unreachable bucket fail identically for
-				// every attachment; stop rather than grind through the library.
-				if ( $streak >= 10 ) {
-					$aborted = true;
-					break 2;
-				}
+			// Bad credentials or an unreachable bucket fail identically for
+			// every attachment; stop rather than grind through the library.
+			// Checked per batch, so the whole batch is counted first.
+			if ( $streak >= 10 ) {
+				$aborted = true;
+				break;
 			}
 		}
 

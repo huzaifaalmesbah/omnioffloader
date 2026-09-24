@@ -59,6 +59,34 @@ class AttachmentUploader {
 	}
 
 	/**
+	 * Whether any of an attachment's local files needs a multipart upload.
+	 *
+	 * Such an attachment can take long enough for the host to kill the
+	 * worker, so bulk runs give it a batch of its own.
+	 *
+	 * @since 0.1.3
+	 *
+	 * @param int $attachment_id Attachment ID.
+	 * @return bool
+	 */
+	public function has_large_file( $attachment_id ) {
+		// Optional provider method (see AbstractS3Provider::is_large_file()).
+		if ( ! method_exists( $this->provider, 'is_large_file' ) ) {
+			return false;
+		}
+
+		$files = self::collect_attachment_files( (int) $attachment_id );
+
+		foreach ( array_merge( $files['main'], $files['sizes'] ) as $entry ) {
+			if ( $this->provider->is_large_file( $entry['file'] ) ) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
 	 * Offload one attachment (main file, sizes, sources).
 	 *
 	 * @param int                       $attachment_id Attachment ID.

@@ -143,6 +143,30 @@ class BulkOffloadProcessor extends AbstractBulkProcessor {
 	}
 
 	/**
+	 * Attachments with a file big enough for a multipart upload run alone.
+	 *
+	 * @since 0.1.3
+	 *
+	 * @param int $attachment_id Attachment ID.
+	 * @return bool
+	 */
+	protected function runs_alone( $attachment_id ) {
+		return ( new AttachmentUploader( $this->provider ) )->has_large_file( $attachment_id );
+	}
+
+	/**
+	 * A lost item counts as done when it did get offloaded.
+	 *
+	 * @since 0.1.3
+	 *
+	 * @param int $attachment_id Attachment ID.
+	 * @return bool
+	 */
+	protected function was_completed( $attachment_id ) {
+		return self::is_offloaded( $attachment_id );
+	}
+
+	/**
 	 * Offload a group of attachments through one shared transfer pool.
 	 *
 	 * @since 0.1.3

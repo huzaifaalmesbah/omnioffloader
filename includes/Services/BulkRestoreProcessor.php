@@ -133,4 +133,16 @@ class BulkRestoreProcessor extends AbstractBulkProcessor {
 
 		return $restorer->restore( $attachment_id, ! empty( $state['delete_cloud'] ) );
 	}
+
+	/**
+	 * A lost item counts as done when it did get restored.
+	 *
+	 * @since 0.1.3
+	 *
+	 * @param int $attachment_id Attachment ID.
+	 * @return bool
+	 */
+	protected function was_completed( $attachment_id ) {
+		return ! self::is_offloaded( $attachment_id );
+	}
 }

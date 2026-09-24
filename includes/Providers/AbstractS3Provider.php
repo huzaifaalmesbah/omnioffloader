@@ -257,11 +257,13 @@ abstract class AbstractS3Provider implements ProviderInterface {
 				$client,
 				$commands(),
 				array(
-					'concurrency' => $concurrency,
-					'fulfilled'   => static function ( $result, $index ) use ( &$results, $pooled ) {
+					'concurrency'            => $concurrency,
+					// Report results under the keys yielded above, not a counter.
+					'preserve_iterator_keys' => true,
+					'fulfilled'              => static function ( $result, $index ) use ( &$results, $pooled ) {
 						$results[ $pooled[ $index ]['key'] ] = true;
 					},
-					'rejected'    => function ( $reason, $index ) use ( $pooled ) {
+					'rejected'               => function ( $reason, $index ) use ( $pooled ) {
 						$message = $reason instanceof \Throwable ? $reason->getMessage() : 'unknown error';
 						$this->log_error( sprintf( 'Error uploading "%s": %s', $pooled[ $index ]['key'], $message ) );
 					},
@@ -331,6 +333,19 @@ abstract class AbstractS3Provider implements ProviderInterface {
 
 			throw $e;
 		}
+	}
+
+	/**
+	 * Whether a local file is big enough to be uploaded in parts.
+	 *
+	 * @since 0.1.3
+	 *
+	 * @param string $file Absolute path.
+	 * @return bool
+	 */
+	public function is_large_file( $file ) {
+		// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- false/0 means small.
+		return (int) @filesize( $file ) >= $this->multipart_threshold();
 	}
 
 	/**
@@ -410,38 +425,42 @@ abstract class AbstractS3Provider implements ProviderInterface {
 	public function download_files( array $files, $concurrency = 1 ) {
 		$results     = array();
 		$concurrency = max( 1, (int) $concurrency );
-		$pending     = array();
+		$files       = array_values( $files );
 
 		foreach ( $files as $entry ) {
 			$results[ $entry['key'] ] = false;
-
-			if ( 1 === $concurrency ) {
-				$results[ $entry['key'] ] = $this->download_file( $entry['key'], $entry['dest'] );
-				continue;
-			}
-
-			$tmp = $this->temp_file_for( $entry['dest'] );
-
-			if ( false !== $tmp ) {
-				$pending[] = $entry + array( 'tmp' => $tmp );
-			}
 		}
 
-		if ( empty( $pending ) ) {
+		if ( 1 === $concurrency ) {
+			foreach ( $files as $entry ) {
+				$results[ $entry['key'] ] = $this->download_file( $entry['key'], $entry['dest'] );
+			}
+
 			return $results;
 		}
 
 		$client = $this->get_client();
 		$bucket = $this->get_bucket();
+		$tmps   = array();
 
-		$commands = static function () use ( $client, $bucket, $pending ) {
-			foreach ( $pending as $index => $entry ) {
+		// Temp files are created as each download starts, so a worker killed
+		// mid-restore leaves at most $concurrency of them behind.
+		$commands = function () use ( $client, $bucket, $files, &$tmps ) {
+			foreach ( $files as $index => $entry ) {
+				$tmp = $this->temp_file_for( $entry['dest'] );
+
+				if ( false === $tmp ) {
+					continue;
+				}
+
+				$tmps[ $index ] = $tmp;
+
 				yield $index => $client->getCommand(
 					'GetObject',
 					array(
 						'Bucket' => $bucket,
 						'Key'    => $entry['key'],
-						'SaveAs' => $entry['tmp'],
+						'SaveAs' => $tmp,
 						'@http'  => array(
 							'connect_timeout' => static::CONNECT_TIMEOUT,
 						),
@@ -457,13 +476,15 @@ abstract class AbstractS3Provider implements ProviderInterface {
 				$client,
 				$commands(),
 				array(
-					'concurrency' => $concurrency,
-					'fulfilled'   => static function ( $result, $index ) use ( &$done ) {
+					'concurrency'            => $concurrency,
+					// Skipped entries leave gaps, so keys must be the yielded ones.
+					'preserve_iterator_keys' => true,
+					'fulfilled'              => static function ( $result, $index ) use ( &$done ) {
 						$done[ $index ] = true;
 					},
-					'rejected'    => function ( $reason, $index ) use ( $pending ) {
+					'rejected'               => function ( $reason, $index ) use ( $files ) {
 						$message = $reason instanceof \Throwable ? $reason->getMessage() : 'unknown error';
-						$this->log_error( sprintf( 'Error downloading "%s": %s', $pending[ $index ]['key'], $message ) );
+						$this->log_error( sprintf( 'Error downloading "%s": %s', $files[ $index ]['key'], $message ) );
 					},
 				)
 			);
@@ -474,11 +495,11 @@ abstract class AbstractS3Provider implements ProviderInterface {
 		}
 
 		// Rename only complete downloads; a failed one never reaches $dest.
-		foreach ( $pending as $index => $entry ) {
+		foreach ( $tmps as $index => $tmp ) {
 			if ( isset( $done[ $index ] ) ) {
-				$results[ $entry['key'] ] = $this->move_into_place( $entry['tmp'], $entry['dest'] );
+				$results[ $files[ $index ]['key'] ] = $this->move_into_place( $tmp, $files[ $index ]['dest'] );
 			} else {
-				wp_delete_file( $entry['tmp'] );
+				wp_delete_file( $tmp );
 			}
 		}
 
@@ -688,8 +709,9 @@ abstract class AbstractS3Provider implements ProviderInterface {
 				$client,
 				$commands(),
 				array(
-					'concurrency' => max( 1, (int) $concurrency ),
-					'fulfilled'   => static function ( $result, $index ) use ( &$exists, $keys ) {
+					'concurrency'            => max( 1, (int) $concurrency ),
+					'preserve_iterator_keys' => true,
+					'fulfilled'              => static function ( $result, $index ) use ( &$exists, $keys ) {
 						$exists[ $keys[ $index ] ] = true;
 					},
 				)

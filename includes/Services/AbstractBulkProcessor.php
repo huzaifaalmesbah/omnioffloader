@@ -98,6 +98,13 @@ abstract class AbstractBulkProcessor extends WP_Background_Process {
 	private $holds_mutex = false;
 
 	/**
+	 * Whether the current pass is the short one an admin poll runs inline.
+	 *
+	 * @var bool
+	 */
+	private $inline_pass = false;
+
+	/**
 	 * Seconds one background pass may run, fixed when the pass starts.
 	 *
 	 * @var int
@@ -148,6 +155,33 @@ abstract class AbstractBulkProcessor extends WP_Background_Process {
 	 */
 	protected function group_size() {
 		return 1;
+	}
+
+	/**
+	 * Whether an item must be claimed and run on its own, never in a group.
+	 *
+	 * A worker killed mid-group reports every item of the group as lost, so
+	 * an item likely to outlast the host's time limit gets a group of one.
+	 *
+	 * @since 0.1.3
+	 *
+	 * @param int $attachment_id Attachment ID.
+	 * @return bool
+	 */
+	protected function runs_alone( $attachment_id ) {
+		return false;
+	}
+
+	/**
+	 * Whether a lost item's work had in fact completed before the worker died.
+	 *
+	 * @since 0.1.3
+	 *
+	 * @param int $attachment_id Attachment ID.
+	 * @return bool
+	 */
+	protected function was_completed( $attachment_id ) {
+		return false;
 	}
 
 	/**
@@ -380,9 +414,14 @@ abstract class AbstractBulkProcessor extends WP_Background_Process {
 		add_filter( $this->identifier . '_wp_die', '__return_false' );
 		add_filter( $this->identifier . '_default_time_limit', $shorten );
 
+		// One item per step: a group would keep this poll request busy for
+		// several attachments' transfers, past the inline time limit.
+		$this->inline_pass = true;
+
 		try {
 			$this->handle();
 		} finally {
+			$this->inline_pass = false;
 			// handle() normally clears these itself; restore them here too so
 			// a task that throws cannot leave the request in a state where
 			// later stats flushes are silently swallowed.
@@ -451,14 +490,14 @@ abstract class AbstractBulkProcessor extends WP_Background_Process {
 				break;
 			}
 
-			$group_size = max( 1, (int) $this->group_size() );
+			$group_size = $this->inline_pass ? 1 : max( 1, (int) $this->group_size() );
 
 			while ( ! empty( $batch->data ) ) {
 				// Claim the items: drop them from the persisted batch *before*
 				// running them. Otherwise a task killed by max_execution_time
 				// leaves them queued and every later pass retries them, so a
 				// single oversized file wedges the run permanently.
-				$group       = array_map( 'intval', array_values( array_slice( $batch->data, 0, $group_size ) ) );
+				$group       = $this->next_group( $batch->data, $group_size );
 				$batch->data = array_slice( $batch->data, count( $group ), null, true );
 
 				if ( empty( $batch->data ) ) {
@@ -591,6 +630,44 @@ abstract class AbstractBulkProcessor extends WP_Background_Process {
 	}
 
 	/**
+	 * The next items to claim from a batch.
+	 *
+	 * Up to $size items from the front of the batch; an item that must run
+	 * alone (see runs_alone()) always forms a group of one.
+	 *
+	 * @since 0.1.3
+	 *
+	 * @param array<int|string, mixed> $data Batch items.
+	 * @param int                      $size Maximum group size.
+	 * @return int[] Non-empty when $data is.
+	 */
+	private function next_group( array $data, $size ) {
+		$group = array();
+
+		foreach ( $data as $value ) {
+			$id = (int) $value;
+
+			if ( empty( $group ) ) {
+				$group[] = $id;
+
+				if ( 1 === $size || $this->runs_alone( $id ) ) {
+					break;
+				}
+
+				continue;
+			}
+
+			if ( count( $group ) >= $size || $this->runs_alone( $id ) ) {
+				break;
+			}
+
+			$group[] = $id;
+		}
+
+		return $group;
+	}
+
+	/**
 	 * Run a claimed group of items and record each outcome.
 	 *
 	 * @since 0.1.3
@@ -625,6 +702,10 @@ abstract class AbstractBulkProcessor extends WP_Background_Process {
 			$ordered[ $id ] = ! empty( $results[ $id ] );
 			$this->record_result( $id, $ordered[ $id ] );
 		}
+
+		// Only now: a worker dying part-way through recording must still
+		// leave the unrecorded items for recover_lost_item().
+		static::update_state( array( 'current_ids' => array() ) );
 
 		return $ordered;
 	}
@@ -670,9 +751,18 @@ abstract class AbstractBulkProcessor extends WP_Background_Process {
 		$message = __( 'The server stopped part-way through this file — it is probably larger than the host allows in one request.', 'omnioffloader' );
 
 		foreach ( $lost as $id ) {
+			// Finished before the worker died (e.g. killed while a later
+			// item of its group was being recorded): count it as done.
+			if ( $this->was_completed( $id ) ) {
+				$this->record_result( $id, true );
+				continue;
+			}
+
 			self::log_attachment_error( $id, $message );
 			$this->record_result( $id, false, $message );
 		}
+
+		static::update_state( array( 'current_ids' => array() ) );
 	}
 
 	/**
@@ -713,7 +803,6 @@ abstract class AbstractBulkProcessor extends WP_Background_Process {
 				'processed'    => (int) $state['processed'] + 1,
 				'errors'       => (int) $state['errors'] + ( $ok ? 0 : 1 ),
 				'current'      => 0,
-				'current_ids'  => array(),
 				'current_item' => null,
 				'recent'       => array_slice( $recent, 0, static::RECENT_LIMIT ),
 			)

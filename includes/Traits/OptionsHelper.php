@@ -35,6 +35,8 @@ trait OptionsHelper {
 			'path_prefix'              => '',
 			'object_versioning'        => false,
 			'async_upload'             => true,
+			'transfer_speed'           => 'balanced',
+			'transfer_concurrency'     => 3,
 			'bring_back_delete_cloud'  => false,
 			'remove_data_on_uninstall' => false,
 		);
@@ -73,6 +75,8 @@ trait OptionsHelper {
 			'path_prefix'              => Helpers::sanitize_path( (string) ( $settings['path_prefix'] ?? $current['path_prefix'] ) ),
 			'object_versioning'        => ! empty( $settings['object_versioning'] ?? $current['object_versioning'] ),
 			'async_upload'             => ! empty( $settings['async_upload'] ?? $current['async_upload'] ),
+			'transfer_speed'           => self::sanitize_transfer_speed( $settings['transfer_speed'] ?? $current['transfer_speed'] ),
+			'transfer_concurrency'     => self::sanitize_transfer_concurrency( $settings['transfer_concurrency'] ?? $current['transfer_concurrency'] ),
 			'bring_back_delete_cloud'  => ! empty( $settings['bring_back_delete_cloud'] ?? $current['bring_back_delete_cloud'] ),
 			'remove_data_on_uninstall' => ! empty( $settings['remove_data_on_uninstall'] ?? $current['remove_data_on_uninstall'] ),
 		);
@@ -80,6 +84,82 @@ trait OptionsHelper {
 		update_option( 'omnioffloader_settings', $sanitized, true );
 
 		return $sanitized;
+	}
+
+	/**
+	 * Files uploaded at once for each transfer speed setting.
+	 *
+	 * All of them run inside one PHP process over curl_multi — a faster
+	 * setting overlaps network waits, it never starts extra PHP workers.
+	 *
+	 * A method, not a constant: trait constants need PHP 8.2.
+	 *
+	 * @since 0.1.3
+	 *
+	 * @return array<string, int> Speed => files in flight.
+	 */
+	public static function transfer_speeds() {
+		return array(
+			'low'      => 1,
+			'balanced' => 3,
+			'fast'     => 6,
+		);
+	}
+
+	/**
+	 * Sanitize the transfer speed to a known value.
+	 *
+	 * @since 0.1.3
+	 *
+	 * @param mixed $value Raw value.
+	 * @return string
+	 */
+	public static function sanitize_transfer_speed( $value ) {
+		$value = is_string( $value ) ? $value : '';
+
+		return isset( self::transfer_speeds()[ $value ] ) || 'custom' === $value ? $value : 'balanced';
+	}
+
+	/**
+	 * Sanitize the custom files-at-once count to 1–10.
+	 *
+	 * @since 0.1.3
+	 *
+	 * @param mixed $value Raw value.
+	 * @return int
+	 */
+	public static function sanitize_transfer_concurrency( $value ) {
+		return max( 1, min( 10, (int) $value ) );
+	}
+
+	/**
+	 * How many files an upload runs at once.
+	 *
+	 * @since 0.1.3
+	 *
+	 * @return int Between 1 and 10.
+	 */
+	public static function upload_concurrency() {
+		$settings = self::get_settings();
+		$speed    = self::sanitize_transfer_speed( $settings['transfer_speed'] );
+		$default  = 'custom' === $speed
+			? self::sanitize_transfer_concurrency( $settings['transfer_concurrency'] )
+			: self::transfer_speeds()[ $speed ];
+
+		/**
+		 * Filter how many files are uploaded to cloud storage at once.
+		 *
+		 * Uploads run side by side inside one PHP process, so this trades a
+		 * little memory and bandwidth for speed. 1 uploads one file at a time.
+		 *
+		 * @since 0.1.3
+		 *
+		 * @param int    $concurrency Files in flight at once.
+		 * @param string $speed       Transfer speed setting ('low', 'balanced', 'fast' or 'custom').
+		 */
+		$concurrency = (int) apply_filters( 'omnioffloader_upload_concurrency', $default, $speed );
+
+		return max( 1, min( 10, $concurrency ) );
 	}
 
 	/**

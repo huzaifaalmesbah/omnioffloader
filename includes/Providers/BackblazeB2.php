@@ -85,7 +85,7 @@ class BackblazeB2 extends AbstractS3Provider {
 			$config['endpoint'] = $endpoint;
 		}
 
-		return new S3Client( $config );
+		return new S3Client( $this->client_config( $config ) );
 	}
 
 	/**

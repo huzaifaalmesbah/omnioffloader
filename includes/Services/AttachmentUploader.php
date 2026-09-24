@@ -92,24 +92,28 @@ class AttachmentUploader {
 			return false;
 		}
 
-		$all_files = array_merge( $files['main'], $files['sizes'] );
-		$all_ok    = true;
+		// Metadata can reference files that never existed on disk (e.g.
+		// cleaned up by another plugin); skip those quietly.
+		$all_files = array_values(
+			array_filter(
+				array_merge( $files['main'], $files['sizes'] ),
+				static function ( $entry ) {
+					return file_exists( $entry['file'] );
+				}
+			)
+		);
 
-		foreach ( $all_files as $entry ) {
-			// Metadata can reference files that never existed on disk
-			// (e.g. cleaned up by another plugin); skip those quietly.
-			if ( ! file_exists( $entry['file'] ) ) {
-				continue;
-			}
+		$all_ok = true;
 
-			if ( false === $this->provider->upload_file( $entry['file'], $entry['key'] ) ) {
+		foreach ( $this->upload_all( $all_files ) as $key => $ok ) {
+			if ( ! $ok ) {
 				$all_ok = false;
 				self::log_attachment_error(
 					$attachment_id,
 					sprintf(
 						/* translators: %s: object key. */
 						__( 'Upload failed for "%s".', 'omnioffloader' ),
-						$entry['key']
+						$key
 					)
 				);
 			}
@@ -145,5 +149,31 @@ class AttachmentUploader {
 		Helpers::flush_media_stats();
 
 		return true;
+	}
+
+	/**
+	 * Upload an attachment's files, several at once when the provider can.
+	 *
+	 * @since 0.1.3
+	 *
+	 * @param array<int, array{file: string, key: string}> $files Files to upload.
+	 * @return array<string, bool> Object key => whether it uploaded.
+	 */
+	private function upload_all( array $files ) {
+		$concurrency = self::upload_concurrency();
+
+		// Optional provider method (see AbstractS3Provider::upload_files()).
+		// Used at every speed so "low" also caps multipart parts at one.
+		if ( method_exists( $this->provider, 'upload_files' ) ) {
+			return $this->provider->upload_files( $files, $concurrency );
+		}
+
+		$results = array();
+
+		foreach ( $files as $entry ) {
+			$results[ $entry['key'] ] = false !== $this->provider->upload_file( $entry['file'], $entry['key'] );
+		}
+
+		return $results;
 	}
 }

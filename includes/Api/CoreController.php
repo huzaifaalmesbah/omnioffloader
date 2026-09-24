@@ -51,6 +51,15 @@ class CoreController extends BaseController {
 						'path_prefix'              => array( 'type' => 'string' ),
 						'object_versioning'        => array( 'type' => 'boolean' ),
 						'async_upload'             => array( 'type' => 'boolean' ),
+						'transfer_speed'           => array(
+							'type' => 'string',
+							'enum' => array( 'low', 'balanced', 'fast', 'custom' ),
+						),
+						'transfer_concurrency'     => array(
+							'type'    => 'integer',
+							'minimum' => 1,
+							'maximum' => 10,
+						),
 						'bring_back_delete_cloud'  => array( 'type' => 'boolean' ),
 						'remove_data_on_uninstall' => array( 'type' => 'boolean' ),
 					),

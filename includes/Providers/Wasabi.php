@@ -73,19 +73,19 @@ class Wasabi extends AbstractS3Provider {
 		$prefix   = 'us-east-1' === $region ? '' : $region . '.';
 		$endpoint = 'https://s3.' . $prefix . 'wasabisys.com';
 
-		return new S3Client(
-			array(
-				'version'                     => 'latest',
-				'use_aws_shared_config_files' => false,
-				'endpoint'                    => $endpoint,
-				'region'                      => $region,
-				'use_path_style_endpoint'     => true,
-				'credentials'                 => array(
-					'key'    => $this->credential( 'key' ),
-					'secret' => $this->credential( 'secret' ),
-				),
-			)
+		$config = array(
+			'version'                     => 'latest',
+			'use_aws_shared_config_files' => false,
+			'endpoint'                    => $endpoint,
+			'region'                      => $region,
+			'use_path_style_endpoint'     => true,
+			'credentials'                 => array(
+				'key'    => $this->credential( 'key' ),
+				'secret' => $this->credential( 'secret' ),
+			),
 		);
+
+		return new S3Client( $this->client_config( $config ) );
 	}
 
 	/**

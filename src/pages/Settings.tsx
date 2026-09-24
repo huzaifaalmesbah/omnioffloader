@@ -2,6 +2,7 @@ import {
 	Button,
 	Icon,
 	RadioControl,
+	SelectControl,
 	TextControl,
 	ToggleControl,
 } from '@wordpress/components';
@@ -15,7 +16,11 @@ import { Card } from '../components/ui/Card';
 import { fetchRetentionPreflight } from '../api/retention';
 import { useCore } from '../context/CoreContext';
 import { radioKeyDown, radioTabIndex } from '../utils/radioGroup';
-import { RetentionPolicy, type RetentionPreflight } from '../types';
+import {
+	RetentionPolicy,
+	type RetentionPreflight,
+	type TransferSpeed,
+} from '../types';
 
 interface SettingsProps {
 	onNavigate: ( view: string ) => void;
@@ -254,6 +259,81 @@ export function SettingsPage( { onNavigate }: SettingsProps ) {
 					}
 					__nextHasNoMarginBottom
 				/>
+
+				<div className="smowp-setting-row">
+					<SelectControl
+						label={ __( 'Transfer Speed', 'omnioffloader' ) }
+						help={ __(
+							'How many files are uploaded to the cloud at the same time. Faster settings finish bulk offloads sooner and still use a single PHP process; choose Low on small shared hosting plans. WP-CLI offloads use this setting too.',
+							'omnioffloader'
+						) }
+						value={ settings.transfer_speed }
+						options={ [
+							{
+								label: __(
+									'Low — one file at a time, lowest resource use',
+									'omnioffloader'
+								),
+								value: 'low',
+							},
+							{
+								label: __(
+									'Balanced — 3 files at a time (recommended)',
+									'omnioffloader'
+								),
+								value: 'balanced',
+							},
+							{
+								label: __(
+									'Fast — 6 files at a time, for VPS and dedicated servers',
+									'omnioffloader'
+								),
+								value: 'fast',
+							},
+							{
+								label: __(
+									'Custom — choose the number of files',
+									'omnioffloader'
+								),
+								value: 'custom',
+							},
+						] }
+						onChange={ ( transfer_speed: TransferSpeed ) =>
+							updateSettings( { transfer_speed } )
+						}
+						__next40pxDefaultSize
+						__nextHasNoMarginBottom
+					/>
+
+					{ settings.transfer_speed === 'custom' && (
+						<TextControl
+							className="smowp-setting-row__sub"
+							type="number"
+							min={ 1 }
+							max={ 10 }
+							step={ 1 }
+							label={ __(
+								'Files at the same time',
+								'omnioffloader'
+							) }
+							help={ __(
+								'Between 1 and 10. Each extra file uses a little more memory and bandwidth, not another PHP process.',
+								'omnioffloader'
+							) }
+							value={ String( settings.transfer_concurrency ) }
+							onChange={ ( value: string ) => {
+								const parsed = parseInt( value, 10 );
+								updateSettings( {
+									transfer_concurrency: Number.isNaN( parsed )
+										? 1
+										: Math.min( 10, Math.max( 1, parsed ) ),
+								} );
+							} }
+							__next40pxDefaultSize
+							__nextHasNoMarginBottom
+						/>
+					) }
+				</div>
 
 				<ToggleControl
 					label={ __( 'Mirror Delete', 'omnioffloader' ) }

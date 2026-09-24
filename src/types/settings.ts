@@ -8,6 +8,9 @@ export enum RetentionPolicy {
 	FullMigration = 2,
 }
 
+/** Files uploaded at once: low 1, balanced 3, fast 6, custom = transfer_concurrency. */
+export type TransferSpeed = 'low' | 'balanced' | 'fast' | 'custom';
+
 export interface Settings {
 	provider: string;
 	retention_policy: RetentionPolicy;
@@ -16,6 +19,9 @@ export interface Settings {
 	path_prefix: string;
 	object_versioning: boolean;
 	async_upload: boolean;
+	transfer_speed: TransferSpeed;
+	/** 1–10; only used when transfer_speed is 'custom'. */
+	transfer_concurrency: number;
 	bring_back_delete_cloud: boolean;
 	remove_data_on_uninstall: boolean;
 }

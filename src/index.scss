@@ -799,11 +799,15 @@
 		height: 42px !important;
 		min-height: 42px !important;
 		border-radius: 8px !important;
+		background: #ffffff !important;
 
+		// The backdrop is absolutely positioned, so it paints over the
+		// static control inside it: keep it transparent or it hides the
+		// select's value and chevron.
 		.components-input-control__backdrop {
 			border: 1.5px solid #cbd5e1 !important;
 			border-radius: 8px !important;
-			background: #ffffff !important;
+			background: transparent !important;
 			box-shadow: 0 1px 2px rgba( 0, 0, 0, 0.03 ) !important;
 			transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
 		}
@@ -1916,6 +1920,25 @@
 	to {
 		opacity: 1;
 		transform: translateY(0) scale(1);
+	}
+}
+
+// A non-toggle setting sitting between toggles: same row rhythm and
+// separator as .components-toggle-control.
+.smowp-card .smowp-setting-row {
+	padding: 12px 0;
+	border-bottom: 1px solid #f1f5f9;
+
+	&:last-child {
+		border-bottom: none;
+	}
+
+	.smowp-setting-row__sub {
+		margin-top: 14px;
+
+		input {
+			max-width: 240px;
+		}
 	}
 }
 

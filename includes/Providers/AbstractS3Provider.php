@@ -74,6 +74,32 @@ abstract class AbstractS3Provider implements ProviderInterface {
 	}
 
 	/**
+	 * Settings every S3 client built by this plugin shares.
+	 *
+	 * Providers pass their own config through this so the defaults below
+	 * apply to all of them.
+	 *
+	 * @since 0.1.3
+	 *
+	 * @param array<string, mixed> $config Provider-specific client config.
+	 * @return array<string, mixed>
+	 */
+	protected function client_config( array $config ) {
+		return array_merge(
+			array(
+				'version'                      => 'latest',
+				'use_aws_shared_config_files'  => false,
+				// Since SDK 3.337 every PutObject is CRC32-checksummed by
+				// default, which reads each file one extra time. The SigV4
+				// payload hash already covers integrity, and several
+				// S3-compatible services reject the newer checksum headers.
+				'request_checksum_calculation' => 'when_required',
+			),
+			$config
+		);
+	}
+
+	/**
 	 * Lazily get the configured client.
 	 *
 	 * @return \Aws\S3\S3Client
@@ -109,11 +135,14 @@ abstract class AbstractS3Provider implements ProviderInterface {
 	/**
 	 * Upload a local file to the bucket.
 	 *
-	 * @param string $file Absolute path of the local file.
-	 * @param string $key  Object key to store it under.
+	 * @since 0.1.3 Added $concurrency.
+	 *
+	 * @param string $file        Absolute path of the local file.
+	 * @param string $key         Object key to store it under.
+	 * @param int    $concurrency Multipart parts in flight at once; 0 for the SDK default.
 	 * @return string|false Object URL on success, false on failure.
 	 */
-	public function upload_file( $file, $key ) {
+	public function upload_file( $file, $key, $concurrency = 0 ) {
 		$client = $this->get_client();
 
 		/**
@@ -130,7 +159,7 @@ abstract class AbstractS3Provider implements ProviderInterface {
 
 		try {
 			if ( $size >= $this->multipart_threshold() ) {
-				$this->upload_multipart( $file, $key, (string) $acl );
+				$this->upload_multipart( $file, $key, (string) $acl, (int) $concurrency );
 			} else {
 				$params = array(
 					'Bucket'     => $this->get_bucket(),
@@ -157,6 +186,98 @@ abstract class AbstractS3Provider implements ProviderInterface {
 	}
 
 	/**
+	 * Upload several files, up to $concurrency of them at once.
+	 *
+	 * An attachment is a handful of small files (original + generated sizes),
+	 * and uploading them one after another spends most of the time waiting on
+	 * round trips. Running them side by side over curl_multi overlaps that
+	 * waiting inside this one PHP process — no extra workers, and commands
+	 * are created lazily, so only $concurrency files are open at a time.
+	 * Files at or above the multipart threshold still go one at a time.
+	 *
+	 * Not part of ProviderInterface, so third-party providers keep working —
+	 * callers check method_exists() and fall back to upload_file().
+	 *
+	 * @since 0.1.3
+	 *
+	 * @param array<int, array{file: string, key: string}> $files       Files to upload.
+	 * @param int                                          $concurrency Files in flight at once.
+	 * @return array<string, bool> Object key => whether it uploaded.
+	 */
+	public function upload_files( array $files, $concurrency = 1 ) {
+		$results     = array();
+		$concurrency = max( 1, (int) $concurrency );
+		$threshold   = $this->multipart_threshold();
+		$pooled      = array();
+
+		foreach ( $files as $entry ) {
+			$results[ $entry['key'] ] = false;
+
+			// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- false/0 simply means "use a single PUT".
+			$size = (int) @filesize( $entry['file'] );
+
+			if ( 1 === $concurrency || $size >= $threshold ) {
+				$results[ $entry['key'] ] = false !== $this->upload_file( $entry['file'], $entry['key'], $concurrency );
+			} else {
+				$pooled[] = $entry;
+			}
+		}
+
+		if ( empty( $pooled ) ) {
+			return $results;
+		}
+
+		$client = $this->get_client();
+		$bucket = $this->get_bucket();
+
+		$commands = static function () use ( $client, $bucket, $pooled ) {
+			foreach ( $pooled as $index => $entry ) {
+				$params = array(
+					'Bucket'     => $bucket,
+					'Key'        => $entry['key'],
+					'SourceFile' => $entry['file'],
+					'@http'      => array(
+						'connect_timeout' => static::CONNECT_TIMEOUT,
+					),
+				);
+
+				/** This filter is documented in includes/Providers/AbstractS3Provider.php */
+				$acl = apply_filters( 'omnioffloader_object_acl', '', $entry['file'], $entry['key'] );
+
+				if ( ! empty( $acl ) ) {
+					$params['ACL'] = $acl;
+				}
+
+				yield $index => $client->getCommand( 'PutObject', $params );
+			}
+		};
+
+		try {
+			$pool = new \Aws\CommandPool(
+				$client,
+				$commands(),
+				array(
+					'concurrency' => $concurrency,
+					'fulfilled'   => static function ( $result, $index ) use ( &$results, $pooled ) {
+						$results[ $pooled[ $index ]['key'] ] = true;
+					},
+					'rejected'    => function ( $reason, $index ) use ( $pooled ) {
+						$message = $reason instanceof \Throwable ? $reason->getMessage() : 'unknown error';
+						$this->log_error( sprintf( 'Error uploading "%s": %s', $pooled[ $index ]['key'], $message ) );
+					},
+				)
+			);
+
+			$pool->promise()->wait();
+		} catch ( \Exception $e ) {
+			// Anything not reported as fulfilled stays false.
+			$this->log_error( sprintf( 'Upload batch failed: %s', $e->getMessage() ) );
+		}
+
+		return $results;
+	}
+
+	/**
 	 * Upload a large file in parts.
 	 *
 	 * Each part is retried on its own, so a dropped connection costs one chunk
@@ -164,14 +285,16 @@ abstract class AbstractS3Provider implements ProviderInterface {
 	 * ceiling become possible.
 	 *
 	 * @since 0.1.1
+	 * @since 0.1.3 Added $concurrency.
 	 *
-	 * @param string $file Absolute path of the local file.
-	 * @param string $key  Object key.
-	 * @param string $acl  ACL value, empty to omit.
+	 * @param string $file        Absolute path of the local file.
+	 * @param string $key         Object key.
+	 * @param string $acl         ACL value, empty to omit.
+	 * @param int    $concurrency Parts in flight at once; 0 for the SDK default.
 	 * @return void
 	 * @throws \Exception When the upload fails.
 	 */
-	protected function upload_multipart( $file, $key, $acl ) {
+	protected function upload_multipart( $file, $key, $acl, $concurrency = 0 ) {
 		$config = array(
 			'bucket'    => $this->get_bucket(),
 			'key'       => $key,
@@ -186,6 +309,12 @@ abstract class AbstractS3Provider implements ProviderInterface {
 		// Only send an ACL when one was asked for — R2 rejects the header.
 		if ( '' !== $acl ) {
 			$config['acl'] = $acl;
+		}
+
+		// The SDK uploads 5 parts at once by default; follow the site's
+		// transfer speed setting instead so a low-resource host stays low.
+		if ( $concurrency > 0 ) {
+			$config['concurrency'] = (int) $concurrency;
 		}
 
 		$uploader = new \Aws\S3\MultipartUploader( $this->get_client(), $file, $config );

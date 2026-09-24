@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Pre-release, version `0.1.3`.** The full design lives in `docs/PLAN.md` — read it before making architectural decisions. Project docs (roadmap, future plan, audits) live in `docs/`, which is excluded from the plugin bundle and the WordPress.org deploy. The phase map in docs/PLAN.md §11 (skeleton → offload → bulk → Bring Back → release candidate) describes development phases, not ship versions.
 
-Released so far: `0.1.0` (initial release, Cloudflare R2 only), `0.1.1` (five more providers, bulk-queue reliability work), `0.1.2` (custom batch quantity limit for Bulk Offload & Bring Back, UI consistency, CLI `--limit` restore, plus LiteSpeed Cache, Breeze, and Object Cache real-time reliability fixes), `0.1.3` (apply a changed retention policy to existing media — Tools page + `wp omnioffloader retention` — and an in-admin WP-CLI reference). See `readme.txt` for the user-facing changelog — keep it updated in the same commit as any user-visible change.
+Released so far: `0.1.0` (initial release, Cloudflare R2 only), `0.1.1` (five more providers, bulk-queue reliability work), `0.1.2` (custom batch quantity limit for Bulk Offload & Bring Back, UI consistency, CLI `--limit` restore, plus LiteSpeed Cache, Breeze, and Object Cache real-time reliability fixes), `0.1.3` (apply a changed retention policy to existing media — Tools page + `wp omnioffloader retention` — an in-admin WP-CLI reference, and parallel uploads with a Transfer Speed setting). See `readme.txt` for the user-facing changelog — keep it updated in the same commit as any user-visible change.
 
 > ⚠️ **VERSION CEILING: `0.9.0`.** Never bump, tag, or release version `1.0.0` (or anything ≥ 1.0.0) without the owner's explicit permission in that conversation. All planned work ends at 0.9.0.
 
@@ -92,6 +92,7 @@ Key rules:
 - **`handle()` takes a MySQL `GET_LOCK()` worker mutex first** (`acquire_worker_mutex()`). The transient process lock is check-then-set, so the loopback worker, cron healthcheck and admin poll could all pass `is_processing()` together and run a batch twice (seen in production: `processed` 12 of `total` 6). The mutex is released right after `unlock_process()` so the next pass's loopback can take it; databases without `GET_LOCK` fall back to the transient.
 - **Queue identifiers are per site on multisite** (`Helpers::queue_prefix()` → `omnioffloader_{blog_id}`), because `WP_Background_Process` stores batches/status/locks in network-wide site options. Single sites keep `omnioffloader_*`. The CLI job lock uses the same prefix (`Plugin::cli_job_lock_key()`).
 - **Items are claimed out of the batch before they run.** The parent removes an item only after `task()` returns, so a task killed by `max_execution_time` is retried forever and one oversized file wedges the run.
+- **Pass length follows the host** (`pass_time_limit()`: `max_execution_time − 20`, clamped 20–40 s; 30 s when unlimited), read before the first item because the uploader's `set_time_limit(0)` rewrites the ini value. The `{identifier}_default_time_limit` filter still wins, which keeps the inline poll pass at 8 s.
 - **`current` in the state records the in-flight ID**, so `recover_lost_item()` can report a killed worker instead of stalling the progress bar below `total`.
 - **Circuit breaker** at `FAILURE_LIMIT` consecutive failures (filter `omnioffloader_bulk_failure_limit`) → status `failed` with a message.
 - **`process_queue_now()` only works when the queue has been quiet for `STALL_SECONDS`.** It is the self-heal for hosts where the loopback is blocked; without the stall check every 2s poll would hold a PHP worker for 8s.
@@ -108,7 +109,7 @@ Queue state statuses: `idle` · `running` · `done` · `cancelled` · `failed`.
 
 That's it. `credential_fields()` is served as JSON to the React app, which renders the form generically — **zero JS changes per provider**.
 
-`AbstractS3Provider` handles the rest (plus the optional `list_object_sizes()` that `RetentionApplier` uses to verify an attachment's files in one request): `upload_file()` switches to `MultipartUploader` above `MULTIPART_THRESHOLD` (64 MB, filter `omnioffloader_multipart_threshold`) and aborts the multipart upload on failure; every call carries `connect_timeout`; ACL is omitted unless `omnioffloader_object_acl` returns one (R2 rejects the header, so never add it unconditionally).
+`AbstractS3Provider` handles the rest (plus the optional `list_object_sizes()` that `RetentionApplier` uses to verify an attachment's files in one request): `upload_file()` switches to `MultipartUploader` above `MULTIPART_THRESHOLD` (64 MB, filter `omnioffloader_multipart_threshold`) and aborts the multipart upload on failure; `upload_files()` (optional, `method_exists`-checked by `AttachmentUploader`) runs an attachment's files through one `Aws\CommandPool` at `OptionsHelper::upload_concurrency()` (setting `transfer_speed` low/balanced/fast → 1/3/6, custom → `transfer_concurrency`, filter `omnioffloader_upload_concurrency`) — one PHP process, never extra workers; providers build their client through `client_config()`, which sets `request_checksum_calculation => when_required`; every call carries `connect_timeout`; ACL is omitted unless `omnioffloader_object_acl` returns one (R2 rejects the header, so never add it unconditionally).
 
 ### Frontend (`src/` — TypeScript React SPA)
 
@@ -162,7 +163,7 @@ Credentials: `GET` returns secrets masked (`is_set: true`); `POST` ignores maske
 ## Data Reference
 
 **Options:**
-- `omnioffloader_settings` (autoload on) — provider, retention_policy (0/1/2), mirror_delete, path_prefix(+active), object_versioning, bring_back_delete_cloud, remove_data_on_uninstall
+- `omnioffloader_settings` (autoload on) — provider, retention_policy (0/1/2), mirror_delete, path_prefix(+active), object_versioning, async_upload, transfer_speed (low/balanced/fast/custom), transfer_concurrency (1–10, used by custom), bring_back_delete_cloud, remove_data_on_uninstall
 - `omnioffloader_version` (autoload on) — for Migrator
 - `omnioffloader_credentials` (autoload **off** — secrets stay out of the shared alloptions cache; `is_configured()` pays one small query per request for that) — per-provider credential sub-arrays. Never returned raw via REST.
 - `omnioffloader_first_activated_version` (autoload off)
@@ -183,7 +184,7 @@ The policy is applied once at offload time (`LocalCleaner`). Changing the settin
 
 ## Public Hooks
 
-Filters: `omnioffloader_cloud_providers`, `omnioffloader_object_acl`, `omnioffloader_attachment_key`, `omnioffloader_attachment_delete_keys`, `omnioffloader_should_offload_attachment`, `omnioffloader_use_async_upload`, `omnioffloader_should_apply_retention`, `omnioffloader_media_block_names`, `omnioffloader_log_provider_errors`, `omnioffloader_multipart_threshold`, `omnioffloader_bulk_failure_limit`.
+Filters: `omnioffloader_cloud_providers`, `omnioffloader_object_acl`, `omnioffloader_attachment_key`, `omnioffloader_attachment_delete_keys`, `omnioffloader_should_offload_attachment`, `omnioffloader_use_async_upload`, `omnioffloader_should_apply_retention`, `omnioffloader_media_block_names`, `omnioffloader_log_provider_errors`, `omnioffloader_multipart_threshold`, `omnioffloader_upload_concurrency`, `omnioffloader_bulk_failure_limit`.
 Actions: `omnioffloader_before_offload`, `omnioffloader_after_offload`, `omnioffloader_before_restore`, `omnioffloader_after_restore`.
 
 ## Safety Invariants (never violate)

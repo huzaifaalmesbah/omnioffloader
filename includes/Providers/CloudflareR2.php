@@ -48,18 +48,18 @@ class CloudflareR2 extends AbstractS3Provider {
 	protected function create_client() {
 		$endpoint = Helpers::normalize_url( $this->credential( 'endpoint' ) );
 
-		return new S3Client(
-			array(
-				'version'                     => 'latest',
-				'use_aws_shared_config_files' => false,
-				'endpoint'                    => $endpoint,
-				'region'                      => 'auto',
-				'credentials'                 => array(
-					'key'    => $this->credential( 'key' ),
-					'secret' => $this->credential( 'secret' ),
-				),
-			)
+		$config = array(
+			'version'                     => 'latest',
+			'use_aws_shared_config_files' => false,
+			'endpoint'                    => $endpoint,
+			'region'                      => 'auto',
+			'credentials'                 => array(
+				'key'    => $this->credential( 'key' ),
+				'secret' => $this->credential( 'secret' ),
+			),
 		);
+
+		return new S3Client( $this->client_config( $config ) );
 	}
 
 	/**

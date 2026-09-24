@@ -98,6 +98,20 @@ abstract class AbstractBulkProcessor extends WP_Background_Process {
 	private $holds_mutex = false;
 
 	/**
+	 * Seconds one background pass may run, fixed when the pass starts.
+	 *
+	 * @var int
+	 */
+	private $pass_seconds = 20;
+
+	/**
+	 * Display title and thumbnail of the item in flight, looked up once.
+	 *
+	 * @var array{id: int, title: string, thumb: string}|null
+	 */
+	private $item_label = null;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param bool|string[] $allowed_batch_data_classes See WP_Background_Process.
@@ -374,6 +388,10 @@ abstract class AbstractBulkProcessor extends WP_Background_Process {
 	 * @return void|mixed
 	 */
 	private function run_pass() {
+		// Read before the first item: the uploader calls set_time_limit(0),
+		// which rewrites max_execution_time for the rest of the request.
+		$this->pass_seconds = $this->pass_time_limit();
+
 		$this->lock_process();
 
 		// A one-shot flush at the end of the pass is enough; busting the stats
@@ -526,27 +544,15 @@ abstract class AbstractBulkProcessor extends WP_Background_Process {
 	private function run_item( $attachment_id ) {
 		// Record the in-flight item so a worker killed mid-transfer is
 		// detectable on the next pass (see recover_lost_item()).
-		$attached_file = get_attached_file( $attachment_id );
-		$filename      = $attached_file ? wp_basename( $attached_file ) : '';
-
-		if ( '' === $filename ) {
-			$post_title = get_the_title( $attachment_id );
-			$filename   = '' !== $post_title ? $post_title : sprintf(
-				/* translators: %d: attachment ID. */
-				__( 'Attachment #%d', 'omnioffloader' ),
-				$attachment_id
-			);
-		}
-
-		$thumb_url = wp_get_attachment_image_url( $attachment_id, 'thumbnail' );
+		$label = $this->item_label( $attachment_id );
 
 		static::update_state(
 			array(
 				'current'      => $attachment_id,
 				'current_item' => array(
 					'id'        => $attachment_id,
-					'title'     => $filename,
-					'thumb'     => $thumb_url ? $thumb_url : '',
+					'title'     => $label['title'],
+					'thumb'     => $label['thumb'],
 					'status'    => 'processing',
 					'timestamp' => time(),
 				),
@@ -611,33 +617,23 @@ abstract class AbstractBulkProcessor extends WP_Background_Process {
 	protected function record_result( $attachment_id, $ok, $message = '' ) {
 		$state  = static::get_state();
 		$recent = isset( $state['recent'] ) && is_array( $state['recent'] ) ? $state['recent'] : array();
+		$label  = $this->item_label( $attachment_id );
 
-		$attached_file = get_attached_file( $attachment_id );
-		$filename      = $attached_file ? wp_basename( $attached_file ) : '';
-
-		if ( '' === $filename ) {
-			$post_title = get_the_title( $attachment_id );
-			$filename   = '' !== $post_title ? $post_title : sprintf(
-				/* translators: %d: attachment ID. */
-				__( 'Attachment #%d', 'omnioffloader' ),
-				$attachment_id
-			);
-		}
+		// The next item needs its own lookup.
+		$this->item_label = null;
 
 		if ( ! $ok && '' === $message ) {
 			$message = self::last_error_message( $attachment_id );
 		}
 
-		$thumb_url = wp_get_attachment_image_url( $attachment_id, 'thumbnail' );
-
 		array_unshift(
 			$recent,
 			array(
 				'id'        => $attachment_id,
-				'title'     => $filename,
+				'title'     => $label['title'],
 				'status'    => $ok ? 'success' : 'error',
 				'timestamp' => time(),
-				'thumb'     => $thumb_url ? $thumb_url : '',
+				'thumb'     => $label['thumb'],
 				'error'     => $ok ? '' : $message,
 			)
 		);
@@ -653,6 +649,45 @@ abstract class AbstractBulkProcessor extends WP_Background_Process {
 		);
 
 		clean_post_cache( $attachment_id );
+	}
+
+	/**
+	 * Display title and thumbnail URL for the activity log.
+	 *
+	 * Looked up once per item and reused for both the "processing" and the
+	 * finished entry — building the thumbnail URL runs the URL filters.
+	 *
+	 * @since 0.1.3
+	 *
+	 * @param int $attachment_id Attachment ID.
+	 * @return array{id: int, title: string, thumb: string}
+	 */
+	private function item_label( $attachment_id ) {
+		if ( null !== $this->item_label && $attachment_id === $this->item_label['id'] ) {
+			return $this->item_label;
+		}
+
+		$attached_file = get_attached_file( $attachment_id );
+		$filename      = $attached_file ? wp_basename( $attached_file ) : '';
+
+		if ( '' === $filename ) {
+			$post_title = get_the_title( $attachment_id );
+			$filename   = '' !== $post_title ? $post_title : sprintf(
+				/* translators: %d: attachment ID. */
+				__( 'Attachment #%d', 'omnioffloader' ),
+				$attachment_id
+			);
+		}
+
+		$thumb_url = wp_get_attachment_image_url( $attachment_id, 'thumbnail' );
+
+		$this->item_label = array(
+			'id'    => $attachment_id,
+			'title' => $filename,
+			'thumb' => $thumb_url ? $thumb_url : '',
+		);
+
+		return $this->item_label;
 	}
 
 	/**
@@ -758,6 +793,47 @@ abstract class AbstractBulkProcessor extends WP_Background_Process {
 	 */
 	public function release_lock() {
 		$this->unlock_process();
+	}
+
+	/**
+	 * Seconds one background pass may run before handing over to the next.
+	 *
+	 * Every pass boots WordPress, the SDK and a fresh TLS connection again,
+	 * so longer passes cost less CPU in total. The parent's fixed 20 seconds
+	 * suits a 30 second host limit; where the host allows more, use up to 40
+	 * while leaving a 20 second margin for the file in flight.
+	 *
+	 * @since 0.1.3
+	 *
+	 * @return int
+	 */
+	protected function pass_time_limit() {
+		$max = (int) ini_get( 'max_execution_time' );
+
+		if ( $max <= 0 ) {
+			// No PHP limit, but the web server may still have one (nginx
+			// and FPM commonly stop at 60 seconds).
+			return 30;
+		}
+
+		return max( 20, min( 40, $max - 20 ) );
+	}
+
+	/**
+	 * Whether the pass has used up its time.
+	 *
+	 * Same as the parent, with pass_time_limit() as the default. The
+	 * `{identifier}_default_time_limit` filter still wins, which is how the
+	 * inline pass in process_queue_now() stays short.
+	 *
+	 * @return bool
+	 */
+	protected function time_exceeded() {
+		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.DynamicHooknameFound -- the parent's own filter name.
+		$limit = (int) apply_filters( $this->identifier . '_default_time_limit', $this->pass_seconds );
+
+		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.DynamicHooknameFound -- the parent's own filter name.
+		return (bool) apply_filters( $this->identifier . '_time_exceeded', time() >= $this->start_time + $limit );
 	}
 
 	/**

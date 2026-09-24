@@ -76,17 +76,17 @@ class AmazonS3 extends AbstractS3Provider {
 	protected function create_client() {
 		$region = '' !== $this->credential( 'region' ) ? $this->credential( 'region' ) : 'us-east-1';
 
-		return new S3Client(
-			array(
-				'version'                     => 'latest',
-				'use_aws_shared_config_files' => false,
-				'region'                      => $region,
-				'credentials'                 => array(
-					'key'    => $this->credential( 'key' ),
-					'secret' => $this->credential( 'secret' ),
-				),
-			)
+		$config = array(
+			'version'                     => 'latest',
+			'use_aws_shared_config_files' => false,
+			'region'                      => $region,
+			'credentials'                 => array(
+				'key'    => $this->credential( 'key' ),
+				'secret' => $this->credential( 'secret' ),
+			),
 		);
+
+		return new S3Client( $this->client_config( $config ) );
 	}
 
 	/**

@@ -261,6 +261,10 @@ class Plugin {
 		add_action( 'init', array( $this, 'maybe_upgrade' ), 5 );
 
 		add_filter( 'plugin_action_links_' . OMNIOFFLOADER_BASENAME, array( $this, 'add_plugin_settings_link' ) );
+
+		// Offload state must stay truthful (Safety Invariant #4): never
+		// editable as a custom field, via the UI, XML-RPC or REST meta.
+		add_filter( 'is_protected_meta', array( $this, 'protect_offload_meta' ), 10, 2 );
 	}
 
 	/**
@@ -279,6 +283,19 @@ class Plugin {
 		Migrator::run( $stored_version );
 
 		self::update_plugin_version( OMNIOFFLOADER_VERSION );
+	}
+
+	/**
+	 * Mark the plugin's attachment meta as protected.
+	 *
+	 * @since 0.1.3
+	 *
+	 * @param bool   $is_protected Whether the key is protected.
+	 * @param string $meta_key     Meta key.
+	 * @return bool
+	 */
+	public function protect_offload_meta( $is_protected, $meta_key ) {
+		return 0 === strpos( (string) $meta_key, 'omnioffloader_' ) ? true : $is_protected;
 	}
 
 	/**

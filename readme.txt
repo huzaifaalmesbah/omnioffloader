@@ -190,7 +190,7 @@ The plugin activates and runs per site. It has not been through a dedicated mult
 * Each Media Library status check reads the bulk job state once (2 queries when idle instead of 6–8).
 * `wp omnioffloader retention --dry-run` and the offload/restore dry runs load attachments 200 at a time instead of one by one.
 * Uploading a file whose name is already taken checks all existing names with one query instead of one per "-1", "-2"… suffix.
-* The credentials option is autoloaded, saving a database query on every page. Clearing the stats cache costs half as many queries, and background uploads clear it once per batch instead of once per file.
+* Clearing the stats cache costs half as many queries, and background uploads clear it once per batch instead of once per file.
 * The post-activation redirect check only runs on the Plugins screen instead of on every admin request.
 
 **Fixes**

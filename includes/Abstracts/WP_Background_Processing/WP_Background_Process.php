@@ -5,6 +5,10 @@ namespace OmniOffloader\Abstracts\WP_Background_Processing;
 /**
  * WP Background Process
  *
+ * Bundled from WP Background Processing by Delicious Brains
+ * (https://github.com/deliciousbrains/wp-background-processing),
+ * licensed GPL-2.0-or-later. Namespaced and adapted for OmniOffloader.
+ *
  * @package WP-Background-Processing
  */
 

@@ -107,26 +107,6 @@ class AsyncUploadProcessor extends WP_Background_Process {
 	}
 
 	/**
-	 * Queue an attachment and dispatch background processing.
-	 *
-	 * @param int $attachment_id Attachment ID.
-	 * @return void
-	 */
-	public function queue_and_dispatch( $attachment_id ) {
-		$attachment_id = (int) $attachment_id;
-
-		if ( $attachment_id <= 0 || self::is_offloaded( $attachment_id ) ) {
-			return;
-		}
-
-		update_post_meta( $attachment_id, 'omnioffloader_status', 'queued' );
-
-		$this->push_to_queue( $attachment_id );
-		$this->save();
-		$this->dispatch();
-	}
-
-	/**
 	 * Save the queued items and flag the queue as active.
 	 *
 	 * @return $this

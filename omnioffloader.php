@@ -32,10 +32,30 @@ define( 'OMNIOFFLOADER_ASSETS_URL', OMNIOFFLOADER_URL . 'assets/' );
 define( 'OMNIOFFLOADER_BASENAME', plugin_basename( __FILE__ ) );
 define( 'OMNIOFFLOADER_FILE', __FILE__ );
 
-// Load Composer autoloader (includes PSR-4 plugin classes and AWS SDK).
-if ( file_exists( OMNIOFFLOADER_DIR . 'vendor/autoload.php' ) ) {
-	require_once OMNIOFFLOADER_DIR . 'vendor/autoload.php';
+/**
+ * Admin notice shown when the bundled libraries are missing.
+ *
+ * @return void
+ */
+function omnioffloader_missing_vendor_notice() {
+	if ( ! current_user_can( 'activate_plugins' ) ) {
+		return;
+	}
+
+	printf(
+		'<div class="notice notice-error"><p>%s</p></div>',
+		esc_html__( 'OmniOffloader is missing its bundled libraries (the vendor folder). Reinstall the plugin from a complete download.', 'omnioffloader' )
+	);
 }
+
+// Load Composer autoloader (includes PSR-4 plugin classes and AWS SDK).
+// Without it every class is missing, so explain instead of a fatal error.
+if ( ! file_exists( OMNIOFFLOADER_DIR . 'vendor/autoload.php' ) ) {
+	add_action( 'admin_notices', 'omnioffloader_missing_vendor_notice' );
+	return;
+}
+
+require_once OMNIOFFLOADER_DIR . 'vendor/autoload.php';
 
 /**
  * The code that runs during plugin activation.

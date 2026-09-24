@@ -164,7 +164,7 @@ Credentials: `GET` returns secrets masked (`is_set: true`); `POST` ignores maske
 **Options:**
 - `omnioffloader_settings` (autoload on) — provider, retention_policy (0/1/2), mirror_delete, path_prefix(+active), object_versioning, bring_back_delete_cloud, remove_data_on_uninstall
 - `omnioffloader_version` (autoload on) — for Migrator
-- `omnioffloader_credentials` (autoload **on** since 0.1.3 — `is_configured()` reads it on every request) — per-provider credential sub-arrays. Never returned raw via REST.
+- `omnioffloader_credentials` (autoload **off** — secrets stay out of the shared alloptions cache; `is_configured()` pays one small query per request for that) — per-provider credential sub-arrays. Never returned raw via REST.
 - `omnioffloader_first_activated_version` (autoload off)
 - `omnioffloader_bulk_offload_state` / `omnioffloader_bulk_restore_state` / `omnioffloader_bulk_retention_state` (autoload off) — progress heartbeats
 - `omnioffloader_bulk_{offload,restore,retention}_batch_*` / `_status` — queue internals, written by `WP_Background_Process` via `update_site_option` (autoload off on single site). Never leave these behind; `purge_stored_data()` owns their cleanup.

@@ -124,20 +124,6 @@ trait OptionsHelper {
 	}
 
 	/**
-	 * Get stored credentials for one provider.
-	 *
-	 * @param string $provider_key Provider key.
-	 * @return array<string, string>
-	 */
-	public static function get_provider_credentials( $provider_key ) {
-		$all = self::get_all_credentials();
-
-		$creds = $all[ $provider_key ] ?? array();
-
-		return is_array( $creds ) ? $creds : array();
-	}
-
-	/**
 	 * Update stored credentials for one provider.
 	 *
 	 * Values are stored as plain strings; fields locked by wp-config
@@ -161,10 +147,10 @@ trait OptionsHelper {
 
 		$all[ $provider_key ] = $existing;
 
-		// Autoloaded: is_configured() reads it on every request to decide
-		// whether to boot the engine, so a separate query each time costs more
-		// than the few hundred bytes in alloptions. Never exposed via REST.
-		update_option( 'omnioffloader_credentials', $all, true );
+		// Not autoloaded: autoloaded options sit in the shared alloptions
+		// cache on every request, and secrets do not belong there. Costs one
+		// small query per request in is_configured(). Never exposed via REST.
+		update_option( 'omnioffloader_credentials', $all, false );
 	}
 
 	/**

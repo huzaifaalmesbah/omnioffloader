@@ -34,6 +34,13 @@ class AttachmentRestorer {
 	use AttachmentHelper;
 
 	/**
+	 * Providers resolved so far in this request, by key.
+	 *
+	 * @var array<string, ProviderInterface>
+	 */
+	private static $providers = array();
+
+	/**
 	 * Restore one attachment from the cloud back to the server.
 	 *
 	 * @param int  $attachment_id Attachment ID.
@@ -359,8 +366,16 @@ class AttachmentRestorer {
 			return null;
 		}
 
+		// One provider (and S3 client) per key for the whole request: bulk
+		// restores create a restorer per item.
+		if ( isset( self::$providers[ $provider_key ] ) ) {
+			return self::$providers[ $provider_key ];
+		}
+
 		try {
-			return ProviderRegistry::create( $provider_key );
+			self::$providers[ $provider_key ] = ProviderRegistry::create( $provider_key );
+
+			return self::$providers[ $provider_key ];
 		} catch ( \InvalidArgumentException $e ) {
 			self::log_attachment_error(
 				$attachment_id,

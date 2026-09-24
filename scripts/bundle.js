@@ -13,7 +13,7 @@ console.log(`\n🚀 Starting ${isOrg ? 'WordPress.org submission' : 'Production'
 
 // 1. Build frontend
 console.log('📦 Step 1: Building production assets...');
-execSync('npm run build', { cwd: rootDir, stdio: 'inherit' });
+execSync('pnpm build', { cwd: rootDir, stdio: 'inherit' });
 
 // 2. Install production-only composer dependencies (no dev tools in autoloader)
 console.log('🐘 Step 2: Preparing production Composer autoloader (--no-dev)...');

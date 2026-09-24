@@ -1,66 +1,67 @@
 # OmniOffloader — Multi-Cloud Media Offload & CDN for WordPress
 
-[![Version](https://img.shields.io/badge/version-0.1.2-blue.svg)](https://github.com/huzaifaalmesbah/omnioffloader)
+[![Version](https://img.shields.io/badge/version-0.1.3-blue.svg)](https://wordpress.org/plugins/omnioffloader/)
 [![WordPress](https://img.shields.io/badge/WordPress-6.6%20--%207.1-blue.svg)](https://wordpress.org/)
 [![PHP](https://img.shields.io/badge/PHP-8.1%2B-purple.svg)](https://www.php.net/)
 [![License](https://img.shields.io/badge/license-GPL--2.0--or--later-green.svg)](https://www.gnu.org/licenses/gpl-2.0.html)
 
-**OmniOffloader** automatically offloads your WordPress media library to cloud object storage, serves assets lightning-fast from your CDN or custom domain, and frees server disk space. 
+**OmniOffloader** offloads your WordPress media library to cloud object storage, serves it from your CDN or custom domain, and frees server disk space.
 
-Unlike traditional offloaders where moving to the cloud is a one-way trip, OmniOffloader features **Bring Back**: seamless, verified restoration of offloaded media from the cloud back to your local server at any time.
+Moving to the cloud is not a one-way trip: **Bring Back** restores offloaded media from the cloud to your server at any time, per file or in bulk, and verifies every file before handing URLs back to local paths.
 
 ---
 
 ## ✨ Features
 
-- **🌐 Multi-Cloud Storage Providers**:
-  - **Amazon S3** (AWS S3)
-  - **Cloudflare R2** (Zero egress fees)
-  - **Backblaze B2**
-  - **DigitalOcean Spaces**
-  - **Wasabi**
-  - **S3-Compatible Storage** (MinIO, Ceph, Linode Object Storage, etc.)
+- **🌐 Multi-cloud storage providers**
+  - Amazon S3
+  - Cloudflare R2
+  - Backblaze B2
+  - DigitalOcean Spaces
+  - Wasabi
+  - Any S3-compatible storage (MinIO, Storj, OVHcloud, Linode Object Storage, Scaleway, …) with your own endpoint, region and display name
 
-- **🔄 Bring Back (Restoration Engine)**:
-  - Restore single files, selected batches, or your entire library from the cloud back to your local server.
-  - Verifies file integrity (MD5 checksum) before safely clearing offload metadata.
-  - Optional cloud cleanup upon verified restore.
-  - Disk-space preflight calculator estimating required space against available server capacity.
+- **🔄 Bring Back (restoration engine)**
+  - Restore single files, a chosen number, or the whole library.
+  - Files already on the server are checked against the cloud with one request per attachment; missing ones download side by side.
+  - Every download goes to a temp file and is moved into place only when complete; offload records are cleared only after every expected file is present.
+  - Optional cloud cleanup after a verified restore (off by default).
+  - Disk-space preflight comparing the required space with what the server has free.
 
-- **📦 Custom Batch Size & Quantity Controls**:
-  - Choose between processing the entire media library ("All Media") or a specified custom quantity.
-  - Quick preset buttons (`5`, `10`, `25`, `50`, `100`, and `All`) with direct number input.
-  - Proportional batch download size estimation for Bring Back operations.
-  - Fully integrated with WP-CLI (`--limit=<number>`) for scheduled incremental migrations.
+- **⚡ Transfer Speed**
+  - Low (1 file at a time), Balanced (3, default), Fast (6) or Custom (1–10).
+  - Applies to Bulk Offload, Bring Back, new uploads and WP-CLI.
+  - Always a single PHP process — faster settings overlap network waits instead of starting more workers.
 
-- **⚡ High-Performance Background Queues**:
-  - Asynchronous, non-blocking upload handler for instant media uploads without browser waiting.
-  - Hardened background workers with automatic lock renewal, self-healing stall recovery, consecutive failure circuit breakers, and delta status polling.
-  - Multipart upload pipeline for large files (>64 MB, up to 5 GB+).
+- **📦 Bulk jobs and batch controls**
+  - Process the whole library or a custom number, with quick presets (`5`, `10`, `25`, `50`, `100`, `All`).
+  - Background queue with lock renewal, stall self-healing, a consecutive-failure circuit breaker and live progress.
+  - Only one bulk job (offload, Bring Back or retention) runs at a time, whether started from the admin, the Media Library or WP-CLI.
+  - Multipart uploads for files of 64 MB and more, including files beyond 5 GB.
 
-- **🛡️ Flexible Retention Policies**:
-  - **Keep Local**: Copies media to cloud storage and serves via CDN while retaining full local backups.
-  - **Smart Cleanup**: Retains the local original file and removes generated thumbnails to save 70%+ disk space while maintaining safety.
-  - **Full Cloud Migration**: Moves all media files and thumbnails to the cloud, reclaiming 100% of uploads disk space on your server.
+- **🛡️ Retention policies**
+  - **Retain Local Files** — the cloud is a second copy; nothing is deleted.
+  - **Smart Local Cleanup** — keep originals, delete generated thumbnails.
+  - **Full Cloud Migration** — keep nothing on the server.
+  - **Apply to existing media** from the Tools screen or WP-CLI: every local file is verified in the bucket by size before it is deleted; moving to a looser policy downloads local copies again.
 
-- **🎨 Seamless Media Library Integration**:
-  - **List View**: Dedicated offload status column, live animated processing indicators, and instant AJAX row actions (`Offload now` / `Bring Back`).
-  - **Grid View**: Real-time cloud badges on thumbnails, live progress indicators, and Attachment Details modal integration.
-  - **Media Editor**: OmniOffloader Meta Box on edit media screens with file metadata, bucket details, and one-click actions.
-  - **Native Bulk Actions**: Bulk offload or restore multiple files directly from the WordPress media library dropdown.
+- **🎨 Media Library integration**
+  - List view status column, grid view badges and a meta box on the edit screen.
+  - Row actions and bulk actions to offload or bring back selected media (administrators only).
 
-- **🔗 Transparent Content Rewriting**:
-  - Rewrites media URLs and `srcset` responsive image attributes on the fly across Gutenberg blocks (`render_block`), Classic Editor content (`the_content`), and audio/video shortcodes.
-  - Post database content is untouched and cleanly preserved.
+- **🔗 Transparent URL rewriting**
+  - Image, gallery, video, audio, file, cover and media-text blocks, Classic Editor media tags, audio/video shortcodes and `srcset` are served from the cloud.
+  - Post content in the database is never modified.
 
-- **💻 Modern React Admin Dashboard**:
-  - Fast, accessible settings interface built with Gutenberg components (`@wordpress/components`).
-  - Live progress bars, activity logs, stat cards, and credential verification testing.
+- **💻 React admin app**
+  - Built with `@wordpress/components` and TypeScript: Dashboard, Settings, Offload, Bring Back and Tools screens with live progress and activity logs.
 
-- **⌨️ Comprehensive WP-CLI Support**:
-  - `wp omnioffloader status`: Inspect library status, offloaded file counts, and storage metrics.
-  - `wp omnioffloader offload`: Trigger background or inline media offloading (supports `--limit=<number>`).
-  - `wp omnioffloader restore`: Trigger background or inline Bring Back restoration (supports `--limit=<number>`).
+- **⌨️ WP-CLI**
+  - `wp omnioffloader offload` — offload media (`--all`, `--ids`, `--limit`, `--dry-run`).
+  - `wp omnioffloader restore` — Bring Back (`--all`, `--ids`, `--limit`, `--delete-cloud`, `--dry-run`).
+  - `wp omnioffloader retention` — apply the retention policy to offloaded media (`--policy`, `--ids`, `--limit`, `--dry-run`, `--format`).
+  - `wp omnioffloader status` — library and connection status.
+  - The Tools screen lists every command and option with copy buttons.
 
 ---
 
@@ -68,109 +69,128 @@ Unlike traditional offloaders where moving to the cloud is a one-way trip, OmniO
 
 - **WordPress**: 6.6 or higher (tested up to 7.1)
 - **PHP**: 8.1 or higher
-- **PHP Extensions**: `curl`, `json`, `mbstring`, `openssl`, `simplexml`
+- **PHP extensions**: `curl`, `json`, `mbstring`, `openssl`, `simplexml`
 
 ---
 
 ## 🚀 Installation
 
-1. Download or clone this repository into your WordPress plugins directory:
-   ```bash
-   cd wp-content/plugins/
-   git clone https://github.com/huzaifaalmesbah/omnioffloader.git
-   ```
-2. Activate the plugin through the WordPress admin (**Plugins > Installed Plugins**) or via WP-CLI:
+Install **OmniOffloader** from **Plugins → Add New** in WordPress, or build it from source (see [Development](#️-development)).
+
+1. Activate the plugin through **Plugins → Installed Plugins**, or with WP-CLI:
    ```bash
    wp plugin activate omnioffloader
    ```
-3. Navigate to **Settings > OmniOffloader** in your WordPress dashboard.
-4. Select your storage provider, enter your bucket and credentials, and choose your retention policy.
+2. Open **OmniOffloader → Settings** in the WordPress admin menu.
+3. Select your storage provider, enter your bucket and credentials, and click **Test Connection**.
+4. Choose a retention policy and a Transfer Speed, then start a bulk offload from **OmniOffloader → Offload**.
 
 ---
 
 ## ⚙️ Provider Configuration Guide
 
-### 1. Cloudflare R2
-* **Storage Provider:** `Cloudflare R2`
-* **Account ID:** Found on the right sidebar of the Cloudflare Dashboard under Account ID.
-* **Access Key ID & Secret Access Key:** In Cloudflare Dashboard, go to **R2 > Manage R2 API Tokens**, create a token with **Object Read & Write** permissions.
-* **Bucket Name:** Your R2 bucket name.
-* **Custom Domain / CDN URL:** In your R2 bucket settings under **Settings > Public Access**, connect a custom domain (e.g. `https://media.yourdomain.com`) or enable the `r2.dev` public access subdomain. Paste that URL here.
+### Cloudflare R2
+* **Access Key ID & Secret Access Key:** Cloudflare dashboard → **R2 → Manage R2 API Tokens**, create a token with **Object Read & Write** permission.
+* **Endpoint URL:** the bucket's S3 API endpoint, `https://<account-id>.r2.cloudflarestorage.com`, from the bucket settings.
+* **Bucket Name:** your R2 bucket name.
+* **Custom Domain / CDN URL:** in the bucket's **Settings**, connect a custom domain (for example `https://media.yourdomain.com`) or enable the `r2.dev` public URL, and paste it here. R2 has no public URL until you do.
 
-### 2. Backblaze B2
-* **Storage Provider:** `Backblaze B2`
-* **Public Bucket Requirement:** In Backblaze B2 Console under **Bucket Settings**, set **Files in Bucket are:** to **`Public`** so media files can be displayed by web browsers.
-* **S3 Endpoint URL & Region:** Found in bucket details (e.g. Endpoint: `https://s3.us-east-005.backblazeb2.com`, Region: `us-east-005`).
-* **Application Key ID & Key:** In Backblaze Console, go to **Application Keys > Add a New Application Key** with **Read and Write** access to your bucket. Use `keyID` as Key and `applicationKey` as Secret.
-* **Custom Domain / CDN URL:** Leave blank to serve directly from Backblaze, or enter your Cloudflare CDN domain if configured.
+### Amazon S3
+* **Access Key ID & Secret Access Key:** create an IAM user with programmatic access and a policy allowing object read/write on the bucket.
+* **Bucket Name** and **Region** (for example `us-east-1`).
+* **Custom Domain / CDN URL:** your CloudFront domain, or leave blank to serve from S3 (the bucket policy must then allow public `s3:GetObject`).
 
-### 3. Amazon S3 (AWS)
-* **Storage Provider:** `Amazon S3`
-* **Region:** AWS region where your bucket was created (e.g. `us-east-1`).
-* **Access Key ID & Secret Access Key:** In AWS IAM Console, create an IAM user with programmatic access and attach an S3 policy (e.g. `AmazonS3FullAccess` or scoped bucket policy).
-* **Bucket Name:** Your AWS S3 bucket name.
-* **Public Access / CDN:** Ensure your bucket policy allows public `s3:GetObject` reads (or connect an **Amazon CloudFront** distribution). Enter your CloudFront domain (e.g. `https://d111111abcdef8.cloudfront.net`) or leave blank to serve via AWS default S3 domain.
+### DigitalOcean Spaces
+* **Spaces Access Key & Secret Key:** create a Spaces access key in the control panel.
+* **Endpoint URL** (for example `https://nyc3.digitaloceanspaces.com`) and **Region** (`nyc3`).
+* **Space / Bucket Name** and your Spaces CDN or custom domain.
 
-### 4. Storj (S3-Compatible)
-* **Storage Provider:** `Any S3-Compatible Storage`
-* **Provider Label:** `Storj`
-* **S3 Endpoint URL:** `https://gateway.storjshare.io` (or satellite gateway e.g. `https://gateway.ap1.storjshare.io`).
-* **Region:** `us-east-1`
-* **Use Path-Style Endpoint:** `Enabled`
-* **Access Key & Secret Key:** In Storj Satellite console, go to **Access > Create S3 Credentials**.
-* **Custom Domain / CDN URL:** Create a public linkshare grant via **Objects > [Your Bucket] > Share**, and copy the URL. Replace `/s/` with `/raw/` (e.g. `https://link.storjshare.io/raw/<ACCESS_KEY>/<YOUR_BUCKET>`) and paste it here.
+### Backblaze B2
+* **Bucket:** set **Files in Bucket are** to **Public** so browsers can load the media.
+* **S3 Endpoint URL & Region:** from the bucket details (for example `https://s3.us-east-005.backblazeb2.com` and `us-east-005`).
+* **Application Key ID & Application Key:** **Application Keys → Add a New Application Key** with **Read and Write** access to the bucket.
+* **Custom Domain / CDN URL:** leave blank to serve from Backblaze, or enter your CDN domain.
 
-### 5. MinIO (Local & Self-Hosted)
-* **Storage Provider:** `Any S3-Compatible Storage`
-* **Provider Label:** `MinIO Local`
-* **S3 Endpoint URL:** `http://127.0.0.1:9090` (or `http://127.0.0.1:9000`)
-* **Region:** `us-east-1`
-* **Use Path-Style Endpoint:** `Enabled`
-* **Access Key ID & Secret Access Key:** Root credentials (e.g. `minioadmin` / `minioadmin`).
-* **Bucket Name:** Your MinIO bucket name (set bucket policy to `download` / public read via `mc anonymous set download <alias>/<bucket>`).
-* **Custom Domain / CDN URL:** Leave blank or enter `http://127.0.0.1:9090/<bucket>`.
+### Wasabi
+* **Access Key ID & Secret Access Key:** create an access key in the Wasabi console.
+* **Bucket Name** and **Region** (for example `us-east-1`).
+* **Custom Domain / CDN URL:** make the files publicly readable with a bucket policy, or serve them through a CDN.
+
+### Storj (S3-compatible)
+* **Storage Provider:** `Any S3-Compatible Storage`, **Provider Label:** `Storj`
+* **S3 Endpoint URL:** `https://gateway.storjshare.io` (or a regional gateway such as `https://gateway.ap1.storjshare.io`)
+* **Region:** `us-east-1`, **Use Path-Style Endpoint:** enabled
+* **Access Key & Secret Key:** Storj console → **Access → Create S3 Credentials**.
+* **Custom Domain / CDN URL:** share the bucket publicly (**Objects → your bucket → Share**), replace `/s/` with `/raw/` in the link (`https://link.storjshare.io/raw/<ACCESS_KEY>/<BUCKET>`) and paste it here.
+
+### MinIO (local & self-hosted)
+* **Storage Provider:** `Any S3-Compatible Storage`, **Provider Label:** `MinIO`
+* **S3 Endpoint URL:** your MinIO API address, for example `http://127.0.0.1:9000`
+* **Region:** `us-east-1`, **Use Path-Style Endpoint:** enabled
+* **Access Key ID & Secret Access Key:** a MinIO access key.
+* **Bucket:** allow public reads (`mc anonymous set download <alias>/<bucket>`); **Custom Domain / CDN URL:** leave blank or enter `http://127.0.0.1:9000/<bucket>`.
+
+### Keeping keys out of the database
+
+Define credentials as constants in `wp-config.php`, named `OMNIOFFLOADER_{PROVIDER}_{FIELD}`:
+
+```php
+define( 'OMNIOFFLOADER_CLOUDFLARE_R2_KEY', '...' );
+define( 'OMNIOFFLOADER_CLOUDFLARE_R2_SECRET', '...' );
+```
+
+Constants take priority over saved values, and the settings screen shows those fields as locked.
 
 ---
 
 ## 🛠️ Development
 
+This project uses **[pnpm](https://pnpm.io/)** — the version is pinned in `package.json` (`packageManager`). The easiest way to get the right version is Corepack, which ships with Node.js:
+
+```bash
+corepack enable
+```
+
 ### Setup
 
 ```bash
-# Install PHP dependencies (AWS SDK, dev tools)
+# PHP dependencies (AWS SDK, dev tools)
 composer install
 
-# Install JavaScript/TypeScript dependencies
-npm install
+# JavaScript/TypeScript dependencies
+pnpm install
 ```
 
-### Build & Quality Commands
+### Build & quality commands
 
 ```bash
-npm start            # Development build with watch mode (wp-scripts)
-npm run build        # Production build
-npm run check-types  # Strict TypeScript check (tsc --noEmit)
-npm run lint:js      # ESLint with WordPress standards
-composer phpcs       # WordPress Coding Standards (WPCS)
-composer phpstan     # PHPStan static analysis (Level 6+)
-npm run bundle       # Package production distribution zip
-npm run bundle:org   # Package shaped for WordPress.org SVN release
+pnpm start            # Development build with watch mode (wp-scripts)
+pnpm build            # Production build
+pnpm check-types      # Strict TypeScript check (tsc --noEmit)
+pnpm lint:js          # ESLint with WordPress standards
+composer phpcs        # WordPress Coding Standards
+composer phpstan      # PHPStan static analysis (level 8)
+pnpm bundle           # Build + distribution zip
+pnpm bundle:org       # Same, shaped for the WordPress.org SVN layout
 ```
 
-### Automated Integration Tests
+Run `pnpm check-types`, `pnpm lint:js`, `composer phpstan` and `composer phpcs` before committing — CI only builds and deploys.
 
-Integration tests run against a WordPress environment using WP-CLI `eval-file`:
+### Integration tests
+
+The tests are `wp eval-file` scripts run against a real WordPress install. `tests/MockProvider.php` stands in for cloud storage, so no credentials are needed:
 
 ```bash
-# End-to-end offload test suite
 wp --exec="define( 'OMNIOFFLOADER_DISABLE_ENGINE', true );" eval-file tests/integration-offload.php
-
-# End-to-end Bring Back restore test suite
 wp --exec="define( 'OMNIOFFLOADER_DISABLE_ENGINE', true );" eval-file tests/integration-restore.php
-
-# Asynchronous non-blocking upload test suite
+wp --exec="define( 'OMNIOFFLOADER_DISABLE_ENGINE', true );" eval-file tests/integration-retention.php
 wp --exec="define( 'OMNIOFFLOADER_DISABLE_ENGINE', true );" eval-file tests/integration-async-upload.php
+
+# Seed local-only test attachments: <count> <prefix>
+wp --exec="define( 'OMNIOFFLOADER_DISABLE_ENGINE', true );" eval-file tests/seed-attachments.php 20 myprefix
 ```
+
+`tests/integration-bulk-rest.php` hits a live bucket and needs real credentials.
 
 ---
 

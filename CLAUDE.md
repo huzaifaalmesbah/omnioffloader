@@ -20,18 +20,20 @@ Providers shipped (`Providers\ProviderRegistry::$providers`): `amazon_s3`, `clou
 
 ## Build Commands
 
+JS tooling uses **pnpm** (version pinned by `packageManager` in `package.json`; `corepack enable` provides it) — not npm.
+
 ```bash
-npm start            # Development build with watch mode (wp-scripts)
-npm run build        # Production build
-npm run check-types  # tsc --noEmit — strict TypeScript check
-npm run lint:js      # ESLint (WordPress TS config)
-npm run bundle       # Build + distribution zip (excludes dev files per .distignore)
-npm run bundle:org   # Same, shaped for the WordPress.org SVN layout
+pnpm start            # Development build with watch mode (wp-scripts)
+pnpm build            # Production build
+pnpm check-types      # tsc --noEmit — strict TypeScript check
+pnpm lint:js          # ESLint (WordPress TS config)
+pnpm bundle           # Build + distribution zip (excludes dev files per .distignore)
+pnpm bundle:org       # Same, shaped for the WordPress.org SVN layout
 composer phpstan     # PHPStan level 8 (szepeviktor/phpstan-wordpress)
 composer phpcs       # WordPress Coding Standards
 ```
 
-Run `check-types`, `lint:js`, `phpstan` and `phpcs` before committing — GitHub Actions only builds and deploys, so nothing else catches a regression. Translations come from translate.wordpress.org; there is no local i18n build step and no `languages/` folder.
+Run `pnpm check-types`, `pnpm lint:js`, `composer phpstan` and `composer phpcs` before committing — GitHub Actions only builds and deploys, so nothing else catches a regression. Translations come from translate.wordpress.org; there is no local i18n build step and no `languages/` folder.
 
 ### Integration tests
 

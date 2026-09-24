@@ -322,10 +322,10 @@ Queue population skips trashed attachments and rows without `_wp_attached_file` 
 
 | Script | Purpose |
 |---|---|
-| `npm start` / `npm run build` | wp-scripts dev / production (TypeScript via Babel) |
-| `npm run check-types` | `tsc --noEmit` (strict) |
-| `npm run lint:js` | ESLint (WordPress TS config) |
-| `npm run bundle` / `bundle:org` | local release zip / WP.org SVN layout |
+| `pnpm start` / `pnpm build` | wp-scripts dev / production (TypeScript via Babel) |
+| `pnpm check-types` | `tsc --noEmit` (strict) |
+| `pnpm lint:js` | ESLint (WordPress TS config) |
+| `pnpm bundle` / `pnpm bundle:org` | local release zip / WP.org SVN layout |
 | `composer phpstan` / `composer phpcs` | PHPStan level 8 / WPCS |
 
 **CI only builds and deploys** — run all checks locally before committing. The release ships **build files only**: `.distignore` excludes `src/`, `package.json`, `tsconfig.json`, `composer.json`, `docs/`, tests and dev config; `vendor/` is installed with `--no-dev`. TypeScript rules: strict, `isolatedModules`, no `any`, `src/types/` is the single source of truth for REST shapes (change PHP and TS together). i18n: PHP and JS `__()` with `omnioffloader`, `_n()` for counts, translator comments; translations come from translate.wordpress.org.

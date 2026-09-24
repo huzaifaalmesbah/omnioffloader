@@ -99,7 +99,7 @@ class Settings {
 				static function () {
 					printf(
 						'<div class="notice notice-error"><p>%s</p></div>',
-						esc_html__( 'OmniOffloader: build assets are missing. Run "npm install && npm run build" in the plugin directory.', 'omnioffloader' )
+						esc_html__( 'OmniOffloader: build assets are missing. Run "pnpm install && pnpm build" in the plugin directory.', 'omnioffloader' )
 					);
 				}
 			);

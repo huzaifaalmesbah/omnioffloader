@@ -51,7 +51,9 @@ class ContentImageTagObserver implements ObserverInterface {
 	private $provider;
 
 	/**
-	 * Local media URL => cloud URL ('' when not offloaded), per request.
+	 * Local media URL (scheme-less, no query/fragment) => cloud URL, or ''
+	 * when not offloaded. Per request. Keyed without the query because the
+	 * media shortcodes add a per-instance "?_=N" that would defeat the memo.
 	 *
 	 * @var array<string, string>
 	 */
@@ -77,6 +79,11 @@ class ContentImageTagObserver implements ObserverInterface {
 
 		// Gutenberg media blocks (video, audio, file, media-text, cover, etc.).
 		add_filter( 'render_block', array( $this, 'rewrite_block' ), 99, 2 );
+
+		// Prime every media block's attachment in one batch before do_blocks
+		// (priority 9) renders them — otherwise each block's offload check is
+		// a meta query of its own, since core only primes at priority 12.
+		add_filter( 'the_content', array( $this, 'prime_block_attachments' ), 8 );
 
 		// Post content fallback for Classic Editor / raw HTML media tags.
 		add_filter( 'the_content', array( $this, 'rewrite_content_media' ), 99 );
@@ -179,13 +186,15 @@ class ContentImageTagObserver implements ObserverInterface {
 		return (string) preg_replace_callback(
 			$pattern,
 			function ( $matches ) {
-				$cloud_url = $this->media_url_cache[ $matches[4] ] ?? '';
+				list( $key, $suffix ) = self::split_media_url( $matches[4] );
+				$cloud_url            = $this->media_url_cache[ $key ] ?? '';
 
 				if ( '' === $cloud_url ) {
 					return $matches[0];
 				}
 
-				return '<' . $matches[1] . $matches[2] . $matches[3] . esc_url( $cloud_url ) . $matches[5];
+				// Keep the original query (e.g. the shortcode's "?_=1").
+				return '<' . $matches[1] . $matches[2] . $matches[3] . esc_url( $cloud_url . $suffix ) . $matches[5];
 			},
 			$content
 		);
@@ -204,17 +213,17 @@ class ContentImageTagObserver implements ObserverInterface {
 		$lookup   = array();
 
 		foreach ( array_unique( $urls ) as $url ) {
-			if ( isset( $this->media_url_cache[ $url ] ) ) {
+			$key = self::split_media_url( $url )[0];
+
+			if ( isset( $this->media_url_cache[ $key ] ) ) {
 				continue;
 			}
 
 			// Anything outside the uploads URL is never ours.
-			$this->media_url_cache[ $url ] = '';
+			$this->media_url_cache[ $key ] = '';
 
-			$path = strtok( set_url_scheme( $url, 'http' ), '?#' );
-
-			if ( is_string( $path ) && 0 === strpos( $path, $base_url ) ) {
-				$lookup[ rawurldecode( substr( $path, strlen( $base_url ) ) ) ][] = $url;
+			if ( 0 === strpos( $key, $base_url ) ) {
+				$lookup[ rawurldecode( substr( $key, strlen( $base_url ) ) ) ][] = $key;
 			}
 		}
 
@@ -234,7 +243,8 @@ class ContentImageTagObserver implements ObserverInterface {
 			return;
 		}
 
-		update_meta_cache( 'post', wp_list_pluck( $rows, 'post_id' ) );
+		// Posts and meta in two queries; wp_get_attachment_url() needs both.
+		_prime_post_caches( array_map( 'intval', wp_list_pluck( $rows, 'post_id' ) ), false, true );
 
 		foreach ( $rows as $row ) {
 			$attachment_id = (int) $row->post_id;
@@ -249,10 +259,72 @@ class ContentImageTagObserver implements ObserverInterface {
 				continue;
 			}
 
-			foreach ( $lookup[ $row->meta_value ] ?? array() as $url ) {
-				$this->media_url_cache[ $url ] = $cloud_url;
+			foreach ( $lookup[ $row->meta_value ] ?? array() as $key ) {
+				$this->media_url_cache[ $key ] = $cloud_url;
 			}
 		}
+	}
+
+	/**
+	 * Split a media URL into its memo key and its query/fragment suffix.
+	 *
+	 * @since 0.1.3
+	 *
+	 * @param string $url URL.
+	 * @return array{0: string, 1: string} Scheme-normalised URL without query/fragment, and the suffix.
+	 */
+	private static function split_media_url( $url ) {
+		$cut = strcspn( $url, '?#' );
+
+		return array( set_url_scheme( substr( $url, 0, $cut ), 'http' ), substr( $url, $cut ) );
+	}
+
+	/**
+	 * Prime the attachments referenced by media blocks in one batch.
+	 *
+	 * Runs on the_content before do_blocks(), so the per-block offload check
+	 * in rewrite_block() reads warm caches instead of querying per block.
+	 *
+	 * @since 0.1.3
+	 *
+	 * @param string $content Post content (unrendered blocks).
+	 * @return string Unchanged content.
+	 */
+	public function prime_block_attachments( $content ) {
+		if ( ! is_string( $content ) || false === strpos( $content, '<!-- wp:' ) ) {
+			return $content;
+		}
+
+		/** This filter is documented in includes/Offload/Observers/ContentImageTagObserver.php */
+		$media_blocks = (array) apply_filters( 'omnioffloader_media_block_names', self::MEDIA_BLOCKS );
+		$names        = array();
+
+		foreach ( $media_blocks as $name ) {
+			// Block comments omit the "core/" namespace.
+			$names[] = preg_quote( 0 === strpos( (string) $name, 'core/' ) ? substr( (string) $name, 5 ) : (string) $name, '/' );
+		}
+
+		if ( empty( $names ) || ! preg_match_all( '/<!-- wp:(?:' . implode( '|', $names ) . ')\s+(\{[^\n]*?\})\s+\/?-->/', $content, $blocks ) ) {
+			return $content;
+		}
+
+		$ids = array();
+
+		foreach ( $blocks[1] as $json ) {
+			if ( preg_match_all( '/"(?:id|mediaId)":(\d+)/', $json, $found ) ) {
+				foreach ( $found[1] as $id ) {
+					$ids[] = (int) $id;
+				}
+			}
+		}
+
+		$ids = array_values( array_unique( array_filter( $ids ) ) );
+
+		if ( ! empty( $ids ) ) {
+			_prime_post_caches( $ids, false, true );
+		}
+
+		return $content;
 	}
 
 	/**

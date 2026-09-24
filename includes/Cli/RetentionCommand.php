@@ -33,6 +33,11 @@ class RetentionCommand {
 	private const LOCK_RENEW_EVERY = 20;
 
 	/**
+	 * Attachments primed per chunk in dry runs and counts.
+	 */
+	private const PRIME_CHUNK = 200;
+
+	/**
 	 * Policy labels for output.
 	 *
 	 * @var array<int, string>
@@ -130,28 +135,21 @@ class RetentionCommand {
 			return;
 		}
 
-		$to_clean = array_values(
-			array_filter(
-				$ids,
-				static function ( $id ) use ( $policy ) {
-					return RetentionApplier::stored_policy( $id ) < $policy;
-				}
-			)
-		);
-
 		if ( $is_dry ) {
 			$this->dry_run( $ids, $policy );
 
 			return;
 		}
 
-		if ( ! empty( $to_clean ) ) {
+		$to_clean = $this->count_to_clean( $ids, $policy );
+
+		if ( $to_clean > 0 ) {
 			WP_CLI::confirm(
 				sprintf(
 					'Apply "%s" to %d attachment(s)? Local files of %d attachment(s) will be deleted after each is verified in cloud storage.',
 					self::POLICY_LABELS[ $policy ],
 					count( $ids ),
-					count( $to_clean )
+					$to_clean
 				),
 				$assoc_args
 			);
@@ -242,36 +240,15 @@ class RetentionCommand {
 		$rows        = array();
 		$total_bytes = 0;
 
-		foreach ( $ids as $id ) {
-			$stored = RetentionApplier::stored_policy( $id );
+		// Prime posts + meta a chunk at a time and drop them again, so a large
+		// library is neither one query per attachment nor all held in memory.
+		foreach ( array_chunk( $ids, self::PRIME_CHUNK ) as $chunk ) {
+			_prime_post_caches( $chunk, false, true );
 
-			if ( $stored < $policy ) {
-				$files  = RetentionApplier::files_to_delete( $id, $policy );
-				$bytes  = 0;
-				$action = 'delete local';
-
-				foreach ( $files as $entry ) {
-					// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- false is treated as 0.
-					$bytes += (int) @filesize( $entry['file'] );
-				}
-
-				$total_bytes += $bytes;
-				$detail       = sprintf( '%d file(s), %s', count( $files ), size_format( $bytes, 1 ) );
-			} else {
-				$action = 'download';
-				$detail = 0 === $policy ? 'original + sizes' : 'original';
+			foreach ( $chunk as $id ) {
+				$rows[] = $this->dry_run_row( $id, $policy, $total_bytes );
+				clean_post_cache( $id );
 			}
-
-			$rows[] = array(
-				'ID'     => $id,
-				'title'  => get_the_title( $id ),
-				'from'   => $stored,
-				'to'     => $policy,
-				'action' => $action,
-				'detail' => $detail,
-			);
-
-			clean_post_cache( $id );
 		}
 
 		\WP_CLI\Utils\format_items( 'table', $rows, array( 'ID', 'title', 'from', 'to', 'action', 'detail' ) );
@@ -285,6 +262,70 @@ class RetentionCommand {
 			)
 		);
 	}
+
+	/**
+	 * How many of $ids would lose local files under $policy.
+	 *
+	 * @param int[] $ids    Attachment IDs.
+	 * @param int   $policy Target policy.
+	 * @return int
+	 */
+	private function count_to_clean( array $ids, $policy ) {
+		$count = 0;
+
+		foreach ( array_chunk( $ids, self::PRIME_CHUNK ) as $chunk ) {
+			update_meta_cache( 'post', $chunk );
+
+			foreach ( $chunk as $id ) {
+				if ( RetentionApplier::stored_policy( $id ) < $policy ) {
+					++$count;
+				}
+
+				wp_cache_delete( $id, 'post_meta' );
+			}
+		}
+
+		return $count;
+	}
+
+	/**
+	 * One dry-run table row. Caches for $id must already be primed.
+	 *
+	 * @param int $id          Attachment ID.
+	 * @param int $policy      Target policy.
+	 * @param int $total_bytes Running total of bytes to free, updated in place.
+	 * @return array<string, int|string>
+	 */
+	private function dry_run_row( $id, $policy, &$total_bytes ) {
+		$stored = RetentionApplier::stored_policy( $id );
+
+		if ( $stored < $policy ) {
+			$files  = RetentionApplier::files_to_delete( $id, $policy );
+			$bytes  = 0;
+			$action = 'delete local';
+
+			foreach ( $files as $entry ) {
+				// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- false is treated as 0.
+				$bytes += (int) @filesize( $entry['file'] );
+			}
+
+			$total_bytes += $bytes;
+			$detail       = sprintf( '%d file(s), %s', count( $files ), size_format( $bytes, 1 ) );
+		} else {
+			$action = 'download';
+			$detail = 0 === $policy ? 'original + sizes' : 'original';
+		}
+
+		return array(
+			'ID'     => $id,
+			'title'  => get_the_title( $id ),
+			'from'   => $stored,
+			'to'     => $policy,
+			'action' => $action,
+			'detail' => $detail,
+		);
+	}
+
 
 	/**
 	 * Resolve the target attachment IDs from CLI args.

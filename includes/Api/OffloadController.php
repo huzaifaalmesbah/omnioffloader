@@ -434,21 +434,28 @@ class OffloadController extends BaseController {
 			$async->process_queue_now();
 		}
 
-		$bulk_offload = Plugin::get_instance()->get_bulk_offload();
-		if ( null !== $bulk_offload && $bulk_offload->is_active() ) {
+		// Each state is read once; the queue tables are only consulted when a
+		// run is actually marked running. This route is polled every couple of
+		// seconds per open Media Library tab, so idle polls stay at two reads.
+		$bulk_offload      = Plugin::get_instance()->get_bulk_offload();
+		$offload_state     = BulkOffloadProcessor::get_state();
+		$is_offload_active = null !== $bulk_offload && 'running' === $offload_state['status'] && $bulk_offload->is_active();
+
+		if ( $is_offload_active ) {
 			$bulk_offload->process_queue_now();
+			$offload_state     = BulkOffloadProcessor::get_state();
+			$is_offload_active = 'running' === $offload_state['status'];
 		}
 
-		$bulk_restore = Plugin::get_instance()->get_bulk_restore();
-		if ( null !== $bulk_restore && $bulk_restore->is_active() ) {
+		$bulk_restore      = Plugin::get_instance()->get_bulk_restore();
+		$restore_state     = BulkRestoreProcessor::get_state();
+		$is_restore_active = null !== $bulk_restore && 'running' === $restore_state['status'] && $bulk_restore->is_active();
+
+		if ( $is_restore_active ) {
 			$bulk_restore->process_queue_now();
+			$restore_state     = BulkRestoreProcessor::get_state();
+			$is_restore_active = 'running' === $restore_state['status'];
 		}
-
-		$offload_state = BulkOffloadProcessor::get_state();
-		$restore_state = BulkRestoreProcessor::get_state();
-
-		$is_offload_active = ( null !== $bulk_offload && $bulk_offload->is_active() && 'running' === ( $offload_state['status'] ?? '' ) );
-		$is_restore_active = ( null !== $bulk_restore && $bulk_restore->is_active() && 'running' === ( $restore_state['status'] ?? '' ) );
 
 		$bulk_active = $is_offload_active || $is_restore_active;
 		$bulk_type   = $is_offload_active ? 'offload' : ( $is_restore_active ? 'restore' : '' );

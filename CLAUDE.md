@@ -198,7 +198,7 @@ Actions: `omnioffloader_before_offload`, `omnioffloader_after_offload`, `omnioff
 
 ## Performance Rules
 
-- Frontend (non-admin) footprint is URL-rewrite filters only — no queries, writes, or HTTP. `render_block` only looks up IDs for `ContentImageTagObserver::MEDIA_BLOCKS` (filter `omnioffloader_media_block_names`); `<video>/<audio>/<source>` URLs are resolved in one batched `IN (…)` query per content and memoized per request — never `attachment_url_to_postid()` per src.
+- Frontend (non-admin) footprint is URL-rewrite filters only — no queries, writes, or HTTP. `render_block` only looks up IDs for `ContentImageTagObserver::MEDIA_BLOCKS` (filter `omnioffloader_media_block_names`), and `prime_block_attachments()` on `the_content` priority 8 primes those IDs in one batch before `do_blocks` (9) — core only primes at 12; `<video>/<audio>/<source>` URLs are resolved in one batched `IN (…)` query per content and memoized per request — never `attachment_url_to_postid()` per src.
 - Preflights (`get_restore_preflight`, `get_retention_preflight`) scan every offloaded attachment's metadata. The UI reads the transient by default and forces a refresh only when a run ends — never on a polling interval.
 - No remote calls outside explicit user actions (Test Connection, offload/restore jobs).
 - Stats via one indexed postmeta count query, short-transient cached.

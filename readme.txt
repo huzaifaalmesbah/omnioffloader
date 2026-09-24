@@ -186,9 +186,12 @@ The plugin activates and runs per site. It has not been through a dedicated mult
 **Performance**
 
 * Front end: media blocks are the only blocks whose IDs are looked up. A navigation menu no longer costs a database query per item.
-* Front end: video and audio links in content are resolved with one query per post instead of one full scan per link, and cached for the rest of the page.
+* Front end: all attachments used by image, gallery, video, audio, file, cover and media-text blocks are loaded in one batch before the blocks render, so a page costs no extra queries per image (a 6-image gallery went from 11 queries to 6, the same as without the plugin).
+* Front end: video and audio links in content are resolved with one query per post instead of one full scan per link, and cached for the rest of the page even when the content is rendered again (for example by an SEO plugin).
 * The Bring Back and Tools screens reuse the cached preflight instead of rescanning the whole library every 6 seconds during a run.
 * The Media Library status script no longer polls the server on every editor load or window focus when there is nothing to update.
+* Each Media Library status check reads the bulk job state once (2 queries when idle instead of 6–8).
+* `wp omnioffloader retention --dry-run` and the offload/restore dry runs load attachments 200 at a time instead of one by one.
 * Uploading a file whose name is already taken checks all existing names with one query instead of one per "-1", "-2"… suffix.
 * The credentials option is autoloaded, saving a database query on every page. Clearing the stats cache costs half as many queries, and background uploads clear it once per batch instead of once per file.
 * The post-activation redirect check only runs on the Plugins screen instead of on every admin request.

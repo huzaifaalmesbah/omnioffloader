@@ -98,8 +98,14 @@ class OffloadCommand {
 
 		if ( $is_dry ) {
 			WP_CLI::log( sprintf( 'Would offload %d attachment(s):', count( $ids ) ) );
-			foreach ( $ids as $id ) {
-				WP_CLI::log( sprintf( '  %d  %s', $id, get_the_title( $id ) ) );
+			// One posts query per 200 titles instead of one per attachment.
+			foreach ( array_chunk( $ids, 200 ) as $chunk ) {
+				_prime_post_caches( $chunk, false, false );
+
+				foreach ( $chunk as $id ) {
+					WP_CLI::log( sprintf( '  %d  %s', $id, get_the_title( $id ) ) );
+					clean_post_cache( $id );
+				}
 			}
 
 			return;

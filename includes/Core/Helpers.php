@@ -345,7 +345,17 @@ class Helpers {
 			$cached = get_transient( 'omnioffloader_retention_preflight' );
 
 			if ( is_array( $cached ) && isset( $cached['policy'], $cached['eligible'] ) && (int) $cached['policy'] === $policy ) {
-				return $cached;
+				// Rebuilt key by key: a transient is untyped storage.
+				return array(
+					'policy'         => $policy,
+					'eligible'       => (int) $cached['eligible'],
+					'to_clean'       => (int) ( $cached['to_clean'] ?? 0 ),
+					'to_download'    => (int) ( $cached['to_download'] ?? 0 ),
+					'freed_bytes'    => (int) ( $cached['freed_bytes'] ?? 0 ),
+					'download_bytes' => (int) ( $cached['download_bytes'] ?? 0 ),
+					'free_bytes'     => (int) ( $cached['free_bytes'] ?? 0 ),
+					'disk_ok'        => (bool) ( $cached['disk_ok'] ?? true ),
+				);
 			}
 		}
 

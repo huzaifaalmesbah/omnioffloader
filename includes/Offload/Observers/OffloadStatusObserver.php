@@ -486,7 +486,7 @@ class OffloadStatusObserver implements ObserverInterface {
 				}
 			}
 
-			$bucket       = ! empty( $status['bucket'] ) ? (string) $status['bucket'] : $this->provider->get_bucket();
+			$bucket       = ! empty( $status['bucket'] ) ? (string) $status['bucket'] : (string) $this->provider->get_bucket();
 			$offloaded_at = (int) get_post_meta( $post_id, 'omnioffloader_offloaded_at', true );
 
 			if ( $offloaded_at > 0 ) {

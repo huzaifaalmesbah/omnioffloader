@@ -23,7 +23,7 @@ abstract class BaseController {
 	/**
 	 * REST namespace.
 	 *
-	 * @var string
+	 * @var non-falsy-string
 	 */
 	protected $namespace = 'omnioffloader/v1';
 
@@ -219,7 +219,7 @@ abstract class BaseController {
 	/**
 	 * Register a GET route.
 	 *
-	 * @param string               $route    Route path (no namespace).
+	 * @param non-falsy-string     $route    Route path (no namespace).
 	 * @param callable             $callback Handler.
 	 * @param array<string, mixed> $args     Argument schema.
 	 * @return void
@@ -240,7 +240,7 @@ abstract class BaseController {
 	/**
 	 * Register a POST route.
 	 *
-	 * @param string               $route    Route path (no namespace).
+	 * @param non-falsy-string     $route    Route path (no namespace).
 	 * @param callable             $callback Handler.
 	 * @param array<string, mixed> $args     Argument schema.
 	 * @return void

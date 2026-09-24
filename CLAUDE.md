@@ -27,7 +27,7 @@ npm run check-types  # tsc --noEmit — strict TypeScript check
 npm run lint:js      # ESLint (WordPress TS config)
 npm run bundle       # Build + distribution zip (excludes dev files per .distignore)
 npm run bundle:org   # Same, shaped for the WordPress.org SVN layout
-composer phpstan     # PHPStan level 6+ (szepeviktor/phpstan-wordpress)
+composer phpstan     # PHPStan level 8 (szepeviktor/phpstan-wordpress)
 composer phpcs       # WordPress Coding Standards
 ```
 

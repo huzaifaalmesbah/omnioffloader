@@ -183,20 +183,38 @@ class BringBackController extends BaseController {
 			$delete_cloud = false;
 		}
 
-		$restorer     = new AttachmentRestorer();
-		$ok           = $restorer->restore( $attachment_id, $delete_cloud );
-		$provider     = Plugin::get_instance()->get_provider();
-		$observer     = new \OmniOffloader\Offload\Observers\OffloadStatusObserver( $provider );
-		$row_observer = new \OmniOffloader\Offload\Observers\RowActionsObserver( $provider );
+		$restorer = new AttachmentRestorer();
+		$ok       = $restorer->restore( $attachment_id, $delete_cloud );
+		$provider = Plugin::get_instance()->get_provider();
+
+		// The Media Library HTML needs the engine; without it (provider since
+		// removed) the restore still succeeds and the page reloads the row.
+		$html = array(
+			'column_html'     => '',
+			'badge_html'      => '',
+			'meta_box_html'   => '',
+			'row_action_html' => '',
+		);
+
+		if ( null !== $provider ) {
+			$observer     = new \OmniOffloader\Offload\Observers\OffloadStatusObserver( $provider );
+			$row_observer = new \OmniOffloader\Offload\Observers\RowActionsObserver( $provider );
+			$html         = array(
+				'column_html'     => $observer->render_column_icon( $attachment_id ),
+				'badge_html'      => $observer->render_details_badge( $attachment_id ),
+				'meta_box_html'   => $observer->render_meta_box_content( $attachment_id ),
+				'row_action_html' => $row_observer->render_action_link( $attachment_id ),
+			);
+		}
 
 		return rest_ensure_response(
 			array(
 				'restored'        => $ok,
 				'status'          => self::get_attachment_status( $attachment_id ),
-				'column_html'     => $observer->render_column_icon( $attachment_id ),
-				'badge_html'      => $observer->render_details_badge( $attachment_id ),
-				'meta_box_html'   => $observer->render_meta_box_content( $attachment_id ),
-				'row_action_html' => $row_observer->render_action_link( $attachment_id ),
+				'column_html'     => $html['column_html'],
+				'badge_html'      => $html['badge_html'],
+				'meta_box_html'   => $html['meta_box_html'],
+				'row_action_html' => $html['row_action_html'],
 				'url'             => (string) wp_get_attachment_url( $attachment_id ),
 				// Always an array, never '' when the attachment has no errors.
 				'errors'          => self::error_log_of( $attachment_id ),

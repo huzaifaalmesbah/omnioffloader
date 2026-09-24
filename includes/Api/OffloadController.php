@@ -193,6 +193,16 @@ class OffloadController extends BaseController {
 		}
 
 		$provider = Plugin::get_instance()->get_provider();
+
+		// require_engine() above guarantees this; keeps the type exact.
+		if ( null === $provider ) {
+			return new \WP_Error(
+				'omnioffloader_not_configured',
+				__( 'No cloud provider is configured.', 'omnioffloader' ),
+				array( 'status' => 409 )
+			);
+		}
+
 		$uploader = new AttachmentUploader( $provider );
 		$ok       = $uploader->upload( $attachment_id );
 
@@ -305,13 +315,20 @@ class OffloadController extends BaseController {
 			)
 		);
 
-		_prime_post_caches( array_map( 'intval', $query->posts ), false, true );
+		// 'fields' => 'ids' yields IDs, but WP_Query types posts as int|WP_Post.
+		$ids = array_map(
+			static function ( $post ) {
+				return $post instanceof \WP_Post ? $post->ID : (int) $post;
+			},
+			$query->posts
+		);
+
+		_prime_post_caches( $ids, false, true );
 
 		$items = array();
 
-		foreach ( $query->posts as $post_id ) {
-			$post_id = (int) $post_id;
-			$log     = get_post_meta( $post_id, 'omnioffloader_error_log', true );
+		foreach ( $ids as $post_id ) {
+			$log = get_post_meta( $post_id, 'omnioffloader_error_log', true );
 
 			$items[] = array(
 				'id'     => $post_id,

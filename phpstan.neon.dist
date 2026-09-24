@@ -1,5 +1,5 @@
 parameters:
-	level: 6
+	level: 8
 	bootstrapFiles:
 		- tests/phpstan-bootstrap.php
 	paths:
@@ -23,3 +23,13 @@ parameters:
 		# wp-cli's progress bar class (php-cli-tools) has no stubs.
 		- '#unknown class cli\\progress\\Bar#'
 	treatPhpDocTypesAsCertain: false
+	# Constants whose value varies by release/environment — never assume the
+	# bootstrap value.
+	dynamicConstantNames:
+		- OMNIOFFLOADER_VERSION
+		- OMNIOFFLOADER_DISABLE_ENGINE
+	# WP_CLI::error() and ::halt() exit; code after them is unreachable.
+	earlyTerminatingMethodCalls:
+		WP_CLI:
+			- error
+			- halt

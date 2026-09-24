@@ -18,7 +18,8 @@ interface DashboardProps {
 }
 
 export function DashboardPage( { onNavigate }: DashboardProps ) {
-	const { stats, settings, providers } = useCore();
+	// Saved settings: an unsaved provider pick must not show as active.
+	const { stats, savedSettings: settings, providers } = useCore();
 
 	const providerName = providers.find(
 		( provider ) => provider.key === settings?.provider

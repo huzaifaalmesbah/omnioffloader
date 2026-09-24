@@ -2,6 +2,7 @@ import type { JSX } from 'react';
 
 import { Spinner } from '@wordpress/components';
 import { useEffect, useState } from '@wordpress/element';
+import { __ } from '@wordpress/i18n';
 import { addQueryArgs, getQueryArg } from '@wordpress/url';
 
 import { MainLayout } from './components/layout/MainLayout';
@@ -38,8 +39,11 @@ export function App() {
 
 	if ( loading ) {
 		return (
-			<div className="smowp-loading">
+			<div className="smowp-loading" role="status">
 				<Spinner />
+				<span className="screen-reader-text">
+					{ __( 'Loading…', 'omnioffloader' ) }
+				</span>
 			</div>
 		);
 	}

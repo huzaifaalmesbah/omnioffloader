@@ -11,6 +11,7 @@ import { ActivityLog } from '../ui/ActivityLog';
 import { BatchScopeSelector, type ScopeMode } from '../ui/BatchScopeSelector';
 import { Card } from '../ui/Card';
 import { ProgressBar } from '../ui/ProgressBar';
+import { RunAnnouncer } from '../ui/RunAnnouncer';
 
 /**
  * Apply the saved retention policy to media offloaded under an older one.
@@ -122,7 +123,12 @@ export function RetentionSyncCard() {
 
 			{ preflight && eligible === 0 && ! running && (
 				<div className="smowp-notice-banner smowp-notice-banner--success">
-					<span className="smowp-notice-banner__icon">✓</span>
+					<span
+						className="smowp-notice-banner__icon"
+						aria-hidden="true"
+					>
+						✓
+					</span>
 					<div className="smowp-notice-banner__text">
 						<strong>
 							{ sprintf(
@@ -357,6 +363,13 @@ export function RetentionSyncCard() {
 						value={ state.processed }
 						max={ state.total }
 						showPercentage={ false }
+					/>
+					<RunAnnouncer
+						status={ state.status }
+						processed={ state.processed }
+						total={ state.total }
+						errors={ state.errors }
+						message={ state.message }
 					/>
 
 					{ state.status === 'failed' && state.message && (

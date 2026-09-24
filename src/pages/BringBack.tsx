@@ -9,12 +9,16 @@ import {
 } from '../components/ui/BatchScopeSelector';
 import { Card } from '../components/ui/Card';
 import { ProgressBar } from '../components/ui/ProgressBar';
+import { RunAnnouncer } from '../components/ui/RunAnnouncer';
 import { useCore } from '../context/CoreContext';
 import { useBringBack } from '../hooks/useBringBack';
 import { formatBytes } from '../utils/formatBytes';
+import { radioKeyDown, radioTabIndex } from '../utils/radioGroup';
+
+const DELETE_CLOUD_OPTIONS: readonly boolean[] = [ false, true ];
 
 export function BringBackPage() {
-	const { stats, settings } = useCore();
+	const { stats, savedSettings: settings } = useCore();
 	const { preflight, state, busy, start, cancel, showProgress, dismiss } =
 		useBringBack();
 	const [ deleteCloud, setDeleteCloud ] = useState(
@@ -165,7 +169,10 @@ export function BringBackPage() {
 
 						{ isAllLocal && (
 							<div className="smowp-notice-banner smowp-notice-banner--info">
-								<span className="smowp-notice-banner__icon">
+								<span
+									className="smowp-notice-banner__icon"
+									aria-hidden="true"
+								>
 									ℹ
 								</span>
 								<div className="smowp-notice-banner__text">
@@ -308,11 +315,12 @@ export function BringBackPage() {
 									<div
 										role="radio"
 										aria-checked={ ! deleteCloud }
-										tabIndex={
+										tabIndex={ radioTabIndex(
+											DELETE_CLOUD_OPTIONS,
+											false,
+											deleteCloud,
 											running || offloadedCount === 0
-												? -1
-												: 0
-										}
+										) }
 										className={
 											'smowp-option-card' +
 											( ! deleteCloud
@@ -332,13 +340,15 @@ export function BringBackPage() {
 										} }
 										onKeyDown={ ( e ) => {
 											if (
-												( e.key === ' ' ||
-													e.key === 'Enter' ) &&
 												! running &&
 												offloadedCount > 0
 											) {
-												e.preventDefault();
-												setDeleteCloud( false );
+												radioKeyDown(
+													e,
+													DELETE_CLOUD_OPTIONS,
+													false,
+													setDeleteCloud
+												);
 											}
 										} }
 									>
@@ -376,11 +386,12 @@ export function BringBackPage() {
 									<div
 										role="radio"
 										aria-checked={ deleteCloud }
-										tabIndex={
+										tabIndex={ radioTabIndex(
+											DELETE_CLOUD_OPTIONS,
+											true,
+											deleteCloud,
 											running || offloadedCount === 0
-												? -1
-												: 0
-										}
+										) }
 										className={
 											'smowp-option-card' +
 											( deleteCloud
@@ -400,13 +411,15 @@ export function BringBackPage() {
 										} }
 										onKeyDown={ ( e ) => {
 											if (
-												( e.key === ' ' ||
-													e.key === 'Enter' ) &&
 												! running &&
 												offloadedCount > 0
 											) {
-												e.preventDefault();
-												setDeleteCloud( true );
+												radioKeyDown(
+													e,
+													DELETE_CLOUD_OPTIONS,
+													true,
+													setDeleteCloud
+												);
 											}
 										} }
 									>
@@ -573,6 +586,13 @@ export function BringBackPage() {
 									value={ state.processed }
 									max={ state.total }
 									showPercentage={ false }
+								/>
+								<RunAnnouncer
+									status={ state.status }
+									processed={ state.processed }
+									total={ state.total }
+									errors={ state.errors }
+									message={ state.message }
 								/>
 
 								{ state.status === 'failed' &&

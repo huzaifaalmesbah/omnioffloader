@@ -9,6 +9,7 @@ import {
 } from '../components/ui/BatchScopeSelector';
 import { Card } from '../components/ui/Card';
 import { ProgressBar } from '../components/ui/ProgressBar';
+import { RunAnnouncer } from '../components/ui/RunAnnouncer';
 import { useCore } from '../context/CoreContext';
 import { useBulkOffload } from '../hooks/useBulkOffload';
 
@@ -138,7 +139,10 @@ export function OffloadPage() {
 
 						{ isAllOffloaded && (
 							<div className="smowp-notice-banner smowp-notice-banner--success">
-								<span className="smowp-notice-banner__icon">
+								<span
+									className="smowp-notice-banner__icon"
+									aria-hidden="true"
+								>
 									✓
 								</span>
 								<div className="smowp-notice-banner__text">
@@ -160,7 +164,10 @@ export function OffloadPage() {
 
 						{ totalCount === 0 && (
 							<div className="smowp-notice-banner smowp-notice-banner--info">
-								<span className="smowp-notice-banner__icon">
+								<span
+									className="smowp-notice-banner__icon"
+									aria-hidden="true"
+								>
 									ℹ
 								</span>
 								<div className="smowp-notice-banner__text">
@@ -352,6 +359,13 @@ export function OffloadPage() {
 									value={ state.processed }
 									max={ state.total }
 									showPercentage={ false }
+								/>
+								<RunAnnouncer
+									status={ state.status }
+									processed={ state.processed }
+									total={ state.total }
+									errors={ state.errors }
+									message={ state.message }
 								/>
 
 								{ state.status === 'failed' &&

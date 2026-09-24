@@ -1,5 +1,7 @@
 import { __, _n, sprintf } from '@wordpress/i18n';
 
+import { radioKeyDown, radioTabIndex } from '../../utils/radioGroup';
+
 export type ScopeMode = 'all' | 'custom';
 
 interface BatchScopeSelectorProps {
@@ -16,6 +18,8 @@ interface BatchScopeSelectorProps {
 }
 
 const PRESETS = [ 5, 10, 25, 50, 100, 250, 500 ];
+
+const SCOPE_MODES: readonly ScopeMode[] = [ 'all', 'custom' ];
 
 export function BatchScopeSelector( {
 	mode,
@@ -69,7 +73,12 @@ export function BatchScopeSelector( {
 				<div
 					role="radio"
 					aria-checked={ mode === 'all' }
-					tabIndex={ disabled ? -1 : 0 }
+					tabIndex={ radioTabIndex(
+						SCOPE_MODES,
+						'all',
+						mode,
+						disabled
+					) }
 					className={
 						'smowp-option-card' +
 						( mode === 'all' ? ' is-selected' : '' ) +
@@ -81,12 +90,8 @@ export function BatchScopeSelector( {
 						}
 					} }
 					onKeyDown={ ( e ) => {
-						if (
-							( e.key === ' ' || e.key === 'Enter' ) &&
-							! disabled
-						) {
-							e.preventDefault();
-							onModeChange( 'all' );
+						if ( ! disabled ) {
+							radioKeyDown( e, SCOPE_MODES, 'all', onModeChange );
 						}
 					} }
 				>
@@ -121,7 +126,12 @@ export function BatchScopeSelector( {
 				<div
 					role="radio"
 					aria-checked={ mode === 'custom' }
-					tabIndex={ disabled ? -1 : 0 }
+					tabIndex={ radioTabIndex(
+						SCOPE_MODES,
+						'custom',
+						mode,
+						disabled
+					) }
 					className={
 						'smowp-option-card' +
 						( mode === 'custom' ? ' is-selected' : '' ) +
@@ -133,12 +143,13 @@ export function BatchScopeSelector( {
 						}
 					} }
 					onKeyDown={ ( e ) => {
-						if (
-							( e.key === ' ' || e.key === 'Enter' ) &&
-							! disabled
-						) {
-							e.preventDefault();
-							onModeChange( 'custom' );
+						if ( ! disabled ) {
+							radioKeyDown(
+								e,
+								SCOPE_MODES,
+								'custom',
+								onModeChange
+							);
 						}
 					} }
 				>
@@ -178,9 +189,12 @@ export function BatchScopeSelector( {
 			{ mode === 'custom' && (
 				<div className="smowp-batch-scope__custom-controls">
 					<div className="smowp-custom-count-inline">
-						<span className="smowp-custom-count-label">
+						<label
+							className="smowp-custom-count-label"
+							htmlFor="smowp-custom-count-input"
+						>
 							{ __( 'Batch Size:', 'omnioffloader' ) }
-						</span>
+						</label>
 
 						<div className="smowp-custom-input-group">
 							<input

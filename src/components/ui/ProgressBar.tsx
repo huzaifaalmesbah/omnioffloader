@@ -1,3 +1,5 @@
+import { __, sprintf } from '@wordpress/i18n';
+
 interface ProgressBarProps {
 	value: number;
 	max: number;
@@ -38,9 +40,16 @@ export function ProgressBar( {
 			<div
 				className="smowp-progress"
 				role="progressbar"
+				aria-label={ label || __( 'Progress', 'omnioffloader' ) }
 				aria-valuenow={ percent }
 				aria-valuemin={ 0 }
 				aria-valuemax={ 100 }
+				aria-valuetext={ sprintf(
+					/* translators: 1: processed count, 2: total count. */
+					__( '%1$d of %2$d', 'omnioffloader' ),
+					value,
+					max
+				) }
 			>
 				<div
 					className="smowp-progress__fill"

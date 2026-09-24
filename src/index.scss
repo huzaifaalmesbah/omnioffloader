@@ -2093,3 +2093,13 @@
 		}
 	}
 }
+
+// Respect reduced-motion preferences.
+@media ( prefers-reduced-motion: reduce ) {
+	#omnioffloader-admin-app *,
+	#omnioffloader-admin-app *::before,
+	#omnioffloader-admin-app *::after {
+		animation: none !important;
+		transition: none !important;
+	}
+}

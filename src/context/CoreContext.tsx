@@ -31,7 +31,10 @@ export interface Notice {
 
 interface CoreContextValue {
 	loading: boolean;
+	/** Draft settings, as edited on the Settings page. */
 	settings: Settings | null;
+	/** Settings as last saved on the server — what the plugin actually uses. */
+	savedSettings: Settings | null;
 	providers: ProviderInfo[];
 	stats: MediaStats | null;
 	notices: Notice[];
@@ -58,6 +61,9 @@ let noticeId = 0;
 export function CoreProvider( { children }: { children: React.ReactNode } ) {
 	const [ loading, setLoading ] = useState( true );
 	const [ settings, setSettings ] = useState< Settings | null >( null );
+	const [ savedSettings, setSavedSettings ] = useState< Settings | null >(
+		null
+	);
 	const [ providers, setProviders ] = useState< ProviderInfo[] >( [] );
 	const [ stats, setStats ] = useState< MediaStats | null >( null );
 	const [ notices, setNotices ] = useState< Notice[] >( [] );
@@ -97,11 +103,14 @@ export function CoreProvider( { children }: { children: React.ReactNode } ) {
 				...current,
 				{ id, status, message },
 			] );
-			window.setTimeout( () => {
-				setNotices( ( current ) =>
-					current.filter( ( notice ) => notice.id !== id )
-				);
-			}, 5000 );
+			// Errors stay until dismissed; they may need reading or acting on.
+			if ( status === 'success' ) {
+				window.setTimeout( () => {
+					setNotices( ( current ) =>
+						current.filter( ( notice ) => notice.id !== id )
+					);
+				}, 5000 );
+			}
 		},
 		[]
 	);
@@ -116,6 +125,7 @@ export function CoreProvider( { children }: { children: React.ReactNode } ) {
 		Promise.all( [ fetchSettings(), fetchProviders(), fetchStats() ] )
 			.then( ( [ loadedSettings, loadedProviders, loadedStats ] ) => {
 				setSettings( loadedSettings );
+				setSavedSettings( loadedSettings );
 				setProviders( loadedProviders );
 				setStats( loadedStats );
 			} )
@@ -155,6 +165,22 @@ export function CoreProvider( { children }: { children: React.ReactNode } ) {
 
 	const isDirty = settingsDirty || Object.keys( credentialDraft ).length > 0;
 
+	// Warn before leaving the page with unsaved changes.
+	useEffect( () => {
+		if ( ! isDirty ) {
+			return;
+		}
+
+		const warn = ( event: BeforeUnloadEvent ) => {
+			event.preventDefault();
+			// Some browsers still require returnValue to be set.
+			event.returnValue = '';
+		};
+
+		window.addEventListener( 'beforeunload', warn );
+		return () => window.removeEventListener( 'beforeunload', warn );
+	}, [ isDirty ] );
+
 	const save = useCallback( async () => {
 		if ( ! settings ) {
 			return;
@@ -166,6 +192,7 @@ export function CoreProvider( { children }: { children: React.ReactNode } ) {
 			if ( settingsDirty ) {
 				const saved = await saveSettings( settings );
 				setSettings( saved );
+				setSavedSettings( saved );
 				setSettingsDirty( false );
 			}
 
@@ -201,6 +228,7 @@ export function CoreProvider( { children }: { children: React.ReactNode } ) {
 		() => ( {
 			loading,
 			settings,
+			savedSettings,
 			providers,
 			stats,
 			notices,
@@ -220,6 +248,7 @@ export function CoreProvider( { children }: { children: React.ReactNode } ) {
 		[
 			loading,
 			settings,
+			savedSettings,
 			providers,
 			stats,
 			notices,

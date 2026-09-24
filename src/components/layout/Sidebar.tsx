@@ -1,4 +1,5 @@
 import { Icon } from '@wordpress/components';
+import { __ } from '@wordpress/i18n';
 
 import { PLUGIN_ICON, PLUGIN_NAME, ROUTES } from '../../utils/constants';
 
@@ -19,7 +20,10 @@ export function Sidebar( { activeView, onNavigate }: SidebarProps ) {
 				</span>
 			</div>
 
-			<nav className="smowp-sidebar__nav">
+			<nav
+				className="smowp-sidebar__nav"
+				aria-label={ __( 'OmniOffloader sections', 'omnioffloader' ) }
+			>
 				{ ROUTES.map( ( route ) => (
 					<button
 						key={ route.view }
@@ -27,6 +31,9 @@ export function Sidebar( { activeView, onNavigate }: SidebarProps ) {
 						className={
 							'smowp-sidebar__item' +
 							( route.view === activeView ? ' is-active' : '' )
+						}
+						aria-current={
+							route.view === activeView ? 'page' : undefined
 						}
 						onClick={ () => onNavigate( route.view ) }
 					>

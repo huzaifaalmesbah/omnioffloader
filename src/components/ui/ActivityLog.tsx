@@ -161,7 +161,10 @@ export function ActivityLog( {
 				{ displayItems.map( ( item ) => {
 					const isOk = item.status === 'success';
 					const timeStr = item.timestamp
-						? new Date( item.timestamp * 1000 ).toLocaleTimeString()
+						? new Date( item.timestamp * 1000 ).toLocaleTimeString(
+								// The admin's <html lang> is the WordPress locale.
+								document.documentElement.lang || undefined
+							)
 						: '';
 
 					return (

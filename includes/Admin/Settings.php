@@ -124,6 +124,9 @@ class Settings {
 			$asset_file['version']
 		);
 
+		// wp-scripts also builds index-rtl.css; swap it in for RTL locales.
+		wp_style_add_data( 'omnioffloader-admin-app', 'rtl', 'replace' );
+
 		wp_localize_script(
 			'omnioffloader-admin-app',
 			'omnioffloader',

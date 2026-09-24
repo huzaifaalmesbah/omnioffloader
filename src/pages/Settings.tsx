@@ -14,6 +14,7 @@ import { TestConnection } from '../components/settings/TestConnection';
 import { Card } from '../components/ui/Card';
 import { fetchRetentionPreflight } from '../api/retention';
 import { useCore } from '../context/CoreContext';
+import { radioKeyDown, radioTabIndex } from '../utils/radioGroup';
 import { RetentionPolicy, type RetentionPreflight } from '../types';
 
 interface SettingsProps {
@@ -42,6 +43,8 @@ export function SettingsPage( { onNavigate }: SettingsProps ) {
 	if ( ! settings ) {
 		return null;
 	}
+
+	const providerKeys = providers.map( ( p ) => p.key );
 
 	return (
 		<div className="smowp-page">
@@ -73,7 +76,11 @@ export function SettingsPage( { onNavigate }: SettingsProps ) {
 										key={ provider.key }
 										role="radio"
 										aria-checked={ isSelected }
-										tabIndex={ 0 }
+										tabIndex={ radioTabIndex(
+											providerKeys,
+											provider.key,
+											settings.provider
+										) }
 										className={
 											'smowp-provider-card' +
 											( isSelected ? ' is-selected' : '' )
@@ -83,17 +90,17 @@ export function SettingsPage( { onNavigate }: SettingsProps ) {
 												provider: provider.key,
 											} )
 										}
-										onKeyDown={ ( e ) => {
-											if (
-												e.key === ' ' ||
-												e.key === 'Enter'
-											) {
-												e.preventDefault();
-												updateSettings( {
-													provider: provider.key,
-												} );
-											}
-										} }
+										onKeyDown={ ( e ) =>
+											radioKeyDown(
+												e,
+												providerKeys,
+												provider.key,
+												( key ) =>
+													updateSettings( {
+														provider: key,
+													} )
+											)
+										}
 									>
 										<div className="smowp-provider-card__head">
 											<div className="smowp-provider-card__icon">
@@ -195,7 +202,12 @@ export function SettingsPage( { onNavigate }: SettingsProps ) {
 					retentionPreflight &&
 					retentionPreflight.eligible > 0 && (
 						<div className="smowp-notice-banner smowp-notice-banner--info smowp-retention-notice">
-							<span className="smowp-notice-banner__icon">ℹ</span>
+							<span
+								className="smowp-notice-banner__icon"
+								aria-hidden="true"
+							>
+								ℹ
+							</span>
 							<div className="smowp-notice-banner__text">
 								<strong>
 									{ sprintf(
@@ -303,7 +315,7 @@ export function SettingsPage( { onNavigate }: SettingsProps ) {
 						'omnioffloader'
 					) }
 					help={ __(
-						'Delete all plugin settings, credentials and offload markers when the plugin is deleted. Cloud files are never touched.',
+						'Delete plugin settings and credentials when the plugin is deleted. Offload records are also removed, except for media that exists only in the cloud, so it can still be recovered after reinstalling. Cloud files are never touched.',
 						'omnioffloader'
 					) }
 					checked={ settings.remove_data_on_uninstall }

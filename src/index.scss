@@ -70,10 +70,20 @@
 
 	&-icon {
 		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 36px;
+		height: 36px;
+		border-radius: 9px;
+		background: var( --smowp-accent-tint );
+		border: 1px solid rgba( 19, 93, 190, 0.12 );
 		color: var( --smowp-accent );
+		flex-shrink: 0;
 
 		svg {
 			fill: currentColor;
+			width: 20px;
+			height: 20px;
 		}
 	}
 
@@ -2079,6 +2089,17 @@
 			margin-bottom: 0;
 			border-bottom: 1px solid var( --smowp-border );
 
+			&-icon {
+				width: 32px;
+				height: 32px;
+				border-radius: 8px;
+
+				svg {
+					width: 18px;
+					height: 18px;
+				}
+			}
+
 			&-info {
 				display: flex;
 				flex-direction: row;
@@ -2329,6 +2350,17 @@
 		&__logo {
 			gap: 8px;
 			padding: 10px 12px;
+
+			&-icon {
+				width: 28px;
+				height: 28px;
+				border-radius: 7px;
+
+				svg {
+					width: 16px;
+					height: 16px;
+				}
+			}
 
 			&-name {
 				font-size: 15px;

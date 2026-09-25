@@ -32,7 +32,7 @@ export function Sidebar( { activeView, onNavigate }: SidebarProps ) {
 		<aside className="smowp-sidebar">
 			<div className="smowp-sidebar__logo">
 				<span className="smowp-sidebar__logo-icon">
-					<Icon icon={ PLUGIN_ICON } size={ 28 } />
+					<Icon icon={ PLUGIN_ICON } size={ 20 } />
 				</span>
 				<div className="smowp-sidebar__logo-info">
 					<span className="smowp-sidebar__logo-name">

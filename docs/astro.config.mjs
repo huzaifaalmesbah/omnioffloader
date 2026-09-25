@@ -1,6 +1,13 @@
 // @ts-check
+import { readFileSync } from 'node:fs';
 import { defineConfig } from 'astro/config';
 import starlight from '@astrojs/starlight';
+
+// Read version dynamically from plugin's package.json
+const pkg = JSON.parse(
+	readFileSync( new URL( '../package.json', import.meta.url ), 'utf8' )
+);
+const version = pkg.version;
 
 // Public address of the docs site — used for the sitemap and canonical URLs.
 // Set DOCS_SITE_URL in Vercel once the custom domain is connected.
@@ -19,6 +26,9 @@ export default defineConfig( {
 			logo: { src: './src/assets/logo.svg' },
 			favicon: '/favicon.svg',
 			customCss: [ './src/styles/custom.css' ],
+			components: {
+				SiteTitle: './src/components/SiteTitle.astro',
+			},
 			social: [
 				{
 					icon: 'download',
@@ -35,7 +45,11 @@ export default defineConfig( {
 				{ label: 'WP-CLI', items: [ { autogenerate: { directory: 'wp-cli' } } ] },
 				{ label: 'Developers', items: [ { autogenerate: { directory: 'developers' } } ] },
 				{ label: 'Help', items: [ { autogenerate: { directory: 'help' } } ] },
-				{ label: 'Changelog', link: '/changelog/' },
+				{
+					label: 'Changelog',
+					link: '/changelog/',
+					badge: { text: `v${ version }`, variant: 'success' },
+				},
 			],
 		} ),
 	],

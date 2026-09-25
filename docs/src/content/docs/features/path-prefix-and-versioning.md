@@ -7,6 +7,8 @@ sidebar:
 
 Two settings in **Settings → Behavior** control where your files are stored in the bucket.
 
+![OmniOffloader Custom Path Prefix and Object Versioning Settings](/images/screenshots/shared-bucket-marked.png)
+
 ## Custom Path Prefix
 
 By default, objects use the same path as in your WordPress uploads folder:

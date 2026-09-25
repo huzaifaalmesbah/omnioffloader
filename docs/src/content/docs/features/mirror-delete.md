@@ -7,6 +7,8 @@ sidebar:
 
 With **Mirror Delete** on, deleting an attachment in WordPress also deletes its files from your cloud storage: the original and every generated size.
 
+![OmniOffloader Mirror Delete Settings](/images/screenshots/mirror-delete-marked.png)
+
 This way, deleted media stops being publicly reachable from your bucket or CDN, and you stop paying to store it.
 
 ## Default setting

@@ -194,6 +194,40 @@ wp --exec="define( 'OMNIOFFLOADER_DISABLE_ENGINE', true );" eval-file tests/seed
 
 ---
 
+## 🚀 WordPress.org Deployment & Maintenance
+
+### 1. Full Release Deployment
+To deploy a new plugin version to the WordPress.org Plugin Directory:
+1. Update `Version:` in `omnioffloader.php`, `OMNIOFFLOADER_VERSION`, and `Stable tag` in `readme.txt`.
+2. Commit and create a GitHub Release or tag (e.g. `0.1.3`).
+3. The `.github/workflows/deploy-on-pushing-plugin.yml` workflow automatically builds production assets and commits them to WordPress.org SVN `trunk/` and `tags/<version>`.
+
+### 2. Readme & Asset Updates (Without a Code Release)
+When you only want to update `readme.txt` (FAQ, description, changelog text) or banners/icons in `.wordpress-org/` without releasing new code or bumping the version:
+* **Option A (Branch Push):** Push to the `assets` branch:
+  ```bash
+  git checkout -b assets
+  git add readme.txt .wordpress-org/
+  git commit -m "docs: update readme and banners"
+  git push origin assets --force
+  ```
+* **Option B (Manual Dispatch):** Go to GitHub repo → **Actions** → **Plugin asset/readme update** → click **Run workflow**.
+
+### 3. Removing a Broken or Mistagged SVN Tag
+If a broken tag was deployed or a version tag needs to be removed:
+* **Option A (GitHub Actions):** Go to GitHub repo → **Actions** → **Delete SVN Tag** → click **Run workflow**, enter the tag name (e.g. `0.1.0`), and select whether to also remove the Git tag on GitHub.
+* **Option B (Command Line):**
+  ```bash
+  # Remove from WordPress.org SVN
+  svn rm "https://plugins.svn.wordpress.org/omnioffloader/tags/0.1.0" -m "Remove broken tag 0.1.0" --username your_svn_username
+
+  # Remove from GitHub Git
+  git tag -d 0.1.0
+  git push origin --delete 0.1.0
+  ```
+
+---
+
 ## 📄 License
 
 OmniOffloader is open-source software licensed under the **[GNU General Public License v2.0 or later (GPL-2.0-or-later)](https://www.gnu.org/licenses/gpl-2.0.html)**.

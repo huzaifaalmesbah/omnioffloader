@@ -1,0 +1,18 @@
+/* Brand accent — matches the plugin admin (#135dbe / #0e4690). */
+:root {
+	--sl-color-accent-low: #0b2a57;
+	--sl-color-accent: #3b86ee;
+	--sl-color-accent-high: #cfe1ff;
+}
+
+:root[data-theme='light'] {
+	--sl-color-accent-low: #dbe8fb;
+	--sl-color-accent: #135dbe;
+	--sl-color-accent-high: #0e3a7a;
+}
+
+/* Hero logo on the home page. */
+.hero img {
+	filter: drop-shadow( 0 12px 32px rgb( 19 93 190 / 0.35 ) );
+}
+

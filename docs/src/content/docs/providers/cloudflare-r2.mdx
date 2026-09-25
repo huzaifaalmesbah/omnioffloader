@@ -1,0 +1,64 @@
+---
+title: Cloudflare R2
+description: Connect OmniOffloader to a Cloudflare R2 bucket and serve your media from your own domain.
+sidebar:
+  order: 2
+---
+
+import { Steps } from '@astrojs/starlight/components';
+
+Cloudflare R2 is S3-compatible object storage with no fees for downloads. It is a good fit for media, which is downloaded far more often than it is uploaded.
+
+## Before you start
+
+You need a Cloudflare account with R2 turned on. To serve files from your own domain, the domain must also use Cloudflare DNS.
+
+## Setup
+
+<Steps>
+
+1. **Create a bucket.** In the Cloudflare dashboard, go to **R2** and create a bucket. Remember its name.
+
+2. **Make the bucket public.** In the bucket's **Settings**, connect a **Custom Domain** (for example `https://media.yourdomain.com`). You can also turn on the public `r2.dev` URL instead, but Cloudflare recommends a custom domain for real sites.
+
+3. **Create an API token.** Go back to the R2 overview page and open **Manage R2 API Tokens**. Create a token with **Object Read & Write** permission. Copy the **Access Key ID** and **Secret Access Key**. Cloudflare shows the secret only once.
+
+4. **Copy the S3 endpoint.** In the bucket settings, copy the **S3 API** endpoint. It looks like `https://<account-id>.r2.cloudflarestorage.com`.
+
+5. **Fill in OmniOffloader.** Go to **OmniOffloader → Settings**, choose **Cloudflare R2** and fill in the fields below.
+
+6. **Click Test Connection**, then save your settings.
+
+</Steps>
+
+## Fields
+
+| Field | Example | Notes |
+| --- | --- | --- |
+| **Access Key ID** | `a1b2c3…` | From the R2 API token. |
+| **Secret Access Key** | `••••••••` | From the R2 API token. Never shown again after you save. |
+| **Endpoint URL** | `https://your-account-id.r2.cloudflarestorage.com` | The bucket's S3 API endpoint, without the bucket name. |
+| **Bucket Name** | `my-site-media` | Exactly as shown in Cloudflare. |
+| **Custom Domain (CDN URL)** | `https://media.yourdomain.com` | The custom domain or `r2.dev` URL you connected in step 2. |
+
+There is no region field. R2 does not use regions, so OmniOffloader sets it for you.
+
+:::caution[The custom domain is required]
+Unlike the other providers, an R2 bucket has **no public address** until you connect one. Without the Custom Domain field, your offloaded images would have nowhere to load from.
+:::
+
+## Good to know
+
+- **Use the endpoint, not the public URL, for the Endpoint URL field.** The endpoint ends in `r2.cloudflarestorage.com`. The public URL (`r2.dev` or your domain) goes into **Custom Domain (CDN URL)**.
+- **Object ACLs are not sent.** R2 rejects the ACL header that some S3 tools send, so OmniOffloader never adds it. Files are public because of the custom domain, not because of per-file permissions.
+- **Caching.** Files served from a custom domain go through Cloudflare's cache. If you replace files and see old versions, turn on **Object Versioning** in Settings. See [Path prefix & object versioning](/features/path-prefix-and-versioning/).
+
+## Common problems
+
+| What you see | Likely cause |
+| --- | --- |
+| `Connection failed: … 403 …` or `Access Denied` | The API token has no **Object Read & Write** access to this bucket, or the keys were copied wrong. |
+| `Connection failed: … NoSuchBucket …` | The bucket name has a typo, or the endpoint belongs to another Cloudflare account. |
+| Test Connection works but images are broken | The custom domain is not connected to the bucket yet, or its DNS is still being set up. Open an offloaded file's URL in a new tab to see the error. |
+
+Next step: [Quick start](/getting-started/quick-start/) — offload your first files.

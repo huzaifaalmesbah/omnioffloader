@@ -1,0 +1,58 @@
+---
+title: DigitalOcean Spaces
+description: Connect OmniOffloader to a DigitalOcean Space and serve media through the Spaces CDN.
+sidebar:
+  order: 4
+---
+
+import { Steps } from '@astrojs/starlight/components';
+
+DigitalOcean Spaces is S3-compatible storage with a built-in CDN you can switch on for each Space.
+
+## Setup
+
+<Steps>
+
+1. **Create a Space.** In the DigitalOcean control panel, create a Space in the region you want. If you like, turn on its **CDN**.
+
+2. **Create a Spaces access key.** Under **Spaces Object Storage → Access Keys**, create a key. Copy the key and the secret. The secret is shown only once.
+
+3. **Note the endpoint and region.** The endpoint is the region address, for example `https://nyc3.digitaloceanspaces.com`. The region is the first part: `nyc3`.
+
+4. **Fill in OmniOffloader.** Go to **OmniOffloader → Settings**, choose **DigitalOcean Spaces** and fill in the fields below.
+
+5. **Click Test Connection**, then save your settings.
+
+</Steps>
+
+## Fields
+
+| Field | Example | Notes |
+| --- | --- | --- |
+| **Spaces Access Key** | `DO00…` | Your Spaces access key. |
+| **Spaces Secret Key** | `••••••••` | Never shown again after you save. |
+| **Endpoint URL** | `https://nyc3.digitaloceanspaces.com` | The region endpoint. Do **not** put the Space name in front of it. |
+| **Region** | `nyc3` | Must match the endpoint. |
+| **Space / Bucket Name** | `my-site-media` | The name of your Space. |
+| **Custom Domain / Spaces CDN URL (Optional)** | `https://media.yourdomain.com` | Your Spaces CDN address or custom CDN domain. |
+
+If you leave the last field empty, media is served from `https://<space>.<region>.digitaloceanspaces.com`.
+
+:::tip[Use the CDN address]
+When the Spaces CDN is on, DigitalOcean shows a CDN address such as `https://my-site-media.nyc3.cdn.digitaloceanspaces.com`, or you can attach your own subdomain. Put that address in **Custom Domain / Spaces CDN URL** so files are served from the edge.
+:::
+
+## Good to know
+
+- **Files must be readable by the public.** If an offloaded image opens with an `AccessDenied` error, your Space's files are private. Make them public in the Space's settings or with a bucket policy. Developers can also set a `public-read` ACL on every upload with the `omnioffloader_object_acl` filter — see [Hooks](/developers/hooks/).
+- **Caching.** If you replace files and see old versions, turn on **Object Versioning** in Settings. See [Path prefix & object versioning](/features/path-prefix-and-versioning/).
+
+## Common problems
+
+| What you see | Likely cause |
+| --- | --- |
+| `Connection failed: … 403 …` | The key or secret is wrong, or the key has no access to this Space. |
+| `Connection failed: … NoSuchBucket …` | The Space name has a typo, or the endpoint is in a different region than the Space. |
+| Test Connection works but images are broken | The files are private, or the CDN address is wrong. Open an offloaded file's URL in a new tab to see the error. |
+
+Next step: [Quick start](/getting-started/quick-start/) — offload your first files.

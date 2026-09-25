@@ -1,0 +1,59 @@
+---
+title: Backblaze B2
+description: Connect OmniOffloader to a public Backblaze B2 bucket through its S3-compatible API.
+sidebar:
+  order: 5
+---
+
+import { Steps } from '@astrojs/starlight/components';
+
+Backblaze B2 is low-cost object storage. OmniOffloader talks to it through B2's S3-compatible API.
+
+## Setup
+
+<Steps>
+
+1. **Create a bucket.** In the Backblaze B2 console, create a bucket. Set **Files in Bucket are** to **Public**, so browsers can load your media.
+
+2. **Note the endpoint and region.** The bucket overview shows its **S3 Endpoint**, for example `s3.us-east-005.backblazeb2.com`. The region is the middle part: `us-east-005`.
+
+3. **Create an application key.** Under **Application Keys**, add a key with **Read and Write** access to this bucket. Copy the `keyID` and the `applicationKey`. The application key is shown only once.
+
+4. **Fill in OmniOffloader.** Go to **OmniOffloader → Settings**, choose **Backblaze B2** and fill in the fields below.
+
+5. **Click Test Connection**, then save your settings.
+
+</Steps>
+
+## Fields
+
+| Field | Example | Notes |
+| --- | --- | --- |
+| **Application Key ID** | `0051a2b3…` | The `keyID`. |
+| **Application Key** | `••••••••` | The `applicationKey`. Never shown again after you save. |
+| **S3 Endpoint URL** | `https://s3.us-west-004.backblazeb2.com` | Your bucket's S3 endpoint, with `https://` in front. |
+| **Region** | `us-west-004` | The region part of the endpoint. |
+| **Bucket Name** | `my-site-media` | Exactly as in the B2 console. |
+| **Custom Domain / CDN URL (Optional)** | `https://media.yourdomain.com` | Your CDN domain, if you use one. |
+
+If you leave **Custom Domain / CDN URL** empty, media is served straight from Backblaze at `https://<bucket>.s3.<region>.backblazeb2.com`.
+
+:::caution[The bucket must be public]
+A private B2 bucket makes Test Connection succeed, but every image on your site will fail to load. Check **Files in Bucket are: Public** in the bucket settings.
+:::
+
+## Good to know
+
+- **Region and endpoint must match.** If your endpoint says `us-east-005`, the Region must be `us-east-005` too.
+- **Use a master key only if you must.** An application key limited to one bucket is safer than your account's master key.
+- **CDN.** Backblaze has free downloads through several CDN partners, such as Cloudflare. Point your CDN at the bucket and enter its address in **Custom Domain / CDN URL**.
+
+## Common problems
+
+| What you see | Likely cause |
+| --- | --- |
+| `Connection failed: … 403 …` or `InvalidAccessKeyId` | The key ID or key is wrong, or the key is limited to another bucket. |
+| `Connection failed: …` with a signature or region error | The **Region** does not match the region in the endpoint. |
+| Test Connection works but images are broken | The bucket is private. |
+
+Next step: [Quick start](/getting-started/quick-start/) — offload your first files.

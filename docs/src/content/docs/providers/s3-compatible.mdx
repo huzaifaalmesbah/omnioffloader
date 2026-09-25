@@ -1,0 +1,104 @@
+---
+title: Any S3-compatible storage
+description: Connect MinIO, Storj, OVHcloud, Linode, Scaleway or any other S3-compatible service with your own endpoint and region.
+sidebar:
+  order: 7
+---
+
+import { Steps, Tabs, TabItem } from '@astrojs/starlight/components';
+
+Many storage services speak the same S3 API as Amazon. For all of them, choose **Any S3-Compatible Storage** in **OmniOffloader → Settings** and enter the endpoint and region your service gives you.
+
+## Fields
+
+| Field | Example | Notes |
+| --- | --- | --- |
+| **Provider Label** | `MinIO` | Optional. The name shown for this provider across the plugin. |
+| **Access Key ID** | `…` | From your storage service. |
+| **Secret Access Key** | `••••••••` | Never shown again after you save. |
+| **S3 Endpoint URL** | `https://minio.yourdomain.com:9000` | The service's S3 API address, including a port if it has one. |
+| **Region** | `us-east-1` | Use what your service shows. Empty means `us-east-1`. Many self-hosted services accept any value. |
+| **Use Path-Style Endpoint** | on / off | See below. |
+| **Bucket Name** | `my-site-media` | Exactly as in your service. |
+| **Custom Domain / CDN URL (Optional)** | `https://media.yourdomain.com` | The public address of your files. |
+
+### Use Path-Style Endpoint
+
+S3 services address a bucket in one of two ways:
+
+- **Virtual-hosted style** (off): `https://my-bucket.storage.example.com/photo.jpg`
+- **Path style** (on): `https://storage.example.com/my-bucket/photo.jpg`
+
+Turn it **on** when your service's documentation asks for path-style access, or when the bucket name cannot be used as a subdomain. MinIO and Storj both need it on.
+
+If you leave **Custom Domain / CDN URL** empty, OmniOffloader builds the public address from the endpoint in the same style.
+
+## Service guides
+
+<Tabs>
+<TabItem label="MinIO">
+
+<Steps>
+
+1. In the MinIO console, create a bucket.
+2. Set the bucket's access policy so anonymous users can **read** (download) objects.
+3. Create an access key and copy the key and secret.
+4. In OmniOffloader, choose **Any S3-Compatible Storage** and enter:
+   - **Provider Label**: `MinIO`
+   - **S3 Endpoint URL**: your MinIO API address, for example `https://minio.yourdomain.com:9000`
+   - **Region**: `us-east-1` (unless you changed MinIO's region)
+   - **Use Path-Style Endpoint**: on
+   - your keys and **Bucket Name**
+5. Click **Test Connection**, then save.
+
+</Steps>
+
+:::caution
+Your MinIO server must be reachable from the internet for visitors, and over HTTPS. A MinIO on `localhost` works for Test Connection but visitors cannot load the files.
+:::
+
+</TabItem>
+<TabItem label="Storj">
+
+<Steps>
+
+1. In the Storj console, create a bucket. Open **Access → Create S3 Credentials** and copy the **Access Key** and **Secret Key**.
+2. Share the bucket publicly (**Objects → your bucket → Share**) and copy the link-sharing URL, for example `https://link.storjshare.io/s/<KEY>/<BUCKET>`.
+3. In that URL, replace `/s/` with `/raw/`. The result looks like `https://link.storjshare.io/raw/<KEY>/<BUCKET>`.
+4. In OmniOffloader, choose **Any S3-Compatible Storage** and enter:
+   - **S3 Endpoint URL**: `https://gateway.storjshare.io`
+   - **Region**: `us-east-1`
+   - **Use Path-Style Endpoint**: on
+   - your keys and **Bucket Name**
+   - **Custom Domain / CDN URL**: the `https://link.storjshare.io/raw/...` URL from step 3
+5. Click **Test Connection**, then save.
+
+</Steps>
+
+</TabItem>
+<TabItem label="Other services">
+
+OVHcloud Object Storage, Linode (Akamai) Object Storage, Scaleway Object Storage and similar services all work the same way:
+
+<Steps>
+
+1. Create a bucket in your service's control panel and make its files publicly readable (or put a CDN in front of it).
+2. Create S3 access keys.
+3. In OmniOffloader, choose **Any S3-Compatible Storage**. For **S3 Endpoint URL** and **Region**, use the S3 endpoint and region your provider shows for the bucket.
+4. Leave **Use Path-Style Endpoint** off unless your provider's documentation says to use path-style access.
+5. Enter your keys, **Bucket Name** and public URL, click **Test Connection**, then save.
+
+</Steps>
+
+</TabItem>
+</Tabs>
+
+## Common problems
+
+| What you see | Likely cause |
+| --- | --- |
+| `Connection failed: …` with a DNS or "could not resolve host" error | Path-style is off but the service needs it, or the endpoint has a typo. |
+| `Connection failed: … 403 …` or a signature error | Wrong keys, or a **Region** the service does not accept. |
+| Test Connection works but images are broken | The bucket is not publicly readable, or the Custom Domain / CDN URL is wrong. Open an offloaded file's URL in a new tab to see the error. |
+
+Next step: [Quick start](/getting-started/quick-start/) — offload your first files.

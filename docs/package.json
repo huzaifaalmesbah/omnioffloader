@@ -1,0 +1,21 @@
+{
+	"name": "omnioffloader-docs",
+	"private": true,
+	"type": "module",
+	"description": "Public documentation site for OmniOffloader (Astro Starlight). Not part of the plugin bundle.",
+	"scripts": {
+		"changelog": "node scripts/changelog.mjs",
+		"predev": "node scripts/changelog.mjs",
+		"dev": "astro dev",
+		"prebuild": "node scripts/changelog.mjs",
+		"build": "astro build",
+		"preview": "astro preview",
+		"astro": "astro"
+	},
+	"packageManager": "pnpm@12.4.2",
+	"dependencies": {
+		"@astrojs/starlight": "^0.42.4",
+		"astro": "^7.3.5",
+		"sharp": "^0.35.4"
+	}
+}

@@ -1,0 +1,110 @@
+---
+title: OmniOffloader
+description: Offload WordPress media to Amazon S3, Cloudflare R2, Wasabi or any S3-compatible storage, serve it from a CDN, and restore it anytime with Bring Back.
+template: splash
+hero:
+  tagline: Move your WordPress media library to cloud storage, serve it from your CDN, and free your server's disk. Without changing a single URL in your content. And bring it all back whenever you want.
+  image:
+    file: ../../assets/logo.svg
+  actions:
+    - text: Get started
+      link: /getting-started/quick-start/
+      icon: right-arrow
+    - text: Download on WordPress.org
+      link: https://wordpress.org/plugins/omnioffloader/
+      icon: external
+      variant: minimal
+---
+
+import { Card, CardGrid, LinkCard } from '@astrojs/starlight/components';
+
+## What it does
+
+<CardGrid>
+	<Card title="Automatic offloading" icon="rocket">
+		Every new upload goes to the cloud in the background: the original, every
+		thumbnail, the `-scaled` version and WebP/AVIF sources.
+	</Card>
+	<Card title="Bring Back" icon="random">
+		Offloading is never a one-way door. Restore one file or the whole library
+		to your server, with a disk-space check before it starts.
+	</Card>
+	<Card title="No broken URLs" icon="seti:html">
+		URLs and `srcset` are rewritten as pages render. Nothing in your database
+		is search-replaced, and page builders keep working.
+	</Card>
+	<Card title="Three retention policies" icon="setting">
+		Keep every local copy, delete only thumbnails, or move everything to the
+		cloud. Local files are deleted only after the upload is confirmed.
+	</Card>
+	<Card title="Built for every host" icon="laptop">
+		One PHP process and low memory. Choose a Transfer Speed that fits a small
+		shared plan or a dedicated server.
+	</Card>
+	<Card title="WP-CLI" icon="seti:shell">
+		Offload, restore, apply retention and check status from the terminal, with
+		`--dry-run` on every write command.
+	</Card>
+</CardGrid>
+
+## Works with your storage
+
+<CardGrid>
+	<LinkCard title="Cloudflare R2" href="/providers/cloudflare-r2/" />
+	<LinkCard title="Amazon S3" href="/providers/amazon-s3/" />
+	<LinkCard title="DigitalOcean Spaces" href="/providers/digitalocean-spaces/" />
+	<LinkCard title="Backblaze B2" href="/providers/backblaze-b2/" />
+	<LinkCard title="Wasabi" href="/providers/wasabi/" />
+	<LinkCard
+		title="Any S3-compatible storage"
+		description="MinIO, Storj, OVHcloud, Linode, Scaleway and more."
+		href="/providers/s3-compatible/"
+	/>
+</CardGrid>
+
+## Safe by design
+
+<CardGrid>
+	<Card title="Verified before deleted" icon="approve-check">
+		A local file is never deleted until its upload is confirmed in your
+		bucket. A cloud file is never deleted until Bring Back has confirmed the
+		local copy, and only if you turned that on.
+	</Card>
+	<Card title="Safe mode for copies" icon="warning">
+		A staging, development or local copy of your site never uploads to or
+		deletes from the live site's storage.
+	</Card>
+	<Card title="One bucket, many sites" icon="puzzle">
+		Several sites can share one bucket and CDN, each in its own folder. A site
+		never touches a folder another site uses.
+	</Card>
+	<Card title="Keys stay private" icon="seti:lock">
+		Access keys are never shown in the browser or written to logs. You can
+		keep them in `wp-config.php` instead of the database.
+	</Card>
+</CardGrid>
+
+## Start here
+
+<CardGrid>
+	<LinkCard
+		title="Quick start"
+		description="Connect a bucket and offload your first image in a few minutes."
+		href="/getting-started/quick-start/"
+	/>
+	<LinkCard
+		title="Bring Back"
+		description="Restore media from the cloud to your server."
+		href="/features/bring-back/"
+	/>
+	<LinkCard
+		title="WP-CLI commands"
+		description="Run big jobs from the terminal."
+		href="/wp-cli/"
+	/>
+	<LinkCard
+		title="Changelog"
+		description="What's new in every release."
+		href="/changelog/"
+	/>
+</CardGrid>

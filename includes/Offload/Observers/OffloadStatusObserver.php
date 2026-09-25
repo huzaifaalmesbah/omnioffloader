@@ -7,6 +7,7 @@
 
 namespace OmniOffloader\Offload\Observers;
 
+use OmniOffloader\Core\SafeMode;
 use OmniOffloader\Offload\ObserverInterface;
 use OmniOffloader\Providers\ProviderInterface;
 use OmniOffloader\Providers\ProviderRegistry;
@@ -302,6 +303,9 @@ class OffloadStatusObserver implements ObserverInterface {
 		$status     = self::get_attachment_status( $post_id );
 		$state      = (string) $status['status'];
 		$can_upload = self::current_user_can_manage( $post_id );
+		// No "Offload now" on a copy of the site (see Core\SafeMode).
+		$can_offload = $can_upload && ! SafeMode::is_active();
+		$can_restore = $can_upload && ! SafeMode::blocks_bring_back();
 
 		$html = sprintf(
 			'<div class="omnioffloader-details-badge omnioffloader-details-badge--%s" data-attachment-id="%d" data-status="%s">',
@@ -322,7 +326,7 @@ class OffloadStatusObserver implements ObserverInterface {
 					$date ? esc_html( ' · ' . $date ) : ''
 				);
 
-				if ( $can_upload ) {
+				if ( $can_restore ) {
 					$restore_url = wp_nonce_url(
 						admin_url( 'admin-post.php?action=omnioffloader_restore_single&id=' . $post_id ),
 						'omnioffloader_restore_single_' . $post_id
@@ -363,7 +367,7 @@ class OffloadStatusObserver implements ObserverInterface {
 					esc_html( sprintf( __( 'Failed — %s', 'omnioffloader' ), $error_text ) )
 				);
 
-				if ( $can_upload ) {
+				if ( $can_offload ) {
 					$offload_url = wp_nonce_url(
 						admin_url( 'admin-post.php?action=omnioffloader_offload_single&id=' . $post_id ),
 						'omnioffloader_offload_single_' . $post_id
@@ -384,7 +388,7 @@ class OffloadStatusObserver implements ObserverInterface {
 					esc_html__( 'Local', 'omnioffloader' )
 				);
 
-				if ( $can_upload ) {
+				if ( $can_offload ) {
 					$offload_url = wp_nonce_url(
 						admin_url( 'admin-post.php?action=omnioffloader_offload_single&id=' . $post_id ),
 						'omnioffloader_offload_single_' . $post_id
@@ -417,6 +421,9 @@ class OffloadStatusObserver implements ObserverInterface {
 		$status     = self::get_attachment_status( $post_id );
 		$state      = (string) $status['status'];
 		$can_upload = self::current_user_can_manage( $post_id );
+		// No "Offload now" on a copy of the site (see Core\SafeMode).
+		$can_offload = $can_upload && ! SafeMode::is_active();
+		$can_restore = $can_upload && ! SafeMode::blocks_bring_back();
 
 		$html = sprintf(
 			'<div class="omnioffloader-meta-box-wrap omnioffloader-details-badge omnioffloader-details-badge--%s" data-attachment-id="%d" data-status="%s">',
@@ -533,7 +540,7 @@ class OffloadStatusObserver implements ObserverInterface {
 		// Action buttons (container always present to prevent layout shift).
 		$html .= '<div class="omnioffloader-meta-box-actions">';
 		if ( $can_upload && 'processing' !== $state && 'queued' !== $state ) {
-			if ( 'offloaded' === $state ) {
+			if ( 'offloaded' === $state && $can_restore ) {
 				$restore_url = wp_nonce_url(
 					admin_url( 'admin-post.php?action=omnioffloader_restore_single&id=' . $post_id ),
 					'omnioffloader_restore_single_' . $post_id
@@ -544,7 +551,7 @@ class OffloadStatusObserver implements ObserverInterface {
 					$post_id,
 					esc_html__( 'Bring Back', 'omnioffloader' )
 				);
-			} elseif ( 'local' === $state ) {
+			} elseif ( 'local' === $state && $can_offload ) {
 				$offload_url = wp_nonce_url(
 					admin_url( 'admin-post.php?action=omnioffloader_offload_single&id=' . $post_id ),
 					'omnioffloader_offload_single_' . $post_id
@@ -555,7 +562,7 @@ class OffloadStatusObserver implements ObserverInterface {
 					$post_id,
 					esc_html__( 'Offload now', 'omnioffloader' )
 				);
-			} elseif ( 'failed' === $state ) {
+			} elseif ( 'failed' === $state && $can_offload ) {
 				$offload_url = wp_nonce_url(
 					admin_url( 'admin-post.php?action=omnioffloader_offload_single&id=' . $post_id ),
 					'omnioffloader_offload_single_' . $post_id

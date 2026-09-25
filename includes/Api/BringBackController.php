@@ -9,6 +9,7 @@ namespace OmniOffloader\Api;
 
 use OmniOffloader\Core\Helpers;
 use OmniOffloader\Core\Plugin;
+use OmniOffloader\Core\SafeMode;
 use OmniOffloader\Services\AttachmentRestorer;
 use OmniOffloader\Services\BulkRestoreProcessor;
 use OmniOffloader\Traits\AttachmentHelper;
@@ -128,6 +129,10 @@ class BringBackController extends BaseController {
 	 * @return \WP_REST_Response|\WP_Error
 	 */
 	public function restore_attachment_response( WP_REST_Request $request ) {
+		if ( SafeMode::blocks_bring_back() ) {
+			return SafeMode::bring_back_refusal();
+		}
+
 		$attachment_id = (int) $request->get_param( 'id' );
 
 		if ( 'attachment' !== get_post_type( $attachment_id ) ) {
@@ -229,6 +234,10 @@ class BringBackController extends BaseController {
 	 * @return \WP_REST_Response|\WP_Error
 	 */
 	public function start_bulk_response( WP_REST_Request $request ) {
+		if ( SafeMode::blocks_bring_back() ) {
+			return SafeMode::bring_back_refusal();
+		}
+
 		$engine = $this->require_engine();
 
 		if ( is_wp_error( $engine ) ) {

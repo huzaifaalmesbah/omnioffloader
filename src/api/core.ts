@@ -1,6 +1,11 @@
 import apiFetch from '@wordpress/api-fetch';
 
-import type { MediaStats, ProviderInfo, Settings } from '../types';
+import type {
+	MediaStats,
+	ProviderInfo,
+	SafeModeStatus,
+	Settings,
+} from '../types';
 
 const BASE = '/omnioffloader/v1';
 
@@ -23,6 +28,14 @@ export function fetchProviders(): Promise< ProviderInfo[] > {
 	return apiFetch( {
 		path: `${ BASE }/core/providers?_t=${ Date.now() }`,
 		cache: 'no-store',
+	} );
+}
+
+/** "This is the live site": records the current address as the live one. */
+export function confirmLiveSite(): Promise< SafeModeStatus > {
+	return apiFetch( {
+		path: `${ BASE }/core/safe-mode/live`,
+		method: 'POST',
 	} );
 }
 

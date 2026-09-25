@@ -8,6 +8,7 @@
 namespace OmniOffloader\Offload\Observers;
 
 use OmniOffloader\Offload\ObserverInterface;
+use OmniOffloader\Core\SafeMode;
 use OmniOffloader\Providers\ProviderInterface;
 use OmniOffloader\Services\AttachmentRestorer;
 use OmniOffloader\Services\AttachmentUploader;
@@ -109,6 +110,10 @@ class RowActionsObserver implements ObserverInterface {
 		}
 
 		if ( self::is_offloaded( $attachment_id ) ) {
+			if ( SafeMode::blocks_bring_back() ) {
+				return $actions;
+			}
+
 			$actions['omnioffloader_restore'] = sprintf(
 				'<a href="%s" class="omnioffloader-row-action" data-action="restore" data-attachment-id="%d">%s</a>',
 				esc_url( $this->action_url( self::RESTORE_ACTION, $attachment_id ) ),
@@ -116,6 +121,11 @@ class RowActionsObserver implements ObserverInterface {
 				esc_html__( 'Bring Back', 'omnioffloader' )
 			);
 
+			return $actions;
+		}
+
+		// A copy of the site offers no way to upload to the live bucket.
+		if ( SafeMode::is_active() ) {
 			return $actions;
 		}
 
@@ -168,12 +178,20 @@ class RowActionsObserver implements ObserverInterface {
 		}
 
 		if ( self::is_offloaded( $attachment_id ) ) {
+			if ( SafeMode::blocks_bring_back() ) {
+				return '';
+			}
+
 			return sprintf(
 				'<span class="omnioffloader_restore omnioffloader_action"><a href="%s" class="omnioffloader-row-action" data-action="restore" data-attachment-id="%d">%s</a></span>',
 				esc_url( $this->action_url( self::RESTORE_ACTION, $attachment_id ) ),
 				$attachment_id,
 				esc_html__( 'Bring Back', 'omnioffloader' )
 			);
+		}
+
+		if ( SafeMode::is_active() ) {
+			return '';
 		}
 
 		return sprintf(
@@ -221,6 +239,10 @@ class RowActionsObserver implements ObserverInterface {
 
 		if ( ! self::current_user_can_manage( $attachment_id ) ) {
 			wp_die( esc_html__( 'Sorry, you are not allowed to do that.', 'omnioffloader' ) );
+		}
+
+		if ( SafeMode::is_active() ) {
+			wp_die( esc_html( SafeMode::message() ) );
 		}
 
 		wp_raise_memory_limit( 'admin' );
@@ -271,6 +293,10 @@ class RowActionsObserver implements ObserverInterface {
 			@set_time_limit( 0 );
 		}
 
+		if ( SafeMode::blocks_bring_back() ) {
+			wp_die( esc_html( SafeMode::bring_back_message() ) );
+		}
+
 		// See BringBackController: never restore alongside a retention run.
 		if ( 'retention' === \OmniOffloader\Core\Plugin::get_instance()->get_active_bulk_job() ) {
 			wp_die( esc_html__( 'A retention policy update is running — wait for it to finish first.', 'omnioffloader' ) );
@@ -311,8 +337,13 @@ class RowActionsObserver implements ObserverInterface {
 			return $actions;
 		}
 
-		$actions['omnioffloader_bulk_offload'] = __( 'Offload to Cloud', 'omnioffloader' );
-		$actions['omnioffloader_bulk_restore'] = __( 'Bring Back to Server', 'omnioffloader' );
+		if ( ! SafeMode::is_active() ) {
+			$actions['omnioffloader_bulk_offload'] = __( 'Offload to Cloud', 'omnioffloader' );
+		}
+
+		if ( ! SafeMode::blocks_bring_back() ) {
+			$actions['omnioffloader_bulk_restore'] = __( 'Bring Back to Server', 'omnioffloader' );
+		}
 
 		return $actions;
 	}
@@ -354,6 +385,10 @@ class RowActionsObserver implements ObserverInterface {
 			if ( '' !== $active && $active !== $job ) {
 				return add_query_arg( 'omnioffloader_bulk_blocked', rawurlencode( $active ), $redirect_to );
 			}
+		}
+
+		if ( ( 'omnioffloader_bulk_offload' === $doaction && SafeMode::is_active() ) || ( 'omnioffloader_bulk_restore' === $doaction && SafeMode::blocks_bring_back() ) ) {
+			return $redirect_to;
 		}
 
 		if ( 'omnioffloader_bulk_offload' === $doaction ) {

@@ -8,6 +8,7 @@
 namespace OmniOffloader\Offload\Observers;
 
 use OmniOffloader\Core\Helpers;
+use OmniOffloader\Core\SafeMode;
 use OmniOffloader\Offload\ObserverInterface;
 use OmniOffloader\Providers\ProviderInterface;
 use OmniOffloader\Traits\AttachmentHelper;
@@ -68,7 +69,8 @@ class DeleteObserver implements ObserverInterface {
 
 		$settings = self::get_settings();
 
-		if ( empty( $settings['mirror_delete'] ) ) {
+		// A copy of the site must never delete files the live site serves.
+		if ( empty( $settings['mirror_delete'] ) || SafeMode::is_active() ) {
 			return;
 		}
 

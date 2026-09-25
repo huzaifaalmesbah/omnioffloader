@@ -13,6 +13,7 @@ import { cloudUpload } from '@wordpress/icons';
 import { CredentialFields } from '../components/settings/CredentialFields';
 import { TestConnection } from '../components/settings/TestConnection';
 import { Card } from '../components/ui/Card';
+import { safeModeReasonText } from '../components/layout/SafeModeBanner';
 import { fetchRetentionPreflight } from '../api/retention';
 import { useCore } from '../context/CoreContext';
 import { radioKeyDown, radioTabIndex } from '../utils/radioGroup';
@@ -386,6 +387,63 @@ export function SettingsPage( { onNavigate }: SettingsProps ) {
 						__nextHasNoMarginBottom
 					/>
 				) }
+			</Card>
+
+			<Card title={ __( 'Staging & Dev Copies', 'omnioffloader' ) }>
+				<p className="smowp-muted">
+					{ stats?.safe_mode?.active
+						? __(
+								'Safe mode is on for this site.',
+								'omnioffloader'
+							) +
+							' ' +
+							safeModeReasonText( stats.safe_mode )
+						: __(
+								'This site is treated as the live site.',
+								'omnioffloader'
+							) }
+				</p>
+				<ToggleControl
+					label={ __(
+						'Protect the live site when this is a copy',
+						'omnioffloader'
+					) }
+					help={
+						stats?.safe_mode?.locked
+							? __(
+									'Set by OMNIOFFLOADER_SAFE_MODE in wp-config.php.',
+									'omnioffloader'
+								)
+							: __(
+									'When this site is a staging, development or local copy (its address changed, WordPress reports a non-production environment, or it runs on a local address), nothing is uploaded to or deleted from your cloud storage, so the live site’s files are never overwritten or removed. Media already in the cloud still loads from it, and new uploads stay on this server.',
+									'omnioffloader'
+								)
+					}
+					checked={ settings.protect_copies }
+					disabled={ !! stats?.safe_mode?.locked }
+					onChange={ ( protect_copies: boolean ) =>
+						updateSettings( { protect_copies } )
+					}
+					__nextHasNoMarginBottom
+				/>
+				<ToggleControl
+					label={ __(
+						'Allow Bring Back on a copy (download only)',
+						'omnioffloader'
+					) }
+					help={ __(
+						'Off: in Safe mode, Bring Back is hidden everywhere (Media Library, media editor, Bring Back page, WP-CLI). On: it downloads media from the cloud to this copy, and the cloud copy is always kept, even if "delete from cloud" is requested.',
+						'omnioffloader'
+					) }
+					checked={ settings.safe_mode_bring_back }
+					disabled={
+						! settings.protect_copies && ! stats?.safe_mode?.locked
+					}
+					onChange={ ( safe_mode_bring_back: boolean ) =>
+						updateSettings( { safe_mode_bring_back } )
+					}
+					__nextHasNoMarginBottom
+				/>
 			</Card>
 
 			<Card title={ __( 'Uninstall', 'omnioffloader' ) }>

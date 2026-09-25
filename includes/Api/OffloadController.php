@@ -8,6 +8,7 @@
 namespace OmniOffloader\Api;
 
 use OmniOffloader\Core\Plugin;
+use OmniOffloader\Core\SafeMode;
 use OmniOffloader\Services\AttachmentUploader;
 use OmniOffloader\Services\BulkOffloadProcessor;
 use OmniOffloader\Services\BulkRestoreProcessor;
@@ -168,6 +169,10 @@ class OffloadController extends BaseController {
 	 * @return \WP_REST_Response|\WP_Error
 	 */
 	public function offload_attachment_response( WP_REST_Request $request ) {
+		if ( SafeMode::is_active() ) {
+			return SafeMode::refusal();
+		}
+
 		$engine = $this->require_engine();
 
 		if ( is_wp_error( $engine ) ) {
@@ -231,6 +236,10 @@ class OffloadController extends BaseController {
 	 * @return \WP_REST_Response|\WP_Error
 	 */
 	public function start_bulk_response( WP_REST_Request $request ) {
+		if ( SafeMode::is_active() ) {
+			return SafeMode::refusal();
+		}
+
 		$engine = $this->require_engine();
 
 		if ( is_wp_error( $engine ) ) {
@@ -385,6 +394,10 @@ class OffloadController extends BaseController {
 		}
 
 		if ( 'offload' === $action ) {
+			if ( SafeMode::is_active() ) {
+				return SafeMode::refusal();
+			}
+
 			$engine = $this->require_engine();
 			if ( is_wp_error( $engine ) ) {
 				return $engine;
@@ -400,6 +413,10 @@ class OffloadController extends BaseController {
 					'ids'     => $ids,
 				)
 			);
+		}
+
+		if ( SafeMode::blocks_bring_back() ) {
+			return SafeMode::bring_back_refusal();
 		}
 
 		$restore_engine = Plugin::get_instance()->get_bulk_restore();

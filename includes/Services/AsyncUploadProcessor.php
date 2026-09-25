@@ -9,6 +9,7 @@ namespace OmniOffloader\Services;
 
 use OmniOffloader\Abstracts\WP_Background_Processing\WP_Background_Process;
 use OmniOffloader\Core\Helpers;
+use OmniOffloader\Core\SafeMode;
 use OmniOffloader\Providers\ProviderInterface;
 use OmniOffloader\Traits\AttachmentHelper;
 
@@ -80,7 +81,8 @@ class AsyncUploadProcessor extends WP_Background_Process {
 			return false;
 		}
 
-		if ( self::is_offloaded( $attachment_id ) ) {
+		// Queued before the site was recognised as a copy: stays local.
+		if ( self::is_offloaded( $attachment_id ) || SafeMode::is_active() ) {
 			delete_post_meta( $attachment_id, 'omnioffloader_status' );
 
 			return false;

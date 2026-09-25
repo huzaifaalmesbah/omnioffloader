@@ -39,6 +39,10 @@ trait OptionsHelper {
 			'transfer_concurrency'     => 3,
 			'bring_back_delete_cloud'  => false,
 			'remove_data_on_uninstall' => false,
+			// Safe mode on staging/dev/local copies (see Core\SafeMode).
+			'protect_copies'           => true,
+			// In Safe mode, allow Bring Back as download-only (off: hidden).
+			'safe_mode_bring_back'     => false,
 		);
 	}
 
@@ -79,6 +83,8 @@ trait OptionsHelper {
 			'transfer_concurrency'     => self::sanitize_transfer_concurrency( $settings['transfer_concurrency'] ?? $current['transfer_concurrency'] ),
 			'bring_back_delete_cloud'  => ! empty( $settings['bring_back_delete_cloud'] ?? $current['bring_back_delete_cloud'] ),
 			'remove_data_on_uninstall' => ! empty( $settings['remove_data_on_uninstall'] ?? $current['remove_data_on_uninstall'] ),
+			'protect_copies'           => ! empty( $settings['protect_copies'] ?? $current['protect_copies'] ),
+			'safe_mode_bring_back'     => ! empty( $settings['safe_mode_bring_back'] ?? $current['safe_mode_bring_back'] ),
 		);
 
 		update_option( 'omnioffloader_settings', $sanitized, true );

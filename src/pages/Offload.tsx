@@ -39,9 +39,15 @@ export function OffloadPage() {
 
 	const isCustomInvalid =
 		scopeMode === 'custom' && ( ! customCount || customCount < 1 );
-	const isDisabled = busy || localCount === 0 || isCustomInvalid;
+	const safeMode = !! stats?.safe_mode?.active;
+	const isDisabled = busy || localCount === 0 || isCustomInvalid || safeMode;
 	let disabledReason: string = '';
-	if ( localCount === 0 ) {
+	if ( safeMode ) {
+		disabledReason = __(
+			'Safe mode is on: this site looks like a copy, so nothing is uploaded to your cloud storage.',
+			'omnioffloader'
+		);
+	} else if ( localCount === 0 ) {
 		if ( totalCount === 0 ) {
 			disabledReason = __(
 				'Media library is empty. Upload media files first.',

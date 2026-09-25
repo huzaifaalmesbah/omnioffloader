@@ -62,6 +62,7 @@ OmniOffloader is designed to run on a small shared hosting plan just as well as 
 * Only one bulk job (offload, Bring Back or retention) runs at a time, whether it was started from the admin screens, the Media Library or WP-CLI.
 * Moving media between your server and the cloud is limited to administrators. Other users keep their normal rights: they upload and delete their own media.
 * Access keys are never shown in the browser or written to logs.
+* Safe mode for staging, development and local copies: a copy of your site never uploads to or deletes from the live site's cloud storage.
 
 = For developers =
 
@@ -171,6 +172,16 @@ Yes — that is what **Bring Back** is for. It downloads your media from the clo
 = What happens to my images if I deactivate the plugin? =
 
 That depends on the retention policy you used. With **Retain Local Files**, every file is still on your server and nothing changes. With **Smart Local Cleanup** or **Full Cloud Migration**, some or all local files were deleted after upload, so URLs would point at files that are no longer on disk. **Run Bring Back before deactivating** if you used either cleanup policy.
+
+= I copied my live site to staging or a local dev site. Can it damage the live site's media? =
+
+No. A copy carries the live site's settings and access keys, so without protection it would upload into the live bucket (a new file with the same name could overwrite one the live site added later) and, with Mirror Delete on, delete files the live site still uses. OmniOffloader recognises a copy automatically and switches to **Safe mode**:
+
+* the site address changed from the one recorded as live (stored as a fingerprint, so migration tools' search-and-replace can't hide the change),
+* WordPress reports a staging, development or local environment (`WP_ENVIRONMENT_TYPE`, set by many managed hosts and local tools), or
+* the site runs on a local address such as `localhost`, `*.local` or `*.test`.
+
+In Safe mode nothing is uploaded to or deleted from your cloud storage. Media already in the cloud keeps loading from it, and new uploads stay on the copy's own server. Bring Back is turned off too; to download media from the cloud to the copy, turn on **Allow Bring Back on a copy (download only)** in Settings — the cloud copy is then always kept. A banner explains why Safe mode is on. If your live site really moved to a new domain, click **This is the live site**. To decide yourself, add `define( 'OMNIOFFLOADER_SAFE_MODE', true );` (or `false`) to `wp-config.php`, or turn off **Protect the live site when this is a copy** in Settings.
 
 = Do I have to delete my local files? =
 
@@ -313,6 +324,7 @@ Depending on the provider you select:
 * Partial downloads left behind when the server stopped a Bring Back mid-file are now cleaned up.
 * The Bring Back download estimate now counts only the files that are actually missing from the server. Before, it also counted files your retention policy kept on the server, so a site using Retain Local Files saw its whole library as the download size and could get a false "not enough disk space" warning. Attachments uploaded before WordPress 6.0, which have no recorded file size, are now reported separately instead of silently counting as zero. A note also explains that free disk space is what the server reports, and a hosting plan's storage quota may be lower.
 * Shared hosting with a storage quota (cPanel, CloudLinux): PHP can only see the whole server disk, not your plan's quota. Bring Back and retention updates now notice when the server refuses to save a file ("Disk quota exceeded", "No space left on device") and stop right away with a clear message. Before, they kept failing until the failure limit and blamed the attachments. Nothing is lost: attachments that were not brought back stay in the cloud. New filter `omnioffloader_free_disk_space` lets a host or developer supply the real space left in the quota.
+* New: Safe mode for staging, development and local copies. A copy of a live site (made with a backup or migration plugin, a host's staging tool, or on a local machine) is recognised automatically, and nothing is uploaded to or deleted from the live site's cloud storage from it. Before, a copy could overwrite files in the live bucket with its own uploads and, with Mirror Delete on, delete files the live site still served. Media already in the cloud keeps loading and new uploads stay local. Bring Back is hidden and turned off on a copy unless you allow it in Settings ("Allow Bring Back on a copy"), and then it only downloads, never deleting from the cloud. Detection uses the site address, `WP_ENVIRONMENT_TYPE` and local addresses; a banner explains why, with a "This is the live site" button for a real domain move. Control it with the new Settings option "Protect the live site when this is a copy" or the `OMNIOFFLOADER_SAFE_MODE` constant. `wp omnioffloader status` shows the mode; `wp omnioffloader offload` and `restore` refuse to run in Safe mode (`restore` works when Bring Back is allowed, but never with `--delete-cloud`).
 * cPanel hosting: the Bring Back screen now shows the space left in your hosting plan (for example "9.3 GB of 10 GB"), read from cPanel's own quota record, together with when cPanel last updated it. Before, it showed the whole server disk (often terabytes). No shell commands are used. The disk check during Bring Back uses the quota too, as long as cPanel updated it within the last hour.
 * The retention policy update now checks the storage connection before stopping on repeated failures, like Bulk Offload and Bring Back.
 * The Dashboard's local media count now matches what Bulk Offload processes (trashed attachments and entries without a file are not counted), so it reaches 0 after a full run.

@@ -9,6 +9,7 @@ namespace OmniOffloader\Cli;
 
 use OmniOffloader\Core\Helpers;
 use OmniOffloader\Core\Plugin;
+use OmniOffloader\Core\SafeMode;
 use OmniOffloader\Services\AttachmentRestorer;
 use OmniOffloader\Traits\AttachmentHelper;
 use WP_CLI;
@@ -89,6 +90,16 @@ class RestoreCommand {
 
 		// Restoring the same attachment from two processes races over the same
 		// destination files; the admin queue owns them until it is done.
+		if ( ! $is_dry && SafeMode::blocks_bring_back() ) {
+			WP_CLI::error( SafeMode::bring_back_message() );
+		}
+
+		// Where Bring Back is allowed on a copy, it never deletes the live
+		// site's cloud files.
+		if ( isset( $assoc_args['delete-cloud'] ) && SafeMode::is_active() ) {
+			WP_CLI::error( 'Safe mode is on (this site looks like a staging, development or local copy), so --delete-cloud is not allowed: it would delete files the live site still serves. Run without --delete-cloud to download only.' );
+		}
+
 		if ( ! $is_dry ) {
 			$this->refuse_if_busy( $plugin, $assoc_args );
 		}

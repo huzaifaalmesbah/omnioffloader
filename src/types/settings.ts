@@ -24,4 +24,8 @@ export interface Settings {
 	transfer_concurrency: number;
 	bring_back_delete_cloud: boolean;
 	remove_data_on_uninstall: boolean;
+	/** Safe mode on staging/dev/local copies of the site. */
+	protect_copies: boolean;
+	/** In Safe mode, allow Bring Back as download-only (default: hidden). */
+	safe_mode_bring_back: boolean;
 }

@@ -156,7 +156,7 @@ Progress polling (`useBulkOffload`, `useBringBack`, `useRetentionSync`) uses a *
 
 All mutations via REST; `@wordpress/api-fetch` sends the nonce. Every route: explicit `permission_callback` (`manage_options`; only the read-only `/offload/attachment-status` uses `upload_files`), `args` with type/sanitize callbacks **plus `'validate_callback' => 'rest_validate_request_arg'`** (core skips schema checks — type, enum, min/max — when only a sanitizer is given), `WP_REST_Server` method constants, `rest_ensure_response()` / `WP_Error` with status + stable `omnioffloader_*` error codes.
 
-- `GET/POST /core/settings` · `GET /core/providers` · `GET /core/stats`
+- `GET/POST /core/settings` · `GET /core/providers` · `GET /core/stats` (includes `safe_mode`) · `POST /core/safe-mode/live`
 - `GET/POST /provider/credentials` · `POST /provider/test-connection` — all take a provider arg
 - `POST /offload/attachment/{id}` · `POST /offload/bulk` · `GET /offload/bulk/progress` · `POST /offload/bulk/cancel` · `GET /offload/errors`
 - `GET /bring-back/preflight` · `POST /bring-back/attachment/{id}` · `POST /bring-back/bulk` · `GET /bring-back/bulk/progress` · `POST /bring-back/bulk/cancel`
@@ -174,6 +174,7 @@ Credentials: `GET` returns secrets masked (`is_set: true`); `POST` ignores maske
 - `omnioffloader_version` (autoload on) — for Migrator
 - `omnioffloader_credentials` (autoload **off** — secrets stay out of the shared alloptions cache; `is_configured()` pays one small query per request for that) — per-provider credential sub-arrays. Never returned raw via REST.
 - `omnioffloader_first_activated_version` (autoload off)
+- `omnioffloader_live_site` (autoload on) — `{hash, label}` of the address recorded as live (`SafeMode::maybe_record_live_site()` on first configured boot; the "This is the live site" button re-records). `label` is base64 so search-replace skips it.
 - `omnioffloader_bulk_offload_state` / `omnioffloader_bulk_restore_state` / `omnioffloader_bulk_retention_state` (autoload off) — progress heartbeats
 - `omnioffloader_bulk_{offload,restore,retention}_batch_*` / `_status` — queue internals, written by `WP_Background_Process` via `update_site_option` (autoload off on single site). Never leave these behind; `purge_stored_data()` owns their cleanup.
 
@@ -187,7 +188,7 @@ The policy is applied once at offload time (`LocalCleaner`). Changing the settin
 
 **Cron:** watchdog event only while a bulk job runs; unschedule when idle.
 
-**Constants:** `OMNIOFFLOADER_VERSION`, `OMNIOFFLOADER_DIR`, `OMNIOFFLOADER_URL`, `OMNIOFFLOADER_ASSETS_URL`, `OMNIOFFLOADER_BASENAME`, `OMNIOFFLOADER_FILE`, plus `OMNIOFFLOADER_DISABLE_ENGINE` (kill switch).
+**Constants:** `OMNIOFFLOADER_SAFE_MODE` (true/false — force Safe mode), `OMNIOFFLOADER_VERSION`, `OMNIOFFLOADER_DIR`, `OMNIOFFLOADER_URL`, `OMNIOFFLOADER_ASSETS_URL`, `OMNIOFFLOADER_BASENAME`, `OMNIOFFLOADER_FILE`, plus `OMNIOFFLOADER_DISABLE_ENGINE` (kill switch).
 
 ## Public Hooks
 
@@ -205,6 +206,7 @@ Actions: `omnioffloader_before_offload`, `omnioffloader_after_offload`, `omnioff
 7. CLI destructive paths (`--delete-cloud`) require `WP_CLI::confirm()` or `--yes`; every write command supports `--dry-run`.
 8. Only one bulk job at a time — offload, restore and retention runs (admin queue or CLI) all read or delete the same local files. REST start routes check `Plugin::bulk_job_conflict()`; CLI commands refuse while `Plugin::get_active_bulk_job()` is non-empty (`--force` overrides), hold their queue's process lock, and announce themselves with `Plugin::claim_cli_job()` (site transient, 10 min). All of this lives in the `Cli\CliJobGuard` trait: locks are renewed after **every** item, released on shutdown and on Ctrl-C (pcntl), and `--limit`/`--ids` are validated (a typo must never mean "whole library") so admin jobs of every type see them. Single-item Bring Back is refused while a retention run is active.
 9. **Offload / Bring Back is administrator-only.** Every path that moves media between server and cloud — row actions, detail buttons, Media Library bulk actions, `/offload/attachment/{id}`, `/bring-back/attachment/{id}`, `/bulk/action` — needs `manage_options` (plus `edit_post`; `delete_post` to delete the cloud copy), via `AttachmentHelper::current_user_can_manage()` / `current_user_can_delete_cloud()` / `filter_manageable_ids()`. Non-admins only upload and delete their own media through core; Mirror Delete handles the cloud side of a delete. `/offload/attachment-status` (read-only badges) stays `upload_files`.
+10. **A copy of the site never writes to or deletes from the bucket** (`Core\SafeMode`). A copy is detected by a changed site address (sha256 fingerprint in `omnioffloader_live_site` — never a plain URL, which migration search-replace would rewrite), `wp_get_environment_type()` ≠ production, or a local host (`localhost`, `*.local`, `*.test`…); `OMNIOFFLOADER_SAFE_MODE` overrides, setting `protect_copies` (default on) disables. Enforced at the provider (`upload_file`/`upload_files`/`delete_objects` refuse) plus every entry point: upload observers and async queue skip, Mirror Delete skips, restores force `delete_cloud` off, offload REST routes return 409 `omnioffloader_safe_mode`, Media Library offload links/bulk option hidden, CLI `offload` and `restore --delete-cloud` refuse. URL rewriting keeps working. Bring Back is refused and hidden too (`SafeMode::blocks_bring_back()`: row/editor/meta-box buttons, bulk option, `/bring-back/*` and `/bulk/action` restore → 409, queue halts, CLI `restore` refuses) unless setting `safe_mode_bring_back` allows it — then download-only. Local test sites (`*.test`) are in Safe mode — the integration tests define `OMNIOFFLOADER_SAFE_MODE` false.
 
 ## Performance Rules
 

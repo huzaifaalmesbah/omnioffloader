@@ -265,6 +265,36 @@ class Plugin {
 		// Offload state must stay truthful (Safety Invariant #4): never
 		// editable as a custom field, via the UI, XML-RPC or REST meta.
 		add_filter( 'is_protected_meta', array( $this, 'protect_offload_meta' ), 10, 2 );
+
+		add_action( 'admin_notices', array( $this, 'safe_mode_notice' ) );
+	}
+
+	/**
+	 * Tell administrators on the Dashboard and Media Library that this site
+	 * is treated as a copy. The plugin's own screens show a banner instead.
+	 *
+	 * @since 0.1.3
+	 *
+	 * @return void
+	 */
+	public function safe_mode_notice() {
+		if ( ! current_user_can( 'manage_options' ) || ! self::is_configured() || ! SafeMode::is_active() ) {
+			return;
+		}
+
+		$screen = function_exists( 'get_current_screen' ) ? get_current_screen() : null;
+
+		if ( null === $screen || ! in_array( $screen->id, array( 'dashboard', 'upload' ), true ) ) {
+			return;
+		}
+
+		printf(
+			'<div class="notice notice-warning"><p><strong>%1$s</strong> %2$s <a href="%3$s">%4$s</a></p></div>',
+			esc_html__( 'OmniOffloader Safe mode:', 'omnioffloader' ),
+			esc_html__( 'this site looks like a staging, development or local copy, so nothing is uploaded to or deleted from your cloud storage. Media already in the cloud still loads from it.', 'omnioffloader' ),
+			esc_url( admin_url( 'admin.php?page=omnioffloader&view=settings' ) ),
+			esc_html__( 'Review in Settings', 'omnioffloader' )
+		);
 	}
 
 	/**
@@ -365,6 +395,10 @@ class Plugin {
 		}
 
 		$this->provider = $provider;
+
+		// The address the plugin runs on once configured is the live one a
+		// later copy (staging, dev, local) is recognised against.
+		SafeMode::maybe_record_live_site();
 
 		// Must exist on every request: their constructors register the
 		// async loopback + cron-healthcheck hooks that drive the queues.

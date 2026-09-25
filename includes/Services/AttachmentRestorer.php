@@ -8,6 +8,7 @@
 namespace OmniOffloader\Services;
 
 use OmniOffloader\Core\Helpers;
+use OmniOffloader\Core\SafeMode;
 use OmniOffloader\Providers\ProviderInterface;
 use OmniOffloader\Providers\ProviderRegistry;
 use OmniOffloader\Traits\AttachmentHelper;
@@ -75,6 +76,10 @@ class AttachmentRestorer {
 	public function restore( $attachment_id, $delete_cloud = false ) {
 		$attachment_id     = (int) $attachment_id;
 		$this->out_of_disk = false;
+
+		// Bring Back still downloads on a copy, but never deletes the live
+		// site's cloud files (see Core\SafeMode).
+		$delete_cloud = $delete_cloud && ! SafeMode::is_active();
 
 		if ( ! self::is_offloaded( $attachment_id ) ) {
 			return false;

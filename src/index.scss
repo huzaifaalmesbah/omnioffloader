@@ -1431,6 +1431,18 @@
 	}
 }
 
+.smowp-safe-mode-banner.components-notice {
+	margin: 0 0 20px;
+
+	p {
+		margin: 0 0 8px;
+	}
+
+	p:last-child {
+		margin-bottom: 0;
+	}
+}
+
 .smowp-preflight-info {
 	margin-top: -6px;
 	font-size: 12.5px;

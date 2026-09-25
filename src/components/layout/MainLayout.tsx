@@ -2,6 +2,7 @@ import { SnackbarList } from '@wordpress/components';
 
 import { useCore } from '../../context/CoreContext';
 import { Header } from './Header';
+import { SafeModeBanner } from './SafeModeBanner';
 import { SaveBar } from './SaveBar';
 import { Sidebar } from './Sidebar';
 
@@ -31,6 +32,7 @@ export function MainLayout( {
 						( activeView === 'settings' ? ' has-savebar' : '' )
 					}
 				>
+					<SafeModeBanner />
 					{ children }
 				</main>
 

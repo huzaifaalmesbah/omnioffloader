@@ -12,6 +12,13 @@
 
 require_once OMNIOFFLOADER_DIR . 'tests/MockProvider.php';
 
+// Safe mode would treat a local test site (*.test, localhost) as a copy and
+// refuse every upload; these tests exercise the real pipeline.
+if ( ! defined( 'OMNIOFFLOADER_SAFE_MODE' ) ) {
+	define( 'OMNIOFFLOADER_SAFE_MODE', false );
+}
+
+
 use OmniOffloader\Core\Helpers;
 use OmniOffloader\Offload\Offloader;
 use OmniOffloader\Services\AttachmentRestorer;

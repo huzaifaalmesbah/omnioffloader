@@ -8,6 +8,7 @@
 namespace OmniOffloader\Offload\Observers;
 
 use OmniOffloader\Offload\ObserverInterface;
+use OmniOffloader\Core\SafeMode;
 use OmniOffloader\Providers\ProviderInterface;
 use OmniOffloader\Services\AsyncUploadProcessor;
 use OmniOffloader\Services\AttachmentUploader;
@@ -82,6 +83,11 @@ class UploadObserver implements ObserverInterface {
 	public function on_add_attachment( $attachment_id ) {
 		$attachment_id = (int) $attachment_id;
 
+		// A copy of the site keeps new uploads on its own server.
+		if ( SafeMode::is_active() ) {
+			return;
+		}
+
 		if ( $this->should_use_async( $attachment_id ) ) {
 			update_post_meta( $attachment_id, 'omnioffloader_status', 'queued' );
 		}
@@ -96,6 +102,10 @@ class UploadObserver implements ObserverInterface {
 	 */
 	public function handle( $metadata, $attachment_id ) {
 		$attachment_id = (int) $attachment_id;
+
+		if ( SafeMode::is_active() ) {
+			return $metadata;
+		}
 
 		if ( $this->should_use_async( $attachment_id ) ) {
 			$this->queue_for_async_upload( $attachment_id );

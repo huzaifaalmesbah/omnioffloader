@@ -7,6 +7,8 @@
 
 namespace OmniOffloader\Services;
 
+use OmniOffloader\Core\SafeMode;
+
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
@@ -130,6 +132,14 @@ class BulkRestoreProcessor extends AbstractBulkProcessor {
 	 * @return bool
 	 */
 	protected function process_item( $attachment_id ) {
+		// Safe mode turned on (or Bring Back disallowed) mid-run.
+		if ( SafeMode::blocks_bring_back() ) {
+			$this->item_messages[ $attachment_id ] = __( 'Bring Back is turned off in Safe mode.', 'omnioffloader' );
+			$this->halt_run( SafeMode::bring_back_message() );
+
+			return false;
+		}
+
 		// Brought back some other way since it was queued (single Bring
 		// Back, or queued twice): nothing left to do.
 		if ( ! self::is_offloaded( $attachment_id ) ) {

@@ -37,6 +37,9 @@ export function BringBackPage() {
 	const isAllLocal =
 		stats?.configured && offloadedCount === 0 && totalCount > 0;
 	const freeKnown = ( preflight?.free_bytes ?? 0 ) > 0;
+	// On a copy of the site Bring Back only downloads; the delete-from-cloud
+	// choice is hidden and the server refuses it too.
+	const safeMode = !! stats?.safe_mode?.active;
 	const quota = preflight?.quota ?? null;
 
 	const [ scopeMode, setScopeMode ] = useState< ScopeMode >( 'all' );
@@ -52,9 +55,17 @@ export function BringBackPage() {
 
 	const isCustomInvalid =
 		scopeMode === 'custom' && ( ! customCount || customCount < 1 );
-	const isDisabled = busy || offloadedCount === 0 || isCustomInvalid;
+	// Safe mode turns Bring Back off unless the owner allowed it in Settings.
+	const bringBackBlocked = stats?.safe_mode?.bring_back === false;
+	const isDisabled =
+		busy || offloadedCount === 0 || isCustomInvalid || bringBackBlocked;
 	let disabledReason: string = '';
-	if ( offloadedCount === 0 ) {
+	if ( bringBackBlocked ) {
+		disabledReason = __(
+			'Safe mode is on: Bring Back is turned off on this copy of the site. You can allow it (download only) in Settings.',
+			'omnioffloader'
+		);
+	} else if ( offloadedCount === 0 ) {
 		if ( totalCount === 0 ) {
 			disabledReason = __(
 				'Media library is empty. No media to restore.',
@@ -354,164 +365,168 @@ export function BringBackPage() {
 								/>
 							) }
 
-							<div className="smowp-bringback-options">
-								<h4 className="smowp-bringback-options__title">
-									{ __(
-										'Restore Safety & Storage Options',
-										'omnioffloader'
-									) }
-								</h4>
-								<div
-									className="smowp-bringback-options__grid"
-									role="radiogroup"
-									aria-label={ __(
-										'Restore storage options',
-										'omnioffloader'
-									) }
-								>
-									<div
-										role="radio"
-										aria-checked={ ! deleteCloud }
-										tabIndex={ radioTabIndex(
-											DELETE_CLOUD_OPTIONS,
-											false,
-											deleteCloud,
-											running || offloadedCount === 0
+							{ ! safeMode && (
+								<div className="smowp-bringback-options">
+									<h4 className="smowp-bringback-options__title">
+										{ __(
+											'Restore Safety & Storage Options',
+											'omnioffloader'
 										) }
-										className={
-											'smowp-option-card' +
-											( ! deleteCloud
-												? ' is-selected'
-												: '' ) +
-											( running || offloadedCount === 0
-												? ' is-disabled'
-												: '' )
-										}
-										onClick={ () => {
-											if (
-												! running &&
-												offloadedCount > 0
-											) {
-												setDeleteCloud( false );
-											}
-										} }
-										onKeyDown={ ( e ) => {
-											if (
-												! running &&
-												offloadedCount > 0
-											) {
-												radioKeyDown(
-													e,
-													DELETE_CLOUD_OPTIONS,
-													false,
-													setDeleteCloud
-												);
-											}
-										} }
+									</h4>
+									<div
+										className="smowp-bringback-options__grid"
+										role="radiogroup"
+										aria-label={ __(
+											'Restore storage options',
+											'omnioffloader'
+										) }
 									>
-										<div className="smowp-option-card__radio">
-											<span className="smowp-radio-circle">
-												{ ! deleteCloud && (
-													<span className="smowp-radio-dot" />
-												) }
-											</span>
-										</div>
-										<div className="smowp-option-card__content">
-											<div className="smowp-option-card__head">
-												<strong>
-													{ __(
-														'Keep Cloud Copies',
-														'omnioffloader'
-													) }
-												</strong>
-												<span className="smowp-badge smowp-badge--ok">
-													{ __(
-														'Recommended',
-														'omnioffloader'
+										<div
+											role="radio"
+											aria-checked={ ! deleteCloud }
+											tabIndex={ radioTabIndex(
+												DELETE_CLOUD_OPTIONS,
+												false,
+												deleteCloud,
+												running || offloadedCount === 0
+											) }
+											className={
+												'smowp-option-card' +
+												( ! deleteCloud
+													? ' is-selected'
+													: '' ) +
+												( running ||
+												offloadedCount === 0
+													? ' is-disabled'
+													: '' )
+											}
+											onClick={ () => {
+												if (
+													! running &&
+													offloadedCount > 0
+												) {
+													setDeleteCloud( false );
+												}
+											} }
+											onKeyDown={ ( e ) => {
+												if (
+													! running &&
+													offloadedCount > 0
+												) {
+													radioKeyDown(
+														e,
+														DELETE_CLOUD_OPTIONS,
+														false,
+														setDeleteCloud
+													);
+												}
+											} }
+										>
+											<div className="smowp-option-card__radio">
+												<span className="smowp-radio-circle">
+													{ ! deleteCloud && (
+														<span className="smowp-radio-dot" />
 													) }
 												</span>
 											</div>
-											<p>
-												{ __(
-													'Files are downloaded to your server and served locally. Originals remain safe in your cloud bucket as backups.',
-													'omnioffloader'
-												) }
-											</p>
+											<div className="smowp-option-card__content">
+												<div className="smowp-option-card__head">
+													<strong>
+														{ __(
+															'Keep Cloud Copies',
+															'omnioffloader'
+														) }
+													</strong>
+													<span className="smowp-badge smowp-badge--ok">
+														{ __(
+															'Recommended',
+															'omnioffloader'
+														) }
+													</span>
+												</div>
+												<p>
+													{ __(
+														'Files are downloaded to your server and served locally. Originals remain safe in your cloud bucket as backups.',
+														'omnioffloader'
+													) }
+												</p>
+											</div>
 										</div>
-									</div>
 
-									<div
-										role="radio"
-										aria-checked={ deleteCloud }
-										tabIndex={ radioTabIndex(
-											DELETE_CLOUD_OPTIONS,
-											true,
-											deleteCloud,
-											running || offloadedCount === 0
-										) }
-										className={
-											'smowp-option-card' +
-											( deleteCloud
-												? ' is-selected'
-												: '' ) +
-											( running || offloadedCount === 0
-												? ' is-disabled'
-												: '' )
-										}
-										onClick={ () => {
-											if (
-												! running &&
-												offloadedCount > 0
-											) {
-												setDeleteCloud( true );
+										<div
+											role="radio"
+											aria-checked={ deleteCloud }
+											tabIndex={ radioTabIndex(
+												DELETE_CLOUD_OPTIONS,
+												true,
+												deleteCloud,
+												running || offloadedCount === 0
+											) }
+											className={
+												'smowp-option-card' +
+												( deleteCloud
+													? ' is-selected'
+													: '' ) +
+												( running ||
+												offloadedCount === 0
+													? ' is-disabled'
+													: '' )
 											}
-										} }
-										onKeyDown={ ( e ) => {
-											if (
-												! running &&
-												offloadedCount > 0
-											) {
-												radioKeyDown(
-													e,
-													DELETE_CLOUD_OPTIONS,
-													true,
-													setDeleteCloud
-												);
-											}
-										} }
-									>
-										<div className="smowp-option-card__radio">
-											<span className="smowp-radio-circle">
-												{ deleteCloud && (
-													<span className="smowp-radio-dot" />
-												) }
-											</span>
-										</div>
-										<div className="smowp-option-card__content">
-											<div className="smowp-option-card__head">
-												<strong>
-													{ __(
-														'Delete from Cloud After Restore',
-														'omnioffloader'
-													) }
-												</strong>
-												<span className="smowp-badge smowp-badge--fail">
-													{ __(
-														'Reclaim Storage',
-														'omnioffloader'
+											onClick={ () => {
+												if (
+													! running &&
+													offloadedCount > 0
+												) {
+													setDeleteCloud( true );
+												}
+											} }
+											onKeyDown={ ( e ) => {
+												if (
+													! running &&
+													offloadedCount > 0
+												) {
+													radioKeyDown(
+														e,
+														DELETE_CLOUD_OPTIONS,
+														true,
+														setDeleteCloud
+													);
+												}
+											} }
+										>
+											<div className="smowp-option-card__radio">
+												<span className="smowp-radio-circle">
+													{ deleteCloud && (
+														<span className="smowp-radio-dot" />
 													) }
 												</span>
 											</div>
-											<p>
-												{ __(
-													'Reclaims bucket storage. Cloud files are permanently deleted ONLY after 100% verified download on your server.',
-													'omnioffloader'
-												) }
-											</p>
+											<div className="smowp-option-card__content">
+												<div className="smowp-option-card__head">
+													<strong>
+														{ __(
+															'Delete from Cloud After Restore',
+															'omnioffloader'
+														) }
+													</strong>
+													<span className="smowp-badge smowp-badge--fail">
+														{ __(
+															'Reclaim Storage',
+															'omnioffloader'
+														) }
+													</span>
+												</div>
+												<p>
+													{ __(
+														'Reclaims bucket storage. Cloud files are permanently deleted ONLY after 100% verified download on your server.',
+														'omnioffloader'
+													) }
+												</p>
+											</div>
 										</div>
 									</div>
 								</div>
-							</div>
+							) }
 
 							{ ! running && (
 								<div className="smowp-bulk-action__btn-wrap">
@@ -541,7 +556,8 @@ export function BringBackPage() {
 											isBusy={ busy }
 											onClick={ () =>
 												void start(
-													deleteCloud,
+													// Never on a copy of the site.
+													deleteCloud && ! safeMode,
 													scopeMode === 'custom'
 														? customCount
 														: undefined

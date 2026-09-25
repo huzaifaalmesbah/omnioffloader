@@ -8,6 +8,7 @@
 namespace OmniOffloader\Api;
 
 use OmniOffloader\Core\Helpers;
+use OmniOffloader\Core\SafeMode;
 use OmniOffloader\Providers\ProviderRegistry;
 use OmniOffloader\Traits\OptionsHelper;
 use WP_REST_Request;
@@ -62,6 +63,8 @@ class CoreController extends BaseController {
 						),
 						'bring_back_delete_cloud'  => array( 'type' => 'boolean' ),
 						'remove_data_on_uninstall' => array( 'type' => 'boolean' ),
+						'protect_copies'           => array( 'type' => 'boolean' ),
+						'safe_mode_bring_back'     => array( 'type' => 'boolean' ),
 					),
 					'additionalProperties' => false,
 					'validate_callback'    => 'rest_validate_request_arg',
@@ -70,6 +73,8 @@ class CoreController extends BaseController {
 		);
 
 		$this->register_get_route( '/core/providers', array( $this, 'get_providers_response' ) );
+
+		$this->register_post_route( '/core/safe-mode/live', array( $this, 'confirm_live_site_response' ) );
 
 		$this->register_get_route(
 			'/core/stats',
@@ -167,7 +172,26 @@ class CoreController extends BaseController {
 
 		$stats['configured'] = self::is_configured();
 		$stats['provider']   = self::get_provider_key();
+		// Never cached: the address check is one comparison.
+		$stats['safe_mode'] = SafeMode::status();
 
 		return rest_ensure_response( $stats );
+	}
+
+	/**
+	 * POST /core/safe-mode/live — "This is the live site".
+	 *
+	 * Records the current address as the live site's, which ends an
+	 * address-based Safe mode (a real domain move). The constant and the
+	 * environment type keep Safe mode on regardless: they are explicit.
+	 *
+	 * @since 0.1.3
+	 *
+	 * @return \WP_REST_Response
+	 */
+	public function confirm_live_site_response() {
+		SafeMode::record_live_site();
+
+		return rest_ensure_response( SafeMode::status() );
 	}
 }

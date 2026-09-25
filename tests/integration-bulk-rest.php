@@ -10,6 +10,13 @@
  * @package OmniOffloader
  */
 
+// Safe mode would treat a local test site (*.test, localhost) as a copy and
+// refuse every upload; these tests exercise the real pipeline.
+if ( ! defined( 'OMNIOFFLOADER_SAFE_MODE' ) ) {
+	define( 'OMNIOFFLOADER_SAFE_MODE', false );
+}
+
+
 use OmniOffloader\Services\BulkOffloadProcessor;
 
 wp_set_current_user( 1 );

@@ -8,6 +8,7 @@
 namespace OmniOffloader\Providers;
 
 use OmniOffloader\Core\Helpers;
+use OmniOffloader\Core\SafeMode;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -187,6 +188,14 @@ abstract class AbstractS3Provider implements ProviderInterface {
 	 * @return string|false Object URL on success, false on failure.
 	 */
 	public function upload_file( $file, $key, $concurrency = 0 ) {
+		// Last line of defence: a copy of the site never writes to the live
+		// bucket, whichever code path asked (see Core\SafeMode).
+		if ( SafeMode::is_active() ) {
+			$this->log_error( sprintf( 'Safe mode: not uploading "%s".', $key ) );
+
+			return false;
+		}
+
 		$client = $this->get_client();
 
 		/**
@@ -247,6 +256,12 @@ abstract class AbstractS3Provider implements ProviderInterface {
 	 * @return array<string, bool> Object key => whether it uploaded.
 	 */
 	public function upload_files( array $files, $concurrency = 1 ) {
+		if ( SafeMode::is_active() ) {
+			$this->log_error( 'Safe mode: not uploading.' );
+
+			return array_fill_keys( wp_list_pluck( $files, 'key' ), false );
+		}
+
 		$results     = array();
 		$concurrency = max( 1, (int) $concurrency );
 		$threshold   = $this->multipart_threshold();
@@ -747,6 +762,13 @@ abstract class AbstractS3Provider implements ProviderInterface {
 	 * @return bool True when all deletes succeeded.
 	 */
 	public function delete_objects( array $keys ) {
+		// A copy of the site never deletes the live site's files.
+		if ( SafeMode::is_active() ) {
+			$this->log_error( 'Safe mode: not deleting cloud objects.' );
+
+			return false;
+		}
+
 		$keys = array_values(
 			array_unique(
 				array_filter(

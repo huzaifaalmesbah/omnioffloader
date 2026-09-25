@@ -40,6 +40,7 @@ class Uninstaller {
 		delete_option( 'omnioffloader_settings' );
 		delete_option( 'omnioffloader_credentials' );
 		delete_option( 'omnioffloader_version' );
+		delete_option( 'omnioffloader_live_site' );
 		delete_option( 'omnioffloader_first_activated_version' );
 		// Left behind by pre-release builds with secondary storage.
 		delete_option( 'omnioffloader_secondary_credentials' );

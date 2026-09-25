@@ -9,6 +9,7 @@ namespace OmniOffloader\Cli;
 
 use OmniOffloader\Core\Helpers;
 use OmniOffloader\Core\Plugin;
+use OmniOffloader\Core\SafeMode;
 use OmniOffloader\Services\BulkOffloadProcessor;
 use OmniOffloader\Services\BulkRestoreProcessor;
 use OmniOffloader\Services\BulkRetentionProcessor;
@@ -65,6 +66,20 @@ class StatusCommand {
 				$healthy = false;
 				WP_CLI::warning( 'Connection: ' . $connection->get_error_message() );
 			}
+		}
+
+		$safe = SafeMode::status();
+
+		if ( $safe['active'] ) {
+			$why = array(
+				'constant'    => 'OMNIOFFLOADER_SAFE_MODE is true in wp-config.php',
+				'environment' => 'WP_ENVIRONMENT_TYPE is "' . $safe['environment'] . '"',
+				'local'       => 'the site address is a local one',
+				'address'     => 'the site address changed from ' . $safe['live_address'] . ' to ' . $safe['current_address'],
+			);
+			WP_CLI::log( 'Safe mode:  ON — ' . ( $why[ $safe['reason'] ] ?? $safe['reason'] ) . '. Nothing is uploaded to or deleted from the cloud.' );
+		} else {
+			WP_CLI::log( 'Safe mode:  off (live site)' );
 		}
 
 		$stats = Helpers::get_media_stats();

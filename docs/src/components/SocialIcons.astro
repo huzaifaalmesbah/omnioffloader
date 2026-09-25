@@ -1,0 +1,89 @@
+---
+import config from 'virtual:starlight/user-config';
+import { Icon } from '@astrojs/starlight/components';
+
+const links = config.social || [];
+---
+
+{
+	links.length > 0 && (
+		<div class="header-actions sl-flex">
+			{links.map(({ label, href, icon }) => {
+				const isDownload =
+					icon === 'download' ||
+					label?.toLowerCase().includes('download') ||
+					label?.toLowerCase().includes('wordpress');
+				if (isDownload) {
+					return (
+						<a
+							href={href}
+							target="_blank"
+							rel="noopener noreferrer"
+							class="header-download-btn"
+							title={label || 'Download on WordPress.org'}
+						>
+							<Icon name="download" size="1rem" />
+							<span>Download</span>
+						</a>
+					);
+				}
+				return (
+					<a href={href} rel="me" class="sl-flex social-link" title={label}>
+						<span class="sr-only">{label}</span>
+						<Icon name={icon} size="1.2rem" />
+					</a>
+				);
+			})}
+		</div>
+	)
+}
+
+<style>
+	.header-actions {
+		align-items: center;
+		gap: 0.75rem;
+	}
+
+	.header-download-btn {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.45rem;
+		padding: 0.35rem 0.85rem;
+		font-size: var(--sl-text-xs, 0.8125rem);
+		font-weight: 600;
+		line-height: 1;
+		color: #ffffff !important;
+		background: var(--sl-color-accent);
+		border: 1px solid transparent;
+		border-radius: 9999px;
+		text-decoration: none !important;
+		white-space: nowrap;
+		box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+		transition: background-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
+	}
+
+	.header-download-btn:hover {
+		background: #2563eb;
+		transform: translateY(-1px);
+		box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15);
+	}
+
+	:root[data-theme='light'] .header-download-btn {
+		background: #135dbe;
+		color: #ffffff !important;
+	}
+
+	:root[data-theme='light'] .header-download-btn:hover {
+		background: #0e4690;
+	}
+
+	.social-link {
+		color: var(--sl-color-text-accent);
+		padding: 0.5em;
+		margin: -0.5em;
+	}
+
+	.social-link:hover {
+		color: var(--sl-color-white);
+	}
+</style>

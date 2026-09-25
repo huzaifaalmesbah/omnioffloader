@@ -145,6 +145,11 @@ class Plugin {
 	private const CLI_JOB_LOCK_TTL = 600;
 
 	/**
+	 * Public user documentation.
+	 */
+	public const DOCS_URL = 'https://omnioffloader.vercel.app/';
+
+	/**
 	 * Announce a running WP-CLI job so admin-started jobs of every type wait.
 	 *
 	 * A CLI run never writes queue state, so without this the admin screens
@@ -261,6 +266,7 @@ class Plugin {
 		add_action( 'init', array( $this, 'maybe_upgrade' ), 5 );
 
 		add_filter( 'plugin_action_links_' . OMNIOFFLOADER_BASENAME, array( $this, 'add_plugin_settings_link' ) );
+		add_filter( 'plugin_row_meta', array( $this, 'add_plugin_docs_link' ), 10, 2 );
 
 		// Offload state must stay truthful (Safety Invariant #4): never
 		// editable as a custom field, via the UI, XML-RPC or REST meta.
@@ -339,6 +345,27 @@ class Plugin {
 		array_unshift( $links, $settings_link );
 
 		return $links;
+	}
+
+	/**
+	 * Add a Documentation link to the plugin's row on the Plugins screen.
+	 *
+	 * @param array<int|string, string> $meta Existing plugin row meta links.
+	 * @param string                    $file Plugin basename of the row.
+	 * @return array<int|string, string>
+	 */
+	public function add_plugin_docs_link( $meta, $file ) {
+		if ( OMNIOFFLOADER_BASENAME !== $file ) {
+			return $meta;
+		}
+
+		$meta[] = sprintf(
+			'<a href="%1$s" target="_blank" rel="noopener noreferrer">%2$s</a>',
+			esc_url( self::DOCS_URL ),
+			esc_html__( 'Documentation', 'omnioffloader' )
+		);
+
+		return $meta;
 	}
 
 	/**

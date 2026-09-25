@@ -2042,12 +2042,275 @@
 	.smowp-sidebar {
 		position: static;
 		height: auto;
+		width: 100%;
+		padding: 0;
 		border-right: 0;
 		border-bottom: 1px solid var( --smowp-border );
+		background: var( --smowp-surface );
+
+		&__logo {
+			padding: 14px 20px;
+			margin-bottom: 0;
+			border-bottom: 1px solid var( --smowp-border );
+		}
+
+		&__nav-wrapper {
+			position: relative;
+			width: 100%;
+			background: var( --smowp-surface );
+
+			// Right-side fade gradient indicating horizontal scrolling is available
+			&::after {
+				content: '';
+				position: absolute;
+				top: 0;
+				right: 0;
+				bottom: 0;
+				width: 36px;
+				background: linear-gradient( to right, rgba( 255, 255, 255, 0 ), var( --smowp-surface ) );
+				pointer-events: none;
+				z-index: 2;
+			}
+		}
+
+		&__nav {
+			display: flex;
+			flex-direction: row;
+			flex-wrap: nowrap;
+			overflow-x: auto;
+			padding: 8px 36px 10px 16px;
+			gap: 8px;
+			-webkit-overflow-scrolling: touch;
+			scrollbar-width: thin;
+			scrollbar-color: rgba( 0, 0, 0, 0.16 ) transparent;
+
+			&::-webkit-scrollbar {
+				height: 3px;
+			}
+
+			&::-webkit-scrollbar-track {
+				background: transparent;
+			}
+
+			&::-webkit-scrollbar-thumb {
+				background: rgba( 0, 0, 0, 0.18 );
+				border-radius: 3px;
+			}
+		}
+
+		&__item {
+			width: auto !important;
+			min-width: max-content;
+			max-width: max-content;
+			flex: 0 0 auto;
+			display: inline-flex;
+			align-items: center;
+			gap: 8px;
+			padding: 7px 14px;
+			border-radius: 20px;
+			border: 1px solid transparent;
+			border-left: 1px solid transparent;
+			background: #f0f0f1;
+			color: var( --smowp-text-muted );
+			cursor: pointer;
+			white-space: nowrap;
+			transition: all 0.15s ease;
+
+			.smowp-sidebar__item-icon {
+				display: flex;
+				align-items: center;
+				color: inherit;
+
+				svg {
+					width: 18px;
+					height: 18px;
+				}
+			}
+
+			.smowp-sidebar__item-text {
+				display: flex;
+				flex-direction: row;
+				align-items: center;
+				gap: 4px;
+
+				strong {
+					font-size: 13px;
+					font-weight: 500;
+					color: inherit;
+				}
+
+				small {
+					display: none;
+				}
+			}
+
+			&:hover {
+				background: #e4e4e6;
+				color: var( --smowp-text );
+			}
+
+			&.is-active {
+				background: var( --smowp-accent );
+				color: #ffffff;
+				font-weight: 600;
+				box-shadow: 0 2px 6px rgba( 19, 93, 190, 0.25 );
+				border-left-color: transparent;
+
+				.smowp-sidebar__item-icon,
+				strong {
+					color: #ffffff;
+				}
+			}
+		}
+	}
+
+	.smowp-header {
+		position: static;
+		padding: 16px 20px;
+	}
+
+	.smowp-content {
+		padding: 20px;
 	}
 
 	.smowp-savebar {
-		left: 0;
+		left: 160px;
+	}
+
+	.folded .smowp-savebar {
+		left: 36px;
+	}
+}
+
+@media ( max-width: 782px ) {
+	#omnioffloader-admin-app, #smowp-admin-app {
+		margin-left: -10px;
+	}
+
+	.smowp-sidebar {
+		&__logo {
+			padding: 12px 14px;
+		}
+
+		&__nav-wrapper {
+			&::after {
+				width: 28px;
+			}
+		}
+
+		&__nav {
+			padding: 8px 32px 10px 14px;
+			gap: 6px;
+		}
+
+		&__item {
+			width: auto !important;
+			min-width: max-content;
+			max-width: max-content;
+			padding: 6px 13px;
+
+			.smowp-sidebar__item-text strong {
+				font-size: 12.5px;
+			}
+		}
+	}
+
+	.smowp-header {
+		padding: 14px;
+		gap: 12px;
+
+		&__badge {
+			width: 38px;
+			height: 38px;
+		}
+
+		&__titles h1 {
+			font-size: 16px;
+		}
+	}
+
+	.smowp-content {
+		padding: 14px;
+	}
+
+	.smowp-card {
+		padding: 16px;
+	}
+
+	.smowp-savebar {
+		left: 0 !important;
+		position: sticky;
+		bottom: 0;
+		height: auto;
+		padding: 12px 14px;
+		flex-direction: column;
+		align-items: stretch;
+		gap: 10px;
+
+		&__status {
+			text-align: center;
+		}
+
+		&__actions {
+			width: 100%;
+			flex-direction: column;
+			gap: 8px;
+		}
+
+		&__feedback {
+			width: 100%;
+			justify-content: center;
+			box-sizing: border-box;
+		}
+
+		.components-button {
+			width: 100%;
+			justify-content: center;
+			height: 38px;
+		}
+	}
+}
+
+@media ( max-width: 600px ) {
+	#omnioffloader-admin-app, #smowp-admin-app {
+		margin-left: 0;
+	}
+
+	.smowp-sidebar {
+		&__logo {
+			gap: 8px;
+			padding: 10px 12px;
+
+			&-name {
+				font-size: 15px;
+			}
+		}
+
+		&__nav-wrapper {
+			&::after {
+				width: 24px;
+			}
+		}
+
+		&__nav {
+			padding: 8px 28px 10px 12px;
+			gap: 6px;
+		}
+
+		&__item {
+			width: auto !important;
+			min-width: max-content;
+			max-width: max-content;
+			padding: 6px 12px;
+
+			.smowp-sidebar__item-text strong {
+				font-size: 12px;
+			}
+		}
+	}
+
+	.smowp-stats-grid {
+		grid-template-columns: 1fr;
 	}
 }
 

@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Status
 
-**Pre-release, version `0.1.3`.** The full design lives in `project/PLAN.md` — read it before making architectural decisions. Internal project notes (roadmap, future plan, audits, security) live in `project/`, which is excluded from the plugin bundle and the WordPress.org deploy. The phase map in project/PLAN.md §11 (skeleton → offload → bulk → Bring Back → release candidate) describes development phases, not ship versions.
+**Pre-release, version `0.1.3`.** The full design lives in `project/PLAN.md` — read it before making architectural decisions. Internal project notes (roadmap, future plan, audits, security) live in `project/`, which is excluded from the plugin bundle and the WordPress.org deploy. The **public user docs** are an Astro Starlight site in `docs/` (its own pnpm workspace, deployed on Vercel, also excluded from the bundle — see `docs/README.md`); its changelog page is generated from `readme.txt`. When a user-visible feature, setting, CLI flag, provider field or hook changes, update the matching `docs/src/content/docs/` page in the same commit. Never link the private repo from it. The phase map in project/PLAN.md §11 (skeleton → offload → bulk → Bring Back → release candidate) describes development phases, not ship versions.
 
 Released so far: `0.1.0` (initial release, Cloudflare R2 only), `0.1.1` (five more providers, bulk-queue reliability work), `0.1.2` (custom batch quantity limit for Bulk Offload & Bring Back, UI consistency, CLI `--limit` restore, plus LiteSpeed Cache, Breeze, and Object Cache real-time reliability fixes), `0.1.3` (apply a changed retention policy to existing media — Tools page + `wp omnioffloader retention` — an in-admin WP-CLI reference, and parallel uploads with a Transfer Speed setting). See `readme.txt` for the user-facing changelog — keep it updated in the same commit as any user-visible change.
 
@@ -138,7 +138,7 @@ src/
 │   ├── ui/             # Card, ProgressBar, StatCard, ActivityLog, BatchScopeSelector
 │   ├── settings/       # CredentialFields, TestConnection
 │   └── tools/          # RetentionSyncCard, CliReference (mirrors includes/Cli docblocks —
-│                       #   update it whenever a command or flag changes)
+│                       #   update it and docs/…/wp-cli/ whenever a command or flag changes)
 └── utils/              # constants.ts holds RouteMeta[] (icon/title/subtitle per page —
                         #   Sidebar and Header render from this one source)
 ```

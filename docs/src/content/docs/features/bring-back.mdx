@@ -1,0 +1,119 @@
+---
+title: Bring Back
+description: Restore offloaded media from the cloud to your server, one file or the whole library, safely and with verification.
+sidebar:
+  order: 3
+---
+
+import { Steps, Card, CardGrid } from '@astrojs/starlight/components';
+
+Offloading should never be a one-way door. **Bring Back** downloads your media from the cloud to its original place on your server, checks that every file arrived, and then serves it locally again.
+
+You can bring back a single attachment, a set number, or your whole library.
+
+<CardGrid>
+	<Card title="Verified downloads" icon="approve-check">
+		An attachment only switches back to local URLs once every file is safely on disk.
+	</Card>
+	<Card title="Cloud copy kept" icon="seti:folder">
+		By default your cloud files stay in the bucket as a backup.
+	</Card>
+	<Card title="Disk check first" icon="information">
+		A preflight shows how much space the restore needs before it starts.
+	</Card>
+	<Card title="Any provider" icon="random">
+		Each attachment restores from the provider it was offloaded to, even if you switched providers since.
+	</Card>
+</CardGrid>
+
+## When to use Bring Back
+
+- **Before you deactivate or remove OmniOffloader** while using **Smart Local Cleanup** or **Full Cloud Migration**. Those policies deleted local files, so without Bring Back your site would point at files that are no longer on the server.
+- **You want to stop using cloud storage**, or move to a different host.
+- **You need local originals** for image editing or regenerating thumbnails after a Full Cloud Migration.
+- **You want to test** a single attachment locally.
+
+:::caution[Deactivating the plugin]
+With **Retain Local Files**, every file is still on your server and deactivating changes nothing. With either cleanup policy, **run Bring Back before you deactivate**.
+:::
+
+## Bring back your library
+
+Open **OmniOffloader → Bring Back**. The page shows **Total Library Media**, **Offloaded (Ready to Restore)** and **Already Local**.
+
+<Steps>
+
+1. Check the **preflight** (see below). It shows the estimated download size and the free space on your server.
+
+2. Choose how much to restore:
+   - **All Offloaded Media**: every cloud attachment.
+   - **Custom Amount**: a set number, from presets (5, 10, 25, 50, 100) or any number you type.
+
+3. Under **Restore Safety & Storage Options**, choose what happens to the cloud files:
+   - **Keep Cloud Copies** (*Recommended*): files are downloaded and served locally. The originals stay in your bucket as a backup.
+   - **Delete from Cloud After Restore** (*Reclaim Storage*): cloud files are deleted permanently, but **only** after the download is 100% verified on your server.
+
+4. Click **Start Bring Back**. The button shows the batch size, for example **Start Bring Back (50 of 800)**.
+
+5. Follow the progress bar and activity log. You can leave the page; the job keeps running in the background. Click **Cancel** to stop.
+
+</Steps>
+
+## The preflight
+
+Before you start, Bring Back estimates what the restore needs:
+
+- **Estimated download**: only the files that are actually missing from your server. Files your retention policy kept on the server are not downloaded again. For a custom amount, it shows the estimate for that batch and for the full library.
+- **Free disk space**: what the server reports right now.
+- **Space left in your hosting plan** (cPanel hosting): read from cPanel's own quota record, for example *"9.3 GB of 10 GB"*, together with when cPanel last updated it.
+
+If the free space may not be enough, you see a warning: *"Free up space before starting."*
+
+:::note[Attachments without a recorded size]
+Attachments uploaded before WordPress 6.0 have no recorded file size. They are not included in the estimate, and the page tells you how many there are, so the real download may be larger.
+:::
+
+:::tip[Shared hosting quotas]
+On many shared hosts, PHP sees the whole server disk, not your plan's storage quota. If your plan has a quota and cPanel data is not available, check how much space is left in your hosting control panel.
+:::
+
+## If the disk fills up
+
+Bring Back watches for the server refusing to save a file ("Disk quota exceeded", "No space left on device"). When that happens, the run **stops right away** with a clear *out of disk space* message, instead of failing download after download.
+
+Nothing is lost. Attachments that were not brought back stay in the cloud and keep working. Free up space, then start Bring Back again; it continues with what is left.
+
+## Bring back a single attachment
+
+You can restore one file at a time:
+
+- **Media Library list view**: use the **Bring Back** row action on any offloaded attachment.
+- **Attachment edit screen**: use the **Bring Back** button in the OmniOffloader box.
+- **Media Library bulk actions**: select several attachments and choose **Bring Back to Server**.
+
+Single restores follow the same "delete from cloud after restore" choice as the Bring Back page. See [Media Library](/features/media-library/).
+
+## How Bring Back keeps your media safe
+
+- **Atomic writes.** Each file is downloaded to a temporary file first and moved into place only when it is complete. A half-downloaded file never replaces a good one.
+- **Verified before switching.** URLs only switch back to local once **every** file of the attachment is on disk.
+- **Cloud deletion is opt-in.** Deleting cloud files is off by default. When on, a cloud file is only deleted after the local copy is verified.
+- **Confined to uploads.** Restores never write outside your WordPress uploads folder.
+- **Partial downloads cleaned up.** If the server stops a restore mid-file, the leftover temporary file is removed.
+- **One job at a time.** Bring Back never runs together with Bulk Offload or a retention update. A single-item Bring Back is refused while a retention update is running.
+
+## Faster restores
+
+Files that are still on your server are checked against the cloud with one request per attachment. Missing files download side by side, following your [Transfer Speed](/features/transfer-speed/) setting.
+
+For large libraries, WP-CLI is usually faster and needs no open browser tab:
+
+```bash
+wp omnioffloader restore --all
+```
+
+See [`wp omnioffloader restore`](/wp-cli/restore/).
+
+## On a staging or local copy
+
+In [Safe mode](/features/safe-mode/), Bring Back is turned off and hidden. To download media from the cloud to a copy of your site, turn on **Allow Bring Back on a copy (download only)** in Settings. The cloud copy is then always kept, even if "delete from cloud" is requested.

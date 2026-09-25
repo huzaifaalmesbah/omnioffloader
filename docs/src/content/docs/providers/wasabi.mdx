@@ -1,0 +1,55 @@
+---
+title: Wasabi
+description: Connect OmniOffloader to a Wasabi bucket and make your media publicly readable.
+sidebar:
+  order: 6
+---
+
+import { Steps } from '@astrojs/starlight/components';
+
+Wasabi is S3-compatible storage with a flat storage price and no download fees.
+
+## Setup
+
+<Steps>
+
+1. **Create a bucket.** In the Wasabi console, create a bucket. Note its region, for example `us-east-1` or `eu-central-1`.
+
+2. **Create an access key.** Create an access key and copy the **Access Key ID** and **Secret Access Key**. The secret is shown only once.
+
+3. **Make the files publicly readable.** Add a bucket policy that allows public reads, or serve the bucket through a CDN.
+
+4. **Fill in OmniOffloader.** Go to **OmniOffloader → Settings**, choose **Wasabi** and fill in the fields below.
+
+5. **Click Test Connection**, then save your settings.
+
+</Steps>
+
+## Fields
+
+| Field | Example | Notes |
+| --- | --- | --- |
+| **Access Key ID** | `ABCD…` | Your Wasabi access key. |
+| **Secret Access Key** | `••••••••` | Never shown again after you save. |
+| **Bucket Name** | `my-site-media` | Exactly as in the Wasabi console. |
+| **Region** | `us-east-1` | The bucket's region. Empty means `us-east-1`. |
+| **Custom Domain / CDN URL (Optional)** | `https://media.yourdomain.com` | Your CDN domain, if you use one. |
+
+There is no endpoint field. OmniOffloader builds the Wasabi endpoint from the region for you, for example `https://s3.eu-central-1.wasabisys.com`.
+
+If you leave **Custom Domain / CDN URL** empty, media is served from `https://s3.<region>.wasabisys.com/<bucket>` (or `https://s3.wasabisys.com/<bucket>` for `us-east-1`).
+
+## Good to know
+
+- **The region must be right.** The endpoint comes from the region, so a wrong region means OmniOffloader cannot find the bucket.
+- **Public access.** Wasabi buckets are private by default. If offloaded images open with `AccessDenied`, add a public-read bucket policy or put a CDN in front of the bucket.
+
+## Common problems
+
+| What you see | Likely cause |
+| --- | --- |
+| `Connection failed: … 403 …` | The keys are wrong, or the key has no access to this bucket. |
+| `Connection failed: …` with a region or redirect error | The **Region** is not the bucket's region. |
+| Test Connection works but images are broken | The bucket is private and has no public-read policy or CDN. |
+
+Next step: [Quick start](/getting-started/quick-start/) — offload your first files.

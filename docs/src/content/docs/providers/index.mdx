@@ -1,0 +1,87 @@
+---
+title: Choosing a provider
+description: Compare the six cloud storage options OmniOffloader supports and learn what each one needs.
+sidebar:
+  order: 1
+---
+
+import { CardGrid, LinkCard } from '@astrojs/starlight/components';
+
+OmniOffloader stores your media in **cloud object storage**. It works with five providers that have their own setup, plus a generic option for any other service that speaks the S3 API.
+
+You choose the provider in **OmniOffloader → Settings → Cloud Provider**. The form then shows only the fields that provider needs.
+
+## Supported providers
+
+| Provider | Good to know |
+| --- | --- |
+| **Cloudflare R2** | No fees for downloads (egress). Needs a custom domain or the `r2.dev` URL to serve files publicly. |
+| **Amazon S3** | The original. Pair it with Amazon CloudFront for a CDN. |
+| **DigitalOcean Spaces** | Simple pricing and a built-in CDN you can switch on per Space. |
+| **Backblaze B2** | Low storage price. The bucket must be set to **Public**. |
+| **Wasabi** | Flat storage price with no download fees. |
+| **Any S3-Compatible Storage** | MinIO, Storj, OVHcloud, Linode, Scaleway and others. You enter the endpoint and region yourself. |
+
+:::tip[Not sure which to pick?]
+If you already use Cloudflare for your domain, **Cloudflare R2** is the easiest start: connecting a custom domain gives you storage and a CDN in one step. If your site already runs on AWS or DigitalOcean, stay with that provider.
+:::
+
+## What each provider asks for
+
+Every provider needs an access key, a secret and a bucket. Some also need an endpoint URL or a region.
+
+| Field | R2 | S3 | Spaces | B2 | Wasabi | S3-Compatible |
+| --- | :-: | :-: | :-: | :-: | :-: | :-: |
+| Access key (ID) | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Secret key | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Endpoint URL | ✓ | — | ✓ | ✓ | — | ✓ |
+| Region | — | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Bucket name | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Custom Domain / CDN URL | ✓ | optional | optional | optional | optional | optional |
+| Provider Label | — | — | — | — | — | optional |
+| Use Path-Style Endpoint | — | — | — | — | — | optional |
+
+The labels differ a little per provider. For example, Backblaze calls them **Application Key ID** and **Application Key**, and DigitalOcean calls them **Spaces Access Key** and **Spaces Secret Key**. Each provider page lists the exact labels.
+
+## The Custom Domain / CDN URL
+
+This is the address your visitors load media from, for example `https://media.yourdomain.com`. OmniOffloader rewrites your image and file URLs to start with it.
+
+It matters for two reasons:
+
+- **Your files must be publicly reachable.** Most buckets are private by default. A custom domain or CDN in front of the bucket is usually how you make them public.
+- **Speed.** A CDN caches your files close to your visitors.
+
+**Cloudflare R2 has no public address at all** until you connect a custom domain or turn on the public `r2.dev` URL. That is why the field is required for R2.
+
+For the other providers the field is optional. If you leave it empty, OmniOffloader uses the provider's default public address for your bucket. That address only works if the bucket allows public reads.
+
+:::note
+Enter the domain only, starting with `https://`. Do not add the bucket name or a folder at the end unless your provider's public URL really includes it (Storj does — see [Any S3-compatible storage](/providers/s3-compatible/)).
+:::
+
+## Test Connection
+
+After you fill in the fields, click **Test Connection**. It checks the values currently in the form, so you can test before you save.
+
+- **Connection successful.** OmniOffloader reached your bucket with these keys.
+- **Connection failed: …** The text after the colon is the error from your provider. Most often the keys are wrong, the key has no access to the bucket, or the bucket name, region or endpoint has a typo.
+
+If another site already uses the bucket folder, the test still succeeds but shows a warning. See [Sharing one bucket between sites](/features/shared-bucket/).
+
+:::caution
+Test Connection checks that the bucket can be reached. It does **not** check that visitors can load files from your custom domain. After your first offload, open an offloaded image in a new browser tab to confirm it loads.
+:::
+
+## Set up your provider
+
+<CardGrid>
+	<LinkCard title="Cloudflare R2" href="/providers/cloudflare-r2/" description="Bucket, API token, endpoint and custom domain." />
+	<LinkCard title="Amazon S3" href="/providers/amazon-s3/" description="Bucket, IAM user, region and CloudFront." />
+	<LinkCard title="DigitalOcean Spaces" href="/providers/digitalocean-spaces/" description="Space, Spaces key and the built-in CDN." />
+	<LinkCard title="Backblaze B2" href="/providers/backblaze-b2/" description="Public bucket, application key and S3 endpoint." />
+	<LinkCard title="Wasabi" href="/providers/wasabi/" description="Bucket, access key and region." />
+	<LinkCard title="Any S3-compatible storage" href="/providers/s3-compatible/" description="MinIO, Storj, OVHcloud, Linode, Scaleway and more." />
+</CardGrid>
+
+Want to keep your keys out of the database? See [Credentials in wp-config.php](/providers/wp-config-credentials/).

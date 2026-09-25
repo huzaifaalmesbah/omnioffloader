@@ -1,0 +1,82 @@
+---
+title: Amazon S3
+description: Connect OmniOffloader to an Amazon S3 bucket, with or without CloudFront in front of it.
+sidebar:
+  order: 3
+---
+
+import { Steps } from '@astrojs/starlight/components';
+
+Amazon S3 is the original object storage service. Most sites put **Amazon CloudFront** in front of the bucket as a CDN.
+
+## Setup
+
+<Steps>
+
+1. **Create a bucket.** In the AWS console, create an S3 bucket in the region closest to your visitors or your server. Note the region code, for example `us-east-1` or `eu-central-1`.
+
+2. **Create an IAM user and access key.** In IAM, create a user for OmniOffloader. Give it a policy that allows reading, writing, listing and deleting objects in this bucket (see the example below). Create an access key for the user and copy the **Access Key ID** and **Secret Access Key**.
+
+3. **Make your media publicly readable.** Choose one:
+   - Put an **Amazon CloudFront** distribution in front of the bucket (recommended), or
+   - Allow public `s3:GetObject` on the bucket with a bucket policy.
+
+4. **Fill in OmniOffloader.** Go to **OmniOffloader → Settings**, choose **Amazon S3** and fill in the fields below.
+
+5. **Click Test Connection**, then save your settings.
+
+</Steps>
+
+## Fields
+
+| Field | Example | Notes |
+| --- | --- | --- |
+| **Access Key ID** | `AKIA…` | The IAM user's access key. |
+| **Secret Access Key** | `••••••••` | Never shown again after you save. |
+| **Bucket Name** | `my-site-media` | Exactly as in the AWS console. |
+| **Region** | `us-east-1` | The bucket's region. Empty means `us-east-1`. |
+| **Custom Domain / CDN URL (Optional)** | `https://media.yourdomain.com` | Your CloudFront or CDN address. |
+
+If you leave **Custom Domain / CDN URL** empty, media is served straight from S3 at `https://<bucket>.s3.<region>.amazonaws.com`. That only works if the bucket allows public reads.
+
+## Example IAM policy
+
+This policy gives the user access to one bucket only. Replace `my-site-media` with your bucket name.
+
+```json
+{
+	"Version": "2012-10-17",
+	"Statement": [
+		{
+			"Effect": "Allow",
+			"Action": [ "s3:ListBucket" ],
+			"Resource": "arn:aws:s3:::my-site-media"
+		},
+		{
+			"Effect": "Allow",
+			"Action": [ "s3:GetObject", "s3:PutObject", "s3:DeleteObject" ],
+			"Resource": "arn:aws:s3:::my-site-media/*"
+		}
+	]
+}
+```
+
+:::tip[Several sites in one bucket?]
+If several sites share the bucket, each in its own folder, give each site its own IAM user limited to its own folder (for example `arn:aws:s3:::my-site-media/shop/*`). That is the strongest guarantee that one site never touches another's files. See [Sharing one bucket between sites](/features/shared-bucket/).
+:::
+
+## Good to know
+
+- **No ACL is sent by default.** New S3 buckets have ACLs turned off, so OmniOffloader does not set per-file permissions. Make files public with CloudFront or a bucket policy. Developers who need an ACL can add one with the `omnioffloader_object_acl` filter — see [Hooks](/developers/hooks/).
+- **Large files** above 64 MB are uploaded in parts, so a dropped connection only costs one part.
+- **CloudFront caching.** If you replace files and see old versions, turn on **Object Versioning** in Settings. See [Path prefix & object versioning](/features/path-prefix-and-versioning/).
+
+## Common problems
+
+| What you see | Likely cause |
+| --- | --- |
+| `Connection failed: … 403 Forbidden …` | The IAM policy does not include this bucket, or the keys are wrong. |
+| `Connection failed: … 301 …` or a region error | The **Region** does not match the bucket's region. |
+| Test Connection works but images show `AccessDenied` | The bucket is private and there is no CloudFront or public bucket policy yet. |
+
+Next step: [Quick start](/getting-started/quick-start/) — offload your first files.

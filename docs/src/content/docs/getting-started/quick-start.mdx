@@ -1,0 +1,81 @@
+---
+title: Quick start
+description: Connect your bucket and offload your media library in a few minutes.
+sidebar:
+  order: 3
+---
+
+import { Steps, LinkCard, CardGrid } from '@astrojs/starlight/components';
+
+This guide takes you from a fresh install to media served from the cloud.
+
+:::tip[Before you start]
+Create a bucket with your storage provider and get an access key for it. The [provider guides](/providers/) walk you through this for each service.
+:::
+
+<Steps>
+
+1. **Choose your provider.**
+
+   Open **OmniOffloader → Settings**. Under **Cloud Provider**, pick your storage provider.
+
+2. **Enter your credentials.**
+
+   Fill in the access key, secret, bucket name and the other fields your provider needs.
+
+   Enter your **Custom Domain / CDN URL** too. This is the public address your media will load from, for example `https://media.yourdomain.com`. Some providers, such as Cloudflare R2, have no public URL until you connect one.
+
+   :::note
+   You can keep keys out of the database by defining them in `wp-config.php`. See [Credentials in wp-config.php](/providers/wp-config-credentials/).
+   :::
+
+3. **Test the connection.**
+
+   Click **Test Connection**. You should see **Connected**. If not, see [Troubleshooting](/help/troubleshooting/).
+
+4. **Choose a retention policy.**
+
+   Start with **Retain Local Files**. It keeps every file on your server while you check that everything loads correctly from the cloud. You can switch to a cleanup policy later and [apply it to existing media](/features/retention-policies/).
+
+5. **Choose a Transfer Speed.**
+
+   **Balanced** is right for most sites. Pick **Low** on a small shared hosting plan. See [Transfer Speed](/features/transfer-speed/).
+
+6. **Save your settings.**
+
+   Click **Save changes** in the bar at the bottom of the screen.
+
+7. **Offload your existing media.**
+
+   Open **OmniOffloader → Offload** and click **Start Bulk Offload**. The job runs in the background, so you can leave the page. From now on, new uploads are offloaded automatically.
+
+8. **Check your site.**
+
+   Open a page with images and check an image address. It should now start with your CDN or custom domain.
+
+</Steps>
+
+## What next?
+
+<CardGrid>
+	<LinkCard
+		title="Retention policies"
+		description="Free disk space by removing local copies after upload."
+		href="/features/retention-policies/"
+	/>
+	<LinkCard
+		title="Bring Back"
+		description="Restore media to your server anytime."
+		href="/features/bring-back/"
+	/>
+	<LinkCard
+		title="Safe mode"
+		description="Keep staging and local copies away from your live bucket."
+		href="/features/safe-mode/"
+	/>
+	<LinkCard
+		title="WP-CLI"
+		description="Offload large libraries from the terminal."
+		href="/wp-cli/"
+	/>
+</CardGrid>

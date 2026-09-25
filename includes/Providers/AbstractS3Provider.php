@@ -64,12 +64,34 @@ abstract class AbstractS3Provider implements ProviderInterface {
 	abstract protected function create_client();
 
 	/**
-	 * Resolve a credential for this provider (constant wins over option).
+	 * In-memory credential overrides (e.g. for testing unsaved drafts).
+	 *
+	 * @var array<string, string>
+	 */
+	protected $credential_overrides = array();
+
+	/**
+	 * Set temporary credential overrides for testing unsaved credentials.
+	 *
+	 * @param array<string, string> $overrides Map of field name => value.
+	 * @return void
+	 */
+	public function set_credential_overrides( array $overrides ) {
+		$this->credential_overrides = $overrides;
+		$this->client               = null;
+	}
+
+	/**
+	 * Resolve a credential for this provider (overrides win, constant wins over option).
 	 *
 	 * @param string $field Field name.
 	 * @return string
 	 */
 	protected function credential( $field ) {
+		if ( isset( $this->credential_overrides[ $field ] ) && '' !== $this->credential_overrides[ $field ] ) {
+			return (string) $this->credential_overrides[ $field ];
+		}
+
 		return Helpers::get_credential( $this->get_key(), $field );
 	}
 

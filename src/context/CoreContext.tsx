@@ -4,6 +4,7 @@ import {
 	useContext,
 	useEffect,
 	useMemo,
+	useRef,
 	useState,
 } from '@wordpress/element';
 import { __ } from '@wordpress/i18n';
@@ -14,7 +15,11 @@ import {
 	fetchStats,
 	saveSettings,
 } from '../api/core';
-import { fetchCredentials, saveCredentials } from '../api/provider';
+import {
+	fetchCredentials,
+	saveCredentials,
+	testConnection,
+} from '../api/provider';
 import { errorMessage } from '../utils/errorHelper';
 import type {
 	CredentialField,
@@ -22,6 +27,11 @@ import type {
 	ProviderInfo,
 	Settings,
 } from '../types';
+
+export interface SaveFeedback {
+	status: 'success' | 'error';
+	message: string;
+}
 
 export interface Notice {
 	id: number;
@@ -38,6 +48,7 @@ interface CoreContextValue {
 	providers: ProviderInfo[];
 	stats: MediaStats | null;
 	notices: Notice[];
+	saveFeedback: SaveFeedback | null;
 	isDirty: boolean;
 	isSaving: boolean;
 	updateSettings: ( partial: Partial< Settings > ) => void;
@@ -49,6 +60,7 @@ interface CoreContextValue {
 	) => Promise< CredentialField[] >;
 	setProviderFields: ( provider: string, fields: CredentialField[] ) => void;
 	save: () => Promise< void >;
+	clearSaveFeedback: () => void;
 	addNotice: ( status: Notice[ 'status' ], message: string ) => void;
 	removeNotice: ( id: number ) => void;
 	refreshStats: ( force?: boolean ) => void;
@@ -75,6 +87,18 @@ export function CoreProvider( { children }: { children: React.ReactNode } ) {
 	const [ credentialsFields, setCredentialsFields ] = useState<
 		Record< string, CredentialField[] >
 	>( {} );
+	const [ saveFeedback, setSaveFeedback ] = useState< SaveFeedback | null >(
+		null
+	);
+	const feedbackTimeoutRef = useRef< number | null >( null );
+
+	const clearSaveFeedback = useCallback( () => {
+		if ( feedbackTimeoutRef.current ) {
+			clearTimeout( feedbackTimeoutRef.current );
+			feedbackTimeoutRef.current = null;
+		}
+		setSaveFeedback( null );
+	}, [] );
 
 	const setProviderFields = useCallback(
 		( provider: string, fields: CredentialField[] ) => {
@@ -135,24 +159,32 @@ export function CoreProvider( { children }: { children: React.ReactNode } ) {
 			.finally( () => setLoading( false ) );
 	}, [ addNotice ] );
 
-	const updateSettings = useCallback( ( partial: Partial< Settings > ) => {
-		setSettings( ( current ) => {
-			if ( ! current ) {
-				return current;
-			}
-			if ( partial.provider && partial.provider !== current.provider ) {
-				setCredentialDraft( {} );
-			}
-			return { ...current, ...partial };
-		} );
-		setSettingsDirty( true );
-	}, [] );
+	const updateSettings = useCallback(
+		( partial: Partial< Settings > ) => {
+			setSettings( ( current ) => {
+				if ( ! current ) {
+					return current;
+				}
+				if (
+					partial.provider &&
+					partial.provider !== current.provider
+				) {
+					setCredentialDraft( {} );
+				}
+				return { ...current, ...partial };
+			} );
+			setSettingsDirty( true );
+			clearSaveFeedback();
+		},
+		[ clearSaveFeedback ]
+	);
 
 	const updateCredentialValues = useCallback(
 		( values: Record< string, string > ) => {
 			setCredentialDraft( ( current ) => ( { ...current, ...values } ) );
+			clearSaveFeedback();
 		},
-		[]
+		[ clearSaveFeedback ]
 	);
 
 	const refreshStats = useCallback( ( force = true ) => {
@@ -187,19 +219,27 @@ export function CoreProvider( { children }: { children: React.ReactNode } ) {
 		}
 
 		setIsSaving( true );
+		clearSaveFeedback();
 
 		try {
-			if ( settingsDirty ) {
-				const saved = await saveSettings( settings );
-				setSettings( saved );
-				setSavedSettings( saved );
-				setSettingsDirty( false );
-			}
-
 			if (
 				Object.keys( credentialDraft ).length > 0 &&
 				settings.provider
 			) {
+				const testRes = await testConnection(
+					settings.provider,
+					credentialDraft
+				);
+				if ( ! testRes.connected ) {
+					throw new Error(
+						testRes.message ||
+							__(
+								'Could not connect to storage provider. Changes not saved.',
+								'omnioffloader'
+							)
+					);
+				}
+
 				const response = await saveCredentials(
 					settings.provider,
 					credentialDraft
@@ -208,10 +248,32 @@ export function CoreProvider( { children }: { children: React.ReactNode } ) {
 				setCredentialDraft( {} );
 			}
 
-			addNotice( 'success', __( 'Changes saved.', 'omnioffloader' ) );
+			if ( settingsDirty ) {
+				const saved = await saveSettings( settings );
+				setSettings( saved );
+				setSavedSettings( saved );
+				setSettingsDirty( false );
+			}
+
+			setSaveFeedback( {
+				status: 'success',
+				message: __( 'Changes saved.', 'omnioffloader' ),
+			} );
+
+			feedbackTimeoutRef.current = window.setTimeout( () => {
+				setSaveFeedback( null );
+			}, 4000 );
+
 			refreshStats();
 		} catch ( error: unknown ) {
-			addNotice( 'error', errorMessage( error ) );
+			setSaveFeedback( {
+				status: 'error',
+				message: errorMessage( error ),
+			} );
+
+			feedbackTimeoutRef.current = window.setTimeout( () => {
+				setSaveFeedback( null );
+			}, 6000 );
 		} finally {
 			setIsSaving( false );
 		}
@@ -220,7 +282,7 @@ export function CoreProvider( { children }: { children: React.ReactNode } ) {
 		settingsDirty,
 		credentialDraft,
 		setProviderFields,
-		addNotice,
+		clearSaveFeedback,
 		refreshStats,
 	] );
 
@@ -232,6 +294,7 @@ export function CoreProvider( { children }: { children: React.ReactNode } ) {
 			providers,
 			stats,
 			notices,
+			saveFeedback,
 			isDirty,
 			isSaving,
 			updateSettings,
@@ -241,6 +304,7 @@ export function CoreProvider( { children }: { children: React.ReactNode } ) {
 			loadProviderCredentials,
 			setProviderFields,
 			save,
+			clearSaveFeedback,
 			addNotice,
 			removeNotice,
 			refreshStats,
@@ -252,6 +316,7 @@ export function CoreProvider( { children }: { children: React.ReactNode } ) {
 			providers,
 			stats,
 			notices,
+			saveFeedback,
 			isDirty,
 			isSaving,
 			updateSettings,
@@ -261,6 +326,7 @@ export function CoreProvider( { children }: { children: React.ReactNode } ) {
 			loadProviderCredentials,
 			setProviderFields,
 			save,
+			clearSaveFeedback,
 			addNotice,
 			removeNotice,
 			refreshStats,

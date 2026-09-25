@@ -67,7 +67,18 @@ class ProviderController extends BaseController {
 			)
 		);
 
-		$this->register_post_route( '/provider/test-connection', array( $this, 'test_connection_response' ), $provider_arg );
+		$this->register_post_route(
+			'/provider/test-connection',
+			array( $this, 'test_connection_response' ),
+			$provider_arg + array(
+				'credentials' => array(
+					'type'                 => 'object',
+					'required'             => false,
+					'additionalProperties' => array( 'type' => 'string' ),
+					'validate_callback'    => 'rest_validate_request_arg',
+				),
+			)
+		);
 	}
 
 	/**
@@ -185,6 +196,15 @@ class ProviderController extends BaseController {
 
 		$provider_key = (string) $request->get_param( 'provider' );
 		$provider     = ProviderRegistry::create( $provider_key );
+
+		$credentials = $request->get_param( 'credentials' );
+		if ( is_array( $credentials ) && ! empty( $credentials ) ) {
+			$sanitized = array();
+			foreach ( $credentials as $field_name => $field_val ) {
+				$sanitized[ sanitize_key( (string) $field_name ) ] = sanitize_text_field( (string) $field_val );
+			}
+			$provider->set_credential_overrides( $sanitized );
+		}
 
 		$result = $provider->check_connection();
 

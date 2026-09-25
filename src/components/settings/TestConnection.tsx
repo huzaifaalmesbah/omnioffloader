@@ -1,5 +1,5 @@
 import { Button } from '@wordpress/components';
-import { useState } from '@wordpress/element';
+import { useEffect, useState } from '@wordpress/element';
 import { __ } from '@wordpress/i18n';
 
 import { testConnection } from '../../api/provider';
@@ -11,29 +11,34 @@ interface TestConnectionProps {
 }
 
 export function TestConnection( { provider }: TestConnectionProps ) {
-	const { isDirty, save, addNotice } = useCore();
+	const { credentialDraft } = useCore();
 	const [ testing, setTesting ] = useState( false );
 	const [ result, setResult ] = useState< 'ok' | 'fail' | null >( null );
+	const [ errorDetail, setErrorDetail ] = useState< string | null >( null );
+
+	// Reset badge and error message whenever credentials are edited or provider changes.
+	useEffect( () => {
+		setResult( null );
+		setErrorDetail( null );
+	}, [ credentialDraft, provider ] );
 
 	const run = async () => {
 		setTesting( true );
 		setResult( null );
+		setErrorDetail( null );
 
 		try {
-			// Persist pending edits first so the test uses what's on screen.
-			if ( isDirty ) {
-				await save();
+			const response = await testConnection( provider, credentialDraft );
+			if ( response.connected ) {
+				setResult( 'ok' );
+				setErrorDetail( null );
+			} else {
+				setResult( 'fail' );
+				setErrorDetail( response.message );
 			}
-
-			const response = await testConnection( provider );
-			setResult( response.connected ? 'ok' : 'fail' );
-			addNotice(
-				response.connected ? 'success' : 'error',
-				response.message
-			);
 		} catch ( error: unknown ) {
 			setResult( 'fail' );
-			addNotice( 'error', errorMessage( error ) );
+			setErrorDetail( errorMessage( error ) );
 		} finally {
 			setTesting( false );
 		}
@@ -61,6 +66,14 @@ export function TestConnection( { provider }: TestConnectionProps ) {
 				<span className="smowp-badge smowp-badge--fail">
 					{ __( 'Not connected', 'omnioffloader' ) }
 				</span>
+			) }
+
+			{ result === 'fail' && errorDetail && (
+				<div className="smowp-test-connection__error" role="alert">
+					<span className="smowp-test-connection__error-text">
+						{ errorDetail }
+					</span>
+				</div>
 			) }
 		</div>
 	);

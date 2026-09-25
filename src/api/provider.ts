@@ -25,11 +25,17 @@ export function saveCredentials(
 }
 
 export function testConnection(
-	provider: string
+	provider: string,
+	credentials?: Record< string, string >
 ): Promise< TestConnectionResponse > {
 	return apiFetch( {
 		path: `${ BASE }/provider/test-connection`,
 		method: 'POST',
-		data: { provider },
+		data: {
+			provider,
+			...( credentials && Object.keys( credentials ).length > 0
+				? { credentials }
+				: {} ),
+		},
 	} );
 }

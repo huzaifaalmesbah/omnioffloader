@@ -98,6 +98,14 @@ interface ProviderInterface {
 	public function check_connection();
 
 	/**
+	 * Set temporary credential overrides for testing unsaved credentials.
+	 *
+	 * @param array<string, string> $overrides Map of field name => value.
+	 * @return void
+	 */
+	public function set_credential_overrides( array $overrides );
+
+	/**
 	 * Credential field definitions, rendered generically by the React admin UI.
 	 *
 	 * Each item: name, label, type (text|password), placeholder, description.

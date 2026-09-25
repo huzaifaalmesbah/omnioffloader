@@ -222,8 +222,7 @@
 	left: calc( 160px + var( --smowp-sidebar-width ) ); // WP admin menu + our sidebar.
 	display: flex;
 	align-items: center;
-	justify-content: flex-end;
-	gap: 16px;
+	justify-content: space-between;
 	height: var( --smowp-savebar-height );
 	padding: 0 32px;
 	background: var( --smowp-surface );
@@ -233,6 +232,62 @@
 
 	&__status {
 		color: var( --smowp-text-muted );
+		font-size: 13px;
+	}
+
+	&__dirty-text {
+		color: #d63638;
+		font-weight: 600;
+	}
+
+	&__clean-text {
+		color: var( --smowp-text-muted );
+	}
+
+	&__actions {
+		display: flex;
+		align-items: center;
+		gap: 12px;
+	}
+
+	&__feedback {
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+		padding: 6px 12px;
+		border-radius: 6px;
+		font-size: 13px;
+		font-weight: 500;
+		animation: smowp-fade-in 0.2s cubic-bezier( 0.16, 1, 0.3, 1 );
+
+		&.is-success {
+			background: #edfaef;
+			color: #1a7f37;
+			border: 1px solid #b7ebb9;
+
+			.smowp-savebar__feedback-icon {
+				color: #1a7f37;
+			}
+		}
+
+		&.is-error {
+			background: #fdf2f2;
+			color: #cf222e;
+			border: 1px solid #f8d7da;
+
+			.smowp-savebar__feedback-icon {
+				color: #cf222e;
+			}
+		}
+	}
+
+	&__feedback-icon {
+		display: flex;
+		align-items: center;
+	}
+
+	&__feedback-text {
+		line-height: 1.4;
 	}
 
 	.smowp-savebar__button.components-button.is-primary {
@@ -255,6 +310,17 @@
 			opacity: 0.85 !important;
 			pointer-events: none;
 		}
+	}
+}
+
+@keyframes smowp-fade-in {
+	from {
+		opacity: 0;
+		transform: translateY( 2px );
+	}
+	to {
+		opacity: 1;
+		transform: translateY( 0 );
 	}
 }
 
@@ -615,6 +681,7 @@
 
 .smowp-test-connection {
 	display: flex;
+	flex-wrap: wrap;
 	align-items: center;
 	gap: 14px;
 	margin-top: 4px;
@@ -639,6 +706,22 @@
 		&:focus-visible {
 			box-shadow: 0 0 0 3px rgba( 19, 93, 190, 0.2 );
 		}
+	}
+
+	&__error {
+		width: 100%;
+		display: flex;
+		align-items: flex-start;
+		gap: 8px;
+		padding: 10px 14px;
+		border-radius: 8px;
+		background: #fdf2f2;
+		border: 1px solid #f8d7da;
+		color: #cf222e;
+		font-size: 12.5px;
+		line-height: 1.5;
+		margin-top: 4px;
+		animation: smowp-fade-in 0.2s cubic-bezier( 0.16, 1, 0.3, 1 );
 	}
 }
 

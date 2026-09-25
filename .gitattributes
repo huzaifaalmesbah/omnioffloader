@@ -69,6 +69,7 @@ languages/org           export-ignore
 skills-lock.json        export-ignore
 .mcp.json               export-ignore
 docs/                   export-ignore
+project/                export-ignore
 .npmrc                  export-ignore
 pnpm-lock.yaml          export-ignore
 pnpm-workspace.yaml     export-ignore

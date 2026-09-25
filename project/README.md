@@ -1,6 +1,6 @@
-# OmniOffloader — Project Docs
+# OmniOffloader — Project Notes
 
-Living project docs. This folder is excluded from the plugin bundle and the WordPress.org deploy. The full design is in [`PLAN.md`](PLAN.md); dev conventions in [`../CLAUDE.md`](../CLAUDE.md).
+Internal project notes — never public. The public user docs live in `../docs/`. This folder is excluded from the plugin bundle and the WordPress.org deploy. The full design is in [`PLAN.md`](PLAN.md); dev conventions in [`../CLAUDE.md`](../CLAUDE.md).
 
 ## Docs
 

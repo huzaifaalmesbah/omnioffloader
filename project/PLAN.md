@@ -61,14 +61,14 @@ omnioffloader/
 ├── uninstall.php                    # Delegates to Core\Uninstaller (opt-in cleanup)
 ├── readme.txt                       # WP.org readme — update with every user-visible change
 ├── CLAUDE.md                        # Dev docs for AI/contributors
-├── docs/                            # Project docs — excluded from bundle + WP.org deploy
+├── project/                         # Internal project notes — excluded from bundle + WP.org deploy
 │   ├── README.md · PLAN.md (this) · AUDIT.md · abilities-audit.md
 │   ├── roadmap/{index, v0.1.0, future-plan}.md · issues/index.md · security/index.md
 ├── package.json · tsconfig.json     # wp-scripts build, strict TS (type-check only)
 ├── composer.json                    # AWS SDK (S3+Sts) + dev tools (phpstan, wpcs)
 ├── phpstan.neon.dist                # PHPStan level 8
 ├── phpcs.xml.dist                   # WordPress Coding Standards
-├── .distignore / .gitattributes     # Release excludes (dev files, src/, docs/)
+├── .distignore / .gitattributes     # Release excludes (dev files, src/, docs/, project/)
 ├── .wordpress-org/                  # Banners, icons, blueprint
 ├── .github/workflows/               # Build + deploy to WP.org SVN (10up action, uses .distignore)
 ├── scripts/bundle.js                # Local release zip (whitelist: main file, readme, uninstall,
@@ -328,14 +328,14 @@ Queue population skips trashed attachments and rows without `_wp_attached_file` 
 | `pnpm bundle` / `pnpm bundle:org` | local release zip / WP.org SVN layout |
 | `composer phpstan` / `composer phpcs` | PHPStan level 8 / WPCS |
 
-**CI only builds and deploys** — run all checks locally before committing. The release ships **build files only**: `.distignore` excludes `src/`, `package.json`, `tsconfig.json`, `composer.json`, `docs/`, tests and dev config; `vendor/` is installed with `--no-dev`. TypeScript rules: strict, `isolatedModules`, no `any`, `src/types/` is the single source of truth for REST shapes (change PHP and TS together). i18n: PHP and JS `__()` with `omnioffloader`, `_n()` for counts, translator comments; translations come from translate.wordpress.org.
+**CI only builds and deploys** — run all checks locally before committing. The release ships **build files only**: `.distignore` excludes `src/`, `package.json`, `tsconfig.json`, `composer.json`, `docs/`, `project/`, tests and dev config; `vendor/` is installed with `--no-dev`. TypeScript rules: strict, `isolatedModules`, no `any`, `src/types/` is the single source of truth for REST shapes (change PHP and TS together). i18n: PHP and JS `__()` with `omnioffloader`, `_n()` for counts, translator comments; translations come from translate.wordpress.org.
 
 ---
 
 ## 9. Documentation
 
 1. **`CLAUDE.md`** — working doc for contributors/AI; must match the code.
-2. **`docs/`** — this plan, roadmap + [future plan](roadmap/future-plan.md), issues, security notes, audits.
+2. **`project/`** — this plan, roadmap + [future plan](roadmap/future-plan.md), issues, security notes, audits.
 3. **`readme.txt`** — WP.org readme; update in the same commit as any user-visible change; `Stable tag` = `Version:` header = `OMNIOFFLOADER_VERSION`.
 
 ---

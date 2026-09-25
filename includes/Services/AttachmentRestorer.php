@@ -58,6 +58,14 @@ class AttachmentRestorer {
 	private const STALE_TEMP_SECONDS = 15 * MINUTE_IN_SECONDS;
 
 	/**
+	 * Whether the last restore() / restore_local_copies() failed because the
+	 * server refused to write a download (disk full, or quota used up).
+	 *
+	 * @var bool
+	 */
+	private $out_of_disk = false;
+
+	/**
 	 * Restore one attachment from the cloud back to the server.
 	 *
 	 * @param int  $attachment_id Attachment ID.
@@ -65,7 +73,8 @@ class AttachmentRestorer {
 	 * @return bool True when the attachment ended up fully local again.
 	 */
 	public function restore( $attachment_id, $delete_cloud = false ) {
-		$attachment_id = (int) $attachment_id;
+		$attachment_id     = (int) $attachment_id;
+		$this->out_of_disk = false;
 
 		if ( ! self::is_offloaded( $attachment_id ) ) {
 			return false;
@@ -181,8 +190,9 @@ class AttachmentRestorer {
 	 * @return bool True when every file the policy keeps locally is present.
 	 */
 	public function restore_local_copies( $attachment_id, $policy ) {
-		$attachment_id = (int) $attachment_id;
-		$policy        = (int) $policy;
+		$attachment_id     = (int) $attachment_id;
+		$policy            = (int) $policy;
+		$this->out_of_disk = false;
 
 		if ( ! self::is_offloaded( $attachment_id ) || $policy >= 2 ) {
 			return false;
@@ -303,7 +313,20 @@ class AttachmentRestorer {
 			);
 		}
 
-		foreach ( $this->download_all( $provider, $download ) as $key => $ok ) {
+		$downloaded = $this->download_all( $provider, $download );
+
+		// Optional provider method (see AbstractS3Provider::download_hit_disk_limit()).
+		if ( ! empty( $download ) && method_exists( $provider, 'download_hit_disk_limit' ) && $provider->download_hit_disk_limit() ) {
+			$this->out_of_disk = true;
+			self::log_attachment_error(
+				$attachment_id,
+				__( 'The server could not save the download: its disk is full, or the hosting plan\'s storage quota is used up.', 'omnioffloader' )
+			);
+
+			return false;
+		}
+
+		foreach ( $downloaded as $key => $ok ) {
 			// The offload side quietly skips size files that never existed on
 			// disk, so their objects were never uploaded. Mirror that: a missing
 			// *object* with no local copy is only fatal for main files — and
@@ -324,6 +347,19 @@ class AttachmentRestorer {
 		}
 
 		return $all_ok;
+	}
+
+	/**
+	 * Whether the last restore failed because the server ran out of disk
+	 * space or storage quota. Every later restore would fail the same way,
+	 * so bulk runs stop on it.
+	 *
+	 * @since 0.1.3
+	 *
+	 * @return bool
+	 */
+	public function ran_out_of_disk() {
+		return $this->out_of_disk;
 	}
 
 	/**
@@ -590,10 +626,11 @@ class AttachmentRestorer {
 			return 0;
 		}
 
-		// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- disk_free_space warns on some hosts; false is handled.
-		$free = @disk_free_space( wp_get_upload_dir()['basedir'] );
+		// A quota figure cPanel has not refreshed for an hour may be out of
+		// date either way; a refused write still stops the run if it is low.
+		$free = Helpers::free_disk_space( HOUR_IN_SECONDS );
 
-		if ( false === $free ) {
+		if ( null === $free ) {
 			return 0;
 		}
 

@@ -129,6 +129,11 @@ class BulkRetentionProcessor extends AbstractBulkProcessor {
 		$state = static::get_state();
 		$ok    = $this->applier->apply( $attachment_id, (int) $state['policy'] );
 
+		if ( ! $ok && $this->applier->ran_out_of_disk() ) {
+			$this->item_messages[ $attachment_id ] = __( 'Out of disk space or storage quota.', 'omnioffloader' );
+			$this->halt_run( BulkRestoreProcessor::out_of_disk_message() );
+		}
+
 		$freed    = $this->applier->get_freed_bytes();
 		$repaired = $this->applier->get_repaired();
 

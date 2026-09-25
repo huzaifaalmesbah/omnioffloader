@@ -1418,6 +1418,12 @@
 	gap: 14px;
 	margin-top: 4px;
 
+	// The flex gap spaces the rows; core's default <p> margins would add
+	// to it (flex items' margins never collapse).
+	> p {
+		margin: 0;
+	}
+
 	&__info {
 		margin: 0;
 		font-size: 13.5px;

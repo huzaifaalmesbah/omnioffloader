@@ -156,8 +156,27 @@ class BulkRestoreProcessor extends AbstractBulkProcessor {
 
 		$state    = static::get_state();
 		$restorer = new AttachmentRestorer();
+		$ok       = $restorer->restore( $attachment_id, ! empty( $state['delete_cloud'] ) );
 
-		return $restorer->restore( $attachment_id, ! empty( $state['delete_cloud'] ) );
+		// The free space checked above can be the whole server disk while a
+		// hosting quota is already used up; a refused write is the real signal.
+		if ( ! $ok && $restorer->ran_out_of_disk() ) {
+			$this->item_messages[ $attachment_id ] = __( 'Out of disk space or storage quota.', 'omnioffloader' );
+			$this->halt_run( self::out_of_disk_message() );
+		}
+
+		return $ok;
+	}
+
+	/**
+	 * Why a run stopped when the server refused to write a download.
+	 *
+	 * @since 0.1.3
+	 *
+	 * @return string
+	 */
+	public static function out_of_disk_message() {
+		return __( 'Stopped: the server ran out of disk space, or the hosting plan\'s storage quota is used up. Free up space (or ask your host for more), then start again. Nothing was lost: the attachments that were not brought back are still served from the cloud.', 'omnioffloader' );
 	}
 
 	/**

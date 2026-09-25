@@ -64,6 +64,14 @@ abstract class AbstractS3Provider implements ProviderInterface {
 	private static $last_heartbeat = 0;
 
 	/**
+	 * Whether the last download_file() / download_files() call failed because
+	 * the server refused to write to its disk (full, or storage quota used up).
+	 *
+	 * @var bool
+	 */
+	private $disk_write_failed = false;
+
+	/**
 	 * Cached client instance.
 	 *
 	 * @var \Aws\S3\S3Client|null
@@ -457,9 +465,26 @@ abstract class AbstractS3Provider implements ProviderInterface {
 	 * @return bool
 	 */
 	public function download_file( $key, $dest ) {
+		$this->start_download_call();
+
+		return $this->download_one( $key, $dest );
+	}
+
+	/**
+	 * Download one object, without resetting the disk-write flag.
+	 *
+	 * @since 0.1.3 Split out of download_file().
+	 *
+	 * @param string $key  Object key.
+	 * @param string $dest Absolute destination path.
+	 * @return bool
+	 */
+	private function download_one( $key, $dest ) {
 		$tmp = $this->temp_file_for( $dest );
 
 		if ( false === $tmp ) {
+			$this->note_download_error( '' );
+
 			return false;
 		}
 
@@ -473,6 +498,7 @@ abstract class AbstractS3Provider implements ProviderInterface {
 				)
 			);
 		} catch ( \Exception $e ) {
+			$this->note_download_error( $e->getMessage() );
 			wp_delete_file( $tmp );
 			$this->log_error( sprintf( 'Error downloading "%s": %s', $key, $e->getMessage() ) );
 
@@ -498,6 +524,8 @@ abstract class AbstractS3Provider implements ProviderInterface {
 	 * @return array<string, bool> Object key => whether it is now at its destination.
 	 */
 	public function download_files( array $files, $concurrency = 1 ) {
+		$this->start_download_call();
+
 		$results     = array();
 		$concurrency = max( 1, (int) $concurrency );
 		$files       = array_values( $files );
@@ -508,7 +536,7 @@ abstract class AbstractS3Provider implements ProviderInterface {
 
 		if ( 1 === $concurrency ) {
 			foreach ( $files as $entry ) {
-				$results[ $entry['key'] ] = $this->download_file( $entry['key'], $entry['dest'] );
+				$results[ $entry['key'] ] = $this->download_one( $entry['key'], $entry['dest'] );
 			}
 
 			return $results;
@@ -526,6 +554,7 @@ abstract class AbstractS3Provider implements ProviderInterface {
 				$tmp = $this->temp_file_for( $entry['dest'] );
 
 				if ( false === $tmp ) {
+					$this->note_download_error( '' );
 					continue;
 				}
 
@@ -558,6 +587,7 @@ abstract class AbstractS3Provider implements ProviderInterface {
 					},
 					'rejected'               => function ( $reason, $index ) use ( $files ) {
 						$message = $reason instanceof \Throwable ? $reason->getMessage() : 'unknown error';
+						$this->note_download_error( $message );
 						$this->log_error( sprintf( 'Error downloading "%s": %s', $files[ $index ]['key'], $message ) );
 					},
 				)
@@ -565,6 +595,7 @@ abstract class AbstractS3Provider implements ProviderInterface {
 
 			$pool->promise()->wait();
 		} catch ( \Exception $e ) {
+			$this->note_download_error( $e->getMessage() );
 			$this->log_error( sprintf( 'Download batch failed: %s', $e->getMessage() ) );
 		}
 
@@ -578,6 +609,77 @@ abstract class AbstractS3Provider implements ProviderInterface {
 		}
 
 		return $results;
+	}
+
+	/**
+	 * Whether the last download call failed because the server's disk
+	 * refused the write — full, or the hosting plan's storage quota used up.
+	 *
+	 * PHP cannot see a per-account quota (cPanel, CloudLinux), so free space
+	 * reported beforehand can be far too high; this is how a restore learns
+	 * it has actually run out. Not part of ProviderInterface — callers check
+	 * method_exists().
+	 *
+	 * @since 0.1.3
+	 *
+	 * @return bool
+	 */
+	public function download_hit_disk_limit() {
+		return $this->disk_write_failed;
+	}
+
+	/**
+	 * Reset the disk-write flag for a new download call.
+	 *
+	 * @return void
+	 */
+	private function start_download_call() {
+		$this->disk_write_failed = false;
+		error_clear_last();
+	}
+
+	/**
+	 * Record a download failure caused by the local disk refusing a write.
+	 *
+	 * The SDK's message rarely says why a write failed (curl reports only
+	 * "error 23: Failed writing body"), but PHP's own warning does carry the
+	 * system error ("Disk quota exceeded", "No space left on device").
+	 *
+	 * @param string $message Error message from the SDK, or '' when none.
+	 * @return void
+	 */
+	private function note_download_error( $message ) {
+		$last = error_get_last();
+
+		if ( self::is_disk_write_error( (string) $message ) || ( is_array( $last ) && self::is_disk_write_error( (string) $last['message'] ) ) ) {
+			$this->disk_write_failed = true;
+		}
+	}
+
+	/**
+	 * Whether an error message means a local write was refused for lack of space.
+	 *
+	 * @since 0.1.3
+	 *
+	 * @param string $message Error message.
+	 * @return bool
+	 */
+	public static function is_disk_write_error( $message ) {
+		$signs = array(
+			'Disk quota exceeded',
+			'No space left on device',
+			'cURL error 23',
+			'Failed writing body',
+			'Failure writing output',
+		);
+
+		foreach ( $signs as $sign ) {
+			if ( false !== stripos( $message, $sign ) ) {
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	/**

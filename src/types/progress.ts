@@ -55,11 +55,27 @@ export interface StartBulkRestoreResponse {
 }
 
 /**
+ * Mirrors Helpers::hosting_quota(). Sizes in bytes.
+ */
+export interface HostingQuota {
+	limit: number;
+	used: number;
+	remaining: number;
+	/** Unix time cPanel last refreshed the figure. */
+	updated_at: number;
+}
+
+/**
  * Mirrors Helpers::get_restore_preflight().
  */
 export interface RestorePreflight {
 	offloaded: number;
+	/** Files the retention policy removed from the server, from metadata. */
 	estimated_bytes: number;
+	/** Attachments with files to download but no recorded size (pre-WP 6.0 uploads). */
+	unsized: number;
+	/** The hosting plan's storage quota, when readable (cPanel); null otherwise. */
+	quota: HostingQuota | null;
 	/** 0 means unknown (disk_free_space disabled on the host). */
 	free_bytes: number;
 	disk_ok: boolean;

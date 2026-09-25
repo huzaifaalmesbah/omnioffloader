@@ -150,6 +150,7 @@ class RestoreCommand {
 		$aborted   = false;
 		$reason    = '';
 		$no_room   = 0;
+		$quota_hit = false;
 
 		foreach ( $ids as $id ) {
 			// Every later download would fail the same way; stop with the
@@ -161,7 +162,15 @@ class RestoreCommand {
 			}
 
 			// Brought back some other way since the run started: done.
-			if ( ! self::is_offloaded( $id ) || $restorer->restore( $id, $delete_cloud ) ) {
+			$restored = ! self::is_offloaded( $id ) || $restorer->restore( $id, $delete_cloud );
+
+			// A hosting quota PHP cannot see: the refused write is the signal.
+			if ( ! $restored && $restorer->ran_out_of_disk() ) {
+				$quota_hit = true;
+				break;
+			}
+
+			if ( $restored ) {
 				++$done;
 				$streak   = 0;
 				$fail_run = 0;
@@ -199,6 +208,10 @@ class RestoreCommand {
 
 		Helpers::defer_media_stats_flush( false );
 		$this->end_job();
+
+		if ( $quota_hit ) {
+			WP_CLI::error( sprintf( 'Stopped: the server ran out of disk space, or the hosting plan\'s storage quota is used up (%d restored first). Free up space, then run the command again.', $done ) );
+		}
 
 		if ( $no_room > 0 ) {
 			WP_CLI::error( sprintf( 'Stopped: the server is running out of disk space (%s more is needed for the next attachment, %d restored first). Free up space, then run the command again.', size_format( $no_room ), $done ) );

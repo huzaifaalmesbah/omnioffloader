@@ -54,6 +54,14 @@ class RetentionApplier {
 	private $freed_bytes = 0;
 
 	/**
+	 * Whether the last apply() failed because the server ran out of disk
+	 * space or storage quota while downloading.
+	 *
+	 * @var bool
+	 */
+	private $out_of_disk = false;
+
+	/**
 	 * Files uploaded by the last apply() call because the cloud lacked them.
 	 *
 	 * @var int
@@ -147,6 +155,7 @@ class RetentionApplier {
 		$policy            = max( 0, min( 2, (int) $policy ) );
 		$this->freed_bytes = 0;
 		$this->repaired    = 0;
+		$this->out_of_disk = false;
 
 		// Restored (Bring Back) since it was queued: nothing left to apply.
 		if ( ! self::is_offloaded( $attachment_id ) ) {
@@ -176,9 +185,11 @@ class RetentionApplier {
 		}
 
 		if ( $policy < $stored ) {
-			$restorer = new AttachmentRestorer();
+			$restorer          = new AttachmentRestorer();
+			$ok                = $restorer->restore_local_copies( $attachment_id, $policy );
+			$this->out_of_disk = $restorer->ran_out_of_disk();
 
-			return $restorer->restore_local_copies( $attachment_id, $policy );
+			return $ok;
 		}
 
 		return $this->clean( $attachment_id, $policy );
@@ -203,6 +214,18 @@ class RetentionApplier {
 				}
 			)
 		);
+	}
+
+	/**
+	 * Whether the last apply() failed because the server ran out of disk
+	 * space or storage quota while downloading.
+	 *
+	 * @since 0.1.3
+	 *
+	 * @return bool
+	 */
+	public function ran_out_of_disk() {
+		return $this->out_of_disk;
 	}
 
 	/**

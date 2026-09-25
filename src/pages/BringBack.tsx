@@ -37,6 +37,7 @@ export function BringBackPage() {
 	const isAllLocal =
 		stats?.configured && offloadedCount === 0 && totalCount > 0;
 	const freeKnown = ( preflight?.free_bytes ?? 0 ) > 0;
+	const quota = preflight?.quota ?? null;
 
 	const [ scopeMode, setScopeMode ] = useState< ScopeMode >( 'all' );
 	const [ customCount, setCustomCount ] = useState< number >( () =>
@@ -227,7 +228,7 @@ export function BringBackPage() {
 										? sprintf(
 												/* translators: 1: batch download size, 2: full download size */
 												__(
-													'Estimated download for this batch: ~%1$s (full library: %2$s).',
+													'Estimated download for this batch: ~%1$s (full library: %2$s)',
 													'omnioffloader'
 												),
 												formatBytes(
@@ -244,14 +245,33 @@ export function BringBackPage() {
 										: sprintf(
 												/* translators: %s: formatted byte size. */
 												__(
-													'Estimated download: up to %s (files still on disk are skipped).',
+													'Estimated download: %s (files your retention policy kept on the server are not downloaded again)',
 													'omnioffloader'
 												),
 												formatBytes(
 													preflight.estimated_bytes
 												)
 											) }
-									{ freeKnown &&
+									{ quota &&
+										' · ' +
+											sprintf(
+												/* translators: 1: space left, 2: plan size, 3: date and time. */
+												__(
+													'Space left in your hosting plan: %1$s of %2$s (from cPanel, %3$s)',
+													'omnioffloader'
+												),
+												formatBytes( quota.remaining ),
+												formatBytes( quota.limit ),
+												new Date(
+													quota.updated_at * 1000
+												).toLocaleString(
+													// The admin's <html lang> is the WordPress locale.
+													document.documentElement
+														.lang || undefined
+												)
+											) }
+									{ ! quota &&
+										freeKnown &&
 										' · ' +
 											sprintf(
 												/* translators: %s: formatted byte size. */
@@ -263,7 +283,8 @@ export function BringBackPage() {
 													preflight.free_bytes
 												)
 											) }
-									{ ! freeKnown &&
+									{ ! quota &&
+										! freeKnown &&
 										' · ' +
 											__(
 												'Free disk space could not be determined on this host.',
@@ -271,6 +292,31 @@ export function BringBackPage() {
 											) }
 								</p>
 							) }
+
+							{ preflight &&
+								offloadedCount > 0 &&
+								( preflight.unsized > 0 ||
+									( ! quota && freeKnown ) ) && (
+									<p className="smowp-muted smowp-preflight-info">
+										{ preflight.unsized > 0 &&
+											sprintf(
+												/* translators: %d: number of attachments. */
+												_n(
+													'%d attachment has no recorded file size (uploaded before WordPress 6.0) and is not included in the estimate, so the real download may be larger.',
+													'%d attachments have no recorded file size (uploaded before WordPress 6.0) and are not included in the estimate, so the real download may be larger.',
+													preflight.unsized,
+													'omnioffloader'
+												),
+												preflight.unsized
+											) + ' ' }
+										{ ! quota &&
+											freeKnown &&
+											__(
+												'Free disk space is what the server reports; if your hosting plan has a storage quota, check how much of it is left in your hosting control panel.',
+												'omnioffloader'
+											) }
+									</p>
+								) }
 
 							{ preflight && ! preflight.disk_ok && (
 								<p className="smowp-warning">

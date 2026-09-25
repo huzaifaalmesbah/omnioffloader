@@ -248,65 +248,255 @@ class Helpers {
 	}
 
 	/**
+	 * Free space, in bytes, for files written to the uploads folder.
+	 *
+	 * The lower of what the filesystem reports and, on cPanel hosting, the
+	 * space left in the account's storage quota (see hosting_quota()). PHP
+	 * alone only sees the whole server disk, which on shared hosting can be
+	 * terabytes while the plan allows 10 GB. The `omnioffloader_free_disk_space`
+	 * filter lets a host or developer supply the real figure on other panels.
+	 * Restores still stop cleanly when a write is refused (see
+	 * AbstractS3Provider::download_hit_disk_limit()).
+	 *
+	 * @since 0.1.3
+	 *
+	 * @param int $max_quota_age Ignore a quota figure older than this many seconds.
+	 * @return int|null Null when unknown (disk_free_space() disabled, no quota).
+	 */
+	public static function free_disk_space( $max_quota_age = DAY_IN_SECONDS ) {
+		// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- disk_free_space warns on some hosts; false is handled.
+		$free = function_exists( 'disk_free_space' ) ? @disk_free_space( wp_get_upload_dir()['basedir'] ) : false;
+		$free = false === $free ? null : (int) $free;
+
+		$quota = self::hosting_quota();
+
+		if ( null !== $quota && time() - $quota['updated_at'] <= $max_quota_age ) {
+			$free = null === $free ? $quota['remaining'] : min( $free, $quota['remaining'] );
+		}
+
+		/**
+		 * Filter the free space available for restored media, in bytes.
+		 *
+		 * Return the space left in a hosting plan's storage quota when the
+		 * server disk (what PHP sees) is larger than the plan allows and the
+		 * plugin cannot read the quota itself (it reads cPanel's).
+		 *
+		 * @since 0.1.3
+		 *
+		 * @param int|null $free Bytes free, or null when unknown.
+		 */
+		$free = apply_filters( 'omnioffloader_free_disk_space', $free );
+
+		return is_numeric( $free ) && $free >= 0 ? (int) $free : null;
+	}
+
+	/**
+	 * The cPanel account's storage quota, from cPanel's own cache file.
+	 *
+	 * The account quota lives in `~/.cpanel/datastore/_Cpanel::Quota.pm__{user}`
+	 * as JSON — {"data":[used, limit, remaining, inodes used, inode limit,
+	 * inodes remaining]}, sizes in bytes — and rewrites it whenever it checks
+	 * the quota. Reading it needs no shell command. The file's age is
+	 * returned so callers can decide how far to trust a figure that cPanel
+	 * has not refreshed lately. Memoized per request and file.
+	 *
+	 * @since 0.1.3
+	 *
+	 * @return array{limit: int, used: int, remaining: int, updated_at: int}|null
+	 *         Null off cPanel, when the file is unreadable, or the plan is unlimited.
+	 */
+	public static function hosting_quota() {
+		static $memo = array();
+
+		$file = self::cpanel_quota_file();
+
+		if ( array_key_exists( $file, $memo ) ) {
+			return $memo[ $file ];
+		}
+
+		$memo[ $file ] = self::read_cpanel_quota( $file );
+
+		return $memo[ $file ];
+	}
+
+	/**
+	 * Parse cPanel's quota cache file (see hosting_quota()).
+	 *
+	 * @since 0.1.3
+	 *
+	 * @param string $file Absolute path, or ''.
+	 * @return array{limit: int, used: int, remaining: int, updated_at: int}|null
+	 */
+	private static function read_cpanel_quota( $file ) {
+		if ( '' === $file || ! self::open_basedir_allows( $file ) || ! is_readable( $file ) || (int) filesize( $file ) > 4096 ) {
+			return null;
+		}
+
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- small local file in the account's home directory.
+		$json = json_decode( (string) file_get_contents( $file ), true );
+		$data = is_array( $json ) && isset( $json['data'] ) && is_array( $json['data'] ) ? array_values( $json['data'] ) : array();
+
+		if ( count( $data ) < 3 || ! is_numeric( $data[0] ) || ! is_numeric( $data[1] ) || ! is_numeric( $data[2] ) ) {
+			return null;
+		}
+
+		$used      = (int) $data[0];
+		$limit     = (int) $data[1];
+		$remaining = (int) $data[2];
+
+		// 0 is an unlimited plan; anything inconsistent is a format we don't know.
+		if ( $limit <= 0 || $used < 0 || $remaining < 0 || $remaining > $limit ) {
+			return null;
+		}
+
+		return array(
+			'limit'      => $limit,
+			'used'       => $used,
+			'remaining'  => $remaining,
+			'updated_at' => (int) filemtime( $file ),
+		);
+	}
+
+	/**
+	 * Whether open_basedir lets PHP look at a path.
+	 *
+	 * Touching a path outside it (is_readable() included) logs a warning, and
+	 * servers without cPanel (Plesk, many VPS setups) often restrict PHP to
+	 * the site folder while the account's home directory lies outside it.
+	 *
+	 * @since 0.1.3
+	 *
+	 * @param string $path Absolute path.
+	 * @return bool
+	 */
+	private static function open_basedir_allows( $path ) {
+		$allowed = (string) ini_get( 'open_basedir' );
+
+		if ( '' === $allowed ) {
+			return true;
+		}
+
+		foreach ( explode( PATH_SEPARATOR, $allowed ) as $dir ) {
+			$dir = trim( $dir );
+
+			// PHP matches open_basedir entries as plain prefixes.
+			if ( '' !== $dir && 0 === strpos( $path, $dir ) ) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Path of cPanel's quota cache file for the account PHP runs as.
+	 *
+	 * @since 0.1.3
+	 *
+	 * @return string Empty when it cannot be located.
+	 */
+	private static function cpanel_quota_file() {
+		$home = '';
+		$user = '';
+
+		if ( function_exists( 'posix_getpwuid' ) && function_exists( 'posix_geteuid' ) ) {
+			$account = posix_getpwuid( posix_geteuid() );
+
+			if ( is_array( $account ) ) {
+				$home = (string) $account['dir'];
+				$user = (string) $account['name'];
+			}
+		}
+
+		// Without POSIX, cPanel's layout (/home/{user}/public_html) gives both.
+		if ( ( '' === $home || '' === $user ) && preg_match( '#^(/home\d*/([^/]+))/#', wp_normalize_path( ABSPATH ), $m ) ) {
+			$home = $m[1];
+			$user = $m[2];
+		}
+
+		$file = ( '' !== $home && '' !== $user ) ? trailingslashit( $home ) . '.cpanel/datastore/_Cpanel::Quota.pm__' . $user : '';
+
+		/**
+		 * Filter the path of cPanel's quota cache file.
+		 *
+		 * @since 0.1.3
+		 *
+		 * @param string $file Absolute path, or '' when not found.
+		 */
+		return (string) apply_filters( 'omnioffloader_cpanel_quota_file', $file );
+	}
+
+	/**
 	 * Bring Back preflight: how much would a full restore download, and
 	 * does the disk have room for it?
 	 *
-	 * Estimated bytes come from each offloaded attachment's stored metadata
-	 * (main + sizes filesizes) — an upper bound, since files still present
-	 * locally are skipped during restore. Only computed on the Bring Back
-	 * page / preflight endpoint.
+	 * Bytes come from each offloaded attachment's stored metadata, counting
+	 * only the files its retention policy removed from the server — Retain
+	 * Local keeps everything (nothing to download), Smart Cleanup keeps the
+	 * original (sizes only), Full Migration keeps nothing. Attachments whose
+	 * metadata has no file size (uploaded before WordPress 6.0) cannot be
+	 * counted and are reported in `unsized` instead. Only computed on the
+	 * Bring Back page / preflight endpoint.
 	 *
 	 * The count and estimate are cached for an hour: every offload, restore
 	 * and delete clears the cache (flush_media_stats()), and on a large
 	 * library the scan takes seconds. Free space is read on every call.
 	 *
 	 * @param bool $force_refresh Optional. True to bypass transient cache and recompute. Default false.
-	 * @return array{offloaded: int, estimated_bytes: int, free_bytes: int, disk_ok: bool}
+	 * @return array{offloaded: int, estimated_bytes: int, unsized: int, quota: array{limit: int, used: int, remaining: int, updated_at: int}|null, free_bytes: int, disk_ok: bool}
 	 */
 	public static function get_restore_preflight( $force_refresh = false ) {
 		$cached = $force_refresh ? false : get_transient( 'omnioffloader_restore_preflight' );
 
-		if ( is_array( $cached ) && isset( $cached['offloaded'], $cached['estimated_bytes'] ) ) {
+		// 'unsized' marks the current shape; older cached values are rebuilt.
+		if ( is_array( $cached ) && isset( $cached['offloaded'], $cached['estimated_bytes'], $cached['unsized'] ) ) {
 			$offloaded = (int) $cached['offloaded'];
 			$estimated = (int) $cached['estimated_bytes'];
+			$unsized   = (int) $cached['unsized'];
 		} else {
-			list( $offloaded, $estimated ) = self::scan_restore_size();
+			list( $offloaded, $estimated, $unsized ) = self::scan_restore_size();
 
 			set_transient(
 				'omnioffloader_restore_preflight',
 				array(
 					'offloaded'       => $offloaded,
 					'estimated_bytes' => $estimated,
+					'unsized'         => $unsized,
 				),
 				HOUR_IN_SECONDS
 			);
 		}
 
-		$upload_dir = wp_get_upload_dir();
-		// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- disk_free_space warns on some hosts; false is handled.
-		$free = @disk_free_space( $upload_dir['basedir'] );
-		$free = false === $free ? 0 : (int) $free;
+		$free  = (int) self::free_disk_space();
+		$quota = self::hosting_quota();
 
 		return array(
 			'offloaded'       => $offloaded,
 			'estimated_bytes' => $estimated,
+			'unsized'         => $unsized,
+			// The hosting plan's quota when the plugin could read it (cPanel).
+			'quota'           => $quota,
 			// 0 means "unknown" on hosts where disk_free_space is disabled —
 			// treated as OK with a caveat in the UI.
 			'free_bytes'      => $free,
-			// 10% headroom over the (upper-bound) estimate.
+			// 10% headroom over the estimate.
 			'disk_ok'         => 0 === $free || $free > $estimated * 1.1,
 		);
 	}
 
 	/**
-	 * Count offloaded attachments and add up their stored file sizes.
+	 * Count offloaded attachments and add up the bytes a restore downloads.
 	 *
-	 * Reads only the `_wp_attachment_metadata` rows, 500 attachments per
-	 * query, rather than priming every meta row of every attachment.
+	 * Reads only the `_wp_attachment_metadata` and `omnioffloader_retention`
+	 * rows, 500 attachments per query, rather than priming every meta row of
+	 * every attachment. No filesystem access: the retention policy each
+	 * attachment was cleaned up under says which of its files left the server.
 	 *
 	 * @since 0.1.3 Split out of get_restore_preflight().
 	 *
-	 * @return array{0: int, 1: int} Offloaded count, estimated bytes.
+	 * @return array{0: int, 1: int, 2: int} Offloaded count, estimated bytes,
+	 *                                      attachments with files to download
+	 *                                      but no recorded size.
 	 */
 	private static function scan_restore_size() {
 		global $wpdb;
@@ -319,35 +509,65 @@ class Helpers {
 		);
 
 		$estimated = 0;
+		$unsized   = 0;
 
 		foreach ( array_chunk( array_map( 'intval', $ids ), 500 ) as $chunk ) {
 			$placeholders = implode( ', ', array_fill( 0, count( $chunk ), '%d' ) );
 
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- one query per 500 attachments, cached via transient by the caller; placeholders are generated above.
-			$rows = $wpdb->get_col( $wpdb->prepare( "SELECT meta_value FROM {$wpdb->postmeta} WHERE meta_key = '_wp_attachment_metadata' AND post_id IN ( {$placeholders} )", $chunk ) );
+			$rows = $wpdb->get_results( $wpdb->prepare( "SELECT post_id, meta_key, meta_value FROM {$wpdb->postmeta} WHERE meta_key IN ( '_wp_attachment_metadata', 'omnioffloader_retention' ) AND post_id IN ( {$placeholders} )", $chunk ) );
 
-			foreach ( $rows as $raw ) {
-				$metadata = maybe_unserialize( $raw );
+			$metadata = array();
+			$policies = array();
 
-				if ( ! is_array( $metadata ) ) {
+			foreach ( $rows as $row ) {
+				if ( 'omnioffloader_retention' === $row->meta_key ) {
+					$policies[ (int) $row->post_id ] = max( 0, min( 2, (int) $row->meta_value ) );
+				} else {
+					$metadata[ (int) $row->post_id ] = maybe_unserialize( $row->meta_value );
+				}
+			}
+
+			foreach ( $chunk as $id ) {
+				// Missing meta means Retain Local (see RetentionApplier::stored_policy()).
+				$roles = RetentionApplier::local_roles( $policies[ $id ] ?? 0 );
+
+				if ( $roles['main'] && $roles['sizes'] ) {
 					continue;
 				}
 
-				if ( isset( $metadata['filesize'] ) && is_numeric( $metadata['filesize'] ) ) {
-					$estimated += (int) $metadata['filesize'];
+				$meta   = isset( $metadata[ $id ] ) && is_array( $metadata[ $id ] ) ? $metadata[ $id ] : array();
+				$known  = true;
+				$sizes  = ! empty( $meta['sizes'] ) && is_array( $meta['sizes'] ) ? $meta['sizes'] : array();
+				$amount = 0;
+
+				if ( ! $roles['main'] ) {
+					if ( isset( $meta['filesize'] ) && is_numeric( $meta['filesize'] ) ) {
+						$amount += (int) $meta['filesize'];
+					} else {
+						$known = false;
+					}
 				}
 
-				if ( ! empty( $metadata['sizes'] ) && is_array( $metadata['sizes'] ) ) {
-					foreach ( $metadata['sizes'] as $size_data ) {
+				if ( ! $roles['sizes'] ) {
+					foreach ( $sizes as $size_data ) {
 						if ( is_array( $size_data ) && isset( $size_data['filesize'] ) && is_numeric( $size_data['filesize'] ) ) {
-							$estimated += (int) $size_data['filesize'];
+							$amount += (int) $size_data['filesize'];
+						} elseif ( is_array( $size_data ) ) {
+							$known = false;
 						}
 					}
+				}
+
+				$estimated += $amount;
+
+				if ( ! $known ) {
+					++$unsized;
 				}
 			}
 		}
 
-		return array( count( $ids ), $estimated );
+		return array( count( $ids ), $estimated, $unsized );
 	}
 
 	/**
@@ -442,10 +662,7 @@ class Helpers {
 			}
 		}
 
-		$upload_dir = wp_get_upload_dir();
-		// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- disk_free_space warns on some hosts; false is handled.
-		$free = @disk_free_space( $upload_dir['basedir'] );
-		$free = false === $free ? 0 : (int) $free;
+		$free = (int) self::free_disk_space();
 
 		$preflight = array(
 			'policy'         => $policy,

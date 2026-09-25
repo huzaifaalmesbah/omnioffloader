@@ -7,6 +7,8 @@ sidebar:
 
 OmniOffloader adds offload status and actions to the WordPress Media Library.
 
+![OmniOffloader WordPress Media Library Integration](/images/screenshots/media-library-marked.png)
+
 ## Status column (list view)
 
 The list view gets an **Offload status** column with a small icon:

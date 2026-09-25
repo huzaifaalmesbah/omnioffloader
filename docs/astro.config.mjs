@@ -8,6 +8,9 @@ const site = process.env.DOCS_SITE_URL || 'https://omnioffloader.vercel.app';
 
 export default defineConfig( {
 	site,
+	redirects: {
+		'/features/staging-and-dev-copies': '/features/safe-mode',
+	},
 	integrations: [
 		starlight( {
 			title: 'OmniOffloader',

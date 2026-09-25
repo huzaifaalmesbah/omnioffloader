@@ -7,6 +7,8 @@ sidebar:
 
 **Transfer Speed** (in **Settings → Behavior**) sets how many files are uploaded or downloaded at the same time.
 
+![OmniOffloader Transfer Speed and Concurrency Settings](/images/screenshots/transfer-speed-marked.png)
+
 | Setting | Files at the same time | Best for |
 |---|---|---|
 | **Low** | 1 | Small shared hosting plans; lowest resource use |

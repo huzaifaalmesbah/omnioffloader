@@ -16,3 +16,14 @@
 	filter: drop-shadow( 0 12px 32px rgb( 19 93 190 / 0.35 ) );
 }
 
+/* Documentation screenshots */
+.sl-markdown-content img:not(.hero img) {
+	border-radius: 10px;
+	border: 1px solid var(--sl-color-gray-5);
+	box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+	margin-top: 1rem;
+	margin-bottom: 1.5rem;
+	width: 100%;
+	height: auto;
+}
+

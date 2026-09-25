@@ -32,6 +32,8 @@ OmniOffloader runs on a small shared hosting plan just as well as on a VPS or de
 
 After activation, you'll find **OmniOffloader** in the WordPress admin menu, with five screens:
 
+![OmniOffloader Dashboard Overview](/images/screenshots/dashboard-marked.png)
+
 | Screen | What it's for |
 | --- | --- |
 | **Dashboard** | Overview and quick status |

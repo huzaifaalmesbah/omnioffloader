@@ -6,10 +6,6 @@ on:
       tag:
         description: 'Tag to remove from WordPress.org SVN (e.g. 0.1.0)'
         required: true
-      slug:
-        description: 'WordPress.org plugin slug (leave empty to use repository name)'
-        required: false
-        default: ''
       delete_git_tag:
         description: 'Also delete this tag from GitHub git? (yes/no)'
         required: false
@@ -38,10 +34,7 @@ jobs:
           SVN_USERNAME: ${{ secrets.SVN_USERNAME }}
           SVN_PASSWORD: ${{ secrets.SVN_PASSWORD }}
         run: |
-          SLUG="${{ github.event.inputs.slug }}"
-          if [ -z "$SLUG" ]; then
-            SLUG="${GITHUB_REPOSITORY#*/}"
-          fi
+          SLUG="${GITHUB_REPOSITORY#*/}"
 
           RAW_TAG="${{ github.event.inputs.tag }}"
           # Strip leading 'v' if present for SVN tags

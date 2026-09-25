@@ -8,11 +8,6 @@ on:
       - readme.txt
       - .wordpress-org/**
   workflow_dispatch:
-    inputs:
-      slug:
-        description: 'WordPress.org plugin slug (leave empty to use repository name)'
-        required: false
-        default: ''
 
 permissions:
   contents: read
@@ -34,5 +29,4 @@ jobs:
         env:
           SVN_PASSWORD: ${{ secrets.SVN_PASSWORD }}
           SVN_USERNAME: ${{ secrets.SVN_USERNAME }}
-          SLUG: ${{ github.event.inputs.slug }}
           IGNORE_OTHER_FILES: true

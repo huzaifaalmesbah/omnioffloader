@@ -6,13 +6,28 @@ on:
       tag:
         description: 'Tag to remove from WordPress.org SVN (e.g. 0.1.0)'
         required: true
-        default: '0.1.0'
+      slug:
+        description: 'WordPress.org plugin slug (leave empty to use repository name)'
+        required: false
+        default: ''
+      delete_git_tag:
+        description: 'Also delete this tag from GitHub git? (yes/no)'
+        required: false
+        default: 'no'
+
+permissions:
+  contents: write
 
 jobs:
   delete-tag:
     name: Delete SVN Tag
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
       - name: Install Subversion
         run: |
           sudo apt-get update
@@ -23,9 +38,38 @@ jobs:
           SVN_USERNAME: ${{ secrets.SVN_USERNAME }}
           SVN_PASSWORD: ${{ secrets.SVN_PASSWORD }}
         run: |
-          SLUG="${GITHUB_REPOSITORY#*/}"
-          TAG="${{ github.event.inputs.tag }}"
+          SLUG="${{ github.event.inputs.slug }}"
+          if [ -z "$SLUG" ]; then
+            SLUG="${GITHUB_REPOSITORY#*/}"
+          fi
+
+          RAW_TAG="${{ github.event.inputs.tag }}"
+          # Strip leading 'v' if present for SVN tags
+          TAG="${RAW_TAG#v}"
+
           TAG_URL="https://plugins.svn.wordpress.org/${SLUG}/tags/${TAG}"
-          echo "Removing ${TAG_URL}..."
-          svn rm "${TAG_URL}" -m "Remove broken tag ${TAG} from SVN" --no-auth-cache --non-interactive --username "$SVN_USERNAME" --password "$SVN_PASSWORD"
-          echo "✓ Successfully removed tag ${TAG} from WordPress.org SVN!"
+          echo "Target SVN Tag URL: ${TAG_URL}"
+
+          echo "Checking if tag exists in SVN..."
+          if svn info "${TAG_URL}" --no-auth-cache --non-interactive --username "$SVN_USERNAME" --password "$SVN_PASSWORD" > /dev/null 2>&1; then
+            echo "Removing ${TAG_URL} from SVN..."
+            svn rm "${TAG_URL}" -m "Remove broken tag ${TAG} from SVN" --no-auth-cache --non-interactive --username "$SVN_USERNAME" --password "$SVN_PASSWORD"
+            echo "✓ Successfully removed tag ${TAG} from WordPress.org SVN!"
+          else
+            echo "⚠️ Tag ${TAG} does not exist at ${TAG_URL}. Skipping SVN removal."
+          fi
+
+      - name: Delete tag from GitHub Git
+        if: ${{ github.event.inputs.delete_git_tag == 'yes' }}
+        run: |
+          RAW_TAG="${{ github.event.inputs.tag }}"
+          TAG="${RAW_TAG#v}"
+
+          for T in "$RAW_TAG" "$TAG" "v$TAG"; do
+            if git rev-parse "refs/tags/$T" >/dev/null 2>&1; then
+              echo "Deleting git tag $T locally and from GitHub..."
+              git tag -d "$T" || true
+              git push origin --delete "$T" || true
+            fi
+          done
+          echo "✓ Git tag cleanup completed!"

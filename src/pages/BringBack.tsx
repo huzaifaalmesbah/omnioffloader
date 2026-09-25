@@ -531,7 +531,11 @@ export function BringBackPage() {
 							{ ! running && (
 								<div className="smowp-bulk-action__btn-wrap">
 									{ isDisabled && disabledReason ? (
-										<Tooltip text={ disabledReason }>
+										<Tooltip
+											text={ disabledReason }
+											className="smowp-tooltip"
+											placement="top-start"
+										>
 											<span
 												className="smowp-btn-disabled-wrap"
 												tabIndex={ 0 }

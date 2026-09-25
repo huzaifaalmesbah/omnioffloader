@@ -75,6 +75,12 @@ export const RETENTION_LABELS: Record< RetentionPolicy, string > = {
 
 export const DEFAULT_VIEW = 'dashboard';
 
+/**
+ * Library size from which the bulk screens suggest WP-CLI: a CLI run needs
+ * no open tab or loopback requests, and never pauses between passes.
+ */
+export const LARGE_LIBRARY = 5000;
+
 export const PLUGIN_ICON = cloud;
 
 export const PLUGIN_NAME = __( 'OmniOffloader', 'omnioffloader' );

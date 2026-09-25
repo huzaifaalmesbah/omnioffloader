@@ -73,6 +73,15 @@ abstract class AbstractBulkProcessor extends WP_Background_Process {
 	protected const FAILURE_LIMIT = 10;
 
 	/**
+	 * Failures in a row, as a multiple of the failure limit, that stop a run
+	 * even while the provider still answers a connection check.
+	 *
+	 * A key that may read the bucket but not write to it passes the check and
+	 * still fails every item; this bounds how far such a run goes.
+	 */
+	protected const UNEXPLAINED_FAILURE_FACTOR = 10;
+
+	/**
 	 * Hook prefix — hooks become omnioffloader_{action}(_cron).
 	 *
 	 * @var string
@@ -117,6 +126,21 @@ abstract class AbstractBulkProcessor extends WP_Background_Process {
 	 * @var array{id: int, title: string, thumb: string}|null
 	 */
 	private $item_label = null;
+
+	/**
+	 * Why the current run must stop, set by a subclass through halt_run().
+	 *
+	 * @var string
+	 */
+	private $halt_message = '';
+
+	/**
+	 * Activity-log messages for failed items, by attachment ID, when the
+	 * reason is not in the attachment's error log.
+	 *
+	 * @var array<int, string>
+	 */
+	protected $item_messages = array();
 
 	/**
 	 * Constructor.
@@ -185,6 +209,37 @@ abstract class AbstractBulkProcessor extends WP_Background_Process {
 	}
 
 	/**
+	 * Whether the storage an item was transferred with still answers.
+	 *
+	 * Asked once the failure limit is reached: when the provider answers, the
+	 * failures belong to the attachments themselves (files missing on disk or
+	 * in the bucket) and the run carries on. Without this, a stretch of broken
+	 * attachments stopped the run, and because they stay queued first, every
+	 * restart stopped on them again.
+	 *
+	 * @since 0.1.3
+	 *
+	 * @param int $attachment_id The last attachment that failed.
+	 * @return true|\WP_Error|null True when reachable, WP_Error when not, null
+	 *                             when this queue cannot tell (the run stops).
+	 */
+	protected function connection_check( $attachment_id ) {
+		return null;
+	}
+
+	/**
+	 * Stop the run after the current group, with a message for the user.
+	 *
+	 * @since 0.1.3
+	 *
+	 * @param string $message Why the run stopped.
+	 * @return void
+	 */
+	protected function halt_run( $message ) {
+		$this->halt_message = (string) $message;
+	}
+
+	/**
 	 * Do the work for a group of attachments.
 	 *
 	 * Subclasses that can share work between items (one transfer pool for
@@ -225,6 +280,11 @@ abstract class AbstractBulkProcessor extends WP_Background_Process {
 			'current_ids'  => array(),
 			'current_item' => null,
 			'recent'       => array(),
+			// Failures in a row, kept across passes for the circuit breaker.
+			'streak'       => 0,
+			// Failures since the last success, including ones a connection
+			// check explained away.
+			'fail_run'     => 0,
 		);
 	}
 
@@ -475,9 +535,8 @@ abstract class AbstractBulkProcessor extends WP_Background_Process {
 
 		$this->recover_lost_item();
 
-		$streak  = 0;
-		$limit   = $this->failure_limit();
 		$aborted = false;
+		$stopped = false;
 
 		do {
 			$batch = $this->get_batch();
@@ -493,6 +552,16 @@ abstract class AbstractBulkProcessor extends WP_Background_Process {
 			$group_size = $this->inline_pass ? 1 : max( 1, (int) $this->group_size() );
 
 			while ( ! empty( $batch->data ) ) {
+				// A cancel from another request has the last word. It is read
+				// from the progress state, which bypasses the cache: the
+				// queue's own status flag is cached for the whole request, so
+				// a cancel sent after this pass started went unseen, and the
+				// claim below re-created the batch row the cancel had deleted.
+				if ( $this->run_stopped() ) {
+					$stopped = true;
+					break;
+				}
+
 				// Claim the items: drop them from the persisted batch *before*
 				// running them. Otherwise a task killed by max_execution_time
 				// leaves them queued and every later pass retries them, so a
@@ -506,17 +575,16 @@ abstract class AbstractBulkProcessor extends WP_Background_Process {
 					$this->update( $batch->key, $batch->data );
 				}
 
-				foreach ( $this->run_group( $group ) as $ok ) {
-					$streak = $ok ? 0 : $streak + 1;
+				$verdict = $this->breaker_verdict( $this->run_group( $group ) );
 
-					if ( $limit > 0 && $streak >= $limit ) {
-						$this->trip_breaker( $streak );
-						$aborted = true;
-						break;
-					}
+				if ( '' !== $this->halt_message ) {
+					$verdict            = $this->halt_message;
+					$this->halt_message = '';
 				}
 
-				if ( $aborted ) {
+				if ( '' !== $verdict ) {
+					$this->trip_breaker( $verdict );
+					$aborted = true;
 					break;
 				}
 
@@ -525,6 +593,10 @@ abstract class AbstractBulkProcessor extends WP_Background_Process {
 				if ( $this->time_exceeded() || $this->memory_exceeded() || $this->is_paused() || $this->is_cancelled() ) {
 					break;
 				}
+			}
+
+			if ( $stopped ) {
+				break;
 			}
 
 			if ( empty( $batch->data ) ) {
@@ -541,6 +613,15 @@ abstract class AbstractBulkProcessor extends WP_Background_Process {
 		Helpers::defer_media_stats_flush( false );
 
 		if ( $aborted ) {
+			return $this->maybe_wp_die();
+		}
+
+		if ( $stopped ) {
+			// The request that stopped the run has reported it already; only
+			// make sure nothing of it is left for a later pass to pick up.
+			$this->clear_scheduled_event();
+			$this->purge_queue();
+
 			return $this->maybe_wp_die();
 		}
 
@@ -700,14 +781,86 @@ abstract class AbstractBulkProcessor extends WP_Background_Process {
 
 		foreach ( $ids as $id ) {
 			$ordered[ $id ] = ! empty( $results[ $id ] );
-			$this->record_result( $id, $ordered[ $id ] );
 		}
 
-		// Only now: a worker dying part-way through recording must still
-		// leave the unrecorded items for recover_lost_item().
-		static::update_state( array( 'current_ids' => array() ) );
+		// One state write for the whole group; it also clears current_ids,
+		// so a worker dying before it leaves every item to recover_lost_item().
+		$this->record_results( $ordered );
 
 		return $ordered;
+	}
+
+	/**
+	 * Whether the run was cancelled or stopped outside this worker.
+	 *
+	 * @since 0.1.3
+	 *
+	 * @return bool
+	 */
+	private function run_stopped() {
+		return 'running' !== static::get_state()['status'];
+	}
+
+	/**
+	 * Decide whether the failures so far should stop the run.
+	 *
+	 * @since 0.1.3
+	 *
+	 * @param array<int, bool> $outcomes Attachment ID => success, of the group just recorded.
+	 * @return string Why the run stops, or '' to carry on.
+	 */
+	private function breaker_verdict( array $outcomes ) {
+		$limit = $this->failure_limit();
+
+		if ( $limit <= 0 || ! in_array( false, $outcomes, true ) ) {
+			return '';
+		}
+
+		$state    = static::get_state();
+		$streak   = (int) $state['streak'];
+		$fail_run = (int) $state['fail_run'];
+
+		if ( $streak < $limit ) {
+			return '';
+		}
+
+		if ( $fail_run < $limit * static::UNEXPLAINED_FAILURE_FACTOR ) {
+			$last_failed = (int) array_search( false, array_reverse( $outcomes, true ), true );
+			$check       = $this->connection_check( $last_failed );
+
+			if ( true === $check ) {
+				// The provider answers, so the attachments are at fault, not
+				// the connection. Their errors are logged; keep going.
+				static::update_state( array( 'streak' => 0 ) );
+
+				return '';
+			}
+
+			if ( is_wp_error( $check ) ) {
+				return sprintf(
+					/* translators: 1: number of consecutive failures, 2: error from the storage provider. */
+					_n(
+						'Stopped after %1$d failure in a row: the storage provider could not be reached (%2$s). Check the connection, then try again.',
+						'Stopped after %1$d failures in a row: the storage provider could not be reached (%2$s). Check the connection, then try again.',
+						$fail_run,
+						'omnioffloader'
+					),
+					$fail_run,
+					$check->get_error_message()
+				);
+			}
+		}
+
+		return sprintf(
+			/* translators: %d: number of consecutive failures. */
+			_n(
+				'Stopped after %d failure in a row. Check the connection to your storage provider, then try again.',
+				'Stopped after %d failures in a row. Check the connection to your storage provider, then try again.',
+				$fail_run,
+				'omnioffloader'
+			),
+			$fail_run
+		);
 	}
 
 	/**
@@ -748,67 +901,93 @@ abstract class AbstractBulkProcessor extends WP_Background_Process {
 			return;
 		}
 
-		$message = __( 'The server stopped part-way through this file — it is probably larger than the host allows in one request.', 'omnioffloader' );
+		$message  = __( 'The server stopped part-way through this file — it is probably larger than the host allows in one request.', 'omnioffloader' );
+		$outcomes = array();
 
 		foreach ( $lost as $id ) {
 			// Finished before the worker died (e.g. killed while a later
 			// item of its group was being recorded): count it as done.
 			if ( $this->was_completed( $id ) ) {
-				$this->record_result( $id, true );
+				$outcomes[ $id ] = true;
 				continue;
 			}
 
 			self::log_attachment_error( $id, $message );
-			$this->record_result( $id, false, $message );
+			// Not "processing" any more, or the Media Library spins forever.
+			update_post_meta( $id, 'omnioffloader_status', 'failed' );
+
+			$outcomes[ $id ]            = false;
+			$this->item_messages[ $id ] = $message;
 		}
 
-		static::update_state( array( 'current_ids' => array() ) );
+		// An oversized file says nothing about the connection.
+		$this->record_results( $outcomes, false );
 	}
 
 	/**
-	 * Append one finished item to the progress state.
+	 * Append finished items to the progress state, in one write.
 	 *
-	 * @param int    $attachment_id Attachment ID.
-	 * @param bool   $ok            Whether the item succeeded.
-	 * @param string $message       Failure message; read from the attachment's
-	 *                              error log when empty.
+	 * @since 0.1.3 Replaces record_result(), which wrote the state per item.
+	 *
+	 * @param array<int, bool> $outcomes     Attachment ID => success.
+	 * @param bool             $track_streak Whether the outcomes feed the circuit breaker.
 	 * @return void
 	 */
-	protected function record_result( $attachment_id, $ok, $message = '' ) {
-		$state  = static::get_state();
-		$recent = isset( $state['recent'] ) && is_array( $state['recent'] ) ? $state['recent'] : array();
-		$label  = $this->item_label( $attachment_id );
+	protected function record_results( array $outcomes, $track_streak = true ) {
+		$state    = static::get_state();
+		$recent   = isset( $state['recent'] ) && is_array( $state['recent'] ) ? $state['recent'] : array();
+		$streak   = (int) $state['streak'];
+		$fail_run = (int) $state['fail_run'];
+		$errors   = 0;
 
-		// The next item needs its own lookup.
-		$this->item_label = null;
+		foreach ( $outcomes as $attachment_id => $ok ) {
+			$label   = $this->item_label( $attachment_id );
+			$message = $this->item_messages[ $attachment_id ] ?? '';
 
-		if ( ! $ok && '' === $message ) {
-			$message = self::last_error_message( $attachment_id );
+			if ( ! $ok && '' === $message ) {
+				$message = self::last_error_message( $attachment_id );
+			}
+
+			array_unshift(
+				$recent,
+				array(
+					'id'        => $attachment_id,
+					'title'     => $label['title'],
+					'status'    => $ok ? 'success' : 'error',
+					'timestamp' => time(),
+					'thumb'     => $label['thumb'],
+					'error'     => $ok ? '' : $message,
+				)
+			);
+
+			if ( ! $ok ) {
+				++$errors;
+			}
+
+			if ( $track_streak ) {
+				$streak   = $ok ? 0 : $streak + 1;
+				$fail_run = $ok ? 0 : $fail_run + 1;
+			}
+
+			clean_post_cache( $attachment_id );
 		}
 
-		array_unshift(
-			$recent,
-			array(
-				'id'        => $attachment_id,
-				'title'     => $label['title'],
-				'status'    => $ok ? 'success' : 'error',
-				'timestamp' => time(),
-				'thumb'     => $label['thumb'],
-				'error'     => $ok ? '' : $message,
-			)
-		);
+		// The next item needs its own lookup.
+		$this->item_label    = null;
+		$this->item_messages = array();
 
 		static::update_state(
 			array(
-				'processed'    => (int) $state['processed'] + 1,
-				'errors'       => (int) $state['errors'] + ( $ok ? 0 : 1 ),
+				'processed'    => (int) $state['processed'] + count( $outcomes ),
+				'errors'       => (int) $state['errors'] + $errors,
+				'streak'       => $streak,
+				'fail_run'     => $fail_run,
 				'current'      => 0,
+				'current_ids'  => array(),
 				'current_item' => null,
 				'recent'       => array_slice( $recent, 0, static::RECENT_LIMIT ),
 			)
 		);
-
-		clean_post_cache( $attachment_id );
 	}
 
 	/**
@@ -890,26 +1069,19 @@ abstract class AbstractBulkProcessor extends WP_Background_Process {
 	 * every attachment; without this the user waits out the whole library to
 	 * be told so, and every item leaves an error-log meta row behind.
 	 *
-	 * @param int $streak Consecutive failures observed.
+	 * @since 0.1.3 Takes the message instead of the failure count.
+	 *
+	 * @param string $message Why the run stopped.
 	 * @return void
 	 */
-	protected function trip_breaker( $streak ) {
+	protected function trip_breaker( $message ) {
 		static::update_state(
 			array(
 				'status'       => 'failed',
 				'current'      => 0,
 				'current_ids'  => array(),
 				'current_item' => null,
-				'message'      => sprintf(
-					/* translators: %d: number of consecutive failures. */
-					_n(
-						'Stopped after %d failure in a row. Check the connection to your storage provider, then try again.',
-						'Stopped after %d failures in a row. Check the connection to your storage provider, then try again.',
-						$streak,
-						'omnioffloader'
-					),
-					$streak
-				),
+				'message'      => (string) $message,
 			)
 		);
 
@@ -927,11 +1099,45 @@ abstract class AbstractBulkProcessor extends WP_Background_Process {
 	 * @return void
 	 */
 	protected function purge_queue() {
+		$ids = array_map( 'intval', (array) static::get_state()['current_ids'] );
+
 		foreach ( $this->get_batches() as $batch ) {
+			if ( is_array( $batch->data ) ) {
+				$ids = array_merge( $ids, array_map( 'intval', $batch->data ) );
+			}
+
 			$this->delete( $batch->key );
 		}
 
 		delete_site_option( $this->get_status_key() );
+
+		self::clear_pending_status( $ids );
+	}
+
+	/**
+	 * Drop the "queued" / "processing" status of items a stopped run will
+	 * never reach, so the Media Library stops showing them as in progress.
+	 *
+	 * @since 0.1.3
+	 *
+	 * @param int[] $ids Attachment IDs.
+	 * @return void
+	 */
+	protected static function clear_pending_status( array $ids ) {
+		global $wpdb;
+
+		$ids = array_values( array_unique( array_filter( $ids ) ) );
+
+		foreach ( array_chunk( $ids, 500 ) as $chunk ) {
+			$placeholders = implode( ', ', array_fill( 0, count( $chunk ), '%d' ) );
+
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- one delete per 500 IDs instead of one per attachment; placeholders are generated above, the meta cache is cleared below.
+			$wpdb->query( $wpdb->prepare( "DELETE FROM {$wpdb->postmeta} WHERE meta_key = 'omnioffloader_status' AND meta_value IN ( 'queued', 'processing' ) AND post_id IN ( {$placeholders} )", $chunk ) );
+
+			foreach ( $chunk as $id ) {
+				wp_cache_delete( $id, 'post_meta' );
+			}
+		}
 	}
 
 	/**

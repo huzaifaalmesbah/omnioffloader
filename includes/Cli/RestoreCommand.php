@@ -26,6 +26,17 @@ class RestoreCommand {
 	use CliJobGuard;
 
 	/**
+	 * Failures in a row that trigger a connection check.
+	 */
+	private const FAILURE_LIMIT = 10;
+
+	/**
+	 * Failures in a row, as a multiple of FAILURE_LIMIT, that stop the run
+	 * even while the provider still answers.
+	 */
+	private const UNEXPLAINED_FAILURE_FACTOR = 10;
+
+	/**
 	 * Restore attachments from the cloud (Bring Back).
 	 *
 	 * Runs synchronously with a progress bar. Each attachment's provider is
@@ -134,16 +145,30 @@ class RestoreCommand {
 		$done      = 0;
 		$failed    = 0;
 		$streak    = 0;
+		$fail_run  = 0;
 		$processed = 0;
 		$aborted   = false;
+		$reason    = '';
+		$no_room   = 0;
 
 		foreach ( $ids as $id ) {
-			if ( $restorer->restore( $id, $delete_cloud ) ) {
+			// Every later download would fail the same way; stop with the
+			// real reason. The attachment stays offloaded for the next run.
+			$no_room = self::is_offloaded( $id ) ? AttachmentRestorer::disk_shortfall( $id ) : 0;
+
+			if ( $no_room > 0 ) {
+				break;
+			}
+
+			// Brought back some other way since the run started: done.
+			if ( ! self::is_offloaded( $id ) || $restorer->restore( $id, $delete_cloud ) ) {
 				++$done;
-				$streak = 0;
+				$streak   = 0;
+				$fail_run = 0;
 			} else {
 				++$failed;
 				++$streak;
+				++$fail_run;
 			}
 			$progress->tick();
 			clean_post_cache( $id );
@@ -153,7 +178,18 @@ class RestoreCommand {
 
 			// Bad credentials or an unreachable bucket fail identically for
 			// every attachment; stop rather than grind through the library.
-			if ( $streak >= 10 ) {
+			// When the bucket still answers, the attachments are at fault
+			// (objects missing): keep going, up to a hard cap.
+			if ( $streak >= self::FAILURE_LIMIT ) {
+				$provider = AttachmentRestorer::provider_for( $id );
+				$check    = null !== $provider && $fail_run < self::FAILURE_LIMIT * self::UNEXPLAINED_FAILURE_FACTOR ? $provider->check_connection() : null;
+
+				if ( true === $check ) {
+					$streak = 0;
+					continue;
+				}
+
+				$reason  = is_wp_error( $check ) ? $check->get_error_message() . '. ' : '';
 				$aborted = true;
 				break;
 			}
@@ -164,8 +200,12 @@ class RestoreCommand {
 		Helpers::defer_media_stats_flush( false );
 		$this->end_job();
 
+		if ( $no_room > 0 ) {
+			WP_CLI::error( sprintf( 'Stopped: the server is running out of disk space (%s more is needed for the next attachment, %d restored first). Free up space, then run the command again.', size_format( $no_room ), $done ) );
+		}
+
 		if ( $aborted ) {
-			WP_CLI::error( sprintf( 'Stopped after %d failures in a row (%d restored first). Check the connection to your storage provider (see omnioffloader_error_log meta).', $streak, $done ) );
+			WP_CLI::error( sprintf( 'Stopped after %d failures in a row (%d restored first). %sCheck the connection to your storage provider (see omnioffloader_error_log meta).', $fail_run, $done, $reason ) );
 		}
 
 		if ( $failed > 0 ) {
@@ -211,8 +251,9 @@ class RestoreCommand {
 
 		$sql = "SELECT p.ID FROM {$wpdb->posts} p
 			 INNER JOIN {$wpdb->postmeta} m ON m.post_id = p.ID AND m.meta_key = 'omnioffloader_offloaded' AND m.meta_value = '1'
+			 LEFT JOIN {$wpdb->postmeta} s ON s.post_id = p.ID AND s.meta_key = 'omnioffloader_status' AND s.meta_value = 'failed'
 			 WHERE p.post_type = 'attachment'
-			 ORDER BY p.ID ASC";
+			 ORDER BY s.post_id IS NOT NULL, p.ID ASC";
 
 		if ( $limit > 0 ) {
 			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- safely prepared with absint.

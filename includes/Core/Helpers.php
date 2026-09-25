@@ -162,11 +162,6 @@ class Helpers {
 
 		global $wpdb;
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- fast count query cached via transient below.
-		$total = (int) $wpdb->get_var(
-			"SELECT COUNT(ID) FROM {$wpdb->posts} WHERE post_type = 'attachment'"
-		);
-
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- indexed meta count query cached via transient below.
 		$offloaded = (int) $wpdb->get_var(
 			$wpdb->prepare(
@@ -176,10 +171,20 @@ class Helpers {
 			)
 		);
 
+		// Counted the way Bulk Offload queues them (not trashed, has a file,
+		// not offloaded), so "local" reaches 0 once a full run is done.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- indexed join count cached via transient below.
+		$local = (int) $wpdb->get_var(
+			"SELECT COUNT(p.ID) FROM {$wpdb->posts} p
+			 INNER JOIN {$wpdb->postmeta} f ON f.post_id = p.ID AND f.meta_key = '_wp_attached_file'
+			 LEFT JOIN {$wpdb->postmeta} m ON m.post_id = p.ID AND m.meta_key = 'omnioffloader_offloaded'
+			 WHERE p.post_type = 'attachment' AND p.post_status != 'trash' AND m.post_id IS NULL"
+		);
+
 		$stats = array(
-			'total'     => $total,
+			'total'     => $offloaded + $local,
 			'offloaded' => $offloaded,
-			'local'     => max( 0, $total - $offloaded ),
+			'local'     => $local,
 		);
 
 		set_transient( 'omnioffloader_media_stats', $stats, MINUTE_IN_SECONDS );
@@ -248,24 +253,65 @@ class Helpers {
 	 *
 	 * Estimated bytes come from each offloaded attachment's stored metadata
 	 * (main + sizes filesizes) — an upper bound, since files still present
-	 * locally are skipped during restore. Cached in a short transient; only
-	 * computed on the Bring Back page / preflight endpoint.
+	 * locally are skipped during restore. Only computed on the Bring Back
+	 * page / preflight endpoint.
+	 *
+	 * The count and estimate are cached for an hour: every offload, restore
+	 * and delete clears the cache (flush_media_stats()), and on a large
+	 * library the scan takes seconds. Free space is read on every call.
 	 *
 	 * @param bool $force_refresh Optional. True to bypass transient cache and recompute. Default false.
 	 * @return array{offloaded: int, estimated_bytes: int, free_bytes: int, disk_ok: bool}
 	 */
 	public static function get_restore_preflight( $force_refresh = false ) {
-		if ( ! $force_refresh ) {
-			$cached = get_transient( 'omnioffloader_restore_preflight' );
+		$cached = $force_refresh ? false : get_transient( 'omnioffloader_restore_preflight' );
 
-			if ( is_array( $cached ) && isset( $cached['offloaded'], $cached['estimated_bytes'], $cached['free_bytes'], $cached['disk_ok'] ) ) {
-				return $cached;
-			}
+		if ( is_array( $cached ) && isset( $cached['offloaded'], $cached['estimated_bytes'] ) ) {
+			$offloaded = (int) $cached['offloaded'];
+			$estimated = (int) $cached['estimated_bytes'];
+		} else {
+			list( $offloaded, $estimated ) = self::scan_restore_size();
+
+			set_transient(
+				'omnioffloader_restore_preflight',
+				array(
+					'offloaded'       => $offloaded,
+					'estimated_bytes' => $estimated,
+				),
+				HOUR_IN_SECONDS
+			);
 		}
 
+		$upload_dir = wp_get_upload_dir();
+		// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- disk_free_space warns on some hosts; false is handled.
+		$free = @disk_free_space( $upload_dir['basedir'] );
+		$free = false === $free ? 0 : (int) $free;
+
+		return array(
+			'offloaded'       => $offloaded,
+			'estimated_bytes' => $estimated,
+			// 0 means "unknown" on hosts where disk_free_space is disabled —
+			// treated as OK with a caveat in the UI.
+			'free_bytes'      => $free,
+			// 10% headroom over the (upper-bound) estimate.
+			'disk_ok'         => 0 === $free || $free > $estimated * 1.1,
+		);
+	}
+
+	/**
+	 * Count offloaded attachments and add up their stored file sizes.
+	 *
+	 * Reads only the `_wp_attachment_metadata` rows, 500 attachments per
+	 * query, rather than priming every meta row of every attachment.
+	 *
+	 * @since 0.1.3 Split out of get_restore_preflight().
+	 *
+	 * @return array{0: int, 1: int} Offloaded count, estimated bytes.
+	 */
+	private static function scan_restore_size() {
 		global $wpdb;
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- indexed meta join query cached via transient below.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- indexed meta join query cached via transient by the caller.
 		$ids = $wpdb->get_col(
 			"SELECT p.ID FROM {$wpdb->posts} p
 			 INNER JOIN {$wpdb->postmeta} m ON m.post_id = p.ID AND m.meta_key = 'omnioffloader_offloaded' AND m.meta_value = '1'
@@ -274,54 +320,34 @@ class Helpers {
 
 		$estimated = 0;
 
-		// Prime the meta cache in chunks. Reading metadata one attachment at a
-		// time is a query per attachment, which times the page out on a large
-		// library; the cache is dropped again after each chunk so a 15,000
-		// item run does not hold every meta row in memory at once.
-		foreach ( array_chunk( array_map( 'intval', $ids ), 200 ) as $chunk ) {
-			update_meta_cache( 'post', $chunk );
+		foreach ( array_chunk( array_map( 'intval', $ids ), 500 ) as $chunk ) {
+			$placeholders = implode( ', ', array_fill( 0, count( $chunk ), '%d' ) );
 
-			foreach ( $chunk as $id ) {
-				$metadata = wp_get_attachment_metadata( $id );
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- one query per 500 attachments, cached via transient by the caller; placeholders are generated above.
+			$rows = $wpdb->get_col( $wpdb->prepare( "SELECT meta_value FROM {$wpdb->postmeta} WHERE meta_key = '_wp_attachment_metadata' AND post_id IN ( {$placeholders} )", $chunk ) );
 
-				if ( is_array( $metadata ) ) {
-					// phpcs:ignore Generic.Commenting.DocComment.MissingShort -- inline @var for PHPStan.
-					/** @var array<string, mixed> $metadata */
-					if ( isset( $metadata['filesize'] ) && is_numeric( $metadata['filesize'] ) ) {
-						$estimated += (int) $metadata['filesize'];
-					}
+			foreach ( $rows as $raw ) {
+				$metadata = maybe_unserialize( $raw );
 
-					if ( ! empty( $metadata['sizes'] ) && is_array( $metadata['sizes'] ) ) {
-						foreach ( $metadata['sizes'] as $size_data ) {
-							if ( is_array( $size_data ) && isset( $size_data['filesize'] ) && is_numeric( $size_data['filesize'] ) ) {
-								$estimated += (int) $size_data['filesize'];
-							}
+				if ( ! is_array( $metadata ) ) {
+					continue;
+				}
+
+				if ( isset( $metadata['filesize'] ) && is_numeric( $metadata['filesize'] ) ) {
+					$estimated += (int) $metadata['filesize'];
+				}
+
+				if ( ! empty( $metadata['sizes'] ) && is_array( $metadata['sizes'] ) ) {
+					foreach ( $metadata['sizes'] as $size_data ) {
+						if ( is_array( $size_data ) && isset( $size_data['filesize'] ) && is_numeric( $size_data['filesize'] ) ) {
+							$estimated += (int) $size_data['filesize'];
 						}
 					}
 				}
-
-				wp_cache_delete( $id, 'post_meta' );
 			}
 		}
 
-		$upload_dir = wp_get_upload_dir();
-		// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- disk_free_space warns on some hosts; false is handled.
-		$free = @disk_free_space( $upload_dir['basedir'] );
-		$free = false === $free ? 0 : (int) $free;
-
-		$preflight = array(
-			'offloaded'       => count( $ids ),
-			'estimated_bytes' => $estimated,
-			// 0 means "unknown" on hosts where disk_free_space is disabled —
-			// treated as OK with a caveat in the UI.
-			'free_bytes'      => $free,
-			// 10% headroom over the (upper-bound) estimate.
-			'disk_ok'         => 0 === $free || $free > $estimated * 1.1,
-		);
-
-		set_transient( 'omnioffloader_restore_preflight', $preflight, MINUTE_IN_SECONDS );
-
-		return $preflight;
+		return array( count( $ids ), $estimated );
 	}
 
 	/**

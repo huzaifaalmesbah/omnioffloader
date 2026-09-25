@@ -100,7 +100,8 @@ class BulkOffloadProcessor extends AbstractBulkProcessor {
 	 * Attachments that still need offloading.
 	 *
 	 * Trashed attachments and rows with no file on disk are skipped — each one
-	 * would otherwise burn a task and land in the error log.
+	 * would otherwise burn a task and land in the error log. Attachments that
+	 * failed before go last, so a new run is not held up by them.
 	 *
 	 * @return int[]
 	 */
@@ -112,8 +113,9 @@ class BulkOffloadProcessor extends AbstractBulkProcessor {
 			"SELECT p.ID FROM {$wpdb->posts} p
 			 INNER JOIN {$wpdb->postmeta} f ON f.post_id = p.ID AND f.meta_key = '_wp_attached_file'
 			 LEFT JOIN {$wpdb->postmeta} m ON m.post_id = p.ID AND m.meta_key = 'omnioffloader_offloaded'
+			 LEFT JOIN {$wpdb->postmeta} s ON s.post_id = p.ID AND s.meta_key = 'omnioffloader_status' AND s.meta_value = 'failed'
 			 WHERE p.post_type = 'attachment' AND p.post_status != 'trash' AND m.post_id IS NULL
-			 ORDER BY p.ID ASC"
+			 ORDER BY s.post_id IS NOT NULL, p.ID ASC"
 		);
 
 		return array_map( 'intval', $ids );
@@ -164,6 +166,18 @@ class BulkOffloadProcessor extends AbstractBulkProcessor {
 	 */
 	protected function was_completed( $attachment_id ) {
 		return self::is_offloaded( $attachment_id );
+	}
+
+	/**
+	 * Whether the bucket still answers.
+	 *
+	 * @since 0.1.3
+	 *
+	 * @param int $attachment_id The last attachment that failed.
+	 * @return true|\WP_Error
+	 */
+	protected function connection_check( $attachment_id ) {
+		return $this->provider->check_connection();
 	}
 
 	/**

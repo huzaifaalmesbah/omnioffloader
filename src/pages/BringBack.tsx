@@ -11,6 +11,7 @@ import { Card } from '../components/ui/Card';
 import { ProgressBar } from '../components/ui/ProgressBar';
 import { RunAnnouncer } from '../components/ui/RunAnnouncer';
 import { useCore } from '../context/CoreContext';
+import { LARGE_LIBRARY } from '../utils/constants';
 import { useBringBack } from '../hooks/useBringBack';
 import { formatBytes } from '../utils/formatBytes';
 import { radioKeyDown, radioTabIndex } from '../utils/radioGroup';
@@ -205,6 +206,16 @@ export function BringBackPage() {
 										),
 										offloadedCount
 									) }
+								</p>
+							) }
+
+							{ offloadedCount >= LARGE_LIBRARY && (
+								<p className="smowp-muted">
+									{ __(
+										'Large library? Running this from WP-CLI is usually faster and needs no open browser tab:',
+										'omnioffloader'
+									) }{ ' ' }
+									<code>wp omnioffloader restore --all</code>
 								</p>
 							) }
 

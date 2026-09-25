@@ -358,8 +358,16 @@ class OffloadController extends BaseController {
 	public function bulk_action_response( WP_REST_Request $request ) {
 		$action = (string) $request->get_param( 'action' );
 
+		$requested = array_values( array_filter( array_map( 'intval', (array) $request->get_param( 'ids' ) ) ) );
+
+		// Posts and meta for up to 1,000 IDs in a few queries, instead of
+		// several per ID in the capability and status checks below.
+		if ( ! empty( $requested ) ) {
+			_prime_post_caches( $requested, false, true );
+		}
+
 		// Only attachments the user may manage (see AttachmentHelper).
-		$ids = self::filter_manageable_ids( (array) $request->get_param( 'ids' ) );
+		$ids = self::filter_manageable_ids( $requested );
 
 		if ( empty( $ids ) ) {
 			return new \WP_Error(

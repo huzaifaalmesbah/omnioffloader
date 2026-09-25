@@ -96,7 +96,10 @@ Key rules:
 - **Items are claimed out of the batch before they run.** The parent removes an item only after `task()` returns, so a task killed by `max_execution_time` is retried forever and one oversized file wedges the run.
 - **Pass length follows the host** (`pass_time_limit()`: `max_execution_time − 20`, clamped 20–40 s; 30 s when unlimited), read before the first item because the uploader's `set_time_limit(0)` rewrites the ini value. The `{identifier}_default_time_limit` filter still wins, which keeps the inline poll pass at 8 s.
 - **`current` / `current_ids` in the state record the in-flight group**, so `recover_lost_item()` can report every item of a killed worker's group instead of stalling the progress bar below `total`. `group_size()` (default 1) and `process_items()` let a queue claim and run several items together — only the offload queue does.
-- **Circuit breaker** at `FAILURE_LIMIT` consecutive failures (filter `omnioffloader_bulk_failure_limit`) → status `failed` with a message.
+- **Circuit breaker** at `FAILURE_LIMIT` consecutive failures (filter `omnioffloader_bulk_failure_limit`) → status `failed` with a message. At the limit it first asks `connection_check()` (offload: the provider; restore: the item's provider; retention: `null` = stop): if the provider answers, the failures are the attachments' own (missing files) and the run continues, up to `FAILURE_LIMIT × UNEXPLAINED_FAILURE_FACTOR` failures since the last success. `streak` / `fail_run` live in the state so they survive passes. Queues order previously `failed` items last, so a restart is never held up by the same broken items. The CLI mirrors this.
+- **Every claim first checks the state's `status` is still `running`** (`run_stopped()`): the queue's own cancel flag is cached for the whole request, so a worker never saw a cancel, and with a persistent object cache its claim re-created the deleted batch row.
+- **One state write per group** (`record_results()`), plus the one that marks the group in flight — never per item.
+- `purge_queue()` clears `queued` / `processing` statuses of the items it drops; `recover_lost_item()` marks lost items `failed`. `halt_run()` stops a run with a custom message (Bring Back's disk check).
 - **`process_queue_now()` only works when the queue has been quiet for `STALL_SECONDS`.** It is the self-heal for hosts where the loopback is blocked; without the stall check every 2s poll would hold a PHP worker for 8s.
 - **`cancel_now()` tears down in-request** rather than via the parent's loopback dispatch, which never arrives on loopback-blocked hosts.
 - **`completed()` refuses to overwrite a non-`running` status**, so a late worker cannot report a cancelled run as done.
@@ -204,11 +207,11 @@ Actions: `omnioffloader_before_offload`, `omnioffloader_after_offload`, `omnioff
 ## Performance Rules
 
 - Frontend (non-admin) footprint is URL-rewrite filters only — no queries, writes, or HTTP. `render_block` only looks up IDs for `ContentImageTagObserver::MEDIA_BLOCKS` (filter `omnioffloader_media_block_names`), and `prime_block_attachments()` on `the_content` priority 8 primes those IDs in one batch before `do_blocks` (9) — core only primes at 12; `<video>/<audio>/<source>` URLs are resolved in one batched `IN (…)` query per content and memoized per request — never `attachment_url_to_postid()` per src.
-- Preflights (`get_restore_preflight`, `get_retention_preflight`) scan every offloaded attachment's metadata. The UI reads the transient by default and forces a refresh only when a run ends — never on a polling interval.
+- Preflights (`get_restore_preflight`, `get_retention_preflight`) scan every offloaded attachment's metadata. The restore preflight caches only count + estimate (1 hour; `flush_media_stats()` invalidates it) and reads free space live; the retention one stays at 1 minute because `RetentionApplier` does not flush. The UI reads the transient by default and forces a refresh only when a run ends — never on a polling interval.
 - No remote calls outside explicit user actions (Test Connection, offload/restore jobs).
-- Stats via one indexed postmeta count query, short-transient cached.
+- Stats via two indexed count queries (offloaded; local counted like the offload queue), short-transient cached.
 - **Never bust the stats cache per attachment.** `Helpers::flush_media_stats()` is deferrable — bulk passes and CLI loops wrap their work in `Helpers::defer_media_stats_flush( true/false )` so it fires once. Per-item flushing costs ~2 queries per attachment for a value nothing reads mid-run.
-- **Never read attachment metadata in an unbounded loop.** Prime with `update_meta_cache( 'post', $chunk )` in chunks and drop the cache between them (see `Helpers::get_restore_preflight()`).
+- **Never read attachment metadata in an unbounded loop.** Prime with `update_meta_cache( 'post', $chunk )` in chunks and drop the cache between them (see `Helpers::get_retention_preflight()`), or select just the meta rows you need 500 IDs at a time (`Helpers::scan_restore_size()`).
 - Bulk state and batch options are `autoload => false`.
 
 ## Reference Plugin (read-only, for patterns)

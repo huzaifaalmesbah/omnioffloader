@@ -103,7 +103,8 @@ class BulkRestoreProcessor extends AbstractBulkProcessor {
 	 * Every offloaded attachment.
 	 *
 	 * Trashed attachments are included on purpose: skipping them would strand
-	 * their objects in the bucket after a full Bring Back.
+	 * their objects in the bucket after a full Bring Back. Attachments that
+	 * failed before go last, so a new run is not held up by them.
 	 *
 	 * @return int[]
 	 */
@@ -114,8 +115,9 @@ class BulkRestoreProcessor extends AbstractBulkProcessor {
 		$ids = $wpdb->get_col(
 			"SELECT p.ID FROM {$wpdb->posts} p
 			 INNER JOIN {$wpdb->postmeta} m ON m.post_id = p.ID AND m.meta_key = 'omnioffloader_offloaded' AND m.meta_value = '1'
+			 LEFT JOIN {$wpdb->postmeta} s ON s.post_id = p.ID AND s.meta_key = 'omnioffloader_status' AND s.meta_value = 'failed'
 			 WHERE p.post_type = 'attachment'
-			 ORDER BY p.ID ASC"
+			 ORDER BY s.post_id IS NOT NULL, p.ID ASC"
 		);
 
 		return array_map( 'intval', $ids );
@@ -128,10 +130,48 @@ class BulkRestoreProcessor extends AbstractBulkProcessor {
 	 * @return bool
 	 */
 	protected function process_item( $attachment_id ) {
+		// Brought back some other way since it was queued (single Bring
+		// Back, or queued twice): nothing left to do.
+		if ( ! self::is_offloaded( $attachment_id ) ) {
+			return true;
+		}
+
+		$short = AttachmentRestorer::disk_shortfall( $attachment_id );
+
+		if ( $short > 0 ) {
+			// Every later download would fail the same way; stop with the
+			// real reason instead of tripping the breaker on "connection".
+			// The attachment stays offloaded, so the next run retries it.
+			$this->item_messages[ $attachment_id ] = __( 'Not enough free disk space.', 'omnioffloader' );
+			$this->halt_run(
+				sprintf(
+					/* translators: %s: amount of disk space, e.g. "120 MB". */
+					__( 'Stopped: the server is running out of disk space (%s more is needed for the next attachment). Free up space, then start Bring Back again.', 'omnioffloader' ),
+					size_format( $short )
+				)
+			);
+
+			return false;
+		}
+
 		$state    = static::get_state();
 		$restorer = new AttachmentRestorer();
 
 		return $restorer->restore( $attachment_id, ! empty( $state['delete_cloud'] ) );
+	}
+
+	/**
+	 * Whether the storage the attachment was offloaded to still answers.
+	 *
+	 * @since 0.1.3
+	 *
+	 * @param int $attachment_id The last attachment that failed.
+	 * @return true|\WP_Error|null Null when its provider is not available.
+	 */
+	protected function connection_check( $attachment_id ) {
+		$provider = AttachmentRestorer::provider_for( $attachment_id );
+
+		return null === $provider ? null : $provider->check_connection();
 	}
 
 	/**

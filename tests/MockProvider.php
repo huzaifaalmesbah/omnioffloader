@@ -130,6 +130,15 @@ class MockProvider implements ProviderInterface {
 
 	/**
 	 * {@inheritDoc}
+	 *
+	 * @param array<string, string> $overrides Ignored — the mock needs no credentials.
+	 */
+	public function set_credential_overrides( array $overrides ) {
+		unset( $overrides );
+	}
+
+	/**
+	 * {@inheritDoc}
 	 */
 	public function check_connection() {
 		return true;

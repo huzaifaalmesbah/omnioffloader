@@ -46,6 +46,11 @@ class AttachmentRestorer {
 	private static $providers = array();
 
 	/**
+	 * Free space, in bytes, a restore always leaves on the uploads disk.
+	 */
+	private const DISK_RESERVE = 50 * MB_IN_BYTES;
+
+	/**
 	 * Restore one attachment from the cloud back to the server.
 	 *
 	 * @param int  $attachment_id Attachment ID.
@@ -432,17 +437,9 @@ class AttachmentRestorer {
 			return null;
 		}
 
-		// One provider (and S3 client) per key for the whole request: bulk
-		// restores create a restorer per item.
-		if ( isset( self::$providers[ $provider_key ] ) ) {
-			return self::$providers[ $provider_key ];
-		}
+		$provider = self::provider_for( $attachment_id );
 
-		try {
-			self::$providers[ $provider_key ] = ProviderRegistry::create( $provider_key );
-
-			return self::$providers[ $provider_key ];
-		} catch ( \InvalidArgumentException $e ) {
+		if ( null === $provider ) {
 			self::log_attachment_error(
 				$attachment_id,
 				sprintf(
@@ -451,8 +448,112 @@ class AttachmentRestorer {
 					$provider_key
 				)
 			);
+		}
 
+		return $provider;
+	}
+
+	/**
+	 * The provider an attachment was offloaded with, without logging.
+	 *
+	 * One provider (and S3 client) per key for the whole request: bulk
+	 * restores create a restorer per item.
+	 *
+	 * @since 0.1.3 Split out of resolve_provider().
+	 *
+	 * @param int $attachment_id Attachment ID.
+	 * @return ProviderInterface|null
+	 */
+	public static function provider_for( $attachment_id ) {
+		$provider_key = (string) get_post_meta( (int) $attachment_id, 'omnioffloader_provider', true );
+
+		if ( '' === $provider_key ) {
 			return null;
 		}
+
+		if ( ! isset( self::$providers[ $provider_key ] ) ) {
+			try {
+				self::$providers[ $provider_key ] = ProviderRegistry::create( $provider_key );
+			} catch ( \InvalidArgumentException $e ) {
+				return null;
+			}
+		}
+
+		return self::$providers[ $provider_key ];
+	}
+
+	/**
+	 * How many bytes short the uploads disk is for restoring an attachment.
+	 *
+	 * Counts only files missing locally, with sizes from the attachment's
+	 * metadata, plus a fixed reserve so a restore never fills the disk to the
+	 * last byte. A host that hides free space never reports a shortfall.
+	 *
+	 * @since 0.1.3
+	 *
+	 * @param int $attachment_id Attachment ID.
+	 * @return int Zero when there is room (or it cannot be told).
+	 */
+	public static function disk_shortfall( $attachment_id ) {
+		$needed = self::bytes_to_download( (int) $attachment_id );
+
+		if ( $needed <= 0 ) {
+			return 0;
+		}
+
+		// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- disk_free_space warns on some hosts; false is handled.
+		$free = @disk_free_space( wp_get_upload_dir()['basedir'] );
+
+		if ( false === $free ) {
+			return 0;
+		}
+
+		$wanted = $needed + self::DISK_RESERVE;
+
+		return $free >= $wanted ? 0 : (int) ceil( $wanted - $free );
+	}
+
+	/**
+	 * Bytes a restore would download: the attachment's files that are not on
+	 * disk, sized from its metadata (files it has no size for count as 0).
+	 *
+	 * @since 0.1.3
+	 *
+	 * @param int $attachment_id Attachment ID.
+	 * @return int
+	 */
+	private static function bytes_to_download( $attachment_id ) {
+		$metadata = wp_get_attachment_metadata( $attachment_id );
+
+		if ( ! is_array( $metadata ) ) {
+			return 0;
+		}
+
+		// phpcs:ignore Generic.Commenting.DocComment.MissingShort -- inline @var for PHPStan.
+		/** @var array<string, mixed> $metadata */
+		$sizes = array();
+
+		if ( isset( $metadata['file'] ) && is_string( $metadata['file'] ) && isset( $metadata['filesize'] ) && is_numeric( $metadata['filesize'] ) ) {
+			$sizes[ wp_basename( $metadata['file'] ) ] = (int) $metadata['filesize'];
+		}
+
+		if ( ! empty( $metadata['sizes'] ) && is_array( $metadata['sizes'] ) ) {
+			foreach ( $metadata['sizes'] as $size_data ) {
+				if ( is_array( $size_data ) && isset( $size_data['file'], $size_data['filesize'] ) && is_string( $size_data['file'] ) && is_numeric( $size_data['filesize'] ) ) {
+					$sizes[ $size_data['file'] ] = (int) $size_data['filesize'];
+				}
+			}
+		}
+
+		$files = self::collect_attachment_files( $attachment_id, $metadata );
+		$bytes = 0;
+
+		foreach ( array_merge( $files['main'], $files['sizes'] ) as $entry ) {
+			if ( ! file_exists( $entry['file'] ) ) {
+				$bytes += $sizes[ wp_basename( $entry['file'] ) ] ?? 0;
+			}
+		}
+
+		return $bytes;
 	}
 }

@@ -11,6 +11,7 @@ import { Card } from '../components/ui/Card';
 import { ProgressBar } from '../components/ui/ProgressBar';
 import { RunAnnouncer } from '../components/ui/RunAnnouncer';
 import { useCore } from '../context/CoreContext';
+import { LARGE_LIBRARY } from '../utils/constants';
 import { useBulkOffload } from '../hooks/useBulkOffload';
 
 export function OffloadPage() {
@@ -200,6 +201,16 @@ export function OffloadPage() {
 										),
 										localCount
 									) }
+								</p>
+							) }
+
+							{ localCount >= LARGE_LIBRARY && (
+								<p className="smowp-muted">
+									{ __(
+										'Large library? Running this from WP-CLI is usually faster and needs no open browser tab:',
+										'omnioffloader'
+									) }{ ' ' }
+									<code>wp omnioffloader offload --all</code>
 								</p>
 							) }
 

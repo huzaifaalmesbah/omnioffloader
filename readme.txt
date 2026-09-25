@@ -286,6 +286,10 @@ Depending on the provider you select:
 * Uploading a file whose name is already taken checks all existing names with one query instead of one per "-1", "-2"… suffix.
 * Clearing the stats cache costs half as many queries, and background uploads clear it once per batch instead of once per file.
 * The post-activation redirect check only runs on the Plugins screen instead of on every admin request.
+* Bulk jobs write their progress once per batch instead of two or three times per attachment, which cuts database writes sharply on large libraries.
+* The Bring Back preflight reads only the attachment metadata it needs, 500 attachments per query, and keeps its estimate for an hour (it is refreshed whenever media is offloaded, brought back or deleted). Free disk space is always current.
+* The Media Library bulk action loads the selected attachments in a few queries instead of several per item.
+* On libraries of 5,000 items or more, the Bulk Offload and Bring Back screens suggest the matching WP-CLI command.
 
 **Fixes**
 
@@ -298,6 +302,13 @@ Depending on the provider you select:
 * The Dashboard only shows saved settings, the Settings page warns before you leave with unsaved changes, and error messages stay until dismissed.
 * Attachment offload records can no longer be edited as custom fields.
 * A missing `vendor` folder shows an admin notice instead of a fatal error.
+* Bulk jobs no longer stop for good on a stretch of broken attachments. Before, 10 failures in a row, such as files missing from the server, stopped the run. Because those attachments stayed first in line, every restart stopped on them again. Now the connection to the storage provider is checked first. If it answers, the run carries on and the failures stay in the error log. It still stops after 100 failures in a row. Attachments that failed before now wait until the end of the next run. The same applies to `wp omnioffloader offload` and `restore`.
+* When the storage provider can't be reached, the stop message now includes the provider's error.
+* Cancelling a bulk job now stops the background worker right away. Before, the worker kept going until the end of its pass (up to 40 seconds, and longer with Redis or Memcached). Because the job already showed as cancelled, another job could start while it was still running.
+* Media Library items no longer stay stuck on "Queued" or "Offloading…" after a job was cancelled or stopped, or after the server killed the worker mid-file.
+* Bring Back stops with a clear "out of disk space" message before the disk fills up, instead of failing downloads and blaming the connection. The attachment stays in the cloud, and the next run picks it up again.
+* Bring Back no longer counts an attachment as failed when it was already brought back while it waited in the queue.
+* The Dashboard's local media count now matches what Bulk Offload processes (trashed attachments and entries without a file are not counted), so it reaches 0 after a full run.
 * Provider errors are only written to the PHP error log when `WP_DEBUG` is on (filter `omnioffloader_log_provider_errors`); they are always recorded on the attachment.
 * Retention: when a cloud copy differs in size from the server file (for example after an image optimizer shrank the thumbnails), the server file is uploaded again and verified, instead of the run stopping with a misleading connection error.
 * Retention: attachments excluded with the `omnioffloader_should_apply_retention` filter no longer show as "needs updating" forever.

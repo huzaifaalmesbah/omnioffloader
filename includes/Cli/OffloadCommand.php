@@ -26,6 +26,17 @@ class OffloadCommand {
 	use CliJobGuard;
 
 	/**
+	 * Failures in a row that trigger a connection check.
+	 */
+	private const FAILURE_LIMIT = 10;
+
+	/**
+	 * Failures in a row, as a multiple of FAILURE_LIMIT, that stop the run
+	 * even while the provider still answers.
+	 */
+	private const UNEXPLAINED_FAILURE_FACTOR = 10;
+
+	/**
 	 * Offload attachments to the cloud.
 	 *
 	 * Runs synchronously with a progress bar. Local files are handled
@@ -118,9 +129,11 @@ class OffloadCommand {
 		$done      = 0;
 		$failed    = 0;
 		$streak    = 0;
+		$fail_run  = 0;
 		$processed = 0;
 		$aborted   = false;
 		$last_fail = 0;
+		$reason    = '';
 
 		// A few attachments share one transfer pool (see upload_many()).
 		foreach ( array_chunk( $ids, AttachmentUploader::batch_size() ) as $chunk ) {
@@ -129,10 +142,12 @@ class OffloadCommand {
 			foreach ( $chunk as $id ) {
 				if ( ! empty( $results[ $id ] ) ) {
 					++$done;
-					$streak = 0;
+					$streak   = 0;
+					$fail_run = 0;
 				} else {
 					++$failed;
 					++$streak;
+					++$fail_run;
 					$last_fail = $id;
 				}
 
@@ -145,8 +160,18 @@ class OffloadCommand {
 
 			// Bad credentials or an unreachable bucket fail identically for
 			// every attachment; stop rather than grind through the library.
-			// Checked per batch, so the whole batch is counted first.
-			if ( $streak >= 10 ) {
+			// Checked per batch, so the whole batch is counted first. When the
+			// bucket still answers, the attachments are at fault (files
+			// missing on disk): keep going, up to a hard cap.
+			if ( $streak >= self::FAILURE_LIMIT ) {
+				$check = $fail_run < self::FAILURE_LIMIT * self::UNEXPLAINED_FAILURE_FACTOR ? $provider->check_connection() : null;
+
+				if ( true === $check ) {
+					$streak = 0;
+					continue;
+				}
+
+				$reason  = is_wp_error( $check ) ? $check->get_error_message() : '';
 				$aborted = true;
 				break;
 			}
@@ -160,9 +185,10 @@ class OffloadCommand {
 		if ( $aborted ) {
 			WP_CLI::error(
 				sprintf(
-					'Stopped after %d failures in a row (%d offloaded first). Last error: %s',
-					$streak,
+					'Stopped after %d failures in a row (%d offloaded first). %sLast error: %s',
+					$fail_run,
 					$done,
+					'' !== $reason ? $reason . '. ' : '',
 					$this->last_error( $last_fail )
 				)
 			);
@@ -230,8 +256,9 @@ class OffloadCommand {
 		$sql = "SELECT p.ID FROM {$wpdb->posts} p
 			 INNER JOIN {$wpdb->postmeta} f ON f.post_id = p.ID AND f.meta_key = '_wp_attached_file'
 			 LEFT JOIN {$wpdb->postmeta} m ON m.post_id = p.ID AND m.meta_key = 'omnioffloader_offloaded'
+			 LEFT JOIN {$wpdb->postmeta} s ON s.post_id = p.ID AND s.meta_key = 'omnioffloader_status' AND s.meta_value = 'failed'
 			 WHERE p.post_type = 'attachment' AND p.post_status != 'trash' AND m.post_id IS NULL
-			 ORDER BY p.ID ASC";
+			 ORDER BY s.post_id IS NOT NULL, p.ID ASC";
 
 		if ( $limit > 0 ) {
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared -- CLI batch IDs query; only the integer limit is interpolated.

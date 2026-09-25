@@ -339,7 +339,7 @@ export function SettingsPage( { onNavigate }: SettingsProps ) {
 				<ToggleControl
 					label={ __( 'Mirror Delete', 'omnioffloader' ) }
 					help={ __(
-						'When an attachment is deleted in WordPress, also delete its files from the cloud.',
+						'When an attachment is deleted in WordPress, also delete its files from the cloud, so they stop being publicly reachable and stop costing storage. Deletes cannot be undone; turn on versioning in your bucket if you want a safety net. Never runs on a staging or dev copy of the site (Safe mode).',
 						'omnioffloader'
 					) }
 					checked={ settings.mirror_delete }

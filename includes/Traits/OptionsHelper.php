@@ -30,7 +30,11 @@ trait OptionsHelper {
 		return array(
 			'provider'                 => '',
 			'retention_policy'         => 0,
-			'mirror_delete'            => false,
+			// On for new installs: a deleted attachment should not stay
+			// publicly reachable (and billed) in the bucket. Existing sites
+			// keep their saved choice — every save stores all keys. Never
+			// runs on a copy of the site (Core\SafeMode).
+			'mirror_delete'            => true,
 			'path_prefix_active'       => false,
 			'path_prefix'              => '',
 			'object_versioning'        => false,

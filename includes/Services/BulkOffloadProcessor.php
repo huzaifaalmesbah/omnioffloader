@@ -186,7 +186,7 @@ class BulkOffloadProcessor extends AbstractBulkProcessor {
 	 * @since 0.1.3
 	 *
 	 * @param int[] $ids Attachment IDs.
-	 * @return array<int, bool>
+	 * @return array<int, bool|null> Null for attachments a filter skipped.
 	 */
 	protected function process_items( array $ids ) {
 		$uploader = new AttachmentUploader( $this->provider );

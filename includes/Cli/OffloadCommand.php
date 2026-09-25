@@ -128,6 +128,7 @@ class OffloadCommand {
 
 		$done      = 0;
 		$failed    = 0;
+		$skipped   = 0;
 		$streak    = 0;
 		$fail_run  = 0;
 		$processed = 0;
@@ -140,7 +141,11 @@ class OffloadCommand {
 			$results = $uploader->upload_many( $chunk );
 
 			foreach ( $chunk as $id ) {
-				if ( ! empty( $results[ $id ] ) ) {
+				if ( array_key_exists( $id, $results ) && null === $results[ $id ] ) {
+					// Excluded by omnioffloader_should_offload_attachment:
+					// neither a success nor a failure.
+					++$skipped;
+				} elseif ( ! empty( $results[ $id ] ) ) {
 					++$done;
 					$streak   = 0;
 					$fail_run = 0;
@@ -194,12 +199,14 @@ class OffloadCommand {
 			);
 		}
 
+		$skipped_note = $skipped > 0 ? sprintf( ', %d skipped by the omnioffloader_should_offload_attachment filter', $skipped ) : '';
+
 		if ( $failed > 0 ) {
-			WP_CLI::warning( sprintf( '%d offloaded, %d failed (see omnioffloader_error_log meta).', $done, $failed ) );
+			WP_CLI::warning( sprintf( '%d offloaded, %d failed%s (see omnioffloader_error_log meta).', $done, $failed, $skipped_note ) );
 			WP_CLI::halt( 1 );
 		}
 
-		WP_CLI::success( sprintf( '%d attachment(s) offloaded.', $done ) );
+		WP_CLI::success( sprintf( '%d attachment(s) offloaded%s.', $done, $skipped_note ) );
 	}
 
 	/**

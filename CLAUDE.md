@@ -99,7 +99,8 @@ Key rules:
 - **Circuit breaker** at `FAILURE_LIMIT` consecutive failures (filter `omnioffloader_bulk_failure_limit`) → status `failed` with a message. At the limit it first asks `connection_check()` (offload: the provider; restore: the item's provider; retention: `null` = stop): if the provider answers, the failures are the attachments' own (missing files) and the run continues, up to `FAILURE_LIMIT × UNEXPLAINED_FAILURE_FACTOR` failures since the last success. `streak` / `fail_run` live in the state so they survive passes. Queues order previously `failed` items last, so a restart is never held up by the same broken items. The CLI mirrors this.
 - **Every claim first checks the state's `status` is still `running`** (`run_stopped()`): the queue's own cancel flag is cached for the whole request, so a worker never saw a cancel, and with a persistent object cache its claim re-created the deleted batch row.
 - **One state write per group** (`record_results()`), plus the one that marks the group in flight — never per item.
-- `purge_queue()` clears `queued` / `processing` statuses of the items it drops; `recover_lost_item()` marks lost items `failed`. `halt_run()` stops a run with a custom message (Bring Back's disk check).
+- `purge_queue()` clears `queued` / `processing` statuses of the items it drops; `recover_lost_item()` marks lost items `failed` and calls `clean_up_lost_item()` (restore/retention: delete partial `*.tmp` downloads). `halt_run()` stops a run with a custom message (Bring Back's disk check).
+- `process_items()` may return `null` for an item — "skipped" (the should-offload filter): logged as `skipped`, not an error, breaker untouched.
 - **`process_queue_now()` only works when the queue has been quiet for `STALL_SECONDS`.** It is the self-heal for hosts where the loopback is blocked; without the stall check every 2s poll would hold a PHP worker for 8s.
 - **`cancel_now()` tears down in-request** rather than via the parent's loopback dispatch, which never arrives on loopback-blocked hosts.
 - **`completed()` refuses to overwrite a non-`running` status**, so a late worker cannot report a cancelled run as done.
@@ -190,7 +191,7 @@ The policy is applied once at offload time (`LocalCleaner`). Changing the settin
 ## Public Hooks
 
 Filters: `omnioffloader_cloud_providers`, `omnioffloader_object_acl`, `omnioffloader_attachment_key`, `omnioffloader_attachment_delete_keys`, `omnioffloader_should_offload_attachment`, `omnioffloader_use_async_upload`, `omnioffloader_should_apply_retention`, `omnioffloader_media_block_names`, `omnioffloader_log_provider_errors`, `omnioffloader_multipart_threshold`, `omnioffloader_transfer_concurrency`, `omnioffloader_bulk_failure_limit`.
-Actions: `omnioffloader_before_offload`, `omnioffloader_after_offload`, `omnioffloader_before_restore`, `omnioffloader_after_restore`.
+Actions: `omnioffloader_before_offload`, `omnioffloader_after_offload`, `omnioffloader_before_restore`, `omnioffloader_after_restore`, `omnioffloader_transfer_heartbeat` (every 30 s while bytes move — `AbstractS3Provider::transfer_http_options()` progress callback; bulk passes and `CliJobGuard` renew their locks on it).
 
 ## Safety Invariants (never violate)
 

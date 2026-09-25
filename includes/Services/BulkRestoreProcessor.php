@@ -175,6 +175,18 @@ class BulkRestoreProcessor extends AbstractBulkProcessor {
 	}
 
 	/**
+	 * Drop partial downloads a killed worker left next to the attachment.
+	 *
+	 * @since 0.1.3
+	 *
+	 * @param int $attachment_id Attachment ID.
+	 * @return void
+	 */
+	protected function clean_up_lost_item( $attachment_id ) {
+		AttachmentRestorer::remove_partial_downloads( $attachment_id );
+	}
+
+	/**
 	 * A lost item counts as done when it did get restored.
 	 *
 	 * @since 0.1.3

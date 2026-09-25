@@ -51,6 +51,13 @@ class AttachmentRestorer {
 	private const DISK_RESERVE = 50 * MB_IN_BYTES;
 
 	/**
+	 * Age, in seconds, after which a leftover partial download is treated as
+	 * abandoned when a restore starts. Old enough that no live download
+	 * (only one job runs at a time) can still be writing to it.
+	 */
+	private const STALE_TEMP_SECONDS = 15 * MINUTE_IN_SECONDS;
+
+	/**
 	 * Restore one attachment from the cloud back to the server.
 	 *
 	 * @param int  $attachment_id Attachment ID.
@@ -258,6 +265,10 @@ class AttachmentRestorer {
 		$all_ok   = true;
 		$ready    = array();
 		$existing = array();
+
+		// A worker killed mid-download (by the host, or Ctrl-C on WP-CLI)
+		// leaves its temp file behind; this is the next chance to tidy up.
+		self::remove_temp_files( $entries, self::STALE_TEMP_SECONDS );
 
 		foreach ( $entries as $entry ) {
 			if ( ! $this->prepare_destination( $attachment_id, $entry['file'], $base_real ) ) {
@@ -483,6 +494,84 @@ class AttachmentRestorer {
 	}
 
 	/**
+	 * Delete partial downloads of an attachment's files, whatever their age.
+	 *
+	 * For a worker known to be dead (see AbstractBulkProcessor::recover_lost_item()).
+	 *
+	 * @since 0.1.3
+	 *
+	 * @param int $attachment_id Attachment ID.
+	 * @return void
+	 */
+	public static function remove_partial_downloads( $attachment_id ) {
+		$files = self::collect_attachment_files( (int) $attachment_id );
+
+		self::remove_temp_files( array_merge( $files['main'], $files['sizes'] ), 0 );
+	}
+
+	/**
+	 * Delete the temp files downloads of these entries would have used.
+	 *
+	 * Downloads write to wp_tempnam( basename( $dest ), dirname( $dest ) ),
+	 * i.e. "{name}-{6 random chars}.tmp" next to the destination (plus a
+	 * "-N" suffix on a name clash). Only names of exactly that shape match.
+	 *
+	 * @since 0.1.3
+	 *
+	 * @param array<int, array{file: string, key: string}> $entries Attachment files.
+	 * @param int                                          $min_age Only delete files at least this many seconds old.
+	 * @return void
+	 */
+	private static function remove_temp_files( array $entries, $min_age ) {
+		$seen = array();
+
+		foreach ( $entries as $entry ) {
+			$dir  = dirname( $entry['file'] );
+			$stem = (string) preg_replace( '|\.[^.]*$|', '', wp_basename( $entry['file'] ) );
+
+			if ( '' === $stem || isset( $seen[ $dir . '/' . $stem ] ) || ! is_dir( $dir ) || self::path_has_traversal( $entry['file'] ) ) {
+				continue;
+			}
+
+			$seen[ $dir . '/' . $stem ] = true;
+
+			$candidates = glob( trailingslashit( $dir ) . self::glob_escape( $stem ) . '-*.tmp' );
+
+			if ( empty( $candidates ) ) {
+				continue;
+			}
+
+			$pattern = '/^' . preg_quote( $stem, '/' ) . '-[A-Za-z0-9]{6}(-\d+)?\.tmp$/';
+
+			foreach ( $candidates as $tmp ) {
+				if ( ! preg_match( $pattern, wp_basename( $tmp ) ) ) {
+					continue;
+				}
+
+				$mtime = (int) filemtime( $tmp );
+
+				if ( $min_age > 0 && time() - $mtime < $min_age ) {
+					continue;
+				}
+
+				wp_delete_file( $tmp );
+			}
+		}
+	}
+
+	/**
+	 * Escape glob() metacharacters in a literal file name.
+	 *
+	 * @since 0.1.3
+	 *
+	 * @param string $name File name.
+	 * @return string
+	 */
+	private static function glob_escape( $name ) {
+		return (string) preg_replace( '/([*?\[\]])/', '[$1]', $name );
+	}
+
+	/**
 	 * How many bytes short the uploads disk is for restoring an attachment.
 	 *
 	 * Counts only files missing locally, with sizes from the attachment's
@@ -533,10 +622,6 @@ class AttachmentRestorer {
 		/** @var array<string, mixed> $metadata */
 		$sizes = array();
 
-		if ( isset( $metadata['file'] ) && is_string( $metadata['file'] ) && isset( $metadata['filesize'] ) && is_numeric( $metadata['filesize'] ) ) {
-			$sizes[ wp_basename( $metadata['file'] ) ] = (int) $metadata['filesize'];
-		}
-
 		if ( ! empty( $metadata['sizes'] ) && is_array( $metadata['sizes'] ) ) {
 			foreach ( $metadata['sizes'] as $size_data ) {
 				if ( is_array( $size_data ) && isset( $size_data['file'], $size_data['filesize'] ) && is_string( $size_data['file'] ) && is_numeric( $size_data['filesize'] ) ) {
@@ -547,6 +632,13 @@ class AttachmentRestorer {
 
 		$files = self::collect_attachment_files( $attachment_id, $metadata );
 		$bytes = 0;
+
+		// The top-level filesize belongs to the attached file. Keyed by that
+		// file, not by $metadata['file']: video, audio and document metadata
+		// has a filesize but no 'file' key, and those are the big downloads.
+		if ( ! empty( $files['main'] ) && isset( $metadata['filesize'] ) && is_numeric( $metadata['filesize'] ) ) {
+			$sizes[ wp_basename( $files['main'][0]['file'] ) ] = (int) $metadata['filesize'];
+		}
 
 		foreach ( array_merge( $files['main'], $files['sizes'] ) as $entry ) {
 			if ( ! file_exists( $entry['file'] ) ) {

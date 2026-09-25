@@ -308,6 +308,10 @@ Depending on the provider you select:
 * Media Library items no longer stay stuck on "Queued" or "Offloading…" after a job was cancelled or stopped, or after the server killed the worker mid-file.
 * Bring Back stops with a clear "out of disk space" message before the disk fills up, instead of failing downloads and blaming the connection. The attachment stays in the cloud, and the next run picks it up again.
 * Bring Back no longer counts an attachment as failed when it was already brought back while it waited in the queue.
+* Attachments excluded by the `omnioffloader_should_offload_attachment` filter now show as "Skipped" in the activity log and WP-CLI summary instead of as failures, and no longer keep a "Queued" badge.
+* A very long single transfer (a multi-GB file on a slow connection) no longer lets the job lock expire mid-file. The lock is renewed while bytes are moving, so another job can't start alongside it. New action `omnioffloader_transfer_heartbeat` fires every 30 seconds during uploads and downloads.
+* Partial downloads left behind when the server stopped a Bring Back mid-file are now cleaned up.
+* The retention policy update now checks the storage connection before stopping on repeated failures, like Bulk Offload and Bring Back.
 * The Dashboard's local media count now matches what Bulk Offload processes (trashed attachments and entries without a file are not counted), so it reaches 0 after a full run.
 * Provider errors are only written to the PHP error log when `WP_DEBUG` is on (filter `omnioffloader_log_provider_errors`); they are always recorded on the attachment.
 * Retention: when a cloud copy differs in size from the server file (for example after an image optimizer shrank the thumbnails), the server file is uploaded again and verified, instead of the run stopping with a misleading connection error.

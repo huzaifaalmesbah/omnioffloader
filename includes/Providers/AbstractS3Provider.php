@@ -50,6 +50,20 @@ abstract class AbstractS3Provider implements ProviderInterface {
 	protected const CONNECT_TIMEOUT = 10;
 
 	/**
+	 * Seconds between transfer heartbeats (see heartbeat()).
+	 */
+	protected const HEARTBEAT_SECONDS = 30;
+
+	/**
+	 * When the last transfer heartbeat fired.
+	 *
+	 * Static: every provider instance in the request shares one clock.
+	 *
+	 * @var int
+	 */
+	private static $last_heartbeat = 0;
+
+	/**
 	 * Cached client instance.
 	 *
 	 * @var \Aws\S3\S3Client|null
@@ -187,9 +201,7 @@ abstract class AbstractS3Provider implements ProviderInterface {
 					'Bucket'     => $this->get_bucket(),
 					'Key'        => $key,
 					'SourceFile' => $file,
-					'@http'      => array(
-						'connect_timeout' => static::CONNECT_TIMEOUT,
-					),
+					'@http'      => $this->transfer_http_options(),
 				);
 
 				if ( ! empty( $acl ) ) {
@@ -251,16 +263,15 @@ abstract class AbstractS3Provider implements ProviderInterface {
 
 		$client = $this->get_client();
 		$bucket = $this->get_bucket();
+		$http   = $this->transfer_http_options();
 
-		$commands = static function () use ( $client, $bucket, $pooled ) {
+		$commands = static function () use ( $client, $bucket, $pooled, $http ) {
 			foreach ( $pooled as $index => $entry ) {
 				$params = array(
 					'Bucket'     => $bucket,
 					'Key'        => $entry['key'],
 					'SourceFile' => $entry['file'],
-					'@http'      => array(
-						'connect_timeout' => static::CONNECT_TIMEOUT,
-					),
+					'@http'      => $http,
 				);
 
 				/** This filter is documented in includes/Providers/AbstractS3Provider.php */
@@ -324,9 +335,7 @@ abstract class AbstractS3Provider implements ProviderInterface {
 			'key'       => $key,
 			'part_size' => static::MULTIPART_PART_SIZE,
 			'params'    => array(
-				'@http' => array(
-					'connect_timeout' => static::CONNECT_TIMEOUT,
-				),
+				'@http' => $this->transfer_http_options(),
 			),
 		);
 
@@ -355,6 +364,52 @@ abstract class AbstractS3Provider implements ProviderInterface {
 
 			throw $e;
 		}
+	}
+
+	/**
+	 * HTTP options for requests that move file bytes.
+	 *
+	 * The progress callback fires many times a second while bytes flow;
+	 * heartbeat() turns that into a throttled action, so whoever holds a job
+	 * lock can keep it alive through a single transfer longer than the lock.
+	 *
+	 * @since 0.1.3
+	 *
+	 * @return array<string, mixed>
+	 */
+	protected function transfer_http_options() {
+		return array(
+			'connect_timeout' => static::CONNECT_TIMEOUT,
+			'progress'        => static function () {
+				self::heartbeat();
+			},
+		);
+	}
+
+	/**
+	 * Fire `omnioffloader_transfer_heartbeat` at most every HEARTBEAT_SECONDS.
+	 *
+	 * @since 0.1.3
+	 *
+	 * @return void
+	 */
+	public static function heartbeat() {
+		$now = time();
+
+		if ( $now - self::$last_heartbeat < static::HEARTBEAT_SECONDS ) {
+			return;
+		}
+
+		self::$last_heartbeat = $now;
+
+		/**
+		 * Fires every HEARTBEAT_SECONDS while a file is being uploaded or
+		 * downloaded, so a long transfer can renew the locks of the job
+		 * running it.
+		 *
+		 * @since 0.1.3
+		 */
+		do_action( 'omnioffloader_transfer_heartbeat' );
 	}
 
 	/**
@@ -414,9 +469,7 @@ abstract class AbstractS3Provider implements ProviderInterface {
 					'Bucket' => $this->get_bucket(),
 					'Key'    => $key,
 					'SaveAs' => $tmp,
-					'@http'  => array(
-						'connect_timeout' => static::CONNECT_TIMEOUT,
-					),
+					'@http'  => $this->transfer_http_options(),
 				)
 			);
 		} catch ( \Exception $e ) {
@@ -464,10 +517,11 @@ abstract class AbstractS3Provider implements ProviderInterface {
 		$client = $this->get_client();
 		$bucket = $this->get_bucket();
 		$tmps   = array();
+		$http   = $this->transfer_http_options();
 
 		// Temp files are created as each download starts, so a worker killed
 		// mid-restore leaves at most $concurrency of them behind.
-		$commands = function () use ( $client, $bucket, $files, &$tmps ) {
+		$commands = function () use ( $client, $bucket, $files, $http, &$tmps ) {
 			foreach ( $files as $index => $entry ) {
 				$tmp = $this->temp_file_for( $entry['dest'] );
 
@@ -483,9 +537,7 @@ abstract class AbstractS3Provider implements ProviderInterface {
 						'Bucket' => $bucket,
 						'Key'    => $entry['key'],
 						'SaveAs' => $tmp,
-						'@http'  => array(
-							'connect_timeout' => static::CONNECT_TIMEOUT,
-						),
+						'@http'  => $http,
 					)
 				);
 			}

@@ -54,6 +54,13 @@ trait CliJobGuard {
 	private $guard_job = '';
 
 	/**
+	 * Heartbeat listener renewing the claim mid-transfer, while a job runs.
+	 *
+	 * @var \Closure|null
+	 */
+	private $guard_heartbeat = null;
+
+	/**
 	 * Why the offload engine is off, for error messages.
 	 *
 	 * @return string
@@ -174,6 +181,13 @@ trait CliJobGuard {
 
 		$this->renew_job();
 
+		// A single upload or download can outlast the 10 minute claim (a
+		// multi-GB video on a slow link); renew it while bytes are moving.
+		$this->guard_heartbeat = function () {
+			$this->renew_job();
+		};
+		add_action( 'omnioffloader_transfer_heartbeat', $this->guard_heartbeat );
+
 		register_shutdown_function( array( $this, 'end_job' ) );
 
 		if ( function_exists( 'pcntl_async_signals' ) && function_exists( 'pcntl_signal' ) && defined( 'SIGINT' ) && defined( 'SIGTERM' ) ) {
@@ -233,6 +247,11 @@ trait CliJobGuard {
 	 * @return void
 	 */
 	public function end_job() {
+		if ( null !== $this->guard_heartbeat ) {
+			remove_action( 'omnioffloader_transfer_heartbeat', $this->guard_heartbeat );
+			$this->guard_heartbeat = null;
+		}
+
 		if ( null !== $this->guard_queue ) {
 			$this->guard_queue->release_lock();
 			$this->guard_queue = null;

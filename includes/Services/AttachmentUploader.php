@@ -112,9 +112,12 @@ class AttachmentUploader {
 	 *
 	 * @since 0.1.3
 	 *
+	 * @since 0.1.3 A filtered-out attachment maps to null (skipped), not false.
+	 *
 	 * @param int[]                                 $ids      Attachment IDs.
 	 * @param array<int, array<string, mixed>|null> $metadata In-flight metadata by ID (see AttachmentHelper).
-	 * @return array<int, bool> Attachment ID => fully offloaded.
+	 * @return array<int, bool|null> Attachment ID => fully offloaded; null when
+	 *                               the should-offload filter skipped it.
 	 */
 	public function upload_many( array $ids, array $metadata = array() ) {
 		$results = array();
@@ -140,6 +143,11 @@ class AttachmentUploader {
 			}
 
 			$job = $this->prepare( $attachment_id, $metadata[ $attachment_id ] ?? null );
+
+			if ( false === $job ) {
+				$results[ $attachment_id ] = null;
+				continue;
+			}
 
 			if ( null === $job ) {
 				$results[ $attachment_id ] = false;
@@ -181,8 +189,8 @@ class AttachmentUploader {
 	 *
 	 * @param int                       $attachment_id Attachment ID.
 	 * @param array<string, mixed>|null $metadata      In-flight metadata.
-	 * @return array{main: array{file: string, key: string}, upload: array<int, array{file: string, key: string}>}|null
-	 *         Null when the attachment will not be offloaded.
+	 * @return array{main: array{file: string, key: string}, upload: array<int, array{file: string, key: string}>}|false|null
+	 *         False when a filter skipped the attachment, null when it cannot be offloaded.
 	 */
 	private function prepare( $attachment_id, $metadata ) {
 		/**
@@ -192,7 +200,13 @@ class AttachmentUploader {
 		 * @param int  $attachment_id Attachment ID.
 		 */
 		if ( ! apply_filters( 'omnioffloader_should_offload_attachment', true, $attachment_id ) ) {
-			return null;
+			// Queued by a bulk run or the Media Library, but never processed:
+			// without this its badge would show "Queued" forever.
+			if ( 'queued' === get_post_meta( $attachment_id, 'omnioffloader_status', true ) ) {
+				delete_post_meta( $attachment_id, 'omnioffloader_status' );
+			}
+
+			return false;
 		}
 
 		/**

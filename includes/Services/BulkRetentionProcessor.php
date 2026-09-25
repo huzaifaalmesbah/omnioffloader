@@ -143,4 +143,30 @@ class BulkRetentionProcessor extends AbstractBulkProcessor {
 
 		return $ok;
 	}
+
+	/**
+	 * Whether the storage the attachment was offloaded to still answers.
+	 *
+	 * @since 0.1.3
+	 *
+	 * @param int $attachment_id The last attachment that failed.
+	 * @return true|\WP_Error|null Null when its provider is not available.
+	 */
+	protected function connection_check( $attachment_id ) {
+		$provider = AttachmentRestorer::provider_for( $attachment_id );
+
+		return null === $provider ? null : $provider->check_connection();
+	}
+
+	/**
+	 * Drop partial downloads a killed worker left next to the attachment.
+	 *
+	 * @since 0.1.3
+	 *
+	 * @param int $attachment_id Attachment ID.
+	 * @return void
+	 */
+	protected function clean_up_lost_item( $attachment_id ) {
+		AttachmentRestorer::remove_partial_downloads( $attachment_id );
+	}
 }

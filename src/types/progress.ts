@@ -15,7 +15,8 @@ export type BulkStatus =
 export interface ProcessedMediaItem {
 	id: number;
 	title: string;
-	status: 'success' | 'error' | 'processing';
+	/** 'skipped': excluded by a filter — neither a success nor an error. */
+	status: 'success' | 'error' | 'processing' | 'skipped';
 	timestamp: number;
 	thumb?: string;
 	error?: string;

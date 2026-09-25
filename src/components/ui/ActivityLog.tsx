@@ -175,6 +175,13 @@ export function ActivityLog( {
 
 				{ displayItems.map( ( item ) => {
 					const isOk = item.status === 'success';
+					const isSkipped = item.status === 'skipped';
+					let badgeVariant = 'smowp-badge--fail';
+					if ( isOk ) {
+						badgeVariant = 'smowp-badge--ok';
+					} else if ( isSkipped ) {
+						badgeVariant = 'smowp-badge--neutral';
+					}
 					const timeStr = item.timestamp
 						? new Date( item.timestamp * 1000 ).toLocaleTimeString(
 								// The admin's <html lang> is the WordPress locale.
@@ -187,7 +194,7 @@ export function ActivityLog( {
 							key={ `${ item.id }-${ item.timestamp }` }
 							className={
 								'smowp-activity-log__item' +
-								( isOk ? ' is-ok' : ' is-error' )
+								( isOk || isSkipped ? ' is-ok' : ' is-error' )
 							}
 						>
 							<div className="smowp-activity-log__thumb">
@@ -216,7 +223,7 @@ export function ActivityLog( {
 										item.id,
 										timeStr
 									) }
-									{ ! isOk && item.error && (
+									{ ! isOk && !! item.error && (
 										<span className="smowp-activity-log__error-text">
 											{ ` — ${ item.error }` }
 										</span>
@@ -226,19 +233,14 @@ export function ActivityLog( {
 
 							<div className="smowp-activity-log__badge-wrap">
 								<span
-									className={
-										'smowp-badge ' +
-										( isOk
-											? 'smowp-badge--ok'
-											: 'smowp-badge--fail' )
-									}
+									className={ 'smowp-badge ' + badgeVariant }
 								>
-									{ isOk
-										? `✓ ${ successLabel }`
-										: `✕ ${ __(
-												'Failed',
-												'omnioffloader'
-											) }` }
+									{ isOk && `✓ ${ successLabel }` }
+									{ isSkipped &&
+										`– ${ __( 'Skipped', 'omnioffloader' ) }` }
+									{ ! isOk &&
+										! isSkipped &&
+										`✕ ${ __( 'Failed', 'omnioffloader' ) }` }
 								</span>
 							</div>
 						</div>

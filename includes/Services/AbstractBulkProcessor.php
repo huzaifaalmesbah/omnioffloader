@@ -135,6 +135,13 @@ abstract class AbstractBulkProcessor extends WP_Background_Process {
 	private $halt_message = '';
 
 	/**
+	 * Heartbeat listener renewing the process lock mid-transfer, during a pass.
+	 *
+	 * @var \Closure|null
+	 */
+	private $heartbeat = null;
+
+	/**
 	 * Activity-log messages for failed items, by attachment ID, when the
 	 * reason is not in the attachment's error log.
 	 *
@@ -209,6 +216,17 @@ abstract class AbstractBulkProcessor extends WP_Background_Process {
 	}
 
 	/**
+	 * Remove what a worker killed mid-item left behind (e.g. partial
+	 * downloads). The worker is gone: this pass holds the worker mutex.
+	 *
+	 * @since 0.1.3
+	 *
+	 * @param int $attachment_id Attachment ID.
+	 * @return void
+	 */
+	protected function clean_up_lost_item( $attachment_id ) {}
+
+	/**
 	 * Whether the storage an item was transferred with still answers.
 	 *
 	 * Asked once the failure limit is reached: when the provider answers, the
@@ -248,7 +266,8 @@ abstract class AbstractBulkProcessor extends WP_Background_Process {
 	 * @since 0.1.3
 	 *
 	 * @param int[] $ids Attachment IDs.
-	 * @return array<int, bool> Attachment ID => success.
+	 * @return array<int, bool|null> Attachment ID => success; null when the
+	 *                               item was deliberately skipped.
 	 */
 	protected function process_items( array $ids ) {
 		$results = array();
@@ -512,6 +531,7 @@ abstract class AbstractBulkProcessor extends WP_Background_Process {
 		try {
 			return $this->run_pass();
 		} finally {
+			$this->stop_heartbeat();
 			$this->release_worker_mutex();
 		}
 	}
@@ -527,6 +547,13 @@ abstract class AbstractBulkProcessor extends WP_Background_Process {
 		$this->pass_seconds = $this->pass_time_limit();
 
 		$this->lock_process();
+
+		// One transfer can outlast the 10 minute lock (a multi-GB file on a
+		// slow link, where the host allows it); renew it while bytes move.
+		$this->heartbeat = function () {
+			$this->renew_lock();
+		};
+		add_action( 'omnioffloader_transfer_heartbeat', $this->heartbeat );
 
 		// A one-shot flush at the end of the pass is enough; busting the stats
 		// cache per attachment costs eight queries an item for a value nobody
@@ -604,6 +631,8 @@ abstract class AbstractBulkProcessor extends WP_Background_Process {
 			}
 		} while ( ! $aborted && ! $this->time_exceeded() && ! $this->memory_exceeded() && ! $this->is_queue_empty() && ! $this->is_paused() && ! $this->is_cancelled() );
 
+		// Before unlocking, or a late heartbeat would lock the queue again.
+		$this->stop_heartbeat();
 		$this->unlock_process();
 
 		// Before dispatch(): the next pass's loopback request must be able to
@@ -754,7 +783,7 @@ abstract class AbstractBulkProcessor extends WP_Background_Process {
 	 * @since 0.1.3
 	 *
 	 * @param int[] $ids Attachment IDs, already claimed out of the batch.
-	 * @return array<int, bool> Attachment ID => success, in $ids order.
+	 * @return array<int, bool|null> Attachment ID => success (null: skipped), in $ids order.
 	 */
 	private function run_group( array $ids ) {
 		// Record the in-flight items so a worker killed mid-transfer is
@@ -780,7 +809,7 @@ abstract class AbstractBulkProcessor extends WP_Background_Process {
 		$ordered = array();
 
 		foreach ( $ids as $id ) {
-			$ordered[ $id ] = ! empty( $results[ $id ] );
+			$ordered[ $id ] = array_key_exists( $id, $results ) && null === $results[ $id ] ? null : ! empty( $results[ $id ] );
 		}
 
 		// One state write for the whole group; it also clears current_ids,
@@ -788,6 +817,20 @@ abstract class AbstractBulkProcessor extends WP_Background_Process {
 		$this->record_results( $ordered );
 
 		return $ordered;
+	}
+
+	/**
+	 * Detach the pass's heartbeat listener.
+	 *
+	 * @since 0.1.3
+	 *
+	 * @return void
+	 */
+	private function stop_heartbeat() {
+		if ( null !== $this->heartbeat ) {
+			remove_action( 'omnioffloader_transfer_heartbeat', $this->heartbeat );
+			$this->heartbeat = null;
+		}
 	}
 
 	/**
@@ -806,7 +849,7 @@ abstract class AbstractBulkProcessor extends WP_Background_Process {
 	 *
 	 * @since 0.1.3
 	 *
-	 * @param array<int, bool> $outcomes Attachment ID => success, of the group just recorded.
+	 * @param array<int, bool|null> $outcomes Attachment ID => success (null: skipped), of the group just recorded.
 	 * @return string Why the run stops, or '' to carry on.
 	 */
 	private function breaker_verdict( array $outcomes ) {
@@ -824,31 +867,46 @@ abstract class AbstractBulkProcessor extends WP_Background_Process {
 			return '';
 		}
 
-		if ( $fail_run < $limit * static::UNEXPLAINED_FAILURE_FACTOR ) {
-			$last_failed = (int) array_search( false, array_reverse( $outcomes, true ), true );
-			$check       = $this->connection_check( $last_failed );
+		$last_failed = (int) array_search( false, array_reverse( $outcomes, true ), true );
+		$check       = $this->connection_check( $last_failed );
+		$capped      = $fail_run >= $limit * static::UNEXPLAINED_FAILURE_FACTOR;
 
-			if ( true === $check ) {
-				// The provider answers, so the attachments are at fault, not
-				// the connection. Their errors are logged; keep going.
-				static::update_state( array( 'streak' => 0 ) );
-
-				return '';
-			}
-
-			if ( is_wp_error( $check ) ) {
-				return sprintf(
-					/* translators: 1: number of consecutive failures, 2: error from the storage provider. */
-					_n(
-						'Stopped after %1$d failure in a row: the storage provider could not be reached (%2$s). Check the connection, then try again.',
-						'Stopped after %1$d failures in a row: the storage provider could not be reached (%2$s). Check the connection, then try again.',
-						$fail_run,
-						'omnioffloader'
-					),
+		if ( true === $check && $capped ) {
+			// Reachable, yet nothing has succeeded for a long stretch: most
+			// likely broken attachments (or a key that cannot write). Don't
+			// blame the connection.
+			return sprintf(
+				/* translators: %d: number of consecutive failures. */
+				_n(
+					'Stopped after %d failure in a row. The storage provider can be reached, so these attachments are probably broken (files missing on the server or in the bucket), or the access key lacks write permission. Check the error log, then try again.',
+					'Stopped after %d failures in a row. The storage provider can be reached, so these attachments are probably broken (files missing on the server or in the bucket), or the access key lacks write permission. Check the error log, then try again.',
 					$fail_run,
-					$check->get_error_message()
-				);
-			}
+					'omnioffloader'
+				),
+				$fail_run
+			);
+		}
+
+		if ( true === $check ) {
+			// The provider answers, so the attachments are at fault, not the
+			// connection. Their errors are logged; keep going.
+			static::update_state( array( 'streak' => 0 ) );
+
+			return '';
+		}
+
+		if ( is_wp_error( $check ) ) {
+			return sprintf(
+				/* translators: 1: number of consecutive failures, 2: error from the storage provider. */
+				_n(
+					'Stopped after %1$d failure in a row: the storage provider could not be reached (%2$s). Check the connection, then try again.',
+					'Stopped after %1$d failures in a row: the storage provider could not be reached (%2$s). Check the connection, then try again.',
+					$fail_run,
+					'omnioffloader'
+				),
+				$fail_run,
+				$check->get_error_message()
+			);
 		}
 
 		return sprintf(
@@ -915,6 +973,7 @@ abstract class AbstractBulkProcessor extends WP_Background_Process {
 			self::log_attachment_error( $id, $message );
 			// Not "processing" any more, or the Media Library spins forever.
 			update_post_meta( $id, 'omnioffloader_status', 'failed' );
+			$this->clean_up_lost_item( $id );
 
 			$outcomes[ $id ]            = false;
 			$this->item_messages[ $id ] = $message;
@@ -929,8 +988,11 @@ abstract class AbstractBulkProcessor extends WP_Background_Process {
 	 *
 	 * @since 0.1.3 Replaces record_result(), which wrote the state per item.
 	 *
-	 * @param array<int, bool> $outcomes     Attachment ID => success.
-	 * @param bool             $track_streak Whether the outcomes feed the circuit breaker.
+	 * @param array<int, bool|null> $outcomes     Attachment ID => success; null
+	 *                                            for a deliberately skipped item,
+	 *                                            which is neither a success nor an
+	 *                                            error and leaves the breaker alone.
+	 * @param bool                  $track_streak Whether the outcomes feed the circuit breaker.
 	 * @return void
 	 */
 	protected function record_results( array $outcomes, $track_streak = true ) {
@@ -943,6 +1005,23 @@ abstract class AbstractBulkProcessor extends WP_Background_Process {
 		foreach ( $outcomes as $attachment_id => $ok ) {
 			$label   = $this->item_label( $attachment_id );
 			$message = $this->item_messages[ $attachment_id ] ?? '';
+
+			if ( null === $ok ) {
+				array_unshift(
+					$recent,
+					array(
+						'id'        => $attachment_id,
+						'title'     => $label['title'],
+						'status'    => 'skipped',
+						'timestamp' => time(),
+						'thumb'     => $label['thumb'],
+						'error'     => '' !== $message ? $message : __( 'Excluded by a filter on this site.', 'omnioffloader' ),
+					)
+				);
+
+				clean_post_cache( $attachment_id );
+				continue;
+			}
 
 			if ( ! $ok && '' === $message ) {
 				$message = self::last_error_message( $attachment_id );

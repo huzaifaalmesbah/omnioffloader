@@ -27,9 +27,9 @@ jobs:
       - name: Install Composer dependencies (Production)
         run: |
           composer install --no-dev --optimize-autoloader
-          find vendor -name "*.py" -delete || true
-          find vendor -name ".DS_Store" -delete || true
-          rm -rf vendor/bin vendor/**/docs vendor/**/tests
+          rm -rf vendor/bin
+          find vendor -type d \( -name "tests" -o -name "test" -o -name "docs" -o -name "doc" -o -name "examples" -o -name "demo" -o -name ".github" \) -exec rm -rf {} + || true
+          find vendor -type f \( -name "*.py" -o -name "*.sh" -o -name "*.bat" -o -name "*.cmd" -o -name "*.exe" -o -name "*.bin" -o -name "*.dylib" -o -name "*.so" -o -name "*.neon" -o -name "*.dist" -o -name "*.sample" -o -name ".DS_Store" -o -name "Thumbs.db" -o -name ".editorconfig" -o -name ".git*" \) -delete || true
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
@@ -55,6 +55,7 @@ jobs:
         run: |
           rm -rf .wordpress-org/sources
           rm -f .wordpress-org/*.svg
+          find .wordpress-org -name ".DS_Store" -delete || true
 
       - name: WordPress Plugin Deploy
         id: deploy

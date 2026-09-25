@@ -3,6 +3,7 @@ name: Plugin asset/readme update
 on:
   push:
     branches:
+      - main
       - assets
     paths:
       - readme.txt
@@ -23,6 +24,7 @@ jobs:
         run: |
           rm -rf .wordpress-org/sources
           rm -f .wordpress-org/*.svg
+          find .wordpress-org -name ".DS_Store" -delete || true
 
       - name: WordPress.org plugin asset/readme update
         uses: 10up/action-wordpress-plugin-asset-update@stable

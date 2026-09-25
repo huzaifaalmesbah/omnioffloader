@@ -34,9 +34,14 @@ export function Sidebar( { activeView, onNavigate }: SidebarProps ) {
 				<span className="smowp-sidebar__logo-icon">
 					<Icon icon={ PLUGIN_ICON } size={ 28 } />
 				</span>
-				<span className="smowp-sidebar__logo-name">
-					{ PLUGIN_NAME }
-				</span>
+				<div className="smowp-sidebar__logo-info">
+					<span className="smowp-sidebar__logo-name">
+						{ PLUGIN_NAME }
+					</span>
+					<span className="smowp-sidebar__version">
+						v{ window.omnioffloader?.version || '0.1.3' }
+					</span>
+				</div>
 			</div>
 
 			<div className="smowp-sidebar__nav-wrapper">
@@ -64,7 +69,7 @@ export function Sidebar( { activeView, onNavigate }: SidebarProps ) {
 							onClick={ () => onNavigate( route.view ) }
 						>
 							<span className="smowp-sidebar__item-icon">
-								<Icon icon={ route.icon } size={ 22 } />
+								<Icon icon={ route.icon } size={ 20 } />
 							</span>
 							<span className="smowp-sidebar__item-text">
 								<strong>{ route.title }</strong>

@@ -136,7 +136,7 @@ class AttachmentUploader {
 			if ( ! $raised ) {
 				wp_raise_memory_limit( 'admin' );
 				if ( function_exists( 'set_time_limit' ) ) {
-					// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- safe timeout extension for large file transfers.
+					// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged, Squiz.PHP.DiscouragedFunctions.Discouraged -- safe timeout extension for large file transfers.
 					@set_time_limit( 0 );
 				}
 				$raised = true;

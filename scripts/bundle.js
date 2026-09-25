@@ -35,6 +35,8 @@ const copyList = [
 	'omnioffloader.php',
 	'readme.txt',
 	'uninstall.php',
+	// Ships with vendor/ so reviewers can see where the bundled libraries come from.
+	'composer.json',
 	'includes',
 	'assets',
 	'build',

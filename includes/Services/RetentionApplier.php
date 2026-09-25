@@ -270,7 +270,7 @@ class RetentionApplier {
 
 		wp_raise_memory_limit( 'admin' );
 		if ( function_exists( 'set_time_limit' ) ) {
-			// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- a missing file may need uploading first.
+			// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged, Squiz.PHP.DiscouragedFunctions.Discouraged -- a missing file may need uploading first.
 			@set_time_limit( 0 );
 		}
 

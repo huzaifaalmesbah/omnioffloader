@@ -18,6 +18,8 @@ Every upload is copied to the cloud automatically: the original, every generated
 
 And because offloading should never be a one-way door, **Bring Back** downloads everything from the cloud to your server again — one file or the whole library — and hands your URLs back to local paths.
 
+**Documentation:** step-by-step provider guides, every feature, WP-CLI and developer hooks at [omnioffloader.vercel.app](https://omnioffloader.vercel.app/).
+
 = Supported cloud storage providers =
 
 * **Amazon S3**
@@ -71,7 +73,7 @@ Filters: `omnioffloader_cloud_providers`, `omnioffloader_object_acl`, `omniofflo
 
 Actions: `omnioffloader_before_offload`, `omnioffloader_after_offload`, `omnioffloader_before_restore`, `omnioffloader_after_restore`.
 
-REST API namespace: `omnioffloader/v1`. WP-CLI: `wp omnioffloader`.
+REST API namespace: `omnioffloader/v1`. WP-CLI: `wp omnioffloader`. Full reference with examples: [Hooks](https://omnioffloader.vercel.app/developers/hooks/) and [WP-CLI](https://omnioffloader.vercel.app/wp-cli/).
 
 = Why offload media to cloud storage? =
 
@@ -108,12 +110,16 @@ Amazon S3, Cloudflare R2, DigitalOcean Spaces, Backblaze B2 and Wasabi each have
 4. Copy the bucket's **S3 API** endpoint (`https://<account-id>.r2.cloudflarestorage.com`) from the bucket settings.
 5. In OmniOffloader Settings, select **Cloudflare R2** and enter the Access Key ID, Secret Access Key, Endpoint URL, Bucket Name and your custom domain, then click **Test Connection**.
 
+Full guide: [omnioffloader.vercel.app/providers/cloudflare-r2/](https://omnioffloader.vercel.app/providers/cloudflare-r2/)
+
 = How do I configure Amazon S3? =
 
 1. In the AWS console, create an S3 bucket in your preferred region.
 2. In IAM, create a user with programmatic access and a policy that allows reading and writing objects in that bucket. Create an access key and copy the Access Key ID and Secret Access Key.
 3. To serve media publicly, allow public `s3:GetObject` on the bucket with a bucket policy, or put an **Amazon CloudFront** distribution in front of it.
 4. In OmniOffloader Settings, select **Amazon S3** and enter the keys, Bucket Name, Region (for example `us-east-1`) and your CloudFront or CDN URL (or leave it blank to serve directly from S3).
+
+Full guide: [omnioffloader.vercel.app/providers/amazon-s3/](https://omnioffloader.vercel.app/providers/amazon-s3/)
 
 = How do I configure DigitalOcean Spaces? =
 
@@ -122,12 +128,16 @@ Amazon S3, Cloudflare R2, DigitalOcean Spaces, Backblaze B2 and Wasabi each have
 3. Note the region endpoint (for example `https://nyc3.digitaloceanspaces.com`) and region (`nyc3`).
 4. In OmniOffloader Settings, select **DigitalOcean Spaces** and enter the keys, Endpoint URL, Region, Space name and your CDN or custom domain.
 
+Full guide: [omnioffloader.vercel.app/providers/digitalocean-spaces/](https://omnioffloader.vercel.app/providers/digitalocean-spaces/)
+
 = How do I configure Backblaze B2? =
 
 1. In the Backblaze B2 console, create a bucket and set **Files in Bucket are** to **Public** so media can be viewed in browsers.
 2. Note the bucket's S3 Endpoint (for example `https://s3.us-east-005.backblazeb2.com`) and its region (`us-east-005`).
 3. Under **Application Keys**, add a key with **Read and Write** access to the bucket, and copy the `keyID` and `applicationKey`.
 4. In OmniOffloader Settings, select **Backblaze B2** and enter the Application Key ID, Application Key, Endpoint URL, Region and Bucket Name. Leave the CDN URL blank to serve directly from Backblaze, or enter your CDN domain.
+
+Full guide: [omnioffloader.vercel.app/providers/backblaze-b2/](https://omnioffloader.vercel.app/providers/backblaze-b2/)
 
 = How do I configure Wasabi? =
 
@@ -136,6 +146,8 @@ Amazon S3, Cloudflare R2, DigitalOcean Spaces, Backblaze B2 and Wasabi each have
 3. Make the files publicly readable with a bucket policy, or serve them through a CDN in front of the bucket.
 4. In OmniOffloader Settings, select **Wasabi** and enter the keys, Bucket Name, Region and your CDN or custom domain.
 
+Full guide: [omnioffloader.vercel.app/providers/wasabi/](https://omnioffloader.vercel.app/providers/wasabi/)
+
 = How do I configure Storj or other S3-compatible storage? =
 
 1. In the Storj console, create a bucket and open **Access → Create S3 Credentials**. Copy the Access Key and Secret Key.
@@ -143,7 +155,7 @@ Amazon S3, Cloudflare R2, DigitalOcean Spaces, Backblaze B2 and Wasabi each have
 3. In OmniOffloader Settings, select **Any S3-Compatible Storage**.
 4. Set the S3 Endpoint URL to `https://gateway.storjshare.io`, Region to `us-east-1`, turn on **Use Path-Style Endpoint**, enter your keys and Bucket Name, and paste the `https://link.storjshare.io/raw/...` URL as the Custom Domain / CDN URL.
 
-The same fields work for MinIO, OVHcloud, Linode, Scaleway and other S3-compatible services. The optional **Provider Label** lets you name the provider as it appears in the plugin.
+The same fields work for MinIO, OVHcloud, Linode, Scaleway and other S3-compatible services. The optional **Provider Label** lets you name the provider as it appears in the plugin. Full guide: [omnioffloader.vercel.app/providers/s3-compatible/](https://omnioffloader.vercel.app/providers/s3-compatible/)
 
 = Which Transfer Speed should I choose? =
 
@@ -198,7 +210,7 @@ No. The default policy, **Retain Local Files**, deletes nothing — the cloud si
 
 = I changed the retention policy. Why are old files still on my server? =
 
-A retention policy is applied when a file is offloaded, so a new policy only affects new uploads at first. Go to **OmniOffloader → Tools → Apply Retention Policy to Existing Media** (or run `wp omnioffloader retention`) to update media you offloaded earlier. Before a local file is deleted, its cloud copy is checked by size. Files missing from the cloud are uploaded first, and a file whose cloud copy differs is kept and reported. Moving to a looser policy (for example from Full Cloud Migration back to Retain Local Files) downloads the local copies again.
+A retention policy is applied when a file is offloaded, so a new policy only affects new uploads at first. Go to **OmniOffloader → Tools → Apply Retention Policy to Existing Media** (or run `wp omnioffloader retention`) to update media you offloaded earlier. Before a local file is deleted, its cloud copy is checked by size. Files missing from the cloud are uploaded first. A file whose cloud copy differs is uploaded again and checked; if that fails, the local file is kept and reported. Moving to a looser policy (for example from Full Cloud Migration back to Retain Local Files) downloads the local copies again.
 
 = Why do I need a custom domain or CDN URL? =
 
@@ -262,10 +274,14 @@ Depending on the provider you select:
 
 = 0.1.3 =
 
+**Documentation**
+
+* New documentation site at [omnioffloader.vercel.app](https://omnioffloader.vercel.app/): setup guides for every storage provider, every feature, the WP-CLI commands and the developer hooks. A **Documentation** link on the Plugins screen opens it.
+
 **Apply Retention Policy to Existing Media**
 
 * New Tools screen: apply the saved retention policy to media that was offloaded under an earlier policy. Switching from Retain Local Files to Smart Local Cleanup or Full Cloud Migration now frees space for existing media too, not just new uploads.
-* Every local file is checked in cloud storage by size before it is deleted. Files missing from the bucket (for example thumbnails regenerated after the offload) are uploaded first; a file whose cloud copy differs is kept and logged. An attachment only counts as updated once every file was handled, so failures are retried on the next run.
+* Every local file is checked in cloud storage by size before it is deleted. Files missing from the bucket (for example thumbnails regenerated after the offload) are uploaded first; a file whose cloud copy differs is uploaded again, and kept and logged only if that fails. An attachment only counts as updated once every file was handled, so failures are retried on the next run.
 * Moving to a looser policy downloads local copies again while the attachment stays offloaded.
 * Preflight shows how many attachments need updating and roughly how much space will be freed or downloaded. Full Cloud Migration asks for confirmation before originals are removed.
 * Runs in the background with the same progress bar, activity log, batch sizes and cancel button as Bulk Offload and Bring Back.

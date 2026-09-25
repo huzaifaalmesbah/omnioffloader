@@ -1443,6 +1443,12 @@
 	}
 }
 
+.smowp-safe-mode-banner__actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+}
+
 .smowp-preflight-info {
 	margin-top: -6px;
 	font-size: 12.5px;

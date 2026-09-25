@@ -7,6 +7,8 @@
 
 namespace OmniOffloader\Services;
 
+use OmniOffloader\Core\FolderClaim;
+use OmniOffloader\Core\SafeMode;
 use OmniOffloader\Providers\ProviderInterface;
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -128,6 +130,10 @@ class BulkOffloadProcessor extends AbstractBulkProcessor {
 	 * @return bool
 	 */
 	protected function process_item( $attachment_id ) {
+		if ( $this->folder_taken( array( $attachment_id ) ) ) {
+			return false;
+		}
+
 		$uploader = new AttachmentUploader( $this->provider );
 
 		return $uploader->upload( $attachment_id );
@@ -189,8 +195,35 @@ class BulkOffloadProcessor extends AbstractBulkProcessor {
 	 * @return array<int, bool|null> Null for attachments a filter skipped.
 	 */
 	protected function process_items( array $ids ) {
+		if ( $this->folder_taken( $ids ) ) {
+			return array_fill_keys( $ids, false );
+		}
+
 		$uploader = new AttachmentUploader( $this->provider );
 
 		return $uploader->upload_many( $ids );
+	}
+
+	/**
+	 * Stop the run when another site sharing the bucket owns this site's
+	 * folder (see Core\FolderClaim), instead of failing every item.
+	 *
+	 * @since 0.1.3
+	 *
+	 * @param int[] $ids Attachments about to be offloaded.
+	 * @return bool True when the run was stopped.
+	 */
+	private function folder_taken( array $ids ) {
+		if ( ! FolderClaim::blocks( $this->provider ) ) {
+			return false;
+		}
+
+		foreach ( $ids as $id ) {
+			$this->item_messages[ $id ] = __( 'This bucket folder is used by another site.', 'omnioffloader' );
+		}
+
+		$this->halt_run( SafeMode::message() );
+
+		return true;
 	}
 }

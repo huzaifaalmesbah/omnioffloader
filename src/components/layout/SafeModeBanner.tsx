@@ -2,9 +2,10 @@ import { Button, Notice } from '@wordpress/components';
 import { useState } from '@wordpress/element';
 import { __, sprintf } from '@wordpress/i18n';
 
-import { confirmLiveSite } from '../../api/core';
+import { confirmLiveSite, takeOverFolder } from '../../api/core';
 import { useCore } from '../../context/CoreContext';
 import type { SafeModeStatus } from '../../types';
+import { errorMessage } from '../../utils/errorHelper';
 
 /**
  * Why this site is treated as a copy, in words.
@@ -43,21 +44,125 @@ export function safeModeReasonText( status: SafeModeStatus ): string {
 				status.live_address,
 				status.current_address
 			);
+		case 'folder':
+			return status.folder
+				? sprintf(
+						/* translators: 1: folder name in the bucket, 2: other site's address. */
+						__(
+							'The bucket folder "%1$s" is already used by another site (%2$s).',
+							'omnioffloader'
+						),
+						status.folder,
+						status.folder_owner
+					)
+				: sprintf(
+						/* translators: %s: other site's address. */
+						__(
+							'The root of the bucket is already used by another site (%s).',
+							'omnioffloader'
+						),
+						status.folder_owner
+					);
 		default:
 			return '';
 	}
 }
 
+interface SafeModeBannerProps {
+	onNavigate: ( view: string ) => void;
+}
+
 /**
  * Banner on every plugin screen while Safe mode is on.
+ *
+ * @param props            Props.
+ * @param props.onNavigate Switches the app to another screen.
  */
-export function SafeModeBanner() {
+export function SafeModeBanner( { onNavigate }: SafeModeBannerProps ) {
 	const { stats, refreshStats, addNotice } = useCore();
 	const [ busy, setBusy ] = useState( false );
 	const safeMode = stats?.safe_mode;
 
 	if ( ! stats?.configured || ! safeMode?.active ) {
 		return null;
+	}
+
+	if ( 'folder' === safeMode.reason ) {
+		const takeOver = () => {
+			if (
+				// eslint-disable-next-line no-alert
+				! window.confirm(
+					sprintf(
+						/* translators: %s: other site's address. */
+						__(
+							'Only continue if %s no longer uses this folder, or it is this same site at its old address. If both sites keep writing here, they will overwrite and delete each other’s files.',
+							'omnioffloader'
+						),
+						safeMode.folder_owner
+					)
+				)
+			) {
+				return;
+			}
+
+			setBusy( true );
+			takeOverFolder()
+				.then( () => {
+					refreshStats( true );
+					addNotice(
+						'success',
+						__(
+							'The folder now belongs to this site. Uploads and deletes are back on.',
+							'omnioffloader'
+						)
+					);
+				} )
+				.catch( ( error: unknown ) => {
+					addNotice( 'error', errorMessage( error ) );
+				} )
+				.finally( () => setBusy( false ) );
+		};
+
+		return (
+			<Notice
+				status="error"
+				isDismissible={ false }
+				className="smowp-safe-mode-banner"
+			>
+				<p>
+					<strong>
+						{ __(
+							'Another site uses this bucket folder.',
+							'omnioffloader'
+						) }
+					</strong>{ ' ' }
+					{ safeModeReasonText( safeMode ) }{ ' ' }
+					{ __(
+						'Sites that share one bucket each need their own Path Prefix, or they overwrite and delete each other’s files. Until this is fixed, nothing is uploaded to or deleted from the cloud; media already there still loads, and new uploads stay on this server.',
+						'omnioffloader'
+					) }
+				</p>
+				<div className="smowp-safe-mode-banner__actions">
+					<Button
+						variant="primary"
+						onClick={ () => onNavigate( 'settings' ) }
+					>
+						{ __( 'Choose a Path Prefix', 'omnioffloader' ) }
+					</Button>
+					<Button
+						variant="tertiary"
+						isBusy={ busy }
+						disabled={ busy }
+						onClick={ takeOver }
+					>
+						{ __(
+							'This folder belongs to this site',
+							'omnioffloader'
+						) }
+					</Button>
+				</div>
+			</Notice>
+		);
 	}
 
 	const confirm = () => {

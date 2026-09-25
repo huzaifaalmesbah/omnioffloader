@@ -7,6 +7,7 @@
 
 namespace OmniOffloader\Cli;
 
+use OmniOffloader\Core\FolderClaim;
 use OmniOffloader\Core\Helpers;
 use OmniOffloader\Core\Plugin;
 use OmniOffloader\Core\SafeMode;
@@ -62,6 +63,10 @@ class StatusCommand {
 			$connection = $provider->check_connection();
 			if ( true === $connection ) {
 				WP_CLI::log( 'Connection: OK' );
+
+				// Read this site's folder marker now rather than report a
+				// cached (or never-made) check.
+				FolderClaim::refresh();
 			} else {
 				$healthy = false;
 				WP_CLI::warning( 'Connection: ' . $connection->get_error_message() );
@@ -76,6 +81,7 @@ class StatusCommand {
 				'environment' => 'WP_ENVIRONMENT_TYPE is "' . $safe['environment'] . '"',
 				'local'       => 'the site address is a local one',
 				'address'     => 'the site address changed from ' . $safe['live_address'] . ' to ' . $safe['current_address'],
+				'folder'      => ( '' !== $safe['folder'] ? 'the bucket folder "' . $safe['folder'] . '"' : 'the bucket root' ) . ' is used by another site (' . $safe['folder_owner'] . '); give this site its own Path Prefix',
 			);
 			WP_CLI::log( 'Safe mode:  ON — ' . ( $why[ $safe['reason'] ] ?? $safe['reason'] ) . '. Nothing is uploaded to or deleted from the cloud.' );
 		} else {

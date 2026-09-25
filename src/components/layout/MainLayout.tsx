@@ -32,7 +32,7 @@ export function MainLayout( {
 						( activeView === 'settings' ? ' has-savebar' : '' )
 					}
 				>
-					<SafeModeBanner />
+					<SafeModeBanner onNavigate={ onNavigate } />
 					{ children }
 				</main>
 

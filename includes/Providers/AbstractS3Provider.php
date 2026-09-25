@@ -7,6 +7,7 @@
 
 namespace OmniOffloader\Providers;
 
+use OmniOffloader\Core\FolderClaim;
 use OmniOffloader\Core\Helpers;
 use OmniOffloader\Core\SafeMode;
 
@@ -196,6 +197,13 @@ abstract class AbstractS3Provider implements ProviderInterface {
 			return false;
 		}
 
+		// Another site sharing the bucket owns this folder (see Core\FolderClaim).
+		if ( FolderClaim::blocks( $this ) ) {
+			$this->log_error( sprintf( 'Folder used by another site: not uploading "%s".', $key ) );
+
+			return false;
+		}
+
 		$client = $this->get_client();
 
 		/**
@@ -258,6 +266,12 @@ abstract class AbstractS3Provider implements ProviderInterface {
 	public function upload_files( array $files, $concurrency = 1 ) {
 		if ( SafeMode::is_active() ) {
 			$this->log_error( 'Safe mode: not uploading.' );
+
+			return array_fill_keys( wp_list_pluck( $files, 'key' ), false );
+		}
+
+		if ( FolderClaim::blocks( $this ) ) {
+			$this->log_error( 'Folder used by another site: not uploading.' );
 
 			return array_fill_keys( wp_list_pluck( $files, 'key' ), false );
 		}
@@ -769,6 +783,13 @@ abstract class AbstractS3Provider implements ProviderInterface {
 			return false;
 		}
 
+		// The keys may now hold the other site's files.
+		if ( FolderClaim::blocks( $this ) ) {
+			$this->log_error( 'Folder used by another site: not deleting cloud objects.' );
+
+			return false;
+		}
+
 		$keys = array_values(
 			array_unique(
 				array_filter(
@@ -1008,6 +1029,86 @@ abstract class AbstractS3Provider implements ProviderInterface {
 
 			return is_numeric( $length ) ? (int) $length : false;
 		} catch ( \Exception $e ) {
+			return false;
+		}
+	}
+
+	/**
+	 * Read a small object's contents (the folder marker).
+	 *
+	 * Not part of ProviderInterface: FolderClaim checks method_exists().
+	 *
+	 * @since 0.1.3
+	 *
+	 * @param string $key Object key.
+	 * @return string|null|\WP_Error Contents; null when the object does not exist.
+	 */
+	public function read_small_object( $key ) {
+		try {
+			$result = $this->get_client()->getObject(
+				array(
+					'Bucket' => $this->get_bucket(),
+					'Key'    => $key,
+					'@http'  => array(
+						'connect_timeout' => static::CONNECT_TIMEOUT,
+						'timeout'         => 10,
+					),
+				)
+			);
+
+			return substr( (string) $result['Body'], 0, 4096 );
+		} catch ( \Aws\S3\Exception\S3Exception $e ) {
+			if ( 404 === $e->getStatusCode() || 'NoSuchKey' === $e->getAwsErrorCode() ) {
+				return null;
+			}
+
+			$this->log_error( sprintf( 'Error reading "%s": %s', $key, $e->getMessage() ) );
+
+			return new \WP_Error( 'omnioffloader_read_failed', $e->getMessage() );
+		} catch ( \Exception $e ) {
+			$this->log_error( sprintf( 'Error reading "%s": %s', $key, $e->getMessage() ) );
+
+			return new \WP_Error( 'omnioffloader_read_failed', $e->getMessage() );
+		}
+	}
+
+	/**
+	 * Write a small object (the folder marker). Never public, never cached.
+	 *
+	 * Not part of ProviderInterface: FolderClaim checks method_exists().
+	 *
+	 * @since 0.1.3
+	 *
+	 * @param string $key  Object key.
+	 * @param string $body Contents.
+	 * @return bool
+	 */
+	public function write_small_object( $key, $body ) {
+		// A copy of the site never writes to the live bucket. A folder
+		// conflict does not stop this: taking a folder over writes here.
+		if ( SafeMode::is_copy() ) {
+			return false;
+		}
+
+		try {
+			$this->get_client()->putObject(
+				array(
+					'Bucket'       => $this->get_bucket(),
+					'Key'          => $key,
+					'Body'         => $body,
+					'ContentType'  => 'application/json',
+					'CacheControl' => 'no-store',
+					'@http'        => array(
+						'connect_timeout' => static::CONNECT_TIMEOUT,
+						'timeout'         => 10,
+					),
+				)
+			);
+
+			return true;
+		} catch ( \Exception $e ) {
+			$this->log_error( sprintf( 'Error writing "%s": %s', $key, $e->getMessage() ) );
+
 			return false;
 		}
 	}

@@ -39,6 +39,14 @@ export function confirmLiveSite(): Promise< SafeModeStatus > {
 	} );
 }
 
+/** "This folder belongs to this site": claims the bucket folder for this site. */
+export function takeOverFolder(): Promise< SafeModeStatus > {
+	return apiFetch( {
+		path: `${ BASE }/core/folder-claim/take-over`,
+		method: 'POST',
+	} );
+}
+
 export function fetchStats( refresh = false ): Promise< MediaStats > {
 	const query = refresh
 		? `?refresh=1&_t=${ Date.now() }`

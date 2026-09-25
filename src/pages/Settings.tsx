@@ -365,7 +365,7 @@ export function SettingsPage( { onNavigate }: SettingsProps ) {
 				<ToggleControl
 					label={ __( 'Custom Path Prefix', 'omnioffloader' ) }
 					help={ __(
-						'Store objects under a custom prefix inside the bucket.',
+						'Store objects under a custom prefix inside the bucket. Sharing one bucket between several sites (for example example.com and blog.example.com)? Give each site its own prefix: a site will not upload into a folder another site already uses.',
 						'omnioffloader'
 					) }
 					checked={ settings.path_prefix_active }

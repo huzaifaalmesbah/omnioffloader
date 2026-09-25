@@ -63,6 +63,7 @@ OmniOffloader is designed to run on a small shared hosting plan just as well as 
 * Moving media between your server and the cloud is limited to administrators. Other users keep their normal rights: they upload and delete their own media.
 * Access keys are never shown in the browser or written to logs.
 * Safe mode for staging, development and local copies: a copy of your site never uploads to or deletes from the live site's cloud storage.
+* Several sites can share one bucket and one CDN address, each in its own folder. A site never uploads to or deletes from a folder another site already uses.
 
 = For developers =
 
@@ -182,6 +183,14 @@ No. A copy carries the live site's settings and access keys, so without protecti
 * the site runs on a local address such as `localhost`, `*.local` or `*.test`.
 
 In Safe mode nothing is uploaded to or deleted from your cloud storage. Media already in the cloud keeps loading from it, and new uploads stay on the copy's own server. Bring Back is turned off too; to download media from the cloud to the copy, turn on **Allow Bring Back on a copy (download only)** in Settings — the cloud copy is then always kept. A banner explains why Safe mode is on. If your live site really moved to a new domain, click **This is the live site**. To decide yourself, add `define( 'OMNIOFFLOADER_SAFE_MODE', true );` (or `false`) to `wp-config.php`, or turn off **Protect the live site when this is a copy** in Settings.
+
+= Can several separate sites share one bucket and one CDN address? =
+
+Yes, for example `example.com`, `shop.example.com` and `blog.example.com`. Install OmniOffloader on each site, enter the same bucket, keys and custom domain, and give each site its own folder under **Settings → Custom Path Prefix** (for example `www`, `shop` and `blog`). Each site's files then live under their own folder, such as `https://cdn.example.com/shop/2026/09/photo.jpg`.
+
+Separate sites share no database, so without a folder of their own two sites would store files under the same names. One site's upload would then overwrite the other's file, and Mirror Delete on one site would delete files the other still uses. To prevent this, each site marks its folder with a small `.omnioffloader-site.json` file naming the site. Settings refuses a folder another site already uses. If a site finds another site's marker in its folder, it switches to Safe mode and a banner explains why. Nothing is uploaded or deleted until you choose a different Path Prefix. If the folder really belongs to this site (for example after a domain change), click **This folder belongs to this site**.
+
+For a hard guarantee on Amazon S3, give each site its own access key, limited to its own folder.
 
 = Do I have to delete my local files? =
 
@@ -337,6 +346,8 @@ Depending on the provider you select:
 * Counts use proper singular/plural translations, and the activity log's "Attachment #" label is translatable.
 * New filter `omnioffloader_media_block_names` to register third-party media blocks.
 * The `omnioffloader_after_offload` action fires again after an attachment is offloaded and verified.
+* New: separate sites can safely share one bucket and one CDN address, each in its own Path Prefix folder. Each site marks its folder with a small `.omnioffloader-site.json` file. Before, two sites using the same folder overwrote each other's files, and Mirror Delete on one site deleted files the other still served. Settings now refuses a folder another site uses. A site that finds another site's marker in its folder switches to Safe mode and stops uploading and deleting. It shows a banner with **Choose a Path Prefix** and **This folder belongs to this site**. Bulk Offload and retention runs stop with a clear message instead of failing item by item. Test Connection warns about a taken folder, `wp omnioffloader status` reports it, and a confirmed domain move ("This is the live site") takes the folder's claim along. The folder is checked on the first upload or delete after an update or settings change, then once a day. Developers can turn the check off with the `omnioffloader_check_folder_claim` filter.
+* Safe mode and the folder check identify a site by its saved Site Address, so multilingual sites with a different domain per language (WPML, Polylang) are never mistaken for a copy of themselves or for another site.
 
 = 0.1.2 =
 

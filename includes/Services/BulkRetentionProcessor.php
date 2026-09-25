@@ -7,6 +7,9 @@
 
 namespace OmniOffloader\Services;
 
+use OmniOffloader\Core\FolderClaim;
+use OmniOffloader\Core\SafeMode;
+
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
@@ -122,6 +125,17 @@ class BulkRetentionProcessor extends AbstractBulkProcessor {
 	 * @return bool
 	 */
 	protected function process_item( $attachment_id ) {
+		// Another site sharing the bucket owns this site's folder: its
+		// objects can no longer be trusted as this site's copies.
+		$active = FolderClaim::provider();
+
+		if ( null !== $active && FolderClaim::blocks( $active ) ) {
+			$this->item_messages[ $attachment_id ] = __( 'This bucket folder is used by another site.', 'omnioffloader' );
+			$this->halt_run( SafeMode::message() );
+
+			return false;
+		}
+
 		if ( null === $this->applier ) {
 			$this->applier = new RetentionApplier();
 		}

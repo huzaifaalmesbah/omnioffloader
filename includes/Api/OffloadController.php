@@ -7,6 +7,7 @@
 
 namespace OmniOffloader\Api;
 
+use OmniOffloader\Core\FolderClaim;
 use OmniOffloader\Core\Plugin;
 use OmniOffloader\Core\SafeMode;
 use OmniOffloader\Services\AttachmentUploader;
@@ -169,6 +170,8 @@ class OffloadController extends BaseController {
 	 * @return \WP_REST_Response|\WP_Error
 	 */
 	public function offload_attachment_response( WP_REST_Request $request ) {
+		FolderClaim::refresh();
+
 		if ( SafeMode::is_active() ) {
 			return SafeMode::refusal();
 		}
@@ -236,6 +239,8 @@ class OffloadController extends BaseController {
 	 * @return \WP_REST_Response|\WP_Error
 	 */
 	public function start_bulk_response( WP_REST_Request $request ) {
+		FolderClaim::refresh();
+
 		if ( SafeMode::is_active() ) {
 			return SafeMode::refusal();
 		}
@@ -394,6 +399,8 @@ class OffloadController extends BaseController {
 		}
 
 		if ( 'offload' === $action ) {
+			FolderClaim::refresh();
+
 			if ( SafeMode::is_active() ) {
 				return SafeMode::refusal();
 			}

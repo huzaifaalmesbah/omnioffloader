@@ -107,6 +107,34 @@ class MockProvider implements ProviderInterface {
 	}
 
 	/**
+	 * Read a small object (see AbstractS3Provider::read_small_object()).
+	 *
+	 * @param string $key Object key.
+	 * @return string|null Null when missing.
+	 */
+	public function read_small_object( $key ) {
+		$path = $this->bucket_dir . $key;
+
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- local test bucket.
+		return is_file( $path ) ? (string) file_get_contents( $path ) : null;
+	}
+
+	/**
+	 * Write a small object (see AbstractS3Provider::write_small_object()).
+	 *
+	 * @param string $key  Object key.
+	 * @param string $body Contents.
+	 * @return bool
+	 */
+	public function write_small_object( $key, $body ) {
+		$path = $this->bucket_dir . $key;
+		wp_mkdir_p( dirname( $path ) );
+
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- local test bucket.
+		return false !== file_put_contents( $path, $body );
+	}
+
+	/**
 	 * {@inheritDoc}
 	 */
 	public function object_exists( $key ) {

@@ -13,7 +13,7 @@ export interface MediaStats {
 
 /** Why Safe mode is on; '' when it is off. */
 export type SafeModeReason =
-	'' | 'constant' | 'environment' | 'local' | 'address';
+	'' | 'constant' | 'environment' | 'local' | 'address' | 'folder';
 
 /**
  * Mirrors SafeMode::status().
@@ -30,4 +30,8 @@ export interface SafeModeStatus {
 	environment: string;
 	/** Whether Bring Back is available (false: Safe mode blocks it). */
 	bring_back: boolean;
+	/** Reason 'folder': address of the site that owns this site's bucket folder. */
+	folder_owner: string;
+	/** Reason 'folder': the folder, e.g. "attorneys"; '' for the bucket root. */
+	folder: string;
 }

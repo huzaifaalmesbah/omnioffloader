@@ -33,9 +33,25 @@ export interface CredentialsResponse {
 	fields: CredentialField[];
 }
 
+/** Mirrors the FolderClaim states (Core\FolderClaim). */
+export type FolderClaimStatus = 'ours' | 'other' | 'free' | 'unknown';
+
+/** Who uses this site's folder in the bucket (read-only check). */
+export interface FolderCheck {
+	status: FolderClaimStatus;
+	/** Address named in the folder's marker; '' when free or unknown. */
+	owner: string;
+	/** The saved Path Prefix folder; '' for the bucket root. */
+	folder: string;
+	/** Why the folder cannot be used; '' unless status is 'other'. */
+	message: string;
+}
+
 /** POST /provider/test-connection response. */
 export interface TestConnectionResponse {
 	connected: boolean;
 	message: string;
 	checked_at: string;
+	/** Absent when the AWS SDK is missing; null when not connected. */
+	folder?: FolderCheck | null;
 }

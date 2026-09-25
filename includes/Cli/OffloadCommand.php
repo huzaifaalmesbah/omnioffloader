@@ -7,6 +7,7 @@
 
 namespace OmniOffloader\Cli;
 
+use OmniOffloader\Core\FolderClaim;
 use OmniOffloader\Core\Helpers;
 use OmniOffloader\Core\Plugin;
 use OmniOffloader\Core\SafeMode;
@@ -91,8 +92,13 @@ class OffloadCommand {
 		// and fills the error log for no reason.
 		// A copy of the site (staging, dev, local) never uploads to the live
 		// bucket. OMNIOFFLOADER_SAFE_MODE false in wp-config.php overrides it.
+		if ( ! $is_dry ) {
+			FolderClaim::refresh();
+		}
+
 		if ( ! $is_dry && SafeMode::is_active() ) {
-			WP_CLI::error( SafeMode::message() . ' (Or define OMNIOFFLOADER_SAFE_MODE as false in wp-config.php.)' );
+			// The constant only overrides copy detection, not a folder conflict.
+			WP_CLI::error( SafeMode::message() . ( 'folder' === SafeMode::reason() ? '' : ' (Or define OMNIOFFLOADER_SAFE_MODE as false in wp-config.php.)' ) );
 		}
 
 		if ( ! $is_dry ) {

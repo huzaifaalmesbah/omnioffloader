@@ -15,23 +15,34 @@ export function TestConnection( { provider }: TestConnectionProps ) {
 	const [ testing, setTesting ] = useState( false );
 	const [ result, setResult ] = useState< 'ok' | 'fail' | null >( null );
 	const [ errorDetail, setErrorDetail ] = useState< string | null >( null );
+	// Another site sharing the bucket already uses this site's folder.
+	const [ folderWarning, setFolderWarning ] = useState< string | null >(
+		null
+	);
 
 	// Reset badge and error message whenever credentials are edited or provider changes.
 	useEffect( () => {
 		setResult( null );
 		setErrorDetail( null );
+		setFolderWarning( null );
 	}, [ credentialDraft, provider ] );
 
 	const run = async () => {
 		setTesting( true );
 		setResult( null );
 		setErrorDetail( null );
+		setFolderWarning( null );
 
 		try {
 			const response = await testConnection( provider, credentialDraft );
 			if ( response.connected ) {
 				setResult( 'ok' );
 				setErrorDetail( null );
+				setFolderWarning(
+					response.folder?.status === 'other'
+						? response.folder.message
+						: null
+				);
 			} else {
 				setResult( 'fail' );
 				setErrorDetail( response.message );
@@ -66,6 +77,14 @@ export function TestConnection( { provider }: TestConnectionProps ) {
 				<span className="smowp-badge smowp-badge--fail">
 					{ __( 'Not connected', 'omnioffloader' ) }
 				</span>
+			) }
+
+			{ result === 'ok' && folderWarning && (
+				<div className="smowp-test-connection__error" role="alert">
+					<span className="smowp-test-connection__error-text">
+						{ folderWarning }
+					</span>
+				</div>
 			) }
 
 			{ result === 'fail' && errorDetail && (

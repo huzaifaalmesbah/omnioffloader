@@ -34,6 +34,11 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * `OMNIOFFLOADER_SAFE_MODE` (true/false) in wp-config.php overrides all of it.
  *
+ * Safe mode also covers a site whose bucket folder turned out to belong to
+ * another site sharing the bucket (reason `folder`, see Core\FolderClaim).
+ * That one is not about being a copy, so the constant and the "protect
+ * copies" setting do not switch it off.
+ *
  * @since 0.1.3
  */
 class SafeMode {
@@ -51,6 +56,13 @@ class SafeMode {
 	private static $reason = null;
 
 	/**
+	 * Why this site counts as a copy, memoized; null until computed.
+	 *
+	 * @var string|null
+	 */
+	private static $copy_reason = null;
+
+	/**
 	 * Whether Safe mode is on.
 	 *
 	 * @return bool
@@ -62,16 +74,57 @@ class SafeMode {
 	/**
 	 * Why Safe mode is on.
 	 *
-	 * @return string 'constant', 'environment', 'local', 'address', or '' when off.
+	 * @return string 'constant', 'environment', 'local', 'address', 'folder', or '' when off.
 	 */
 	public static function reason() {
 		if ( null !== self::$reason ) {
 			return self::$reason;
 		}
 
-		self::$reason = self::detect();
+		self::$reason = self::copy_reason();
+
+		if ( '' === self::$reason && null !== FolderClaim::active_conflict() ) {
+			self::$reason = 'folder';
+		}
 
 		return self::$reason;
+	}
+
+	/**
+	 * Whether this site is a staging, development or local copy — Safe mode
+	 * for any reason except a folder conflict.
+	 *
+	 * @since 0.1.3
+	 *
+	 * @return bool
+	 */
+	public static function is_copy() {
+		return '' !== self::copy_reason();
+	}
+
+	/**
+	 * Why this site counts as a copy.
+	 *
+	 * @return string
+	 */
+	private static function copy_reason() {
+		if ( null === self::$copy_reason ) {
+			self::$copy_reason = self::detect();
+		}
+
+		return self::$copy_reason;
+	}
+
+	/**
+	 * Drop the memoized result, after something it depends on changed.
+	 *
+	 * @since 0.1.3
+	 *
+	 * @return void
+	 */
+	public static function reset() {
+		self::$reason      = null;
+		self::$copy_reason = null;
 	}
 
 	/**
@@ -103,13 +156,17 @@ class SafeMode {
 	 * @return string
 	 */
 	public static function bring_back_message() {
+		if ( 'folder' === self::reason() ) {
+			return self::message() . ' ' . __( 'Bring Back is paused too, because files in that folder may now be the other site\'s. To download anyway (the cloud copy is always kept), turn on "Allow Bring Back on a copy" in OmniOffloader → Settings.', 'omnioffloader' );
+		}
+
 		return __( 'Safe mode is on: this site looks like a staging, development or local copy, so Bring Back is turned off. To download media from the cloud to this copy (the cloud copy is always kept), turn on "Allow Bring Back on a copy" in OmniOffloader → Settings.', 'omnioffloader' );
 	}
 
 	/**
 	 * Work out whether this site is a copy.
 	 *
-	 * @return string See reason().
+	 * @return string See reason(); never 'folder'.
 	 */
 	private static function detect() {
 		if ( defined( 'OMNIOFFLOADER_SAFE_MODE' ) ) {
@@ -176,7 +233,7 @@ class SafeMode {
 			true
 		);
 
-		self::$reason = null;
+		self::reset();
 	}
 
 	/**
@@ -200,11 +257,12 @@ class SafeMode {
 	/**
 	 * State for the admin UI and REST.
 	 *
-	 * @return array{active: bool, reason: string, locked: bool, live_address: string, current_address: string, environment: string, bring_back: bool}
+	 * @return array{active: bool, reason: string, locked: bool, live_address: string, current_address: string, environment: string, bring_back: bool, folder_owner: string, folder: string}
 	 */
 	public static function status() {
-		$live  = self::live_site();
-		$label = null !== $live ? base64_decode( $live['label'], true ) : false; // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode -- see record_live_site().
+		$conflict = 'folder' === self::reason() ? FolderClaim::active_conflict() : null;
+		$live     = self::live_site();
+		$label    = null !== $live ? base64_decode( $live['label'], true ) : false; // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode -- see record_live_site().
 
 		return array(
 			'active'          => self::is_active(),
@@ -215,6 +273,9 @@ class SafeMode {
 			'environment'     => wp_get_environment_type(),
 			// Whether Bring Back is available (always, unless Safe mode blocks it).
 			'bring_back'      => ! self::blocks_bring_back(),
+			// Folder conflict: the site that owns this site's bucket folder.
+			'folder_owner'    => null !== $conflict ? $conflict['owner'] : '',
+			'folder'          => null !== $conflict ? $conflict['folder'] : '',
 		);
 	}
 
@@ -237,6 +298,14 @@ class SafeMode {
 	 * @return string
 	 */
 	public static function message() {
+		if ( 'folder' === self::reason() ) {
+			$conflict = FolderClaim::active_conflict();
+
+			if ( null !== $conflict ) {
+				return FolderClaim::message( $conflict['owner'], $conflict['folder'] );
+			}
+		}
+
 		return __( 'Safe mode is on: this site looks like a staging, development or local copy, so nothing is uploaded to or deleted from your cloud storage. Media already in the cloud still loads from it. If this is the live site, turn Safe mode off in OmniOffloader → Settings.', 'omnioffloader' );
 	}
 
@@ -245,10 +314,16 @@ class SafeMode {
 	 * plus path, lower-case, without scheme or trailing slash — so moving to
 	 * https or adding "www." is not mistaken for a copy.
 	 *
+	 * Read from the stored Site Address (the `home` option, or `WP_HOME`),
+	 * not home_url(): multilingual and domain-mapping plugins filter
+	 * home_url() per request (one domain per language), which would make a
+	 * site look like a copy of itself, or like another site in its own
+	 * bucket folder. A real migration still changes the stored address.
+	 *
 	 * @return string E.g. "example.com" or "example.com/blog".
 	 */
 	public static function current_address() {
-		$parts = wp_parse_url( home_url() );
+		$parts = wp_parse_url( self::site_address() );
 		$host  = strtolower( (string) ( $parts['host'] ?? '' ) );
 		$host  = (string) preg_replace( '/^www\./', '', $host );
 		$port  = isset( $parts['port'] ) ? ':' . (int) $parts['port'] : '';
@@ -263,7 +338,16 @@ class SafeMode {
 	 * @return string
 	 */
 	private static function current_host() {
-		return strtolower( (string) wp_parse_url( home_url(), PHP_URL_HOST ) );
+		return strtolower( (string) wp_parse_url( self::site_address(), PHP_URL_HOST ) );
+	}
+
+	/**
+	 * The stored Site Address, unaffected by per-request home_url filters.
+	 *
+	 * @return string
+	 */
+	private static function site_address() {
+		return (string) get_option( 'home' );
 	}
 
 	/**

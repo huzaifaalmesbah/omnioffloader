@@ -41,6 +41,9 @@ class Uninstaller {
 		delete_option( 'omnioffloader_credentials' );
 		delete_option( 'omnioffloader_version' );
 		delete_option( 'omnioffloader_live_site' );
+		// Cached folder check only; the marker in the bucket stays, so a
+		// reinstall on the same address finds its own folder again.
+		delete_option( 'omnioffloader_folder_claims' );
 		delete_option( 'omnioffloader_first_activated_version' );
 		// Left behind by pre-release builds with secondary storage.
 		delete_option( 'omnioffloader_secondary_credentials' );

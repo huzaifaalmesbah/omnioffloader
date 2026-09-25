@@ -7,7 +7,9 @@
 
 namespace OmniOffloader\Api;
 
+use OmniOffloader\Core\FolderClaim;
 use OmniOffloader\Core\Helpers;
+use OmniOffloader\Core\SafeMode;
 use OmniOffloader\Providers\ProviderRegistry;
 use OmniOffloader\Traits\OptionsHelper;
 use WP_REST_Request;
@@ -171,6 +173,14 @@ class ProviderController extends BaseController {
 
 		if ( ! empty( $to_save ) ) {
 			self::update_provider_credentials( $provider_key, $to_save );
+
+			// A new bucket: check (and claim) this site's folder in it now.
+			$active = FolderClaim::enabled() && self::get_provider_key() === $provider_key ? FolderClaim::provider() : null;
+
+			if ( null !== $active ) {
+				SafeMode::reset();
+				FolderClaim::ensure( $active, true );
+			}
 		}
 
 		// Return fresh masked state (same shape as GET).
@@ -209,11 +219,29 @@ class ProviderController extends BaseController {
 		$result = $provider->check_connection();
 
 		if ( true === $result ) {
+			// Read-only: whether this site's folder is free, its own, or
+			// another site's (see Core\FolderClaim).
+			$prefix = FolderClaim::prefix();
+			// A copy of the site would only find the live site's own marker.
+			$found  = FolderClaim::enabled() && ! SafeMode::is_copy() ? FolderClaim::inspect( $provider, $prefix ) : array(
+				'status' => FolderClaim::UNKNOWN,
+				'owner'  => '',
+			);
+			$folder = '' !== $prefix ? untrailingslashit( $prefix ) : '';
+
 			return rest_ensure_response(
 				array(
 					'connected'  => true,
-					'message'    => __( 'Connection successful.', 'omnioffloader' ),
+					'message'    => FolderClaim::OTHER === $found['status']
+						? __( 'Connection successful, but see the warning below.', 'omnioffloader' )
+						: __( 'Connection successful.', 'omnioffloader' ),
 					'checked_at' => current_time( 'mysql', true ),
+					'folder'     => array(
+						'status'  => $found['status'],
+						'owner'   => $found['owner'],
+						'folder'  => $folder,
+						'message' => FolderClaim::OTHER === $found['status'] ? FolderClaim::message( $found['owner'], $folder ) : '',
+					),
 				)
 			);
 		}
@@ -223,6 +251,7 @@ class ProviderController extends BaseController {
 				'connected'  => false,
 				'message'    => $result->get_error_message(),
 				'checked_at' => current_time( 'mysql', true ),
+				'folder'     => null,
 			)
 		);
 	}

@@ -27,6 +27,9 @@ pnpm start            # Development build with watch mode (wp-scripts)
 pnpm build            # Production build
 pnpm check-types      # tsc --noEmit — strict TypeScript check
 pnpm lint:js          # ESLint (WordPress TS config)
+pnpm screenshots      # Automated Puppeteer headless browser screenshot & annotation engine
+pnpm --filter docs dev    # Start Astro Starlight docs development server (localhost:4321)
+pnpm --filter docs build  # Build production Astro Starlight static site to docs/dist/
 pnpm bundle           # Build + distribution zip (excludes dev files per .distignore)
 pnpm bundle:org       # Same, shaped for the WordPress.org SVN layout
 composer phpstan     # PHPStan level 8 (szepeviktor/phpstan-wordpress)
@@ -228,4 +231,20 @@ Actions: `omnioffloader_before_offload`, `omnioffloader_after_offload`, `omnioff
 
 This plugin's own skeleton, admin UX and conventions are settled — follow what is already in `includes/` and `src/`, not an outside plugin.
 
+## Documentation & Screenshots
+
+### Public User Docs (`docs/` — Astro Starlight)
+The public documentation is built with Astro Starlight in `docs/` and deployed to Vercel (see `docs/README.md`).
+- Run `pnpm --filter docs dev` to test documentation locally at `http://localhost:4321`.
+- Run `pnpm --filter docs build` to verify the static site builds without broken links or syntax errors.
+- The changelog page is generated automatically from `readme.txt` by `docs/scripts/changelog.mjs`. Always update `readme.txt`, never `changelog.md`.
+- Keep docs in sync with user-facing features, settings, CLI flags, provider fields, and hooks in the same commit.
+
+### Screenshot Automation (`pnpm screenshots`)
+Run `pnpm screenshots` to generate high-resolution screenshots using Puppeteer Core against your local WordPress install:
+- Generates clean 2x retina captures (`docs/public/images/screenshots/<view>.png`).
+- Generates callout-annotated diagrams (`docs/public/images/screenshots/<view>-marked.png`) for the user documentation.
+- Crops and exports `.wordpress-org/screenshot-{1..N}.png` matching official WordPress.org specifications.
+
 The WordPress skills (`wordpress-router`, `wp-plugin-development`, `wp-rest-api`, `wp-block-development`, `wp-phpstan`, `wp-performance`, `wp-plugin-directory-guidelines`, `wp-wpcli-and-ops`, `wp-abilities-*`, `wp-interactivity-api`) are installed locally in `.claude/skills/`.
+

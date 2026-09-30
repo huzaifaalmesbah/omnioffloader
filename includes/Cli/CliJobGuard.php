@@ -204,6 +204,17 @@ trait CliJobGuard {
 					exit( 143 );
 				}
 			);
+
+			// Closing the SSH window sends SIGHUP; without this the claim
+			// stayed behind and blocked the next run for 10 minutes.
+			if ( defined( 'SIGHUP' ) ) {
+				pcntl_signal(
+					SIGHUP,
+					static function () {
+						exit( 129 );
+					}
+				);
+			}
 		}
 	}
 

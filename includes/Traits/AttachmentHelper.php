@@ -32,6 +32,85 @@ trait AttachmentHelper {
 	}
 
 	/**
+	 * Which of an attachment's files load from the cloud.
+	 *
+	 * With "Serve media from cloud" off, offloaded media keeps its local
+	 * URLs — except files the retention policy removed from the server,
+	 * because the cloud is then the only place they exist: every file
+	 * under Full Cloud Migration, the generated sizes under Smart Cleanup.
+	 *
+	 * @since 0.1.4
+	 *
+	 * @param int $attachment_id Attachment ID.
+	 * @return string 'all', 'sizes' (main files stay local) or 'none'.
+	 */
+	public static function cloud_serving( $attachment_id ) {
+		if ( ! self::is_offloaded( $attachment_id ) ) {
+			return 'none';
+		}
+
+		if ( ! empty( \OmniOffloader\Core\Plugin::get_settings()['serve_from_cloud'] ) ) {
+			return 'all';
+		}
+
+		$policy = (int) get_post_meta( $attachment_id, 'omnioffloader_retention', true );
+
+		if ( $policy >= 2 ) {
+			return 'all';
+		}
+
+		return 1 === $policy ? 'sizes' : 'none';
+	}
+
+	/**
+	 * Whether one file of an attachment loads from the cloud.
+	 *
+	 * @since 0.1.4
+	 *
+	 * @param int    $attachment_id Attachment ID.
+	 * @param string $filename      File basename.
+	 * @return bool
+	 */
+	public static function is_served_from_cloud( $attachment_id, $filename ) {
+		$serving = self::cloud_serving( $attachment_id );
+
+		if ( 'sizes' === $serving ) {
+			return ! in_array( $filename, self::main_filenames( $attachment_id ), true );
+		}
+
+		return 'all' === $serving;
+	}
+
+	/**
+	 * Basenames of the files Smart Cleanup keeps on the server: the main
+	 * file, the pre-scaled original and root-level format sources.
+	 *
+	 * Mirrors the 'main' role of collect_attachment_files() without its
+	 * filesystem paths and object keys.
+	 *
+	 * @since 0.1.4
+	 *
+	 * @param int $attachment_id Attachment ID.
+	 * @return string[]
+	 */
+	public static function main_filenames( $attachment_id ) {
+		$names    = array( wp_basename( (string) get_post_meta( $attachment_id, '_wp_attached_file', true ) ) );
+		$metadata = wp_get_attachment_metadata( $attachment_id );
+
+		if ( is_array( $metadata ) ) {
+			// phpcs:ignore Generic.Commenting.DocComment.MissingShort -- inline @var for PHPStan.
+			/** @var array<string, mixed> $metadata */
+			if ( ! empty( $metadata['original_image'] ) && is_string( $metadata['original_image'] ) ) {
+				$names[] = $metadata['original_image'];
+			}
+
+			$names = array_merge( $names, self::root_source_files( $metadata ) );
+		}
+
+		return $names;
+	}
+
+	/**
 	 * Whether the current user may offload or bring back an attachment.
 	 *
 	 * Moving media between the server and the cloud is a site-management

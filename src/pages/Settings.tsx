@@ -51,6 +51,8 @@ export function SettingsPage( { onNavigate }: SettingsProps ) {
 	}
 
 	const providerKeys = providers.map( ( p ) => p.key );
+	const keepsLocalFiles =
+		settings.retention_policy === RetentionPolicy.RetainLocal;
 
 	return (
 		<div className="smowp-page">
@@ -203,6 +205,33 @@ export function SettingsPage( { onNavigate }: SettingsProps ) {
 						'omnioffloader'
 					) }
 				</p>
+
+				{ /* Cleanup policies delete local files, so their media always
+				loads from the cloud and there is nothing to choose. */ }
+				{ keepsLocalFiles && (
+					<ToggleControl
+						label={ __(
+							'Serve Media from Cloud',
+							'omnioffloader'
+						) }
+						help={
+							settings.serve_from_cloud
+								? __(
+										'Your site loads offloaded media from your cloud storage or CDN. Turn off to keep loading it from this server, with the cloud as a backup copy.',
+										'omnioffloader'
+									)
+								: __(
+										'Your site loads media from this server; the cloud keeps a copy. Turn on when your CDN is ready — every offloaded file switches over at once, nothing is uploaded again. Clear your page cache after changing this.',
+										'omnioffloader'
+									)
+						}
+						checked={ settings.serve_from_cloud }
+						onChange={ ( serve_from_cloud: boolean ) =>
+							updateSettings( { serve_from_cloud } )
+						}
+						__nextHasNoMarginBottom
+					/>
+				) }
 
 				{ ! isDirty &&
 					retentionPreflight &&

@@ -30,6 +30,11 @@ trait OptionsHelper {
 		return array(
 			'provider'                 => '',
 			'retention_policy'         => 0,
+			// Rewrite offloaded media URLs to the cloud/CDN. Off (Retain Local
+			// Files only — update_settings() forces it on otherwise): media is
+			// still offloaded but keeps its local URLs, except files an
+			// earlier retention policy already removed.
+			'serve_from_cloud'         => true,
 			// On for new installs: a deleted attachment should not stay
 			// publicly reachable (and billed) in the bucket. Existing sites
 			// keep their saved choice — every save stores all keys. Never
@@ -78,6 +83,7 @@ trait OptionsHelper {
 		$sanitized = array(
 			'provider'                 => sanitize_key( $settings['provider'] ?? $current['provider'] ),
 			'retention_policy'         => self::sanitize_retention_policy( $settings['retention_policy'] ?? $current['retention_policy'] ),
+			'serve_from_cloud'         => ! empty( $settings['serve_from_cloud'] ?? $current['serve_from_cloud'] ),
 			'mirror_delete'            => ! empty( $settings['mirror_delete'] ?? $current['mirror_delete'] ),
 			'path_prefix_active'       => ! empty( $settings['path_prefix_active'] ?? $current['path_prefix_active'] ),
 			'path_prefix'              => Helpers::sanitize_path( (string) ( $settings['path_prefix'] ?? $current['path_prefix'] ) ),
@@ -90,6 +96,12 @@ trait OptionsHelper {
 			'protect_copies'           => ! empty( $settings['protect_copies'] ?? $current['protect_copies'] ),
 			'safe_mode_bring_back'     => ! empty( $settings['safe_mode_bring_back'] ?? $current['safe_mode_bring_back'] ),
 		);
+
+		// Cleanup policies delete local files, so their media must load from
+		// the cloud; only Retain Local Files may keep local URLs.
+		if ( $sanitized['retention_policy'] > 0 ) {
+			$sanitized['serve_from_cloud'] = true;
+		}
 
 		update_option( 'omnioffloader_settings', $sanitized, true );
 

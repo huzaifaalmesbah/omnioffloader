@@ -10,6 +10,7 @@ Applies a [retention policy](/features/retention-policies/) to media that is alr
 A new retention policy only affects new uploads at first. This command updates the media you offloaded before:
 
 - **A stricter policy** deletes local files. Each file is checked in cloud storage by size first. A file missing from the bucket is uploaded before its local copy is deleted.
+  It is refused while [Serve Media from Cloud](/features/url-rewriting/#offload-now-serve-from-the-cdn-later) is off, because your site still loads those files from the server. `--dry-run` still works.
 - **A looser policy** downloads local copies again.
 
 The attachments stay offloaded either way. The admin screen that does the same job is **OmniOffloader → Tools → Apply Retention Policy to Existing Media**.

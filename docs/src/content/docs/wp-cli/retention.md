@@ -18,7 +18,7 @@ The attachments stay offloaded either way. The admin screen that does the same j
 ## Synopsis
 
 ```bash
-wp omnioffloader retention [--policy=<policy>] [--ids=<ids>] [--limit=<number>] [--dry-run] [--yes] [--force] [--format=<format>]
+wp omnioffloader retention [--policy=<policy>] [--ids=<ids>] [--limit=<number>] [--dry-run] [--yes] [--force] [--background] [--log=<file>] [--format=<format>]
 ```
 
 ## Options
@@ -31,6 +31,8 @@ wp omnioffloader retention [--policy=<policy>] [--ids=<ids>] [--limit=<number>] 
 | `--dry-run` | List what would change without deleting or downloading anything. |
 | `--yes` | Skip the confirmation prompt before local files are deleted. |
 | `--force` | Run even when a bulk job started from the admin screen is active. |
+| `--background` | Keep running after you close the terminal. Output goes to a log file. See [Run in the background](/wp-cli/stop/#run-in-the-background). |
+| `--log=<file>` | Log file for `--background`. Default: a new file in the server's temp folder. |
 | `--format=<format>` | Output format for the `--dry-run` table: `table` (default), `json` or `csv`. |
 
 ### Policy values

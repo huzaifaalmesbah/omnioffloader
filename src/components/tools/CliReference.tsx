@@ -47,6 +47,33 @@ function getCommands(): CliCommand[] {
 			options: [],
 		},
 		{
+			name: 'wp omnioffloader stop',
+			summary: __(
+				'Stop the running offload, Bring Back or retention job, from any terminal. A WP-CLI run finishes the file it is transferring first; an admin job is cancelled.',
+				'omnioffloader'
+			),
+			view: 'dashboard',
+			viewLabel: __( 'Open Dashboard', 'omnioffloader' ),
+			examples: [
+				{
+					command: 'wp omnioffloader stop',
+					description: __(
+						'Stop it and wait until it has ended.',
+						'omnioffloader'
+					),
+				},
+			],
+			options: [
+				{
+					flag: '--wait=<seconds>',
+					description: __(
+						'How long to wait for the current file (default 120).',
+						'omnioffloader'
+					),
+				},
+			],
+		},
+		{
 			name: 'wp omnioffloader offload',
 			summary: __(
 				'Upload media to the cloud with a progress bar. Local files follow the saved retention policy after each verified upload.',
@@ -73,6 +100,13 @@ function getCommands(): CliCommand[] {
 					command: 'wp omnioffloader offload --all --limit=500',
 					description: __(
 						'Work through a large library in chunks.',
+						'omnioffloader'
+					),
+				},
+				{
+					command: 'wp omnioffloader offload --all --background',
+					description: __(
+						'Run it in the background; you can close the terminal.',
 						'omnioffloader'
 					),
 				},
@@ -117,6 +151,13 @@ function getCommands(): CliCommand[] {
 					flag: '--force',
 					description: __(
 						'Run even while an admin bulk job is active.',
+						'omnioffloader'
+					),
+				},
+				{
+					flag: '--background',
+					description: __(
+						'Keep running after you close the terminal; output goes to a log file.',
 						'omnioffloader'
 					),
 				},
@@ -208,6 +249,13 @@ function getCommands(): CliCommand[] {
 						'omnioffloader'
 					),
 				},
+				{
+					flag: '--background',
+					description: __(
+						'Keep running after you close the terminal; output goes to a log file.',
+						'omnioffloader'
+					),
+				},
 			],
 		},
 		{
@@ -296,6 +344,13 @@ function getCommands(): CliCommand[] {
 					flag: '--force',
 					description: __(
 						'Run even while an admin bulk job is active.',
+						'omnioffloader'
+					),
+				},
+				{
+					flag: '--background',
+					description: __(
+						'Keep running after you close the terminal; output goes to a log file.',
 						'omnioffloader'
 					),
 				},

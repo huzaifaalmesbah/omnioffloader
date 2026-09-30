@@ -41,6 +41,7 @@ What each part means:
 - **Safe mode:** `off (live site)`, or `ON` with the reason, for example `WP_ENVIRONMENT_TYPE is "staging"` or `the site address changed from … to …`. See [Safe mode](/features/safe-mode/).
 - **Media:** total attachments, how many are offloaded and how many are only local.
 - **Bulk offload / Bulk restore / Retention update:** shown only when that job is not idle, with its status (`running`, `done`, `cancelled` or `failed`), progress and error count.
+- **WP-CLI offload / restore / retention:** shown while a WP-CLI run is going, in the foreground or with `--background`: its progress, failures, process number and log file. `NOT RUNNING` means the run was killed without cleaning up; the next command clears its lock. Stop a run with [`wp omnioffloader stop`](/wp-cli/stop/).
 - **Older retention policy:** shown when some offloaded media still follows a policy you changed later. See [`wp omnioffloader retention`](/wp-cli/retention/).
 
 When a site's bucket folder is used by another site, the Safe mode line names that site and asks you to give this site its own Path Prefix. See [Sharing one bucket](/features/shared-bucket/).

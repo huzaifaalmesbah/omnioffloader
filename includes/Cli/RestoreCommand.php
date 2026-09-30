@@ -70,12 +70,20 @@ class RestoreCommand {
 	 * [--force]
 	 * : Run even when a bulk restore started from the admin screen is active.
 	 *
+	 * [--background]
+	 * : Keep running after you close the terminal. Output goes to a log file;
+	 * follow it with `wp omnioffloader status`, end it with `wp omnioffloader stop`.
+	 *
+	 * [--log=<file>]
+	 * : Log file for --background. Default: a new file in the temp directory.
+	 *
 	 * ## EXAMPLES
 	 *
 	 *     wp omnioffloader restore --all
 	 *     wp omnioffloader restore --ids=12,15,42
 	 *     wp omnioffloader restore --all --delete-cloud --yes
 	 *     wp omnioffloader restore --all --dry-run
+	 *     wp omnioffloader restore --all --background
 	 *
 	 * @param string[]              $args       Positional args (unused).
 	 * @param array<string, string> $assoc_args Named args.
@@ -102,6 +110,12 @@ class RestoreCommand {
 
 		if ( ! $is_dry ) {
 			$this->refuse_if_busy( $plugin, $assoc_args );
+		}
+
+		if ( isset( $assoc_args['background'] ) ) {
+			$this->launch_background( 'restore', $assoc_args, isset( $assoc_args['delete-cloud'] ) );
+
+			return;
 		}
 
 		$ids = $this->resolve_ids( $assoc_args );
@@ -146,7 +160,7 @@ class RestoreCommand {
 		// Hold the queue's process lock and the CLI claim for the duration, so
 		// the loopback worker, cron healthcheck, admin poll and admin-started
 		// jobs of every type all stand down.
-		$this->begin_job( $plugin, $queue, 'restore' );
+		$this->begin_job( $plugin, $queue, 'restore', count( $ids ) );
 
 		Helpers::defer_media_stats_flush( true );
 
@@ -162,6 +176,7 @@ class RestoreCommand {
 		$reason    = '';
 		$no_room   = 0;
 		$quota_hit = false;
+		$stopped   = false;
 
 		foreach ( $ids as $id ) {
 			// Every later download would fail the same way; stop with the
@@ -194,7 +209,12 @@ class RestoreCommand {
 			clean_post_cache( $id );
 			++$processed;
 
-			$this->keep_job_alive( $processed );
+			$this->keep_job_alive( $processed, $failed );
+
+			if ( $this->stop_requested() ) {
+				$stopped = true;
+				break;
+			}
 
 			// Bad credentials or an unreachable bucket fail identically for
 			// every attachment; stop rather than grind through the library.
@@ -230,6 +250,10 @@ class RestoreCommand {
 
 		if ( $aborted ) {
 			WP_CLI::error( sprintf( 'Stopped after %d failures in a row (%d restored first). %sCheck the connection to your storage provider (see omnioffloader_error_log meta).', $fail_run, $done, $reason ) );
+		}
+
+		if ( $stopped ) {
+			$this->report_stopped( sprintf( '%d restored, %d failed', $done, $failed ) );
 		}
 
 		if ( $failed > 0 ) {

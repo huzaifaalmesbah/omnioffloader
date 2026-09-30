@@ -62,12 +62,20 @@ class OffloadCommand {
 	 * [--force]
 	 * : Run even when a bulk offload started from the admin screen is active.
 	 *
+	 * [--background]
+	 * : Keep running after you close the terminal. Output goes to a log file;
+	 * follow it with `wp omnioffloader status`, end it with `wp omnioffloader stop`.
+	 *
+	 * [--log=<file>]
+	 * : Log file for --background. Default: a new file in the temp directory.
+	 *
 	 * ## EXAMPLES
 	 *
 	 *     wp omnioffloader offload --all
 	 *     wp omnioffloader offload --ids=12,15,42
 	 *     wp omnioffloader offload --all --limit=500
 	 *     wp omnioffloader offload --all --dry-run
+	 *     wp omnioffloader offload --all --background
 	 *
 	 * @param string[]              $args       Positional args (unused).
 	 * @param array<string, string> $assoc_args Named args.
@@ -105,6 +113,12 @@ class OffloadCommand {
 			$this->refuse_if_busy( $plugin, $assoc_args );
 		}
 
+		if ( isset( $assoc_args['background'] ) ) {
+			$this->launch_background( 'offload', $assoc_args, false );
+
+			return;
+		}
+
 		$ids = $this->resolve_ids( $assoc_args );
 
 		if ( empty( $ids ) ) {
@@ -132,7 +146,7 @@ class OffloadCommand {
 		// Hold the queue's process lock and the CLI claim for the duration, so
 		// the loopback worker, cron healthcheck, admin poll and admin-started
 		// jobs of every type all stand down.
-		$this->begin_job( $plugin, $queue, 'offload' );
+		$this->begin_job( $plugin, $queue, 'offload', count( $ids ) );
 
 		Helpers::defer_media_stats_flush( true );
 
@@ -148,6 +162,7 @@ class OffloadCommand {
 		$aborted   = false;
 		$last_fail = 0;
 		$reason    = '';
+		$stopped   = false;
 
 		// A few attachments share one transfer pool (see upload_many()).
 		foreach ( array_chunk( $ids, AttachmentUploader::batch_size() ) as $chunk ) {
@@ -173,7 +188,13 @@ class OffloadCommand {
 				clean_post_cache( $id );
 				++$processed;
 
-				$this->keep_job_alive( $processed );
+				$this->keep_job_alive( $processed, $failed );
+			}
+
+			// Between batches: every upload of this one has finished.
+			if ( $this->stop_requested() ) {
+				$stopped = true;
+				break;
 			}
 
 			// Bad credentials or an unreachable bucket fail identically for
@@ -213,6 +234,10 @@ class OffloadCommand {
 		}
 
 		$skipped_note = $skipped > 0 ? sprintf( ', %d skipped by the omnioffloader_should_offload_attachment filter', $skipped ) : '';
+
+		if ( $stopped ) {
+			$this->report_stopped( sprintf( '%d offloaded, %d failed%s', $done, $failed, $skipped_note ) );
+		}
 
 		if ( $failed > 0 ) {
 			WP_CLI::warning( sprintf( '%d offloaded, %d failed%s (see omnioffloader_error_log meta).', $done, $failed, $skipped_note ) );

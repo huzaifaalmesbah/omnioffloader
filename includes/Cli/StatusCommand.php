@@ -107,6 +107,33 @@ class StatusCommand {
 			WP_CLI::log( sprintf( 'Retention update: %s (%d/%d, %d errors)', $retention['status'], $retention['processed'], $retention['total'], $retention['errors'] ) );
 		}
 
+		$run = Plugin::get_cli_run();
+		if ( null !== $run ) {
+			$alive = Plugin::cli_run_alive( $run );
+
+			WP_CLI::log(
+				sprintf(
+					'WP-CLI %s: %s — %d of %d done, %d failed, started %s ago (process %d%s)',
+					$run['job'],
+					false === $alive ? 'NOT RUNNING (ended without cleaning up; the next run clears it)' : 'running',
+					(int) $run['processed'],
+					(int) $run['total'],
+					(int) $run['failed'],
+					human_time_diff( (int) $run['started'] ),
+					(int) $run['pid'],
+					! empty( $run['background'] ) ? ', background' : ''
+				)
+			);
+
+			if ( ! empty( $run['log'] ) ) {
+				WP_CLI::log( '  Log: ' . $run['log'] );
+			}
+
+			if ( false !== $alive ) {
+				WP_CLI::log( '  Stop it with: wp omnioffloader stop' );
+			}
+		}
+
 		if ( null !== $provider ) {
 			$preflight = Helpers::get_retention_preflight( true );
 

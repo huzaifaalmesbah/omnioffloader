@@ -13,6 +13,7 @@ Every bulk job in OmniOffloader can also run from the terminal with [WP-CLI](htt
 | [`wp omnioffloader restore`](/wp-cli/restore/) | Bring Back: download offloaded media to the server again. |
 | [`wp omnioffloader retention`](/wp-cli/retention/) | Apply a retention policy to media that is already offloaded. |
 | [`wp omnioffloader status`](/wp-cli/status/) | Show the provider, connection, Safe mode, media counts and running jobs. |
+| [`wp omnioffloader stop`](/wp-cli/stop/) | Stop the running job from any terminal. |
 
 The same reference, with copy buttons, is on the **OmniOffloader → Tools** screen.
 
@@ -20,6 +21,7 @@ The same reference, with copy buttons, is on the **OmniOffloader → Tools** scr
 
 - **Large libraries.** A terminal command is not limited by the browser or by short web request time limits. On libraries of 5,000 items or more, the Bulk Offload and Bring Back screens suggest the matching command.
 - **SSH access.** You can run a job on the server directly and watch a progress bar.
+- **Long jobs.** Add `--background` and close the terminal; the job keeps going. Check it with `status`, end it with [`stop`](/wp-cli/stop/).
 - **Scheduled work.** Use `--limit` with a cron job to work through a big library in small chunks, for example 500 attachments each night.
 - **Hosts that time out.** Some hosts stop long admin requests or block WordPress's internal background requests. WP-CLI does not depend on them.
 
@@ -83,7 +85,9 @@ Error: A bulk offload started from the admin screen is running. Wait for it to f
 
 While a command runs, it holds a lock. The admin screens see the lock and will not start a second job. The lock is renewed after every attachment, and while a large file is still transferring. It is released when the command ends, also when you press **Ctrl-C** (when PHP's `pcntl` extension is available, which is common for the command line).
 
-If a command was killed in a way that left the lock behind (for example the server restarted), the lock expires within 10 minutes. Pass `--force` only if you are sure nothing else is running.
+Closing the terminal also stops the command and releases its lock. To keep a job running after you close the terminal, add `--background`. To stop a running job from another terminal, use [`wp omnioffloader stop`](/wp-cli/stop/).
+
+If a command was killed in a way that left the lock behind (for example `kill -9`, or the server restarted), the next command on the same server sees the process is gone and clears the lock. Otherwise the lock expires within 10 minutes. Pass `--force` only if you are sure nothing else is running.
 
 :::caution
 `--force` skips the one-job-at-a-time check. Two jobs working on the same files can fail each other's uploads or downloads. Use it only when you know the other job is gone.
@@ -116,4 +120,5 @@ Attachments that failed in an earlier run are processed last, so a restart is no
 | --- | --- |
 | `0` | Success. |
 | `1` | An error, or some attachments failed. `status` also returns `1` when no provider is configured or the bucket can't be reached, so you can use it in monitoring. |
-| `130` / `143` | The command was stopped with Ctrl-C (`SIGINT`) or `SIGTERM`, and its locks were released. Needs PHP's `pcntl` extension. |
+| `0` (with a warning) | The run was ended with `wp omnioffloader stop`. |
+| `129` / `130` / `143` | The command was stopped by closing the terminal (`SIGHUP`), Ctrl-C (`SIGINT`) or `SIGTERM`, and its locks were released. Needs PHP's `pcntl` extension. |

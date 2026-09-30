@@ -177,6 +177,128 @@ class Plugin {
 	}
 
 	/**
+	 * Option holding the running WP-CLI job's record (see set_cli_run()).
+	 */
+	public const CLI_RUN_OPTION = 'omnioffloader_cli_run';
+
+	/**
+	 * Option set by `wp omnioffloader stop`. Kept apart from the run record,
+	 * which the running job rewrites after every item and would clobber.
+	 */
+	public const CLI_STOP_OPTION = 'omnioffloader_cli_stop';
+
+	/**
+	 * Record the running WP-CLI job: who runs it and how far it got.
+	 *
+	 * Lets `wp omnioffloader stop` reach it, `status` report it, and a new
+	 * run tell a live lock from one a dead process left behind.
+	 *
+	 * @since 0.1.4
+	 *
+	 * @param array{job: string, pid: int, host: string, started: int, total: int, processed: int, failed: int, background: bool, log: string} $run Run record.
+	 * @return void
+	 */
+	public static function set_cli_run( array $run ) {
+		update_option( self::CLI_RUN_OPTION, $run, false );
+	}
+
+	/**
+	 * The running WP-CLI job's record.
+	 *
+	 * @since 0.1.4
+	 *
+	 * @param bool $fresh Read the database, not this request's option cache —
+	 *                    for a long-running process watching another one.
+	 * @return array<string, mixed>|null
+	 */
+	public static function get_cli_run( $fresh = false ) {
+		$run = $fresh ? self::read_option_uncached( self::CLI_RUN_OPTION ) : get_option( self::CLI_RUN_OPTION );
+
+		return is_array( $run ) && ! empty( $run['job'] ) ? $run : null;
+	}
+
+	/**
+	 * Forget the running WP-CLI job's record and any stop request.
+	 *
+	 * @since 0.1.4
+	 *
+	 * @return void
+	 */
+	public static function clear_cli_run() {
+		delete_option( self::CLI_RUN_OPTION );
+		delete_option( self::CLI_STOP_OPTION );
+	}
+
+	/**
+	 * Ask the running WP-CLI job to stop after its current item.
+	 *
+	 * @since 0.1.4
+	 *
+	 * @return void
+	 */
+	public static function request_cli_stop() {
+		update_option( self::CLI_STOP_OPTION, time(), false );
+	}
+
+	/**
+	 * Whether `wp omnioffloader stop` asked the running job to stop.
+	 *
+	 * Read from the database on every call: the job runs for hours in one
+	 * process, and its option cache would never see the request.
+	 *
+	 * @since 0.1.4
+	 *
+	 * @return bool
+	 */
+	public static function cli_stop_requested() {
+		return (bool) self::read_option_uncached( self::CLI_STOP_OPTION );
+	}
+
+	/**
+	 * Whether the process recorded for the running WP-CLI job still exists.
+	 *
+	 * Only answerable on the server that runs it (several web servers can
+	 * share one database) and where PHP can look up processes.
+	 *
+	 * @since 0.1.4
+	 *
+	 * @param array<string, mixed> $run Run record.
+	 * @return bool|null True alive, false gone, null unknown.
+	 */
+	public static function cli_run_alive( array $run ) {
+		$pid = (int) ( $run['pid'] ?? 0 );
+
+		if ( $pid < 1 || (string) ( $run['host'] ?? '' ) !== (string) gethostname() ) {
+			return null;
+		}
+
+		if ( function_exists( 'posix_kill' ) ) {
+			// EPERM (1): the process exists but belongs to another user.
+			return posix_kill( $pid, 0 ) || ( function_exists( 'posix_get_last_error' ) && 1 === posix_get_last_error() );
+		}
+
+		return is_dir( '/proc/self' ) ? is_dir( '/proc/' . $pid ) : null;
+	}
+
+	/**
+	 * Read an option straight from the database.
+	 *
+	 * The update_option() function always writes the database, so this sees
+	 * a value another process saved even with a persistent object cache.
+	 *
+	 * @param string $name Option name.
+	 * @return mixed False when missing.
+	 */
+	private static function read_option_uncached( $name ) {
+		global $wpdb;
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- must bypass the object cache, see above.
+		$value = $wpdb->get_var( $wpdb->prepare( "SELECT option_value FROM {$wpdb->options} WHERE option_name = %s LIMIT 1", $name ) );
+
+		return null === $value ? false : maybe_unserialize( $value );
+	}
+
+	/**
 	 * The bulk job currently running, if any — admin queue or WP-CLI.
 	 *
 	 * Offload, restore and retention runs all read or delete the same local

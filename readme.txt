@@ -288,6 +288,10 @@ Depending on the provider you select:
 * New setting in **Settings → Retention Policy**: with **Retain Local Files**, turn off **Serve Media from Cloud** to keep offloading media while your site still loads it from your own server, for example while you set up your CDN. Turn it on and every offloaded file switches to your cloud storage or CDN at once, with no re-upload.
 * Smart Local Cleanup and Full Cloud Migration delete local files, so with those policies media always loads from the cloud. Files an earlier policy already removed keep loading from the cloud until they are downloaded again, so turning serving off never breaks an image.
 
+**Fixes**
+
+* WP-CLI: closing the SSH window during `wp omnioffloader offload`, `restore` or `retention` now releases the job lock right away, as Ctrl+C does. Before, the next run was refused for up to 10 minutes.
+
 = 0.1.3 =
 
 **Documentation**

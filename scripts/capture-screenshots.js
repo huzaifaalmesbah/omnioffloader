@@ -285,7 +285,7 @@ async function main() {
       slug: 'storage-policies',
       wpOrgNum: 3,
       width: 1440,
-      height: 980,
+      height: 1080,
       title: 'Retention & Delivery Policies',
       url: 'https://wp71.test/wp-admin/admin.php?page=omnioffloader&view=settings',
       waitFor: '#omnioffloader-admin-app',
@@ -300,7 +300,8 @@ async function main() {
       },
       annotations: [
         { selector: '.smowp-page > .smowp-card:nth-of-type(2)', num: 1, label: 'Local Retention Policy (Controls What Local Files Stay on Server After Offload)', position: 'top-right', offsetY: -16 },
-        { selector: '.smowp-card:nth-of-type(2) .components-radio-control', num: 2, label: 'Three Granular Modes: Retain Local Files, Smart Cleanup, Full Cloud Migration', position: 'top-right', offsetY: -16 }
+        { selector: '.smowp-card:nth-of-type(2) .components-radio-control', num: 2, label: 'Three Granular Modes: Retain Local Files, Smart Cleanup, Full Cloud Migration', position: 'top-right', offsetY: -16 },
+        { selector: '.smowp-card:nth-of-type(2) .components-toggle-control', num: 3, label: 'Serve Media from Cloud: Offload Now, Switch to Your CDN Later', position: 'below-right', offsetY: 10 }
       ]
     },
 

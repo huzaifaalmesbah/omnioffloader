@@ -104,7 +104,7 @@ class ContentImageTagObserver implements ObserverInterface {
 	public function rewrite( $filtered_image, $context, $attachment_id ) {
 		$attachment_id = (int) $attachment_id;
 
-		if ( 0 === $attachment_id || ! self::is_offloaded( $attachment_id ) ) {
+		if ( 0 === $attachment_id || 'none' === self::cloud_serving( $attachment_id ) ) {
 			return $filtered_image;
 		}
 
@@ -146,7 +146,7 @@ class ContentImageTagObserver implements ObserverInterface {
 			$attachment_id = (int) $block['attrs']['mediaId'];
 		}
 
-		if ( 0 === $attachment_id || ! self::is_offloaded( $attachment_id ) ) {
+		if ( 0 === $attachment_id || 'none' === self::cloud_serving( $attachment_id ) ) {
 			return $block_content;
 		}
 
@@ -249,7 +249,7 @@ class ContentImageTagObserver implements ObserverInterface {
 		foreach ( $rows as $row ) {
 			$attachment_id = (int) $row->post_id;
 
-			if ( ! self::is_offloaded( $attachment_id ) ) {
+			if ( 'none' === self::cloud_serving( $attachment_id ) ) {
 				continue;
 			}
 
@@ -369,6 +369,10 @@ class ContentImageTagObserver implements ObserverInterface {
 
 		$cloud_base = trailingslashit( $domain ) . self::get_offload_path( $attachment_id );
 
+		if ( 'sizes' === self::cloud_serving( $attachment_id ) ) {
+			return $this->replace_size_urls_in_content( $content, $attachment_id, $local_base, $cloud_base );
+		}
+
 		// Handle both http:// and https:// variations in stored content.
 		$searches = array(
 			set_url_scheme( $local_base, 'http' ),
@@ -376,5 +380,60 @@ class ContentImageTagObserver implements ObserverInterface {
 		);
 
 		return str_replace( $searches, $cloud_base, $content );
+	}
+
+	/**
+	 * Point only an attachment's generated sizes at the cloud, for Smart
+	 * Cleanup media while "Serve media from cloud" is off: its main files
+	 * are still on the server and keep their local URLs.
+	 *
+	 * @since 0.1.4
+	 *
+	 * @param string $content       Content markup.
+	 * @param int    $attachment_id Attachment ID.
+	 * @param string $local_base    Local directory URL, trailing slash.
+	 * @param string $cloud_base    Cloud directory URL, trailing slash.
+	 * @return string
+	 */
+	private function replace_size_urls_in_content( $content, $attachment_id, $local_base, $cloud_base ) {
+		$metadata = wp_get_attachment_metadata( $attachment_id );
+
+		if ( ! is_array( $metadata ) || empty( $metadata['sizes'] ) || ! is_array( $metadata['sizes'] ) ) {
+			return $content;
+		}
+
+		$main  = self::main_filenames( $attachment_id );
+		$files = array();
+
+		foreach ( $metadata['sizes'] as $size_data ) {
+			if ( is_array( $size_data ) ) {
+				foreach ( self::files_from_size_data( $size_data ) as $file ) {
+					if ( ! in_array( $file, $main, true ) ) {
+						$files[] = $file;
+					}
+				}
+			}
+		}
+
+		// Longest first, so no filename is replaced as the prefix of another.
+		$files = array_unique( $files );
+		usort(
+			$files,
+			static function ( $a, $b ) {
+				return strlen( $b ) - strlen( $a );
+			}
+		);
+
+		$searches = array();
+		$replaces = array();
+
+		foreach ( $files as $file ) {
+			foreach ( array( 'http', 'https' ) as $scheme ) {
+				$searches[] = set_url_scheme( $local_base, $scheme ) . $file;
+				$replaces[] = $cloud_base . $file;
+			}
+		}
+
+		return str_replace( $searches, $replaces, $content );
 	}
 }

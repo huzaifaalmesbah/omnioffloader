@@ -60,7 +60,9 @@ class SrcsetObserver implements ObserverInterface {
 	public function rewrite( $sources, $size_array, $image_src, $image_meta, $attachment_id ) {
 		$attachment_id = (int) $attachment_id;
 
-		if ( ! is_array( $sources ) || ! self::is_offloaded( $attachment_id ) ) {
+		$serving = self::cloud_serving( $attachment_id );
+
+		if ( ! is_array( $sources ) || 'none' === $serving ) {
 			return $sources;
 		}
 
@@ -71,9 +73,15 @@ class SrcsetObserver implements ObserverInterface {
 		}
 
 		$base = trailingslashit( $domain ) . self::get_offload_path( $attachment_id );
+		$keep = 'sizes' === $serving ? self::main_filenames( $attachment_id ) : array();
 
 		foreach ( $sources as $width => $source ) {
 			$filename = wp_basename( (string) wp_parse_url( $source['url'], PHP_URL_PATH ) );
+
+			// Still on the server and not served from the cloud.
+			if ( in_array( $filename, $keep, true ) ) {
+				continue;
+			}
 
 			$sources[ $width ]['url'] = $base . $filename;
 		}

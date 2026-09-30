@@ -175,7 +175,7 @@ Credentials: `GET` returns secrets masked (`is_set: true`); `POST` ignores maske
 ## Data Reference
 
 **Options:**
-- `omnioffloader_settings` (autoload on) — provider, retention_policy (0/1/2), mirror_delete (default **on** since 0.1.3 — only affects new installs, because every save stores all keys), path_prefix(+active), object_versioning, async_upload, transfer_speed (low/balanced/fast/custom), transfer_concurrency (1–10, used by custom), bring_back_delete_cloud, remove_data_on_uninstall, protect_copies (Safe mode, default on), safe_mode_bring_back (download-only Bring Back on a copy, default off)
+- `omnioffloader_settings` (autoload on) — provider, retention_policy (0/1/2), serve_from_cloud (default on; may only be off with retention_policy 0 — `update_settings()` forces it on otherwise; off keeps local URLs except files an attachment's stored `omnioffloader_retention` removed: all at 2, generated sizes at 1 — `AttachmentHelper::cloud_serving()` / `is_served_from_cloud()`), mirror_delete (default **on** since 0.1.3 — only affects new installs, because every save stores all keys), path_prefix(+active), object_versioning, async_upload, transfer_speed (low/balanced/fast/custom), transfer_concurrency (1–10, used by custom), bring_back_delete_cloud, remove_data_on_uninstall, protect_copies (Safe mode, default on), safe_mode_bring_back (download-only Bring Back on a copy, default off)
 - `omnioffloader_version` (autoload on) — for Migrator
 - `omnioffloader_credentials` (autoload **off** — secrets stay out of the shared alloptions cache; `is_configured()` pays one small query per request for that) — per-provider credential sub-arrays. Never returned raw via REST.
 - `omnioffloader_first_activated_version` (autoload off)

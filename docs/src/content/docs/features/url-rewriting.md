@@ -24,6 +24,16 @@ URLs are rewritten **as pages render**. Nothing in your post content is edited, 
 
 Only offloaded attachments are rewritten. Media that is still local keeps its local URL.
 
+## Offload now, serve from the CDN later
+
+**Serve Media from Cloud** (in **Settings → Retention Policy**) is on by default. With the **Retain Local Files** policy you can turn it off: media is still offloaded to your bucket, but your site keeps loading every file from your own server, and the cloud is a backup copy. This is useful while your CDN or custom domain is not ready yet.
+
+When you are ready, turn it on and save. Every offloaded file switches to your cloud storage or CDN right away. Nothing is uploaded again and no content is edited.
+
+- **Smart Local Cleanup** and **Full Cloud Migration** delete files from your server, so with those policies the setting is hidden and media always loads from the cloud.
+- Switched to Retain Local Files after media was cleaned up? Files that are still missing from your server keep loading from the cloud, so nothing breaks. Apply the policy from **Tools** to download them again, and they load from your server too.
+- Clear your page cache after changing the setting, so cached pages pick up the new URLs.
+
 ## Custom domain / CDN URL
 
 Each provider has a **Custom Domain / CDN URL** field in Settings. Enter the address that serves your bucket, for example `https://media.yourdomain.com`.

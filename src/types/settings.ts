@@ -14,6 +14,8 @@ export type TransferSpeed = 'low' | 'balanced' | 'fast' | 'custom';
 export interface Settings {
 	provider: string;
 	retention_policy: RetentionPolicy;
+	/** Rewrite offloaded media URLs to the cloud/CDN. Off: local URLs, except media whose local files were removed. */
+	serve_from_cloud: boolean;
 	mirror_delete: boolean;
 	path_prefix_active: boolean;
 	path_prefix: string;

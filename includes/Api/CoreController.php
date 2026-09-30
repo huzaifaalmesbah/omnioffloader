@@ -48,6 +48,7 @@ class CoreController extends BaseController {
 							'type' => 'integer',
 							'enum' => array( 0, 1, 2 ),
 						),
+						'serve_from_cloud'         => array( 'type' => 'boolean' ),
 						'mirror_delete'            => array( 'type' => 'boolean' ),
 						'path_prefix_active'       => array( 'type' => 'boolean' ),
 						'path_prefix'              => array( 'type' => 'string' ),

@@ -53,6 +53,9 @@ class RetentionCommand {
 	 * is missing there); a looser policy downloads local copies again. The
 	 * attachments stay offloaded either way.
 	 *
+	 * A stricter policy is refused while "Serve Media from Cloud" is off,
+	 * since the site still loads the files it would delete.
+	 *
 	 * ## OPTIONS
 	 *
 	 * [--policy=<policy>]
@@ -116,6 +119,12 @@ class RetentionCommand {
 		$policy   = isset( $assoc_args['policy'] ) ? Plugin::sanitize_retention_policy( $assoc_args['policy'] ) : $saved;
 		$is_dry   = isset( $assoc_args['dry-run'] );
 		$queue    = $plugin->get_bulk_retention();
+
+		// Serving from the server needs the files there: deleting them would
+		// break every page that loads them until the attachment is marked.
+		if ( ! $is_dry && $policy > 0 && empty( $settings['serve_from_cloud'] ) ) {
+			WP_CLI::error( 'Serve Media from Cloud is off, so your site loads media from this server. Choose a cleanup retention policy in Settings (it turns serving on), or turn serving on first, then run this again.' );
+		}
 
 		// With a cleanup policy this command deletes files an admin-started
 		// offload or restore may be reading at the same moment.

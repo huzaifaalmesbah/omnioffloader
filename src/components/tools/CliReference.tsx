@@ -213,7 +213,7 @@ function getCommands(): CliCommand[] {
 		{
 			name: 'wp omnioffloader retention',
 			summary: __(
-				'Apply a retention policy to media that is already offloaded. A stricter policy deletes verified local files; a looser one downloads local copies again.',
+				'Apply a retention policy to media that is already offloaded. A stricter policy deletes verified local files (refused while Serve Media from Cloud is off); a looser one downloads local copies again.',
 				'omnioffloader'
 			),
 			view: 'tools',

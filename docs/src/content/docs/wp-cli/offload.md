@@ -12,7 +12,7 @@ The admin screen that does the same job is **OmniOffloader → Offload**.
 ## Synopsis
 
 ```bash
-wp omnioffloader offload [--all] [--ids=<ids>] [--limit=<number>] [--dry-run] [--force]
+wp omnioffloader offload [--all] [--ids=<ids>] [--limit=<number>] [--dry-run] [--force] [--link-existing]
 ```
 
 ## Options
@@ -24,6 +24,7 @@ wp omnioffloader offload [--all] [--ids=<ids>] [--limit=<number>] [--dry-run] [-
 | `--limit=<number>` | Stop after this many attachments. Useful for working through a large library in scheduled chunks. |
 | `--dry-run` | List what would be offloaded without uploading anything. |
 | `--force` | Run even when a bulk job started from the admin screen is active. |
+| `--link-existing` | For media already copied to the bucket with rclone or a similar tool: files already there with the same size are only checked, not uploaded again. Missing or different files are uploaded. Needs Object Versioning off. With `--dry-run`, reports what is already in the bucket. See [Large libraries](/wp-cli/large-libraries/). |
 
 You must pass either `--all` or `--ids`, but not both.
 
@@ -59,6 +60,13 @@ Offload specific attachments:
 wp omnioffloader offload --ids=12,15,42
 ```
 
+Link media you already copied to the bucket with rclone, uploading only what is missing (see [Large libraries](/wp-cli/large-libraries/)):
+
+```bash
+wp omnioffloader offload --all --link-existing --dry-run
+wp omnioffloader offload --all --link-existing
+```
+
 ## Output
 
 A dry run prints the ID and title of each attachment:
@@ -80,6 +88,12 @@ If some attachments failed, the command prints a warning and exits with code `1`
 
 ```
 Warning: 41 offloaded, 2 failed (see omnioffloader_error_log meta).
+```
+
+With `--link-existing`, the summary also counts files that were already in the bucket and files that were uploaded:
+
+```
+Success: 2 attachment(s) offloaded (8 file(s) already in the bucket, 0 uploaded).
 ```
 
 Each failed attachment keeps its error. You can see it in the Media Library (**Failed — …** with a **Retry Offload** link) and in the attachment's OmniOffloader box on its edit screen.

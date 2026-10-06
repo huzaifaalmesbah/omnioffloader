@@ -118,6 +118,13 @@ function getCommands(): CliCommand[] {
 						'omnioffloader'
 					),
 				},
+				{
+					command: 'wp omnioffloader offload --all --link-existing',
+					description: __(
+						'Already copied your uploads to the bucket (rclone, AWS CLI…)? Link them: only missing or different files are uploaded.',
+						'omnioffloader'
+					),
+				},
 			],
 			options: [
 				{
@@ -152,6 +159,13 @@ function getCommands(): CliCommand[] {
 					flag: '--force',
 					description: __(
 						'Run even while an admin bulk job is active.',
+						'omnioffloader'
+					),
+				},
+				{
+					flag: '--link-existing',
+					description: __(
+						'Skip files already in the bucket with the same size. Needs Object Versioning off.',
 						'omnioffloader'
 					),
 				},

@@ -4,7 +4,7 @@ Tags: offload, cloud storage, cdn, media library, s3
 Requires at least: 6.6
 Tested up to: 7.1
 Requires PHP: 8.1
-Stable tag: 0.1.3
+Stable tag: 0.1.4
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -466,6 +466,9 @@ Depending on the provider you select:
 * Complete WP-CLI commands: `wp omnioffloader offload`, `wp omnioffloader restore`, and `wp omnioffloader status`.
 
 == Upgrade Notice ==
+
+= 0.1.4 =
+New Serve Media from Cloud setting to offload now and switch to your CDN later, plus `--background` runs and a new `wp omnioffloader stop` command for WP-CLI. Recommended for all users.
 
 = 0.1.3 =
 Faster offloading of existing media with a new Transfer Speed setting, a Tools screen to apply a changed retention policy to offloaded media, a new `wp omnioffloader retention` command, plus security and performance fixes. Recommended for all users.

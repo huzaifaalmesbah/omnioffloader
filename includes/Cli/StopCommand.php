@@ -96,8 +96,7 @@ class StopCommand {
 		}
 
 		if ( false === Plugin::cli_run_alive( $run ) ) {
-			$plugin->release_cli_job();
-			Plugin::clear_cli_run();
+			$plugin->clear_dead_cli_run( $job );
 			WP_CLI::success( sprintf( 'The %s run (process %d) had already ended; its lock is released.', $job, (int) $run['pid'] ) );
 
 			return;

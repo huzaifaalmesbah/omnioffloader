@@ -493,7 +493,7 @@ Depending on the provider you select:
 == Upgrade Notice ==
 
 = 0.1.4 =
-New Serve Media from Cloud setting to offload now and switch to your CDN later, `wp omnioffloader offload --link-existing` to link a library you copied with rclone, `--concurrency` for faster WP-CLI uploads, plus a new `wp omnioffloader stop` command and long-run support for WP-CLI. Recommended for all users.
+Serve Media from Cloud setting, `--link-existing` to link a library copied with rclone, `--concurrency` for faster WP-CLI uploads, and a new `wp omnioffloader stop` command. Recommended for all users.
 
 = 0.1.3 =
 Faster offloading of existing media with a new Transfer Speed setting, a Tools screen to apply a changed retention policy to offloaded media, a new `wp omnioffloader retention` command, plus security and performance fixes. Recommended for all users.

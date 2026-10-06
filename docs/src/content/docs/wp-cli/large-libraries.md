@@ -59,18 +59,84 @@ Not suitable: Cloudflare's **Wrangler** uploads one file per command, and Cloudf
 
 ### rclone
 
-Set up a remote once with `rclone config` (choose S3, then your provider, for example Cloudflare R2). Use the same keys, endpoint and bucket as in OmniOffloader. Then copy, from your WordPress folder:
+#### 1. Install it
+
+On a VPS with root or sudo:
+
+```bash
+curl https://rclone.org/install.sh | sudo bash
+rclone version
+```
+
+This installs the latest version for your server's CPU. Package managers (`apt install rclone`) often ship an old one.
+
+Without root (shared or cPanel hosting with SSH), put the program in your home folder:
+
+```bash
+cd ~
+curl -O https://downloads.rclone.org/rclone-current-linux-amd64.zip
+unzip rclone-current-linux-amd64.zip
+mkdir -p ~/bin
+cp rclone-*-linux-amd64/rclone ~/bin/
+chmod 755 ~/bin/rclone
+~/bin/rclone version
+```
+
+If `uname -m` shows `aarch64`, download `rclone-current-linux-arm64.zip` instead. Some shared hosts don't allow running your own programs or long jobs. There, use [`--concurrency`](/wp-cli/offload/) instead, or run rclone on your own computer with an SFTP remote as the source (`rclone copy sftp:path/to/wp-content/uploads r2:BUCKET …`); the files then pass through your computer.
+
+#### 2. Connect it to your bucket
+
+Use the same keys, endpoint and bucket as in OmniOffloader. Either run `rclone config` and answer the questions (new remote named `r2`, storage **Amazon S3 compatible**, then your provider, for example **Cloudflare R2**, your keys and endpoint, defaults for the rest), or write the config file `~/.config/rclone/rclone.conf` yourself. For Cloudflare R2:
+
+```ini
+[r2]
+type = s3
+provider = Cloudflare
+access_key_id = YOUR_ACCESS_KEY_ID
+secret_access_key = YOUR_SECRET_ACCESS_KEY
+endpoint = https://ACCOUNT_ID.r2.cloudflarestorage.com
+no_check_bucket = true
+```
+
+For another provider, set `provider` to `AWS`, `DigitalOcean`, `Wasabi` or `Other`, and add `region` where your provider needs one. The file holds your keys, so protect it:
+
+```bash
+chmod 600 ~/.config/rclone/rclone.conf
+```
+
+Check the connection:
+
+```bash
+rclone ls r2:BUCKET | head
+```
+
+`rclone lsd r2:` lists your buckets, but answers "Access Denied" when your API token is limited to one bucket. That is normal.
+
+#### 3. Copy your media
+
+From your WordPress folder (the one that contains `wp-content`), first do a dry run, which copies nothing:
 
 ```bash
 rclone copy wp-content/uploads r2:BUCKET/PREFIX \
   --include "/[0-9][0-9][0-9][0-9]/**" \
-  --transfers 32 --checkers 32 --progress
+  --transfers 32 --checkers 32 --dry-run
+```
+
+Then run it for real. Started with `nohup`, it keeps going after you close the terminal:
+
+```bash
+nohup rclone copy wp-content/uploads r2:BUCKET/PREFIX \
+  --include "/[0-9][0-9][0-9][0-9]/**" \
+  --transfers 32 --checkers 32 \
+  --stats 1m --log-file rclone.log > /dev/null 2>&1 &
+
+tail -f rclone.log
 ```
 
 - Leave out `/PREFIX` if you don't use a Path Prefix.
-- You can run it again at any time: it only copies new or changed files.
-- With an API token that can't create buckets, add `--s3-no-check-bucket`.
-- On shared hosting without rclone, run it on your own computer with an SFTP remote as the source (`rclone copy sftp:path/to/wp-content/uploads r2:BUCKET …`). The files then pass through your computer.
+- The `--include` line copies only the year/month folders, so logs and backups stay out of the bucket.
+- If the copy stops, run the same command again: it skips files that are already copied.
+- `tail -f` only shows progress; Ctrl+C stops watching, not the copy.
 
 ### AWS CLI
 

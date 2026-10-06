@@ -21,12 +21,12 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * Builds the rclone remote, copy command and link command that let a large
  * library be copied with rclone and then linked with
- * `wp omnioffloader offload --link-existing`. Used by the Tools screen and
+ * `wp omnioffloader offload --link-existing`. Used by
  * `wp omnioffloader rclone`.
  *
- * The secret key never leaves the server: the shown config carries a
- * placeholder, and only `wp omnioffloader rclone --write-config` puts the
- * real secret into a private file.
+ * The secret key is never printed: the shown config carries a placeholder,
+ * and only `wp omnioffloader rclone --write-config` puts the real secret
+ * into a private file.
  *
  * @since 0.1.4
  */
@@ -253,47 +253,6 @@ class RcloneSetup {
 		fclose( $handle ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose
 
 		return $count;
-	}
-
-	/**
-	 * Everything the Tools screen shows (GET /provider/rclone).
-	 *
-	 * @param ProviderInterface|null $provider Active provider.
-	 * @return array{available: bool, message: string, remote: string, config: string, copy_dry_run: string, copy: string, link_dry_run: string, link: string, source: string, destination: string, warnings: string[]}
-	 */
-	public static function snapshot( $provider ) {
-		$refusal = self::refusal( $provider );
-		$empty   = array(
-			'available'    => false,
-			'message'      => $refusal,
-			'remote'       => self::REMOTE,
-			'config'       => '',
-			'copy_dry_run' => '',
-			'copy'         => '',
-			'link_dry_run' => '',
-			'link'         => '',
-			'source'       => '',
-			'destination'  => '',
-			'warnings'     => array(),
-		);
-
-		if ( '' !== $refusal || null === $provider ) {
-			return $empty;
-		}
-
-		return array(
-			'available'    => true,
-			'message'      => '',
-			'remote'       => self::REMOTE,
-			'config'       => self::config( $provider ),
-			'copy_dry_run' => self::copy_command( $provider, '', true ),
-			'copy'         => self::copy_command( $provider ),
-			'link_dry_run' => 'wp omnioffloader offload --all --link-existing --dry-run',
-			'link'         => 'wp omnioffloader offload --all --link-existing',
-			'source'       => self::source(),
-			'destination'  => self::destination( $provider ),
-			'warnings'     => self::warnings(),
-		);
 	}
 
 	/**

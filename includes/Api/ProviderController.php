@@ -10,9 +10,7 @@ namespace OmniOffloader\Api;
 use OmniOffloader\Core\FolderClaim;
 use OmniOffloader\Core\Helpers;
 use OmniOffloader\Core\SafeMode;
-use OmniOffloader\Core\Plugin;
 use OmniOffloader\Providers\ProviderRegistry;
-use OmniOffloader\Services\RcloneSetup;
 use OmniOffloader\Traits\OptionsHelper;
 use WP_REST_Request;
 
@@ -71,10 +69,6 @@ class ProviderController extends BaseController {
 			)
 		);
 
-		// rclone setup for the active provider (Tools screen). Settings only,
-		// no remote call; the secret key is never part of the response.
-		$this->register_get_route( '/provider/rclone', array( $this, 'get_rclone_response' ) );
-
 		$this->register_post_route(
 			'/provider/test-connection',
 			array( $this, 'test_connection_response' ),
@@ -87,17 +81,6 @@ class ProviderController extends BaseController {
 				),
 			)
 		);
-	}
-
-	/**
-	 * GET /provider/rclone
-	 *
-	 * @since 0.1.4
-	 *
-	 * @return \WP_REST_Response
-	 */
-	public function get_rclone_response() {
-		return rest_ensure_response( RcloneSetup::snapshot( Plugin::get_instance()->get_provider() ) );
 	}
 
 	/**

@@ -92,7 +92,7 @@ The quickest way: let OmniOffloader write the remote from its own settings, with
 wp omnioffloader rclone --write-config
 ```
 
-It saves a remote named `omnioffloader` to rclone's config file and prints the copy and link commands for this site. The same setup is on **OmniOffloader → Tools**. See [`wp omnioffloader rclone`](/wp-cli/rclone/). Then skip to step 3, using `omnioffloader:` where the examples below say `r2:`.
+It saves a remote named `omnioffloader` to rclone's config file and prints the copy and link commands for this site. See [`wp omnioffloader rclone`](/wp-cli/rclone/). Then skip to step 3, using `omnioffloader:` where the examples below say `r2:`.
 
 To set it up by hand instead, use the same keys, endpoint and bucket as in OmniOffloader. Either run `rclone config` and answer the questions (new remote named `r2`, storage **Amazon S3 compatible**, then your provider, for example **Cloudflare R2**, your keys and endpoint, defaults for the rest), or write the config file `~/.config/rclone/rclone.conf` yourself. For Cloudflare R2:
 

@@ -14,14 +14,12 @@ Every bulk job in OmniOffloader can also run from the terminal with [WP-CLI](htt
 | [`wp omnioffloader retention`](/wp-cli/retention/) | Apply a retention policy to media that is already offloaded. |
 | [`wp omnioffloader status`](/wp-cli/status/) | Show the provider, connection, Safe mode, media counts and running jobs. |
 | [`wp omnioffloader stop`](/wp-cli/stop/) | Stop the running job from any terminal. |
-| [`wp omnioffloader rclone`](/wp-cli/rclone/) | Print or save the rclone setup for this site, built from its settings. |
-| [Large libraries](/wp-cli/large-libraries/) | Copy with rclone or a similar tool, then link with `offload --link-existing`. |
 
 The same reference, with copy buttons, is on the **OmniOffloader → Tools** screen.
 
 ## When to use WP-CLI
 
-- **Large libraries.** A terminal command is not limited by the browser or by short web request time limits. On libraries of 5,000 items or more, the Bulk Offload and Bring Back screens suggest the matching command. For tens of thousands of items, copy the files with rclone first and [link them](/wp-cli/large-libraries/).
+- **Large libraries.** A terminal command is not limited by the browser or by short web request time limits. On libraries of 5,000 items or more, the Bulk Offload and Bring Back screens suggest the matching command. For tens of thousands of items, add [`--concurrency`](/wp-cli/offload/) to upload many files at once.
 - **SSH access.** You can run a job on the server directly and watch a progress bar.
 - **Long jobs.** Start it with `nohup … &` and close the terminal; the job keeps going ([how](/wp-cli/stop/#keep-a-job-running-after-you-close-the-terminal)). Check it with `status`, end it with [`stop`](/wp-cli/stop/).
 - **Scheduled work.** Use `--limit` with a cron job to work through a big library in small chunks, for example 500 attachments each night.

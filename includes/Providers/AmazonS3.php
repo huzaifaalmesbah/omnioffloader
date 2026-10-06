@@ -69,20 +69,6 @@ class AmazonS3 extends AbstractS3Provider {
 	}
 
 	/**
-	 * {@inheritDoc}
-	 *
-	 * @since 0.1.4
-	 *
-	 * @return array<string, string>
-	 */
-	protected function rclone_backend() {
-		return array(
-			'provider' => 'AWS',
-			'region'   => '' !== $this->credential( 'region' ) ? $this->credential( 'region' ) : 'us-east-1',
-		);
-	}
-
-	/**
 	 * Build the S3 client configured for Amazon S3.
 	 *
 	 * @return S3Client

@@ -63,21 +63,6 @@ class BackblazeB2 extends AbstractS3Provider {
 	}
 
 	/**
-	 * {@inheritDoc}
-	 *
-	 * @since 0.1.4
-	 *
-	 * @return array<string, string>
-	 */
-	protected function rclone_backend() {
-		return array(
-			'provider' => 'Other',
-			'region'   => '' !== $this->credential( 'region' ) ? $this->credential( 'region' ) : 'us-west-004',
-			'endpoint' => Helpers::normalize_url( $this->credential( 'endpoint' ) ),
-		);
-	}
-
-	/**
 	 * Build the S3 client configured for Backblaze B2.
 	 *
 	 * @return S3Client

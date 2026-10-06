@@ -33,7 +33,7 @@ And because offloading should never be a one-way door, **Bring Back** downloads 
 
 * **Automatic offloading** — new uploads go to the cloud in the background, so the upload screen never waits on a cloud transfer.
 * **Bulk offload for existing media** — process the whole library or a set number of attachments (5, 10, 25, 50, 100 or any number), with a live progress bar, activity log and a Cancel button.
-* **Large libraries, much faster** — copy your uploads to the bucket with rclone, the AWS CLI or a similar tool, then link them with `wp omnioffloader offload --all --link-existing`. Every file is checked in the bucket by size; only missing or different files are uploaded.
+* **Large libraries, much faster** — `wp omnioffloader offload --all --concurrency=32` (up to 64) uploads many files at the same time from WP-CLI on a VPS or dedicated server.
 * **Adjustable transfer speed** — offload your existing, not-yet-offloaded media library and bring it back faster by moving 1, 3 or 6 files at the same time, or your own number from 1 to 10. Every setting runs inside a single PHP process, so faster never means more server processes.
 * **Content URL rewriting** — images, galleries, video, audio, file, cover and media-text blocks, Classic Editor media tags and audio/video shortcodes are all served from the cloud, without editing post content.
 * **Serve from your CDN** — media is delivered from your custom domain or CDN edge, not your origin server. Not ready yet? Turn off **Serve Media from Cloud** to offload now and keep loading media from your server, then switch over with one click.
@@ -236,9 +236,7 @@ Yes. **OmniOffloader → Tools** lists every command and option with copy button
 
 `wp omnioffloader offload --all [--limit=<number>] [--dry-run]`
 `wp omnioffloader offload --ids=12,34`
-`wp omnioffloader offload --all --link-existing`
 `wp omnioffloader offload --all --concurrency=32`
-`wp omnioffloader rclone --write-config`
 `wp omnioffloader restore --all [--limit=<number>] [--delete-cloud] [--dry-run]`
 `wp omnioffloader retention [--policy=<0|1|2>] [--dry-run] [--format=json]`
 `nohup wp omnioffloader offload --all > offload.log 2>&1 &`
@@ -247,9 +245,9 @@ Yes. **OmniOffloader → Tools** lists every command and option with copy button
 
 Start a long job with `nohup … &` (as above) to keep it running after you close the terminal; `status` shows its progress and `stop` ends it from any terminal. Every write command supports `--dry-run`, and destructive options ask for confirmation unless you pass `--yes`. Commands refuse to start while another bulk job is running (`--force` overrides this), so two jobs never touch the same files. WP-CLI offloads use your Transfer Speed setting.
 
-= I have a very large library. Can I copy it with rclone first? =
+= How can I offload a very large library faster? =
 
-Yes, and for tens of thousands of attachments it is much faster. Copy the year/month folders of `wp-content/uploads` into your bucket (under your Path Prefix, if you use one) with rclone, the AWS CLI, s5cmd, MinIO Client or a similar tool. `wp omnioffloader rclone --write-config` builds the rclone setup and commands from your settings. Then run `wp omnioffloader offload --all --link-existing --dry-run` to see what is already there, and `wp omnioffloader offload --all --link-existing` to link it. A file that is already in the bucket with the same size is not uploaded again; anything missing or different is uploaded as usual. Object Versioning must be off. Copy only your media folders — `wp-content/uploads` can also hold logs and backups that should never be public. Full guide: [Large libraries](https://omnioffloader.vercel.app/wp-cli/large-libraries/).
+Run the offload from WP-CLI on your server with more files at once: `wp omnioffloader offload --all --concurrency=32`, up to 64. The admin screens stay at 10 at most, because they run inside web requests. Try a short run first (`--limit=500`) and time it, then start the full run with `nohup … &` so it keeps going after you close the terminal.
 
 = Who can offload or bring back media? =
 
@@ -302,17 +300,9 @@ Depending on the provider you select:
 * New setting in **Settings → Retention Policy**: with **Retain Local Files**, turn off **Serve Media from Cloud** to keep offloading media while your site still loads it from your own server, for example while you set up your CDN. Turn it on and every offloaded file switches to your cloud storage or CDN at once, with no re-upload.
 * Smart Local Cleanup and Full Cloud Migration delete local files, so with those policies media always loads from the cloud. Files an earlier policy already removed keep loading from the cloud until they are downloaded again, so turning serving off never breaks an image.
 
-**Link media you already copied to the bucket**
-
-* New `wp omnioffloader offload --link-existing`: copy a large library to your bucket with rclone, the AWS CLI or a similar tool first, then link it. A file already in the bucket with exactly the same size is checked, not uploaded again; missing or different files are uploaded as usual, and the attachment is only marked offloaded once every file is there.
-* The bucket is read one folder at a time, about one request per 1,000 files, so a library of tens of thousands of attachments links in a fraction of the upload time.
-* `--link-existing --dry-run` reads the bucket and reports how many attachments are already complete and how much would still be uploaded, without changing anything.
-* New `wp omnioffloader rclone`: the rclone remote for your bucket, the copy command for this site's folder (Path Prefix included, so sites sharing a bucket each get their own) and the link command, all built from your settings. The secret key is never printed; `wp omnioffloader rclone --write-config` saves it straight into rclone's config file, readable only by your user. Hidden in Safe mode, and the copy command only takes the year/month folders.
-* The Offload screen mentions it for large libraries, and a new [Large libraries](https://omnioffloader.vercel.app/wp-cli/large-libraries/) guide covers rclone, the AWS CLI and other copy tools.
-
 **WP-CLI: upload more files at once**
 
-* New `wp omnioffloader offload --concurrency=<1–64>`: upload up to 64 files at the same time for that run, instead of the Transfer Speed setting (at most 10, which the admin screens keep). For a VPS or dedicated server offloading a large library without a copy tool. More attachments share one batch so every slot stays busy, and a file above 64 MB still uploads at most 10 parts at once.
+* New `wp omnioffloader offload --concurrency=<1–64>`: upload up to 64 files at the same time for that run, instead of the Transfer Speed setting (at most 10, which the admin screens keep). For a VPS or dedicated server offloading a large library. More attachments share one batch so every slot stays busy, and a file above 64 MB still uploads at most 10 parts at once.
 
 **WP-CLI: stop command and long runs**
 
@@ -495,7 +485,7 @@ Depending on the provider you select:
 == Upgrade Notice ==
 
 = 0.1.4 =
-Serve Media from Cloud setting, `--link-existing` to link a library copied with rclone, `--concurrency` for faster WP-CLI uploads, and a new `wp omnioffloader stop` command. Recommended for all users.
+Serve Media from Cloud setting, `--concurrency` for much faster WP-CLI uploads of large libraries, and a new `wp omnioffloader stop` command. Recommended for all users.
 
 = 0.1.3 =
 Faster offloading of existing media with a new Transfer Speed setting, a Tools screen to apply a changed retention policy to offloaded media, a new `wp omnioffloader retention` command, plus security and performance fixes. Recommended for all users.

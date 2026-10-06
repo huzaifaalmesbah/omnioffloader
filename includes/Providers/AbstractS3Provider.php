@@ -177,61 +177,6 @@ abstract class AbstractS3Provider implements ProviderInterface {
 	}
 
 	/**
-	 * This provider as an rclone remote (`type = s3`), for copying a large
-	 * library with rclone before `wp omnioffloader offload --link-existing`.
-	 *
-	 * Optional provider method: callers check method_exists().
-	 *
-	 * @since 0.1.4
-	 *
-	 * @param bool $with_secret Include the secret key. Only for writing a
-	 *                          private config file on the server — never for
-	 *                          the browser or the terminal.
-	 * @return array<string, string> rclone option => value, empty values left out.
-	 */
-	public function rclone_settings( $with_secret = false ) {
-		$settings = array_merge(
-			array(
-				'type'              => 's3',
-				'provider'          => 'Other',
-				'access_key_id'     => $this->credential( 'key' ),
-				'secret_access_key' => $with_secret ? $this->credential( 'secret' ) : '',
-			),
-			$this->rclone_backend(),
-			array(
-				// The keys may not be allowed to create buckets, and the
-				// bucket exists already.
-				'no_check_bucket' => 'true',
-			)
-		);
-
-		return array_filter(
-			array_map( 'strval', $settings ),
-			static function ( $value ) {
-				return '' !== $value;
-			}
-		);
-	}
-
-	/**
-	 * Provider-specific rclone options: provider, region, endpoint…
-	 *
-	 * Mirrors create_client(), so rclone reaches the same bucket the same
-	 * way. This default suits a generic S3-compatible service.
-	 *
-	 * @since 0.1.4
-	 *
-	 * @return array<string, string>
-	 */
-	protected function rclone_backend() {
-		return array(
-			'provider' => 'Other',
-			'region'   => $this->credential( 'region' ),
-			'endpoint' => Helpers::normalize_url( $this->credential( 'endpoint' ) ),
-		);
-	}
-
-	/**
 	 * Public/CDN base URL used for rewrites.
 	 *
 	 * @return string

@@ -64,23 +64,6 @@ class Wasabi extends AbstractS3Provider {
 	}
 
 	/**
-	 * {@inheritDoc}
-	 *
-	 * @since 0.1.4
-	 *
-	 * @return array<string, string>
-	 */
-	protected function rclone_backend() {
-		$region = '' !== $this->credential( 'region' ) ? $this->credential( 'region' ) : 'us-east-1';
-
-		return array(
-			'provider' => 'Wasabi',
-			'region'   => $region,
-			'endpoint' => 'https://s3.' . ( 'us-east-1' === $region ? '' : $region . '.' ) . 'wasabisys.com',
-		);
-	}
-
-	/**
 	 * Build the S3 client configured for Wasabi.
 	 *
 	 * @return S3Client

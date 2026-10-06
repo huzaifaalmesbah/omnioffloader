@@ -71,7 +71,7 @@ Commands that delete files ask before they start:
 - `restore --delete-cloud` asks before it deletes cloud copies.
 - `retention` asks before it deletes local files.
 
-Add `--yes` to skip the question, for example in a script.
+Add `--yes` to skip the question, for example in a script. Without a terminal to answer in (a cron job, `nohup … &`, or output sent to a file) the question can't be asked, so these commands stop with a message asking for `--yes` instead of waiting.
 
 ### One job at a time
 

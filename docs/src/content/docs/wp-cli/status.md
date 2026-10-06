@@ -20,7 +20,7 @@ This command has no options.
 ## Example output
 
 ```
-OmniOffloader 0.1.3
+OmniOffloader 0.1.4
 
 Provider:   Cloudflare R2 (cloudflare_r2)
 Bucket:     my-media
@@ -32,6 +32,14 @@ Media: 1250 total — 1200 offloaded, 50 local
 Bulk offload: running (120/500, 0 errors)
 
 40 offloaded attachment(s) follow an older retention policy. Run `wp omnioffloader retention --dry-run` to review.
+```
+
+While a WP-CLI job runs, `status` adds a line for it:
+
+```
+WP-CLI offload: running — 3420 of 5000 done, 2 failed, started 25 mins ago (process 843753, detached)
+  Log: /home/example/offload.log
+  Stop it with: wp omnioffloader stop
 ```
 
 What each part means:

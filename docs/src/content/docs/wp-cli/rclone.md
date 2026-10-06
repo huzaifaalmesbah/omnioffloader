@@ -7,8 +7,6 @@ sidebar:
 
 Builds the rclone setup for this site from its settings: an rclone remote for your bucket, the command that copies this site's media into its folder, and the command that links the copied files afterwards. It is the first step of offloading a [large library](/wp-cli/large-libraries/) with rclone.
 
-The same setup, with copy buttons, is on **OmniOffloader → Tools → Copy a Large Library with rclone**.
-
 ## Synopsis
 
 ```bash
@@ -65,7 +63,7 @@ Each site prints its own destination, so `shop.example.com` copies into `my-buck
 
 ## Safety
 
-- **The secret key is never printed**, and never sent to the browser on the Tools screen. Only `--write-config` writes it, into a file only your user can read.
+- **The secret key is never printed.** Only `--write-config` writes it, into a file only your user can read.
 - **On a copy of the site, or when another site uses this folder** ([Safe mode](/features/safe-mode/)), the command refuses: copying from here would write into someone else's files.
 - **The copy command only copies the year/month folders** (or, with `--file-list`, only your media files), so logs and backups in the uploads folder never reach the bucket.
 - **Use `rclone copy`, never `rclone sync`.** `sync` deletes files in the bucket that are not on this server: the folder's [ownership marker](/features/shared-bucket/) and, in a shared bucket, other sites' files.

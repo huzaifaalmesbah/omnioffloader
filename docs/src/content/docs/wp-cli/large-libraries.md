@@ -12,6 +12,14 @@ The fastest way to offload a large library:
 1. Copy your uploads folder to the bucket with a copy tool.
 2. Run `wp omnioffloader offload --all --link-existing`. OmniOffloader checks each file in the bucket and marks the attachment as offloaded. It only uploads files that are missing or different.
 
+Can't install a copy tool? Let WP-CLI upload more files at once instead. It still uploads every file through PHP, so it is slower than copying and linking, but on a VPS with good bandwidth it is usually faster than the default:
+
+```bash
+nohup wp omnioffloader offload --all --concurrency=32 > offload.log 2>&1 &
+```
+
+See [`--concurrency`](/wp-cli/offload/).
+
 ## How the files must be laid out
 
 OmniOffloader stores each file at the same path it has in your uploads folder, under your Path Prefix if you set one:

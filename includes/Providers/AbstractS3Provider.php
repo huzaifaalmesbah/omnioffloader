@@ -44,6 +44,13 @@ abstract class AbstractS3Provider implements ProviderInterface {
 	protected const MULTIPART_PART_SIZE = 8388608;
 
 	/**
+	 * Most parts of one large file uploaded at once, whatever the transfer
+	 * concurrency: WP-CLI --concurrency can reach 64, and each part in
+	 * flight holds a buffer and a connection.
+	 */
+	protected const MAX_PART_CONCURRENCY = 10;
+
+	/**
 	 * Seconds to wait for a connection before giving up.
 	 *
 	 * The SDK sets no timeout by default, so an unreachable endpoint can hold
@@ -384,7 +391,7 @@ abstract class AbstractS3Provider implements ProviderInterface {
 		// The SDK uploads 5 parts at once by default; follow the site's
 		// transfer speed setting instead so a low-resource host stays low.
 		if ( $concurrency > 0 ) {
-			$config['concurrency'] = (int) $concurrency;
+			$config['concurrency'] = min( static::MAX_PART_CONCURRENCY, (int) $concurrency );
 		}
 
 		$uploader = new \Aws\S3\MultipartUploader( $this->get_client(), $file, $config );

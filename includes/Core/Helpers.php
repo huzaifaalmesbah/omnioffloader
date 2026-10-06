@@ -33,6 +33,14 @@ class Helpers {
 	private static $stats_flush_pending = false;
 
 	/**
+	 * Files in flight at once for this process, set by `wp omnioffloader
+	 * offload --concurrency`; 0 follows the Transfer Speed setting.
+	 *
+	 * @var int<0, 64>
+	 */
+	private static $transfer_concurrency_override = 0;
+
+	/**
 	 * Prefix for background-queue identifiers.
 	 *
 	 * WP_Background_Process keeps batches, run status and the process lock in
@@ -221,6 +229,36 @@ class Helpers {
 				delete_option( '_transient_timeout_' . $key );
 			}
 		}
+	}
+
+	/**
+	 * Most files a WP-CLI run may move at once with --concurrency. The admin
+	 * screens stay at 10: they run inside web requests, often on shared hosts.
+	 */
+	public const MAX_CLI_CONCURRENCY = 64;
+
+	/**
+	 * Move this many files at once for the rest of this process, ignoring
+	 * the Transfer Speed setting. WP-CLI only (`offload --concurrency`).
+	 *
+	 * @since 0.1.4
+	 *
+	 * @param int $concurrency 1 to MAX_CLI_CONCURRENCY; 0 follows the setting again.
+	 * @return void
+	 */
+	public static function set_transfer_concurrency_override( $concurrency ) {
+		self::$transfer_concurrency_override = max( 0, min( self::MAX_CLI_CONCURRENCY, (int) $concurrency ) );
+	}
+
+	/**
+	 * The --concurrency value of this process, 0 when none.
+	 *
+	 * @since 0.1.4
+	 *
+	 * @return int<0, 64>
+	 */
+	public static function transfer_concurrency_override() {
+		return self::$transfer_concurrency_override;
 	}
 
 	/**

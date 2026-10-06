@@ -85,14 +85,18 @@ class AttachmentUploader {
 	 * How many attachments a bulk run offloads together (see upload_many()).
 	 *
 	 * One at a time on the Low transfer speed, so the lightest setting
-	 * stays exactly that.
+	 * stays exactly that. Three up to 15 files at once; above that (WP-CLI
+	 * --concurrency) one attachment per four slots, so a big pool stays full.
 	 *
 	 * @since 0.1.3
+	 * @since 0.1.4 Grows with --concurrency.
 	 *
-	 * @return int<1, 3>
+	 * @return int<1, 16>
 	 */
 	public static function batch_size() {
-		return self::files_at_once() > 1 ? 3 : 1;
+		$slots = self::files_at_once();
+
+		return $slots > 1 ? min( 16, max( 3, intdiv( $slots, 4 ) ) ) : 1;
 	}
 
 	/**

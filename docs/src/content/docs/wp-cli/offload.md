@@ -12,7 +12,7 @@ The admin screen that does the same job is **OmniOffloader → Offload**.
 ## Synopsis
 
 ```bash
-wp omnioffloader offload [--all] [--ids=<ids>] [--limit=<number>] [--dry-run] [--force] [--link-existing]
+wp omnioffloader offload [--all] [--ids=<ids>] [--limit=<number>] [--dry-run] [--force] [--concurrency=<number>] [--link-existing]
 ```
 
 ## Options
@@ -24,6 +24,7 @@ wp omnioffloader offload [--all] [--ids=<ids>] [--limit=<number>] [--dry-run] [-
 | `--limit=<number>` | Stop after this many attachments. Useful for working through a large library in scheduled chunks. |
 | `--dry-run` | List what would be offloaded without uploading anything. |
 | `--force` | Run even when a bulk job started from the admin screen is active. |
+| `--concurrency=<number>` | Files uploaded at the same time for this run, from `1` to `64`, instead of the [Transfer Speed](/features/transfer-speed/) setting (at most 10). For a VPS or dedicated server. |
 | `--link-existing` | For media already copied to the bucket with rclone or a similar tool: files already there with the same size are only checked, not uploaded again. Missing or different files are uploaded. Needs Object Versioning off. With `--dry-run`, reports what is already in the bucket. See [Large libraries](/wp-cli/large-libraries/). |
 
 You must pass either `--all` or `--ids`, but not both.
@@ -52,6 +53,12 @@ Offload the whole library and keep it running after you close the terminal (see 
 
 ```bash
 nohup wp omnioffloader offload --all > offload.log 2>&1 &
+```
+
+Upload 32 files at the same time on a VPS; try a short run first and time it:
+
+```bash
+wp omnioffloader offload --all --concurrency=32 --limit=500
 ```
 
 Offload specific attachments:
@@ -102,7 +109,8 @@ Each failed attachment keeps its error. You can see it in the Media Library (**F
 
 - **Which attachments:** `--all` picks every attachment that has a file and is not in the trash or already offloaded. Attachments that failed before are processed last.
 - **Skipped attachments:** attachments excluded by the [`omnioffloader_should_offload_attachment`](/developers/hooks/#omnioffloader_should_offload_attachment) filter are counted as skipped, not as failures.
-- **Speed:** uploads follow the [Transfer Speed](/features/transfer-speed/) setting. Above **Low**, a few attachments share one batch and their files upload side by side.
+- **Speed:** uploads follow the [Transfer Speed](/features/transfer-speed/) setting, or `--concurrency` for this run. Above **Low**, a few attachments share one batch and their files upload side by side; with a high `--concurrency`, more attachments share a batch (one per four files at once, up to 16) so every slot stays busy. A file above 64 MB uploads at most 10 parts at once.
+- **When `--concurrency` helps:** with many small files (thumbnails) on a server with good bandwidth. It can't make one large file or a saturated connection faster. Bring Back and retention move one attachment's files at a time, so `offload` is the only command that takes it.
 - **Repeated failures:** after 10 failures in a row the command checks the connection. If the provider does not answer, it stops with the provider's error. See [Stopping on repeated failures](/wp-cli/#stopping-on-repeated-failures).
 - **Safe mode:** on a staging, development or local copy, the command refuses to run (a dry run still works). See [Safe mode](/features/safe-mode/).
 - **Shared buckets:** before it starts, the command checks that this site's bucket folder is not used by another site. See [Sharing one bucket](/features/shared-bucket/).

@@ -69,6 +69,11 @@ class OffloadCommand {
 	 * [--force]
 	 * : Run even when a bulk offload started from the admin screen is active.
 	 *
+	 * [--concurrency=<number>]
+	 * : Files uploaded at the same time for this run, 1 to 64, instead of the
+	 * Transfer Speed setting (at most 10). For a VPS or dedicated server; try
+	 * a short run first, e.g. with --limit=500.
+	 *
 	 * [--link-existing]
 	 * : For media already copied to the bucket with another tool (rclone, the
 	 * AWS CLI, s5cmd…): a file whose object already exists at the expected key
@@ -82,6 +87,7 @@ class OffloadCommand {
 	 *     wp omnioffloader offload --all --limit=500
 	 *     wp omnioffloader offload --all --dry-run
 	 *     nohup wp omnioffloader offload --all > offload.log 2>&1 &
+	 *     wp omnioffloader offload --all --concurrency=32
 	 *     wp omnioffloader offload --all --link-existing --dry-run
 	 *     wp omnioffloader offload --all --link-existing
 	 *
@@ -102,6 +108,17 @@ class OffloadCommand {
 		$queue  = $plugin->get_bulk_offload();
 		$is_dry = isset( $assoc_args['dry-run'] );
 		$link   = isset( $assoc_args['link-existing'] );
+
+		if ( isset( $assoc_args['concurrency'] ) ) {
+			$concurrency = (string) $assoc_args['concurrency'];
+
+			// A typo must not silently mean "the setting" or "64".
+			if ( ! ctype_digit( $concurrency ) || (int) $concurrency < 1 || (int) $concurrency > Helpers::MAX_CLI_CONCURRENCY ) {
+				WP_CLI::error( sprintf( '--concurrency must be a whole number from 1 to %d.', Helpers::MAX_CLI_CONCURRENCY ) );
+			}
+
+			Helpers::set_transfer_concurrency_override( (int) $concurrency );
+		}
 
 		// Versioned keys get a fresh timestamp folder, so no object copied
 		// beforehand could ever sit at the expected key.
@@ -181,7 +198,11 @@ class OffloadCommand {
 		$stopped   = false;
 
 		// A few attachments share one transfer pool (see upload_many()).
-		foreach ( array_chunk( $ids, $link ? self::LINK_BATCH_SIZE : AttachmentUploader::batch_size() ) as $chunk ) {
+		if ( Helpers::transfer_concurrency_override() > 0 ) {
+			WP_CLI::log( sprintf( 'Uploading up to %d files at once.', AttachmentUploader::files_at_once() ) );
+		}
+
+		foreach ( array_chunk( $ids, $link ? max( self::LINK_BATCH_SIZE, AttachmentUploader::batch_size() ) : AttachmentUploader::batch_size() ) as $chunk ) {
 			$results = $uploader->upload_many( $chunk );
 
 			foreach ( $chunk as $id ) {

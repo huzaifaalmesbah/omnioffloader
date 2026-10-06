@@ -159,9 +159,19 @@ trait OptionsHelper {
 	 *
 	 * @since 0.1.3
 	 *
-	 * @return int Between 1 and 10.
+	 * @since 0.1.4 WP-CLI --concurrency overrides it, up to 64.
+	 *
+	 * @return int<1, 64> Between 1 and 10, or up to 64 with WP-CLI --concurrency.
 	 */
 	public static function files_at_once() {
+		// `wp omnioffloader offload --concurrency`: an explicit choice for
+		// this run, so it wins over the setting and the filter.
+		$override = Helpers::transfer_concurrency_override();
+
+		if ( $override > 0 ) {
+			return $override;
+		}
+
 		$settings = self::get_settings();
 		$speed    = self::sanitize_transfer_speed( $settings['transfer_speed'] );
 		$default  = 'custom' === $speed

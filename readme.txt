@@ -167,7 +167,7 @@ It matters most when you offload media that is already in your library but not i
 * **Fast** — 6 files at a time, for a VPS or dedicated server.
 * **Custom** — any number from 1 to 10.
 
-All four run in the same single PHP process; a faster setting overlaps the time spent waiting on the network instead of starting more processes. Each extra file only adds a little memory and bandwidth. Bulk Offload, Bring Back, new uploads and WP-CLI all follow this setting.
+All four run in the same single PHP process; a faster setting overlaps the time spent waiting on the network instead of starting more processes. Each extra file only adds a little memory and bandwidth. Bulk Offload, Bring Back, new uploads and WP-CLI all follow this setting. For a one-off WP-CLI offload on a VPS, `wp omnioffloader offload --concurrency=32` (up to 64) goes beyond it for that run only.
 
 = How long does a bulk offload take, and can I close the browser tab? =
 
@@ -237,6 +237,7 @@ Yes. **OmniOffloader → Tools** lists every command and option with copy button
 `wp omnioffloader offload --all [--limit=<number>] [--dry-run]`
 `wp omnioffloader offload --ids=12,34`
 `wp omnioffloader offload --all --link-existing`
+`wp omnioffloader offload --all --concurrency=32`
 `wp omnioffloader restore --all [--limit=<number>] [--delete-cloud] [--dry-run]`
 `wp omnioffloader retention [--policy=<0|1|2>] [--dry-run] [--format=json]`
 `nohup wp omnioffloader offload --all > offload.log 2>&1 &`
@@ -306,6 +307,10 @@ Depending on the provider you select:
 * The bucket is read one folder at a time, about one request per 1,000 files, so a library of tens of thousands of attachments links in a fraction of the upload time.
 * `--link-existing --dry-run` reads the bucket and reports how many attachments are already complete and how much would still be uploaded, without changing anything.
 * The Offload screen mentions it for large libraries, and a new [Large libraries](https://omnioffloader.vercel.app/wp-cli/large-libraries/) guide covers rclone, the AWS CLI and other copy tools.
+
+**WP-CLI: upload more files at once**
+
+* New `wp omnioffloader offload --concurrency=<1–64>`: upload up to 64 files at the same time for that run, instead of the Transfer Speed setting (at most 10, which the admin screens keep). For a VPS or dedicated server offloading a large library without a copy tool. More attachments share one batch so every slot stays busy, and a file above 64 MB still uploads at most 10 parts at once.
 
 **WP-CLI: stop command and long runs**
 
@@ -488,7 +493,7 @@ Depending on the provider you select:
 == Upgrade Notice ==
 
 = 0.1.4 =
-New Serve Media from Cloud setting to offload now and switch to your CDN later, `wp omnioffloader offload --link-existing` to link a library you copied with rclone, plus a new `wp omnioffloader stop` command and long-run support for WP-CLI. Recommended for all users.
+New Serve Media from Cloud setting to offload now and switch to your CDN later, `wp omnioffloader offload --link-existing` to link a library you copied with rclone, `--concurrency` for faster WP-CLI uploads, plus a new `wp omnioffloader stop` command and long-run support for WP-CLI. Recommended for all users.
 
 = 0.1.3 =
 Faster offloading of existing media with a new Transfer Speed setting, a Tools screen to apply a changed retention policy to offloaded media, a new `wp omnioffloader retention` command, plus security and performance fixes. Recommended for all users.

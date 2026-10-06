@@ -172,8 +172,7 @@ trait CliJobGuard {
 			$run = Plugin::get_cli_run( true );
 
 			if ( null !== $run && false === Plugin::cli_run_alive( $run ) ) {
-				$plugin->release_cli_job();
-				Plugin::clear_cli_run();
+				$plugin->clear_dead_cli_run( $cli_job );
 				WP_CLI::log( sprintf( 'Cleared the lock of a `wp omnioffloader %s` run that is no longer running (process %d).', $cli_job, (int) $run['pid'] ) );
 
 				if ( '' === $plugin->get_active_bulk_job() ) {

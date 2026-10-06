@@ -177,6 +177,35 @@ class Plugin {
 	}
 
 	/**
+	 * Release everything a WP-CLI run that is gone left behind: its claim,
+	 * its record and its queue's process lock.
+	 *
+	 * Without the queue lock, an admin job of the same type started next
+	 * would sit idle until the 10 minute lock expired. The lock is left
+	 * alone while that queue runs a job of its own (--force).
+	 *
+	 * @since 0.1.4
+	 *
+	 * @param string $job 'offload', 'restore' or 'retention'.
+	 * @return void
+	 */
+	public function clear_dead_cli_run( $job ) {
+		$queues = array(
+			'offload'   => $this->bulk_offload,
+			'restore'   => $this->bulk_restore,
+			'retention' => $this->bulk_retention,
+		);
+		$queue  = $queues[ $job ] ?? null;
+
+		if ( null !== $queue && 'running' !== ( $queue::get_state()['status'] ?? 'idle' ) ) {
+			$queue->release_lock();
+		}
+
+		$this->release_cli_job();
+		self::clear_cli_run();
+	}
+
+	/**
 	 * Option holding the running WP-CLI job's record (see set_cli_run()).
 	 */
 	public const CLI_RUN_OPTION = 'omnioffloader_cli_run';

@@ -47,6 +47,27 @@ export interface FolderCheck {
 	message: string;
 }
 
+/** GET /provider/rclone — rclone setup built from this site's settings. */
+export interface RcloneSetupResponse {
+	/** False when there is no provider, no bucket, or Safe mode is on. */
+	available: boolean;
+	/** Why the setup is not available; '' when it is. */
+	message: string;
+	/** rclone remote name. */
+	remote: string;
+	/** Config section; the secret key is always a placeholder. */
+	config: string;
+	copy_dry_run: string;
+	copy: string;
+	link_dry_run: string;
+	link: string;
+	/** This site's uploads folder on the server. */
+	source: string;
+	/** remote:bucket[/prefix]. */
+	destination: string;
+	warnings: string[];
+}
+
 /** POST /provider/test-connection response. */
 export interface TestConnectionResponse {
 	connected: boolean;

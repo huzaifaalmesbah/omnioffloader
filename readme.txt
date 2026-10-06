@@ -33,7 +33,7 @@ And because offloading should never be a one-way door, **Bring Back** downloads 
 
 * **Automatic offloading** — new uploads go to the cloud in the background, so the upload screen never waits on a cloud transfer.
 * **Bulk offload for existing media** — process the whole library or a set number of attachments (5, 10, 25, 50, 100 or any number), with a live progress bar, activity log and a Cancel button.
-* **Huge libraries in hours, not days** — copy your uploads to the bucket with rclone, the AWS CLI or a similar tool, then link them with `wp omnioffloader offload --all --link-existing`. Every file is checked in the bucket by size; only missing or different files are uploaded.
+* **Large libraries, much faster** — copy your uploads to the bucket with rclone, the AWS CLI or a similar tool, then link them with `wp omnioffloader offload --all --link-existing`. Every file is checked in the bucket by size; only missing or different files are uploaded.
 * **Adjustable transfer speed** — offload your existing, not-yet-offloaded media library and bring it back faster by moving 1, 3 or 6 files at the same time, or your own number from 1 to 10. Every setting runs inside a single PHP process, so faster never means more server processes.
 * **Content URL rewriting** — images, galleries, video, audio, file, cover and media-text blocks, Classic Editor media tags and audio/video shortcodes are all served from the cloud, without editing post content.
 * **Serve from your CDN** — media is delivered from your custom domain or CDN edge, not your origin server. Not ready yet? Turn off **Serve Media from Cloud** to offload now and keep loading media from your server, then switch over with one click.
@@ -238,6 +238,7 @@ Yes. **OmniOffloader → Tools** lists every command and option with copy button
 `wp omnioffloader offload --ids=12,34`
 `wp omnioffloader offload --all --link-existing`
 `wp omnioffloader offload --all --concurrency=32`
+`wp omnioffloader rclone --write-config`
 `wp omnioffloader restore --all [--limit=<number>] [--delete-cloud] [--dry-run]`
 `wp omnioffloader retention [--policy=<0|1|2>] [--dry-run] [--format=json]`
 `nohup wp omnioffloader offload --all > offload.log 2>&1 &`
@@ -248,7 +249,7 @@ Start a long job with `nohup … &` (as above) to keep it running after you clos
 
 = I have a very large library. Can I copy it with rclone first? =
 
-Yes, and for tens of thousands of attachments it is much faster. Copy the year/month folders of `wp-content/uploads` into your bucket (under your Path Prefix, if you use one) with rclone, the AWS CLI, s5cmd, MinIO Client or a similar tool. Then run `wp omnioffloader offload --all --link-existing --dry-run` to see what is already there, and `wp omnioffloader offload --all --link-existing` to link it. A file that is already in the bucket with the same size is not uploaded again; anything missing or different is uploaded as usual. Object Versioning must be off. Copy only your media folders — `wp-content/uploads` can also hold logs and backups that should never be public. Full guide: [Large libraries](https://omnioffloader.vercel.app/wp-cli/large-libraries/).
+Yes, and for tens of thousands of attachments it is much faster. Copy the year/month folders of `wp-content/uploads` into your bucket (under your Path Prefix, if you use one) with rclone, the AWS CLI, s5cmd, MinIO Client or a similar tool. **OmniOffloader → Tools** (or `wp omnioffloader rclone --write-config`) builds the rclone setup and commands from your settings. Then run `wp omnioffloader offload --all --link-existing --dry-run` to see what is already there, and `wp omnioffloader offload --all --link-existing` to link it. A file that is already in the bucket with the same size is not uploaded again; anything missing or different is uploaded as usual. Object Versioning must be off. Copy only your media folders — `wp-content/uploads` can also hold logs and backups that should never be public. Full guide: [Large libraries](https://omnioffloader.vercel.app/wp-cli/large-libraries/).
 
 = Who can offload or bring back media? =
 
@@ -306,6 +307,7 @@ Depending on the provider you select:
 * New `wp omnioffloader offload --link-existing`: copy a large library to your bucket with rclone, the AWS CLI or a similar tool first, then link it. A file already in the bucket with exactly the same size is checked, not uploaded again; missing or different files are uploaded as usual, and the attachment is only marked offloaded once every file is there.
 * The bucket is read one folder at a time, about one request per 1,000 files, so a library of tens of thousands of attachments links in a fraction of the upload time.
 * `--link-existing --dry-run` reads the bucket and reports how many attachments are already complete and how much would still be uploaded, without changing anything.
+* New `wp omnioffloader rclone` and a **Copy a Large Library with rclone** card on the Tools screen: the rclone remote for your bucket, the copy command for this site's folder (Path Prefix included, so sites sharing a bucket each get their own) and the link command, all built from your settings with copy buttons. The secret key is never shown; `wp omnioffloader rclone --write-config` saves it straight into rclone's config file, readable only by your user. Hidden in Safe mode, and the copy command only takes the year/month folders.
 * The Offload screen mentions it for large libraries, and a new [Large libraries](https://omnioffloader.vercel.app/wp-cli/large-libraries/) guide covers rclone, the AWS CLI and other copy tools.
 
 **WP-CLI: upload more files at once**

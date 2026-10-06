@@ -48,10 +48,10 @@ Work through a large library in chunks of 500:
 wp omnioffloader offload --all --limit=500
 ```
 
-Offload the whole library and keep it running after you close the terminal (see [Keep a job running](/wp-cli/stop/#keep-a-job-running-after-you-close-the-terminal)):
+Offload the whole library, keep it running after you close the terminal, and write its progress to a log file (see [Long runs and log files](/wp-cli/long-runs/)):
 
 ```bash
-nohup wp omnioffloader offload --all > offload.log 2>&1 &
+nohup wp omnioffloader offload --all > ~/offload.log 2>&1 &
 ```
 
 Upload 32 files at the same time on a VPS; try a short run first and time it:

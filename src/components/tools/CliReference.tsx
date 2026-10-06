@@ -105,9 +105,9 @@ function getCommands(): CliCommand[] {
 				},
 				{
 					command:
-						'nohup wp omnioffloader offload --all > offload.log 2>&1 &',
+						'nohup wp omnioffloader offload --all > ~/offload.log 2>&1 &',
 					description: __(
-						'Keep it running after you close the terminal; progress goes to offload.log.',
+						'Keep it running after you close the terminal; progress goes to offload.log in your home folder.',
 						'omnioffloader'
 					),
 				},

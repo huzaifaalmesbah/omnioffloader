@@ -16,7 +16,7 @@ The admin screen that does the same job is **OmniOffloader → Bring Back**. See
 ## Synopsis
 
 ```bash
-wp omnioffloader restore [--all] [--ids=<ids>] [--limit=<number>] [--delete-cloud] [--yes] [--dry-run] [--force] [--background] [--log=<file>]
+wp omnioffloader restore [--all] [--ids=<ids>] [--limit=<number>] [--delete-cloud] [--yes] [--dry-run] [--force]
 ```
 
 ## Options
@@ -30,8 +30,6 @@ wp omnioffloader restore [--all] [--ids=<ids>] [--limit=<number>] [--delete-clou
 | `--yes` | Answer yes to the `--delete-cloud` confirmation prompt. |
 | `--dry-run` | List what would be restored without downloading anything. |
 | `--force` | Run even when a bulk job started from the admin screen is active. |
-| `--background` | Keep running after you close the terminal. Output goes to a log file. See [Run in the background](/wp-cli/stop/#run-in-the-background). |
-| `--log=<file>` | Log file for `--background`. Default: a new file in the server's temp folder. |
 
 You must pass either `--all` or `--ids`, but not both.
 

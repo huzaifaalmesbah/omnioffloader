@@ -83,13 +83,6 @@ class RetentionCommand {
 	 * [--force]
 	 * : Run even when a bulk job started from the admin screen is active.
 	 *
-	 * [--background]
-	 * : Keep running after you close the terminal. Output goes to a log file;
-	 * follow it with `wp omnioffloader status`, end it with `wp omnioffloader stop`.
-	 *
-	 * [--log=<file>]
-	 * : Log file for --background. Default: a new file in the temp directory.
-	 *
 	 * [--format=<format>]
 	 * : Output format for the --dry-run table.
 	 * ---
@@ -107,7 +100,7 @@ class RetentionCommand {
 	 *     wp omnioffloader retention --policy=1 --limit=500
 	 *     wp omnioffloader retention --policy=2 --yes
 	 *     wp omnioffloader retention --policy=0
-	 *     wp omnioffloader retention --yes --background
+	 *     nohup wp omnioffloader retention --yes > retention.log 2>&1 &
 	 *
 	 * @param string[]              $args       Positional args (unused).
 	 * @param array<string, string> $assoc_args Named args.
@@ -140,13 +133,6 @@ class RetentionCommand {
 			$this->refuse_if_busy( $plugin, $assoc_args );
 		}
 
-		// A stricter policy asks before deleting local files.
-		if ( isset( $assoc_args['background'] ) ) {
-			$this->launch_background( 'retention', $assoc_args, $policy > 0 );
-
-			return;
-		}
-
 		if ( $policy !== $saved ) {
 			WP_CLI::warning(
 				sprintf(
@@ -173,6 +159,7 @@ class RetentionCommand {
 		$to_clean = $this->count_to_clean( $ids, $policy );
 
 		if ( $to_clean > 0 ) {
+			$this->require_yes_when_detached( $assoc_args );
 			WP_CLI::confirm(
 				sprintf(
 					'Apply "%s" to %d attachment(s)? Local files of %d attachment(s) will be deleted after each is verified in cloud storage.',

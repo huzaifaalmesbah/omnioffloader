@@ -42,7 +42,7 @@ And because offloading should never be a one-way door, **Bring Back** downloads 
 * **Media Library integration** — a status column, grid view badges, a meta box on the edit screen, row actions and bulk actions for Offload and Bring Back.
 * **Mirror Delete** — deleting an attachment in WordPress removes its cloud copies too (on by default for new installs; never on a staging or dev copy).
 * **Object versioning and path prefix** — add a timestamp segment to object keys so CDN caches never serve a stale file, and store objects under a folder of your choice.
-* **WP-CLI** — offload, restore, apply retention and check status from the terminal. Long jobs can run in the background after you close the terminal, and `wp omnioffloader stop` ends them from anywhere. A full command reference is on the Tools screen.
+* **WP-CLI** — offload, restore, apply retention and check status from the terminal. Long jobs keep running after you close the terminal when started with `nohup`, and `wp omnioffloader stop` ends them from anywhere. A full command reference is on the Tools screen.
 * **Credentials in wp-config.php** — define keys as PHP constants instead of storing them in the database; the settings screen locks those fields.
 
 = Built for every host — shared plans to dedicated servers =
@@ -237,11 +237,11 @@ Yes. **OmniOffloader → Tools** lists every command and option with copy button
 `wp omnioffloader offload --ids=12,34`
 `wp omnioffloader restore --all [--limit=<number>] [--delete-cloud] [--dry-run]`
 `wp omnioffloader retention [--policy=<0|1|2>] [--dry-run] [--format=json]`
-`wp omnioffloader offload --all --background`
+`nohup wp omnioffloader offload --all > offload.log 2>&1 &`
 `wp omnioffloader status`
 `wp omnioffloader stop`
 
-Add `--background` to keep a long job running after you close the terminal; `status` shows its progress and `stop` ends it from any terminal. Every write command supports `--dry-run`, and destructive options ask for confirmation unless you pass `--yes`. Commands refuse to start while another bulk job is running (`--force` overrides this), so two jobs never touch the same files. WP-CLI offloads use your Transfer Speed setting.
+Start a long job with `nohup … &` (as above) to keep it running after you close the terminal; `status` shows its progress and `stop` ends it from any terminal. Every write command supports `--dry-run`, and destructive options ask for confirmation unless you pass `--yes`. Commands refuse to start while another bulk job is running (`--force` overrides this), so two jobs never touch the same files. WP-CLI offloads use your Transfer Speed setting.
 
 = Who can offload or bring back media? =
 
@@ -294,12 +294,12 @@ Depending on the provider you select:
 * New setting in **Settings → Retention Policy**: with **Retain Local Files**, turn off **Serve Media from Cloud** to keep offloading media while your site still loads it from your own server, for example while you set up your CDN. Turn it on and every offloaded file switches to your cloud storage or CDN at once, with no re-upload.
 * Smart Local Cleanup and Full Cloud Migration delete local files, so with those policies media always loads from the cloud. Files an earlier policy already removed keep loading from the cloud until they are downloaded again, so turning serving off never breaks an image.
 
-**WP-CLI: background runs and a stop command**
+**WP-CLI: stop command and long runs**
 
-* `wp omnioffloader offload`, `restore` and `retention` take `--background`: the job keeps running after you close the terminal, with its output in a log file.
+* Long runs started with `nohup wp omnioffloader … > file.log 2>&1 &` keep going after you close the terminal and write a progress line every 25 attachments to the log. A run without a terminal that would ask for confirmation stops with a message asking for `--yes`, instead of waiting for an answer.
 * New `wp omnioffloader stop` ends the running job from any terminal. A WP-CLI run finishes the file it is transferring first; a job started from the admin screen is cancelled.
 * `wp omnioffloader status` shows a running WP-CLI job: progress, failures, process and log file.
-* The WP-CLI reference on the Tools screen lists the new `stop` command and `--background` option.
+* The WP-CLI reference on the Tools screen lists the new `stop` command and how to keep a job running with `nohup`.
 * A lock left behind by a killed run (for example after a server restart) is cleared by the next command on the same server, instead of blocking it for 10 minutes.
 
 **Fixes**
@@ -475,7 +475,7 @@ Depending on the provider you select:
 == Upgrade Notice ==
 
 = 0.1.4 =
-New Serve Media from Cloud setting to offload now and switch to your CDN later, plus `--background` runs and a new `wp omnioffloader stop` command for WP-CLI. Recommended for all users.
+New Serve Media from Cloud setting to offload now and switch to your CDN later, plus a new `wp omnioffloader stop` command and long-run support for WP-CLI. Recommended for all users.
 
 = 0.1.3 =
 Faster offloading of existing media with a new Transfer Speed setting, a Tools screen to apply a changed retention policy to offloaded media, a new `wp omnioffloader retention` command, plus security and performance fixes. Recommended for all users.

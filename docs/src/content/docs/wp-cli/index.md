@@ -21,7 +21,7 @@ The same reference, with copy buttons, is on the **OmniOffloader → Tools** scr
 
 - **Large libraries.** A terminal command is not limited by the browser or by short web request time limits. On libraries of 5,000 items or more, the Bulk Offload and Bring Back screens suggest the matching command.
 - **SSH access.** You can run a job on the server directly and watch a progress bar.
-- **Long jobs.** Add `--background` and close the terminal; the job keeps going. Check it with `status`, end it with [`stop`](/wp-cli/stop/).
+- **Long jobs.** Start it with `nohup … &` and close the terminal; the job keeps going ([how](/wp-cli/stop/#keep-a-job-running-after-you-close-the-terminal)). Check it with `status`, end it with [`stop`](/wp-cli/stop/).
 - **Scheduled work.** Use `--limit` with a cron job to work through a big library in small chunks, for example 500 attachments each night.
 - **Hosts that time out.** Some hosts stop long admin requests or block WordPress's internal background requests. WP-CLI does not depend on them.
 
@@ -85,7 +85,7 @@ Error: A bulk offload started from the admin screen is running. Wait for it to f
 
 While a command runs, it holds a lock. The admin screens see the lock and will not start a second job. The lock is renewed after every attachment, and while a large file is still transferring. It is released when the command ends, also when you press **Ctrl-C** (when PHP's `pcntl` extension is available, which is common for the command line).
 
-Closing the terminal also stops the command and releases its lock. To keep a job running after you close the terminal, add `--background`. To stop a running job from another terminal, use [`wp omnioffloader stop`](/wp-cli/stop/).
+Closing the terminal also stops the command and releases its lock. To keep a job running after you close the terminal, start it with [`nohup … &`](/wp-cli/stop/#keep-a-job-running-after-you-close-the-terminal). To stop a running job from another terminal, use [`wp omnioffloader stop`](/wp-cli/stop/).
 
 If a command was killed in a way that left the lock behind (for example `kill -9`, or the server restarted), the next command on the same server sees the process is gone and clears the lock. Otherwise the lock expires within 10 minutes. Pass `--force` only if you are sure nothing else is running.
 

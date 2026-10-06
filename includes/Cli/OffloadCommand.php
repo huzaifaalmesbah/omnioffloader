@@ -62,20 +62,13 @@ class OffloadCommand {
 	 * [--force]
 	 * : Run even when a bulk offload started from the admin screen is active.
 	 *
-	 * [--background]
-	 * : Keep running after you close the terminal. Output goes to a log file;
-	 * follow it with `wp omnioffloader status`, end it with `wp omnioffloader stop`.
-	 *
-	 * [--log=<file>]
-	 * : Log file for --background. Default: a new file in the temp directory.
-	 *
 	 * ## EXAMPLES
 	 *
 	 *     wp omnioffloader offload --all
 	 *     wp omnioffloader offload --ids=12,15,42
 	 *     wp omnioffloader offload --all --limit=500
 	 *     wp omnioffloader offload --all --dry-run
-	 *     wp omnioffloader offload --all --background
+	 *     nohup wp omnioffloader offload --all > offload.log 2>&1 &
 	 *
 	 * @param string[]              $args       Positional args (unused).
 	 * @param array<string, string> $assoc_args Named args.
@@ -111,12 +104,6 @@ class OffloadCommand {
 
 		if ( ! $is_dry ) {
 			$this->refuse_if_busy( $plugin, $assoc_args );
-		}
-
-		if ( isset( $assoc_args['background'] ) ) {
-			$this->launch_background( 'offload', $assoc_args, false );
-
-			return;
 		}
 
 		$ids = $this->resolve_ids( $assoc_args );

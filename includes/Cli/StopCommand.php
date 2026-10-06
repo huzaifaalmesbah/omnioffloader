@@ -24,8 +24,8 @@ class StopCommand {
 	/**
 	 * Stop the running offload, restore or retention job.
 	 *
-	 * Works from any terminal. A WP-CLI run — in the foreground or started
-	 * with --background — finishes the file it is transferring, then exits
+	 * Works from any terminal. A WP-CLI run — in a terminal or started with
+	 * `nohup … &` — finishes the file it is transferring, then exits
 	 * and releases its lock. A bulk job started from the admin screen is
 	 * cancelled, as its Cancel button does.
 	 *

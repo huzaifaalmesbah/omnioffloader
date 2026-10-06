@@ -68,7 +68,7 @@ trait CliJobGuard {
 	private $guard_run = null;
 
 	/**
-	 * Items between progress lines in a background run's log.
+	 * Items between progress lines in a detached run's log.
 	 *
 	 * @var int
 	 */
@@ -212,6 +212,8 @@ trait CliJobGuard {
 		// A stop request left from an earlier run must not end this one.
 		delete_option( Plugin::CLI_STOP_OPTION );
 
+		$detached = self::is_detached();
+
 		$this->guard_run = array(
 			'job'        => (string) $job,
 			'pid'        => (int) getmypid(),
@@ -220,12 +222,12 @@ trait CliJobGuard {
 			'total'      => (int) $total,
 			'processed'  => 0,
 			'failed'     => 0,
-			'background' => self::in_background(),
-			'log'        => (string) getenv( 'OMNIOFFLOADER_BACKGROUND_LOG' ),
+			'background' => $detached,
+			'log'        => $detached ? self::output_file() : '',
 		);
 		Plugin::set_cli_run( $this->guard_run );
 
-		if ( self::in_background() ) {
+		if ( $detached ) {
 			WP_CLI::log( sprintf( '[%s] Started %s of %d attachment(s), process %d.', wp_date( 'Y-m-d H:i:s' ), $job, $total, getmypid() ) );
 		}
 
@@ -255,11 +257,12 @@ trait CliJobGuard {
 
 			// Closing the SSH window sends SIGHUP; without this the claim
 			// stayed behind and blocked the next run for 10 minutes. A
-			// --background run ignores it: it must outlive the window.
-			if ( defined( 'SIGHUP' ) ) {
+			// detached run (`nohup … &`) must outlive the window, so its
+			// SIGHUP disposition is left as nohup set it.
+			if ( defined( 'SIGHUP' ) && ! $detached ) {
 				pcntl_signal(
 					SIGHUP,
-					self::in_background() ? SIG_IGN : static function () {
+					static function () {
 						exit( 129 );
 					}
 				);
@@ -322,123 +325,41 @@ trait CliJobGuard {
 	}
 
 	/**
-	 * Whether this process is a --background run.
+	 * Whether this run has no terminal to draw on: started with `nohup …&`,
+	 * from cron, or with its output redirected to a file.
+	 *
+	 * Such a run writes progress lines instead of a progress bar, and leaves
+	 * SIGHUP alone so `nohup` keeps it running after the window closes.
 	 *
 	 * @return bool
 	 */
-	private static function in_background() {
-		return '1' === getenv( 'OMNIOFFLOADER_BACKGROUND' );
+	private static function is_detached() {
+		return ! defined( 'STDOUT' ) || ! stream_isatty( STDOUT );
 	}
 
 	/**
-	 * Start this same command again, detached from the terminal, and return.
+	 * Refuse a question nobody can answer: a detached run would hang
+	 * waiting for input (or stop on SIGTTIN) instead of asking.
 	 *
-	 * The copy runs under nohup (and setsid where available), so closing
-	 * the SSH window does not stop it; its output goes to a log file.
-	 * Stop it with `wp omnioffloader stop`.
-	 *
-	 * @param string                $job        'offload', 'restore' or 'retention'.
 	 * @param array<string, string> $assoc_args Named args.
-	 * @param bool                  $confirms   Whether the run may ask for confirmation.
 	 * @return void
 	 */
-	private function launch_background( $job, array $assoc_args, $confirms ) {
-		if ( isset( $assoc_args['dry-run'] ) ) {
-			WP_CLI::error( '--background cannot be combined with --dry-run.' );
+	private function require_yes_when_detached( array $assoc_args ) {
+		if ( self::is_detached() && ! isset( $assoc_args['yes'] ) ) {
+			WP_CLI::error( 'This run asks for confirmation, which cannot be answered without a terminal (nohup, cron or redirected output). Add --yes.' );
 		}
+	}
 
-		// Nobody is there to answer a prompt.
-		if ( $confirms && ! isset( $assoc_args['yes'] ) ) {
-			WP_CLI::error( 'This run asks for confirmation, which cannot be answered in the background. Add --yes.' );
-		}
+	/**
+	 * The file this run's output goes to, where the system can tell (Linux).
+	 *
+	 * @return string Empty when unknown or not a file.
+	 */
+	private static function output_file() {
+		// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- /proc is missing outside Linux.
+		$target = @readlink( '/proc/self/fd/1' );
 
-		$disabled = array_map( 'trim', explode( ',', (string) ini_get( 'disable_functions' ) ) );
-
-		if ( ! function_exists( 'proc_open' ) || in_array( 'proc_open', $disabled, true ) ) {
-			WP_CLI::error( 'This server does not let PHP start processes (proc_open is disabled), so --background is not available. Run the command inside `screen`, or with `nohup … &`.' );
-		}
-
-		$argv = isset( $GLOBALS['argv'] ) && is_array( $GLOBALS['argv'] ) ? $GLOBALS['argv'] : array();
-		$wp   = isset( $argv[0] ) ? (string) $argv[0] : '';
-		$wp   = '' !== $wp && false !== realpath( $wp ) ? (string) realpath( $wp ) : $wp;
-
-		if ( '' === $wp ) {
-			WP_CLI::error( 'Could not work out how WP-CLI was started. Run the command inside `screen` instead.' );
-		}
-
-		$args = array();
-		foreach ( array_slice( $argv, 1 ) as $arg ) {
-			if ( '--background' !== $arg && 0 !== strpos( (string) $arg, '--log=' ) ) {
-				$args[] = escapeshellarg( (string) $arg );
-			}
-		}
-
-		$log = isset( $assoc_args['log'] ) && '' !== $assoc_args['log']
-			? (string) $assoc_args['log']
-			: trailingslashit( get_temp_dir() ) . 'omnioffloader-' . $job . '-' . wp_date( 'Ymd-His' ) . '.log';
-
-		// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged, WordPress.WP.AlternativeFunctions.file_system_operations_fopen -- only checks the log is writable.
-		$handle = @fopen( $log, 'a' );
-		if ( false === $handle ) {
-			WP_CLI::error( sprintf( 'Cannot write the log file %s. Pass --log=<file> with a writable path.', $log ) );
-		}
-		fclose( $handle ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose
-
-		$setsid  = is_executable( '/usr/bin/setsid' ) ? '/usr/bin/setsid ' : ( is_executable( '/bin/setsid' ) ? '/bin/setsid ' : '' );
-		$command = sprintf(
-			'nohup %s%s %s %s > %s 2>&1 < /dev/null & echo $!',
-			$setsid,
-			escapeshellarg( \WP_CLI\Utils\get_php_binary() ),
-			escapeshellarg( $wp ),
-			implode( ' ', $args ),
-			escapeshellarg( $log )
-		);
-
-		$env                                 = getenv();
-		$env['OMNIOFFLOADER_BACKGROUND']     = '1';
-		$env['OMNIOFFLOADER_BACKGROUND_LOG'] = $log;
-
-		$spec = array(
-			1 => array( 'pipe', 'w' ),
-			2 => array( 'pipe', 'w' ),
-		);
-
-		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.system_calls_proc_open -- WP-CLI only; availability is checked above.
-		$process = proc_open( $command, $spec, $pipes, (string) getcwd(), $env );
-
-		if ( ! is_resource( $process ) ) {
-			WP_CLI::error( 'Could not start the background run. Run the command inside `screen` instead.' );
-		}
-
-		$pid = (int) trim( (string) stream_get_contents( $pipes[1] ) );
-		fclose( $pipes[1] ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose -- process pipe.
-		fclose( $pipes[2] ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose -- process pipe.
-		proc_close( $process );
-
-		// Wait for it to take the lock, so a failure to start is reported here.
-		for ( $i = 0; $i < 20; $i++ ) {
-			usleep( 500000 );
-
-			$run = Plugin::get_cli_run( true );
-			if ( null !== $run && (int) $run['pid'] === $pid ) {
-				WP_CLI::success( sprintf( 'Started in the background (process %d). You can close this window.', $pid ) );
-				WP_CLI::log( 'Log:      ' . $log );
-				WP_CLI::log( 'Progress: wp omnioffloader status' );
-				WP_CLI::log( 'Stop:     wp omnioffloader stop' );
-
-				return;
-			}
-
-			// Ended already: nothing to do, or it refused to start.
-			if ( $pid > 0 && function_exists( 'posix_kill' ) && ! posix_kill( $pid, 0 ) ) {
-				break;
-			}
-		}
-
-		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- local log file.
-		$output = trim( (string) file_get_contents( $log ) );
-		WP_CLI::log( '' !== $output ? $output : '(no output)' );
-		WP_CLI::warning( sprintf( 'The background run did not start a job (see above). Log: %s', $log ) );
+		return is_string( $target ) && 0 === strpos( $target, '/' ) && is_file( $target ) ? $target : '';
 	}
 
 	/**

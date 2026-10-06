@@ -70,20 +70,13 @@ class RestoreCommand {
 	 * [--force]
 	 * : Run even when a bulk restore started from the admin screen is active.
 	 *
-	 * [--background]
-	 * : Keep running after you close the terminal. Output goes to a log file;
-	 * follow it with `wp omnioffloader status`, end it with `wp omnioffloader stop`.
-	 *
-	 * [--log=<file>]
-	 * : Log file for --background. Default: a new file in the temp directory.
-	 *
 	 * ## EXAMPLES
 	 *
 	 *     wp omnioffloader restore --all
 	 *     wp omnioffloader restore --ids=12,15,42
 	 *     wp omnioffloader restore --all --delete-cloud --yes
 	 *     wp omnioffloader restore --all --dry-run
-	 *     wp omnioffloader restore --all --background
+	 *     nohup wp omnioffloader restore --all > restore.log 2>&1 &
 	 *
 	 * @param string[]              $args       Positional args (unused).
 	 * @param array<string, string> $assoc_args Named args.
@@ -110,12 +103,6 @@ class RestoreCommand {
 
 		if ( ! $is_dry ) {
 			$this->refuse_if_busy( $plugin, $assoc_args );
-		}
-
-		if ( isset( $assoc_args['background'] ) ) {
-			$this->launch_background( 'restore', $assoc_args, isset( $assoc_args['delete-cloud'] ) );
-
-			return;
 		}
 
 		$ids = $this->resolve_ids( $assoc_args );
@@ -150,6 +137,7 @@ class RestoreCommand {
 		}
 
 		if ( $delete_cloud ) {
+			$this->require_yes_when_detached( $assoc_args );
 			WP_CLI::confirm(
 				sprintf( 'Delete the cloud objects of %d attachment(s) after restoring them?', count( $ids ) ),
 				$assoc_args

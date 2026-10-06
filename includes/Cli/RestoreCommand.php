@@ -76,7 +76,7 @@ class RestoreCommand {
 	 *     wp omnioffloader restore --ids=12,15,42
 	 *     wp omnioffloader restore --all --delete-cloud --yes
 	 *     wp omnioffloader restore --all --dry-run
-	 *     nohup wp omnioffloader restore --all > restore.log 2>&1 &
+	 *     nohup wp omnioffloader restore --all > ~/restore.log 2>&1 &
 	 *
 	 * @param string[]              $args       Positional args (unused).
 	 * @param array<string, string> $assoc_args Named args.

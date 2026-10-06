@@ -100,7 +100,7 @@ class RetentionCommand {
 	 *     wp omnioffloader retention --policy=1 --limit=500
 	 *     wp omnioffloader retention --policy=2 --yes
 	 *     wp omnioffloader retention --policy=0
-	 *     nohup wp omnioffloader retention --yes > retention.log 2>&1 &
+	 *     nohup wp omnioffloader retention --yes > ~/retention.log 2>&1 &
 	 *
 	 * @param string[]              $args       Positional args (unused).
 	 * @param array<string, string> $assoc_args Named args.

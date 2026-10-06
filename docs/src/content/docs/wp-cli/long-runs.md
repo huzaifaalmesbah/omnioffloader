@@ -1,0 +1,201 @@
+---
+title: Long runs and log files
+description: Run a big offload, Bring Back or retention job in the background, save its progress to a log file, watch it, check the speed and time left, and stop it.
+sidebar:
+  order: 7
+---
+
+A big job, such as offloading tens of thousands of attachments, can take hours. This page shows how to run it so it keeps going after you close the terminal, how to follow its progress in a log file, and how to work out how long it still needs.
+
+Everything here works the same for `offload`, `restore` and `retention`. The examples use `offload`.
+
+## 1. Start the job with a log file
+
+Connect to your server over SSH, go to your WordPress folder, and run:
+
+```bash
+nohup wp omnioffloader offload --all > ~/offload.log 2>&1 &
+```
+
+What each part does:
+
+| Part | What it does |
+| --- | --- |
+| `nohup` | Keeps the job running when you close the terminal or your connection drops. |
+| `wp omnioffloader offload --all` | The job itself. Add any options you need, such as [`--concurrency=32`](/wp-cli/offload/). |
+| `> ~/offload.log` | Writes everything the job prints into the file `offload.log` in your home folder. |
+| `2>&1` | Writes error messages into the same file. |
+| `&` | Runs it in the background, so you get your prompt back right away. |
+
+The terminal answers with something like this. **It is not an error**: it is the job number and the process number of your job.
+
+```
+[1] 2480717
+```
+
+:::caution[Keep log files out of your website folder]
+Save logs in your home folder (`~/offload.log`), not inside `public_html` or `wp-content`. Files there can be opened in a browser. A log only holds counts and times, but it should still not be public.
+:::
+
+:::tip[A job that asks a question]
+Without a terminal, nobody can answer a question. A job that would ask one (`restore --delete-cloud`, or `retention` with a stricter policy) needs `--yes`, or it stops with a message asking for it.
+:::
+
+## 2. Check that it started
+
+Wait a few seconds, then look at the start of the log:
+
+```bash
+head -n 5 ~/offload.log
+```
+
+```
+[2026-10-06 11:30:12] Started offload of 63966 attachment(s), process 2480717.
+[2026-10-06 11:30:16] 25 of 63966 done, 0 failed.
+[2026-10-06 11:30:21] 50 of 63966 done, 0 failed.
+```
+
+Or ask the plugin:
+
+```bash
+wp omnioffloader status
+```
+
+```
+WP-CLI offload: running — 50 of 63966 done, 0 failed, started 23 seconds ago (process 2480717, detached)
+  Log: /home/example/offload.log
+  Stop it with: wp omnioffloader stop
+```
+
+If you see this, the job is running and you can close the terminal.
+
+If the log shows an error instead, or `status` shows nothing running, see [If something goes wrong](#if-something-goes-wrong).
+
+## 3. Watch the log
+
+| To see… | Run |
+| --- | --- |
+| New lines as they arrive | `tail -f ~/offload.log` |
+| The last few lines | `tail -n 20 ~/offload.log` |
+| Only the progress lines | `grep "done," ~/offload.log \| tail -n 5` |
+| The beginning | `head -n 10 ~/offload.log` |
+| The whole log, page by page | `less ~/offload.log` (Space for the next page, `q` to quit) |
+| A short summary, without the log | `wp omnioffloader status` |
+
+:::note[Ctrl+C only stops watching]
+`tail -f` keeps showing new lines until you press **Ctrl+C**. That only stops the watching. The job itself keeps running.
+:::
+
+## What the lines mean
+
+| Line | Meaning |
+| --- | --- |
+| `[time] Started offload of 63966 attachment(s), process 2480717.` | The job started. The number is how many attachments it will work through. |
+| `Uploading up to 64 files at once.` | Only with `--concurrency`: how many files upload at the same time. |
+| `[time] 1200 of 63966 done, 0 failed.` | Progress, written every 25 attachments. |
+| `[time] Ended.` | The job finished or was stopped. |
+| `Success: 63966 attachment(s) offloaded.` | Everything worked. |
+| `Warning: 63940 offloaded, 26 failed …` | Most worked; some attachments failed. See [When it is finished](#when-it-is-finished). |
+
+The log can also contain warnings from your theme or other plugins, such as `Undefined array key "QUERY_STRING"`. WP-CLI loads your whole site, so their notices end up in the log too. They don't come from OmniOffloader and don't affect the job.
+
+## 4. Work out the speed and time left
+
+Take two progress lines and compare them. For example:
+
+```
+[2026-10-06 11:33:59] 675 of 63966 done, 0 failed.
+[2026-10-06 11:43:18] 2550 of 63966 done, 0 failed.
+```
+
+- **Done in between:** 2,550 − 675 = 1,875 attachments
+- **Time in between:** 9 min 19 s ≈ 9.3 minutes
+- **Speed:** 1,875 ÷ 9.3 ≈ **201 per minute**
+- **Left:** 63,966 − 2,550 = 61,416 attachments
+- **Time left:** 61,416 ÷ 201 ≈ 305 minutes ≈ **5 hours**
+
+Or let the server work it out. On a Linux server, this reads the log and prints the speed, the time left and the expected finish time (server clock):
+
+```bash
+S=$(grep -m1 "Started" ~/offload.log | cut -c2-20); L=$(grep "done," ~/offload.log | tail -1); N=$(echo "$L" | awk '{print $3}'); T=$(echo "$L" | awk '{print $5}'); E=$(echo "$L" | cut -c2-20); EL=$(( $(date -d "$E" +%s) - $(date -d "$S" +%s) )); echo "Done: $N of $T | Speed: $(( N * 60 / EL ))/min | Time left: $(( (T - N) * EL / N / 3600 ))h $(( (T - N) * EL / N / 60 % 60 ))m | Finish: $(date -d "@$(( $(date +%s) + (T - N) * EL / N ))" '+%H:%M')"
+```
+
+```
+Done: 2550 of 63966 | Speed: 194/min | Time left: 5h 15m | Finish: 16:58
+```
+
+Run it again later for a fresh estimate. It gets more accurate the longer the job runs.
+
+## 5. Test the speed before a big run
+
+Before offloading a whole library, time a short run of 500 attachments. You don't need `nohup` for a test of a few minutes:
+
+```bash
+time wp omnioffloader offload --all --limit=500
+time wp omnioffloader offload --all --limit=500 --concurrency=32
+time wp omnioffloader offload --all --limit=500 --concurrency=64
+```
+
+`time` prints how long each run took (`real`). Then estimate the full library:
+
+**total time ≈ time for 500 × (your number of attachments ÷ 500)**
+
+An example from a VPS with 65,000 attachments:
+
+| Run | 500 attachments | 65,000 attachments |
+| --- | --- | --- |
+| Default | 13 min 30 s | about 29 hours |
+| `--concurrency=32` | 3 min 14 s | about 7 hours |
+| `--concurrency=64` | 2 min 21 s | about 5 hours |
+
+Your numbers depend on your server's upload speed and your files. Many small images gain the most; a few large videos gain the least. Each test run moves different attachments (the next 500), so compare the rough speed, not exact seconds.
+
+## 6. Stop, continue, or let it finish
+
+**Stop it**, from any terminal:
+
+```bash
+wp omnioffloader stop
+```
+
+The job finishes the files it is uploading, then exits. Nothing is left half done.
+
+**Continue later** by running the same command again. Attachments that are already done are skipped, so it carries on where it stopped:
+
+```bash
+nohup wp omnioffloader offload --all > ~/offload.log 2>&1 &
+```
+
+This starts a new log. Use a different file name (`~/offload-2.log`) to keep the old one.
+
+### When it is finished
+
+The last lines of the log show the result:
+
+```bash
+tail -n 3 ~/offload.log
+```
+
+Some failures are normal on a big, old library. Find them in **Media → Library** with the OmniOffloader filter set to **Failed**; each one shows its error.
+
+| Error | Meaning |
+| --- | --- |
+| **Main file is missing locally.** | The attachment's file is no longer on the server, so there is nothing to upload. It was already broken before the offload. Restore the file from a backup, or delete the attachment if nothing uses it. |
+| **Upload failed for "…"** | The upload itself failed (network, storage provider). Run the same command again: failed attachments are retried, last in line. If many fail with `--concurrency`, try a lower number. |
+
+Then delete the log:
+
+```bash
+rm ~/offload.log
+```
+
+## If something goes wrong
+
+| What you see | What to do |
+| --- | --- |
+| The log ends after a second with a PHP error | The job never started. Read the first lines (`head -n 10 ~/offload.log`). An error in `wp-config.php` or a plugin stops WP-CLI before OmniOffloader runs. Check that `wp option get home` works. |
+| `Error: A bulk offload started from the admin screen is running…` | Only one job runs at a time. Wait for it to finish, or cancel it on the admin screen. |
+| `Error: Safe mode is on…` | The site looks like a staging or local copy, so nothing is uploaded. See [Safe mode](/features/safe-mode/). |
+| `Success: Nothing to offload.` | Everything is already offloaded. |
+| `status` shows `NOT RUNNING` | The job was killed (for example, the server restarted). Start the same command again; it continues where it stopped. |
+| `nohup: ignoring input` at the top of the log | Normal. `nohup` says it won't read from the keyboard. |

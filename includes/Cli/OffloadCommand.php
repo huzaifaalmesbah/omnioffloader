@@ -73,7 +73,7 @@ class OffloadCommand {
 	 *     wp omnioffloader offload --ids=12,15,42
 	 *     wp omnioffloader offload --all --limit=500
 	 *     wp omnioffloader offload --all --dry-run
-	 *     nohup wp omnioffloader offload --all > offload.log 2>&1 &
+	 *     nohup wp omnioffloader offload --all > ~/offload.log 2>&1 &
 	 *     wp omnioffloader offload --all --concurrency=32
 	 *
 	 * @param string[]              $args       Positional args (unused).

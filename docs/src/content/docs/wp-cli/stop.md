@@ -39,17 +39,13 @@ If a large file is still transferring when the wait ends, the command says so. T
 
 ## Keep a job running after you close the terminal
 
-Start the command with `nohup` and `&`, and send its output to a log file:
+Start the command with `nohup` and `&`, and send its output to a log file in your home folder:
 
 ```bash
-nohup wp omnioffloader offload --all > offload.log 2>&1 &
+nohup wp omnioffloader offload --all > ~/offload.log 2>&1 &
 ```
 
-You can then close the terminal; the job keeps going.
-
-- **Progress:** [`wp omnioffloader status`](/wp-cli/status/) shows how far it got. The log gets a line every 25 attachments: `tail -f offload.log` to follow along.
-- **Confirmations:** nobody can answer a question without a terminal, so a run that would ask one (`restore --delete-cloud`, or `retention` with a stricter policy) needs `--yes`. Without it, the command stops with a message instead of waiting.
-- **Stop it:** `wp omnioffloader stop`, from any terminal.
+You can then close the terminal; the job keeps going. Follow it with `tail -f ~/offload.log` or `wp omnioffloader status`, and end it with `wp omnioffloader stop`. [Long runs and log files](/wp-cli/long-runs/) explains every step: checking that it started, reading the log, working out the time left, and what to do when it ends.
 
 `screen` and `tmux` work too: start the command inside one, detach, and come back to it later.
 

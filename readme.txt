@@ -239,7 +239,7 @@ Yes. **OmniOffloader → Tools** lists every command and option with copy button
 `wp omnioffloader offload --all --concurrency=32`
 `wp omnioffloader restore --all [--limit=<number>] [--delete-cloud] [--dry-run]`
 `wp omnioffloader retention [--policy=<0|1|2>] [--dry-run] [--format=json]`
-`nohup wp omnioffloader offload --all > offload.log 2>&1 &`
+`nohup wp omnioffloader offload --all > ~/offload.log 2>&1 &`
 `wp omnioffloader status`
 `wp omnioffloader stop`
 
@@ -248,6 +248,10 @@ Start a long job with `nohup … &` (as above) to keep it running after you clos
 = How can I offload a very large library faster? =
 
 Run the offload from WP-CLI on your server with more files at once: `wp omnioffloader offload --all --concurrency=32`, up to 64. The admin screens stay at 10 at most, because they run inside web requests. Try a short run first (`--limit=500`) and time it, then start the full run with `nohup … &` so it keeps going after you close the terminal.
+
+= How do I follow a long WP-CLI run? =
+
+Start it in the background with a log file in your home folder: `nohup wp omnioffloader offload --all > ~/offload.log 2>&1 &`. The answer `[1] 12345` is the job and process number, not an error. Follow the progress with `tail -f ~/offload.log` (Ctrl+C only stops watching, not the job) or `wp omnioffloader status`; the log gets a timestamped line every 25 attachments, so you can work out the speed and the time left. Stop it with `wp omnioffloader stop` and run the same command again to continue. Step-by-step guide: [Long runs and log files](https://omnioffloader.vercel.app/wp-cli/long-runs/).
 
 = Who can offload or bring back media? =
 
@@ -310,6 +314,7 @@ Depending on the provider you select:
 * New `wp omnioffloader stop` ends the running job from any terminal. A WP-CLI run finishes the file it is transferring first; a job started from the admin screen is cancelled.
 * `wp omnioffloader status` shows a running WP-CLI job: progress, failures, process and log file.
 * The WP-CLI reference on the Tools screen lists the new `stop` command and how to keep a job running with `nohup`.
+* New documentation page [Long runs and log files](https://omnioffloader.vercel.app/wp-cli/long-runs/): start a big job with a log file, watch it, work out the speed and time left, and what to do when it ends.
 * A lock left behind by a killed run (for example after a server restart) is cleared by the next command on the same server, instead of blocking it for 10 minutes.
 
 **Fixes**

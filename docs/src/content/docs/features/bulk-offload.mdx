@@ -68,6 +68,8 @@ wp omnioffloader offload --all
 
 See [`wp omnioffloader offload`](/wp-cli/offload/).
 
+For tens of thousands of items, it is faster still to copy the files to your bucket with a tool such as rclone first, then let OmniOffloader check and link them without uploading them again. See [Large libraries](/wp-cli/large-libraries/).
+
 ## One job at a time
 
 Only one bulk job runs at a time: Bulk Offload, [Bring Back](/features/bring-back/) or a [retention update](/features/retention-policies/#apply-a-policy-to-existing-media). This applies whether the job was started from these screens, the Media Library or WP-CLI. Two jobs never touch the same files.

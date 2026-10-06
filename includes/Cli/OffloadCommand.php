@@ -33,6 +33,12 @@ class OffloadCommand {
 	private const FAILURE_LIMIT = 10;
 
 	/**
+	 * Attachments per batch with --link-existing, where most files need no
+	 * transfer and the batch is mostly bookkeeping.
+	 */
+	private const LINK_BATCH_SIZE = 20;
+
+	/**
 	 * Failures in a row, as a multiple of FAILURE_LIMIT, that stop the run
 	 * even while the provider still answers.
 	 */
@@ -57,10 +63,17 @@ class OffloadCommand {
 	 * library in scheduled chunks.
 	 *
 	 * [--dry-run]
-	 * : List what would be offloaded without uploading anything.
+	 * : List what would be offloaded without uploading anything. With
+	 * --link-existing, check the bucket and report what is already there.
 	 *
 	 * [--force]
 	 * : Run even when a bulk offload started from the admin screen is active.
+	 *
+	 * [--link-existing]
+	 * : For media already copied to the bucket with another tool (rclone, the
+	 * AWS CLI, s5cmd…): a file whose object already exists at the expected key
+	 * with the same size is not uploaded again, only checked. Missing or
+	 * different files are uploaded as usual. Needs Object Versioning off.
 	 *
 	 * ## EXAMPLES
 	 *
@@ -69,6 +82,8 @@ class OffloadCommand {
 	 *     wp omnioffloader offload --all --limit=500
 	 *     wp omnioffloader offload --all --dry-run
 	 *     nohup wp omnioffloader offload --all > offload.log 2>&1 &
+	 *     wp omnioffloader offload --all --link-existing --dry-run
+	 *     wp omnioffloader offload --all --link-existing
 	 *
 	 * @param string[]              $args       Positional args (unused).
 	 * @param array<string, string> $assoc_args Named args.
@@ -86,6 +101,13 @@ class OffloadCommand {
 
 		$queue  = $plugin->get_bulk_offload();
 		$is_dry = isset( $assoc_args['dry-run'] );
+		$link   = isset( $assoc_args['link-existing'] );
+
+		// Versioned keys get a fresh timestamp folder, so no object copied
+		// beforehand could ever sit at the expected key.
+		if ( $link && ! empty( Plugin::get_settings()['object_versioning'] ) ) {
+			WP_CLI::error( '--link-existing needs Object Versioning off (Settings → Behavior): versioned files go to a new timestamped folder, so files you copied to the bucket would never match.' );
+		}
 
 		// The admin bulk queue and this command would otherwise offload the
 		// same attachments at once: with a cleanup retention policy one side
@@ -114,6 +136,12 @@ class OffloadCommand {
 			return;
 		}
 
+		if ( $is_dry && $link ) {
+			$this->link_dry_run( new AttachmentUploader( $provider ), $ids );
+
+			return;
+		}
+
 		if ( $is_dry ) {
 			WP_CLI::log( sprintf( 'Would offload %d attachment(s):', count( $ids ) ) );
 			// One posts query per 200 titles instead of one per attachment.
@@ -138,7 +166,8 @@ class OffloadCommand {
 		Helpers::defer_media_stats_flush( true );
 
 		$uploader = new AttachmentUploader( $provider );
-		$progress = \WP_CLI\Utils\make_progress_bar( 'Offloading', count( $ids ) );
+		$uploader->link_existing( $link );
+		$progress = \WP_CLI\Utils\make_progress_bar( $link ? 'Linking' : 'Offloading', count( $ids ) );
 
 		$done      = 0;
 		$failed    = 0;
@@ -152,7 +181,7 @@ class OffloadCommand {
 		$stopped   = false;
 
 		// A few attachments share one transfer pool (see upload_many()).
-		foreach ( array_chunk( $ids, AttachmentUploader::batch_size() ) as $chunk ) {
+		foreach ( array_chunk( $ids, $link ? self::LINK_BATCH_SIZE : AttachmentUploader::batch_size() ) as $chunk ) {
 			$results = $uploader->upload_many( $chunk );
 
 			foreach ( $chunk as $id ) {
@@ -222,6 +251,11 @@ class OffloadCommand {
 
 		$skipped_note = $skipped > 0 ? sprintf( ', %d skipped by the omnioffloader_should_offload_attachment filter', $skipped ) : '';
 
+		if ( $link ) {
+			$counts        = $uploader->file_counts();
+			$skipped_note .= sprintf( ' (%d file(s) already in the bucket, %d uploaded)', $counts['linked'], $counts['uploaded'] );
+		}
+
 		if ( $stopped ) {
 			$this->report_stopped( sprintf( '%d offloaded, %d failed%s', $done, $failed, $skipped_note ) );
 		}
@@ -232,6 +266,57 @@ class OffloadCommand {
 		}
 
 		WP_CLI::success( sprintf( '%d attachment(s) offloaded%s.', $done, $skipped_note ) );
+	}
+
+	/**
+	 * Report what --link-existing would do, reading the bucket only.
+	 *
+	 * @param AttachmentUploader $uploader Uploader.
+	 * @param int[]              $ids      Attachment IDs, folder by folder.
+	 * @return void
+	 */
+	private function link_dry_run( AttachmentUploader $uploader, array $ids ) {
+		$progress = \WP_CLI\Utils\make_progress_bar( 'Checking the bucket', count( $ids ) );
+		$complete = 0;
+		$partial  = 0;
+		$no_file  = 0;
+		$present  = 0;
+		$missing  = 0;
+		$bytes    = 0;
+
+		// Metadata for 200 attachments per query instead of several each.
+		foreach ( array_chunk( $ids, 200 ) as $chunk ) {
+			update_meta_cache( 'post', $chunk );
+
+			foreach ( $uploader->link_preview( $chunk ) as $id => $row ) {
+				if ( 0 === $row['files'] ) {
+					++$no_file;
+				} elseif ( $row['present'] === $row['files'] ) {
+					++$complete;
+				} else {
+					++$partial;
+				}
+
+				$present += $row['present'];
+				$missing += $row['files'] - $row['present'];
+				$bytes   += $row['upload_bytes'];
+
+				$progress->tick();
+				clean_post_cache( $id );
+			}
+		}
+
+		$progress->finish();
+
+		WP_CLI::log( sprintf( 'Checked %d attachment(s) against the bucket:', count( $ids ) ) );
+		WP_CLI::log( sprintf( '  %d already fully in the bucket: would be linked without uploading.', $complete ) );
+		WP_CLI::log( sprintf( '  %d need %d file(s) uploaded (%s).', $partial, $missing, $bytes > 0 ? size_format( $bytes, 1 ) : '0 B' ) );
+
+		if ( $no_file > 0 ) {
+			WP_CLI::log( sprintf( '  %d have no file on this server and would fail.', $no_file ) );
+		}
+
+		WP_CLI::log( sprintf( '%d file(s) found in the bucket with the same size as on this server.', $present ) );
 	}
 
 	/**
@@ -276,6 +361,16 @@ class OffloadCommand {
 
 			$this->warn_skipped_ids( $requested, $ids, 'not attachments, or already offloaded' );
 
+			// Folder by folder, so each folder of the bucket is listed once.
+			if ( isset( $assoc_args['link-existing'] ) ) {
+				usort(
+					$ids,
+					static function ( $a, $b ) {
+						return strcmp( (string) get_post_meta( $a, '_wp_attached_file', true ), (string) get_post_meta( $b, '_wp_attached_file', true ) );
+					}
+				);
+			}
+
 			return $limit > 0 ? array_slice( $ids, 0, $limit ) : $ids;
 		}
 
@@ -290,7 +385,7 @@ class OffloadCommand {
 			 LEFT JOIN {$wpdb->postmeta} m ON m.post_id = p.ID AND m.meta_key = 'omnioffloader_offloaded'
 			 LEFT JOIN {$wpdb->postmeta} s ON s.post_id = p.ID AND s.meta_key = 'omnioffloader_status' AND s.meta_value = 'failed'
 			 WHERE p.post_type = 'attachment' AND p.post_status != 'trash' AND m.post_id IS NULL
-			 ORDER BY s.post_id IS NOT NULL, p.ID ASC";
+			 ORDER BY s.post_id IS NOT NULL, " . ( isset( $assoc_args['link-existing'] ) ? 'f.meta_value ASC' : 'p.ID ASC' );
 
 		if ( $limit > 0 ) {
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared -- CLI batch IDs query; only the integer limit is interpolated.

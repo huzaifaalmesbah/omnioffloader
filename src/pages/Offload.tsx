@@ -216,7 +216,11 @@ export function OffloadPage() {
 										'Large library? Running this from WP-CLI is usually faster and needs no open browser tab:',
 										'omnioffloader'
 									) }{ ' ' }
-									<code>wp omnioffloader offload --all</code>
+									<code>wp omnioffloader offload --all</code>{ ' ' }
+									{ __(
+										'Already copied your uploads to the bucket with a tool such as rclone? Add --link-existing so only missing files are uploaded.',
+										'omnioffloader'
+									) }
 								</p>
 							) }
 

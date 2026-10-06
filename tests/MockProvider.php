@@ -26,6 +26,28 @@ class MockProvider implements ProviderInterface {
 	private $bucket_dir;
 
 	/**
+	 * Files uploaded through upload_file(), for tests that count transfers.
+	 *
+	 * @var int
+	 */
+	public $uploads = 0;
+
+	/**
+	 * Calls to list_object_sizes().
+	 *
+	 * @var int
+	 */
+	public $list_calls = 0;
+
+	/**
+	 * Whether list_object_sizes() answers; false makes it fail, so callers
+	 * take their per-file fallback.
+	 *
+	 * @var bool
+	 */
+	public $listing = true;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param string $bucket_dir Directory acting as the bucket.
@@ -73,6 +95,8 @@ class MockProvider implements ProviderInterface {
 		if ( ! copy( $file, $dest ) ) {
 			return false;
 		}
+
+		++$this->uploads;
 
 		return $this->get_domain() . '/' . $key;
 	}
@@ -132,6 +156,36 @@ class MockProvider implements ProviderInterface {
 
 		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- local test bucket.
 		return false !== file_put_contents( $path, $body );
+	}
+
+	/**
+	 * List object sizes under a prefix (see AbstractS3Provider::list_object_sizes()).
+	 *
+	 * @param string $prefix    Key prefix.
+	 * @param int    $max_pages Ignored.
+	 * @return array<string, int>|false
+	 */
+	public function list_object_sizes( $prefix, $max_pages = 2 ) {
+		unset( $max_pages );
+		++$this->list_calls;
+
+		if ( ! $this->listing ) {
+			return false;
+		}
+
+		$sizes = array();
+		$base  = strlen( $this->bucket_dir );
+		$files = new \RecursiveIteratorIterator( new \RecursiveDirectoryIterator( $this->bucket_dir, \FilesystemIterator::SKIP_DOTS ) );
+
+		foreach ( $files as $file ) {
+			$key = substr( (string) $file->getPathname(), $base );
+
+			if ( 0 === strpos( $key, (string) $prefix ) ) {
+				$sizes[ $key ] = (int) $file->getSize();
+			}
+		}
+
+		return $sizes;
 	}
 
 	/**

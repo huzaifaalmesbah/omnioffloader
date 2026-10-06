@@ -15,6 +15,10 @@ Amazon S3, Cloudflare R2, DigitalOcean Spaces, Backblaze B2 and Wasabi each have
 
 Most buckets don't serve files publicly by default, and Cloudflare R2 has no public URL at all until you connect one. A custom domain or CDN hostname pointed at your bucket makes your media reachable, and lets it be cached at the edge.
 
+### Can I offload now and switch to the CDN later?
+
+Yes. With **Retain Local Files**, turn off **Serve Media from Cloud** in **Settings → Retention Policy**. Media is still offloaded, but your site keeps loading it from your own server. Turn it on when your CDN is ready and every offloaded file switches over at once. See [Offload now, serve from the CDN later](/features/url-rewriting/#offload-now-serve-from-the-cdn-later).
+
 ### Can I keep my access keys out of the database?
 
 Yes. Define them as constants in `wp-config.php`. The settings screen then shows those fields as locked. See [Credentials in wp-config.php](/providers/wp-config-credentials/).

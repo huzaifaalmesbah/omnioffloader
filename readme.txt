@@ -35,14 +35,14 @@ And because offloading should never be a one-way door, **Bring Back** downloads 
 * **Bulk offload for existing media** — process the whole library or a set number of attachments (5, 10, 25, 50, 100 or any number), with a live progress bar, activity log and a Cancel button.
 * **Adjustable transfer speed** — offload your existing, not-yet-offloaded media library and bring it back faster by moving 1, 3 or 6 files at the same time, or your own number from 1 to 10. Every setting runs inside a single PHP process, so faster never means more server processes.
 * **Content URL rewriting** — images, galleries, video, audio, file, cover and media-text blocks, Classic Editor media tags and audio/video shortcodes are all served from the cloud, without editing post content.
-* **Serve from your CDN** — media is delivered from your custom domain or CDN edge, not your origin server.
+* **Serve from your CDN** — media is delivered from your custom domain or CDN edge, not your origin server. Not ready yet? Turn off **Serve Media from Cloud** to offload now and keep loading media from your server, then switch over with one click.
 * **Three retention policies** — keep every local copy, delete only generated thumbnails (Smart Local Cleanup), or move everything to the cloud (Full Cloud Migration).
 * **Apply a new policy to old media** — change the retention policy later and apply it to media you already offloaded from the Tools screen. Every file is checked in the cloud before its local copy is deleted.
 * **Bring Back** — restore media from the cloud to your server, per file or in bulk, with a disk-space preflight so you know what it needs before it starts. Deleting the cloud copy afterwards is optional and off by default.
 * **Media Library integration** — a status column, grid view badges, a meta box on the edit screen, row actions and bulk actions for Offload and Bring Back.
 * **Mirror Delete** — deleting an attachment in WordPress removes its cloud copies too (on by default for new installs; never on a staging or dev copy).
 * **Object versioning and path prefix** — add a timestamp segment to object keys so CDN caches never serve a stale file, and store objects under a folder of your choice.
-* **WP-CLI** — offload, restore, apply retention and check status from the terminal, with a full command reference on the Tools screen.
+* **WP-CLI** — offload, restore, apply retention and check status from the terminal. Long jobs can run in the background after you close the terminal, and `wp omnioffloader stop` ends them from anywhere. A full command reference is on the Tools screen.
 * **Credentials in wp-config.php** — define keys as PHP constants instead of storing them in the database; the settings screen locks those fields.
 
 = Built for every host — shared plans to dedicated servers =
@@ -69,9 +69,9 @@ OmniOffloader is designed to run on a small shared hosting plan just as well as 
 
 = For developers =
 
-Filters: `omnioffloader_cloud_providers`, `omnioffloader_object_acl`, `omnioffloader_attachment_key`, `omnioffloader_attachment_delete_keys`, `omnioffloader_should_offload_attachment`, `omnioffloader_use_async_upload`, `omnioffloader_should_apply_retention`, `omnioffloader_media_block_names`, `omnioffloader_log_provider_errors`, `omnioffloader_multipart_threshold`, `omnioffloader_transfer_concurrency`, `omnioffloader_bulk_failure_limit`.
+Filters: `omnioffloader_cloud_providers`, `omnioffloader_object_acl`, `omnioffloader_attachment_key`, `omnioffloader_attachment_delete_keys`, `omnioffloader_should_offload_attachment`, `omnioffloader_use_async_upload`, `omnioffloader_should_apply_retention`, `omnioffloader_media_block_names`, `omnioffloader_log_provider_errors`, `omnioffloader_multipart_threshold`, `omnioffloader_transfer_concurrency`, `omnioffloader_bulk_failure_limit`, `omnioffloader_free_disk_space`, `omnioffloader_cpanel_quota_file`, `omnioffloader_check_folder_claim`.
 
-Actions: `omnioffloader_before_offload`, `omnioffloader_after_offload`, `omnioffloader_before_restore`, `omnioffloader_after_restore`.
+Actions: `omnioffloader_before_offload`, `omnioffloader_after_offload`, `omnioffloader_before_restore`, `omnioffloader_after_restore`, `omnioffloader_transfer_heartbeat`.
 
 REST API namespace: `omnioffloader/v1`. WP-CLI: `wp omnioffloader`. Full reference with examples: [Hooks](https://omnioffloader.vercel.app/developers/hooks/) and [WP-CLI](https://omnioffloader.vercel.app/wp-cli/).
 
@@ -216,6 +216,10 @@ A retention policy is applied when a file is offloaded, so a new policy only aff
 
 Most storage buckets do not serve files publicly by default, and Cloudflare R2 has no public URL at all until you connect one. Pointing a custom domain or CDN hostname at your bucket is what makes your media reachable — and it lets the files be cached at the edge.
 
+= Can I offload now and switch to the CDN later? =
+
+Yes. With the **Retain Local Files** policy, turn off **Serve Media from Cloud** in **Settings → Retention Policy**. Media is still offloaded to your bucket, but your site keeps loading it from your own server. When your CDN is ready, turn it on: every offloaded file switches over at once, with nothing uploaded again. Clear your page cache after changing it. The cleanup policies delete local files, so with them media always loads from the cloud.
+
 = Can I keep my access keys out of the database? =
 
 Yes. Define them as constants in `wp-config.php`, named `OMNIOFFLOADER_{PROVIDER}_{FIELD}` — for example:
@@ -233,9 +237,11 @@ Yes. **OmniOffloader → Tools** lists every command and option with copy button
 `wp omnioffloader offload --ids=12,34`
 `wp omnioffloader restore --all [--limit=<number>] [--delete-cloud] [--dry-run]`
 `wp omnioffloader retention [--policy=<0|1|2>] [--dry-run] [--format=json]`
+`wp omnioffloader offload --all --background`
 `wp omnioffloader status`
+`wp omnioffloader stop`
 
-Every write command supports `--dry-run`, and destructive options ask for confirmation unless you pass `--yes`. Commands refuse to start while another bulk job is running (`--force` overrides this), so two jobs never touch the same files. WP-CLI offloads use your Transfer Speed setting.
+Add `--background` to keep a long job running after you close the terminal; `status` shows its progress and `stop` ends it from any terminal. Every write command supports `--dry-run`, and destructive options ask for confirmation unless you pass `--yes`. Commands refuse to start while another bulk job is running (`--force` overrides this), so two jobs never touch the same files. WP-CLI offloads use your Transfer Speed setting.
 
 = Who can offload or bring back media? =
 
@@ -293,6 +299,7 @@ Depending on the provider you select:
 * `wp omnioffloader offload`, `restore` and `retention` take `--background`: the job keeps running after you close the terminal, with its output in a log file.
 * New `wp omnioffloader stop` ends the running job from any terminal. A WP-CLI run finishes the file it is transferring first; a job started from the admin screen is cancelled.
 * `wp omnioffloader status` shows a running WP-CLI job: progress, failures, process and log file.
+* The WP-CLI reference on the Tools screen lists the new `stop` command and `--background` option.
 * A lock left behind by a killed run (for example after a server restart) is cleared by the next command on the same server, instead of blocking it for 10 minutes.
 
 **Fixes**

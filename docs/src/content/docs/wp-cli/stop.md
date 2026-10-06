@@ -1,13 +1,13 @@
 ---
 title: wp omnioffloader stop
-description: Stop a running offload, Bring Back or retention job from any terminal, and run long jobs in the background.
+description: Stop a running offload, Bring Back or retention job from any terminal, and keep long jobs running after you close the terminal.
 sidebar:
   order: 6
 ---
 
 Stops the offload, Bring Back or retention job that is running. It works from any terminal: a new SSH window, a script or a cron job.
 
-- **A WP-CLI run** (in the foreground or with `--background`) finishes the file it is transferring, then exits and releases its lock. No file is left half uploaded or half downloaded.
+- **A WP-CLI run** (in a terminal or started with `nohup … &`) finishes the file it is transferring, then exits and releases its lock. No file is left half uploaded or half downloaded.
 - **A bulk job started from the admin screen** is cancelled, like its **Cancel** button does.
 
 Attachments that were already done stay done. Run the same command again to continue where it stopped.
@@ -37,31 +37,25 @@ Success: Stopped. Run the same command again to continue where it left off.
 
 If a large file is still transferring when the wait ends, the command says so. The run still stops on its own right after that file.
 
-## Run in the background
+## Keep a job running after you close the terminal
 
-`offload`, `restore` and `retention` take `--background`. The command starts the job, confirms it is running, and returns. You can then close the terminal; the job keeps going.
+Start the command with `nohup` and `&`, and send its output to a log file:
 
 ```bash
-wp omnioffloader offload --all --background
+nohup wp omnioffloader offload --all > offload.log 2>&1 &
 ```
 
-```
-Success: Started in the background (process 843753). You can close this window.
-Log:      /tmp/omnioffloader-offload-20260930-110512.log
-Progress: wp omnioffloader status
-Stop:     wp omnioffloader stop
-```
+You can then close the terminal; the job keeps going.
 
-- **Progress:** [`wp omnioffloader status`](/wp-cli/status/) shows how far it got. The log file gets a line every 25 attachments: `tail -f` it to follow along.
-- **Log file:** by default a new file in the server's temp folder. Choose another with `--log=<file>`.
-- **Confirmations:** nobody can answer a question in the background, so a run that would ask one (`restore --delete-cloud`, or `retention` with a stricter policy) needs `--yes`.
-- `--background` can't be combined with `--dry-run`.
+- **Progress:** [`wp omnioffloader status`](/wp-cli/status/) shows how far it got. The log gets a line every 25 attachments: `tail -f offload.log` to follow along.
+- **Confirmations:** nobody can answer a question without a terminal, so a run that would ask one (`restore --delete-cloud`, or `retention` with a stricter policy) needs `--yes`. Without it, the command stops with a message instead of waiting.
+- **Stop it:** `wp omnioffloader stop`, from any terminal.
 
-`--background` needs PHP to be allowed to start processes (`proc_open`). Most hosts allow it on the command line. Where it is disabled, the command says so; run the job inside `screen` or `tmux` instead.
+`screen` and `tmux` work too: start the command inside one, detach, and come back to it later.
 
-## Closing the terminal without `--background`
+## Closing the terminal
 
-A run in the foreground stops when you close the terminal, like any command. Its lock is released right away, so you can start it again at once.
+A run started without `nohup` stops when you close the terminal, like any command. Its lock is released right away, so you can start it again at once.
 
 ## A run that was killed
 

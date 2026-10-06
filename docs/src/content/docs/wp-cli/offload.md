@@ -12,7 +12,7 @@ The admin screen that does the same job is **OmniOffloader → Offload**.
 ## Synopsis
 
 ```bash
-wp omnioffloader offload [--all] [--ids=<ids>] [--limit=<number>] [--dry-run] [--force] [--background] [--log=<file>]
+wp omnioffloader offload [--all] [--ids=<ids>] [--limit=<number>] [--dry-run] [--force]
 ```
 
 ## Options
@@ -24,8 +24,6 @@ wp omnioffloader offload [--all] [--ids=<ids>] [--limit=<number>] [--dry-run] [-
 | `--limit=<number>` | Stop after this many attachments. Useful for working through a large library in scheduled chunks. |
 | `--dry-run` | List what would be offloaded without uploading anything. |
 | `--force` | Run even when a bulk job started from the admin screen is active. |
-| `--background` | Keep running after you close the terminal. Output goes to a log file. See [Run in the background](/wp-cli/stop/#run-in-the-background). |
-| `--log=<file>` | Log file for `--background`. Default: a new file in the server's temp folder. |
 
 You must pass either `--all` or `--ids`, but not both.
 
@@ -49,10 +47,10 @@ Work through a large library in chunks of 500:
 wp omnioffloader offload --all --limit=500
 ```
 
-Offload the whole library in the background, so you can close the terminal:
+Offload the whole library and keep it running after you close the terminal (see [Keep a job running](/wp-cli/stop/#keep-a-job-running-after-you-close-the-terminal)):
 
 ```bash
-wp omnioffloader offload --all --background
+nohup wp omnioffloader offload --all > offload.log 2>&1 &
 ```
 
 Offload specific attachments:

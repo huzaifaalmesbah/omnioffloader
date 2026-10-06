@@ -104,9 +104,10 @@ function getCommands(): CliCommand[] {
 					),
 				},
 				{
-					command: 'wp omnioffloader offload --all --background',
+					command:
+						'nohup wp omnioffloader offload --all > offload.log 2>&1 &',
 					description: __(
-						'Run it in the background; you can close the terminal.',
+						'Keep it running after you close the terminal; progress goes to offload.log.',
 						'omnioffloader'
 					),
 				},
@@ -151,13 +152,6 @@ function getCommands(): CliCommand[] {
 					flag: '--force',
 					description: __(
 						'Run even while an admin bulk job is active.',
-						'omnioffloader'
-					),
-				},
-				{
-					flag: '--background',
-					description: __(
-						'Keep running after you close the terminal; output goes to a log file.',
 						'omnioffloader'
 					),
 				},
@@ -249,13 +243,6 @@ function getCommands(): CliCommand[] {
 						'omnioffloader'
 					),
 				},
-				{
-					flag: '--background',
-					description: __(
-						'Keep running after you close the terminal; output goes to a log file.',
-						'omnioffloader'
-					),
-				},
 			],
 		},
 		{
@@ -344,13 +331,6 @@ function getCommands(): CliCommand[] {
 					flag: '--force',
 					description: __(
 						'Run even while an admin bulk job is active.',
-						'omnioffloader'
-					),
-				},
-				{
-					flag: '--background',
-					description: __(
-						'Keep running after you close the terminal; output goes to a log file.',
 						'omnioffloader'
 					),
 				},

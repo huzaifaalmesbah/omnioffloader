@@ -121,7 +121,7 @@ class StatusCommand {
 					(int) $run['failed'],
 					human_time_diff( (int) $run['started'] ),
 					(int) $run['pid'],
-					! empty( $run['background'] ) ? ', background' : ''
+					! empty( $run['background'] ) ? ', detached' : ''
 				)
 			);
 

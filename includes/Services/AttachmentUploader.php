@@ -36,43 +36,6 @@ class AttachmentUploader {
 	private $provider;
 
 	/**
-	 * Pages of 1,000 keys read when listing one upload folder in the bucket.
-	 * A bigger folder falls back to one small listing per attachment.
-	 */
-	private const LINK_LIST_PAGES = 200;
-
-	/**
-	 * Folder listings kept in memory at once (see existing_sizes()).
-	 */
-	private const LINK_LISTINGS_KEPT = 2;
-
-	/**
-	 * Whether files already in the bucket with the same size are linked
-	 * instead of uploaded again (see link_existing()).
-	 *
-	 * @var bool
-	 */
-	private $link_existing = false;
-
-	/**
-	 * Recent folder listings: key prefix => (object key => size), or false
-	 * when the folder could not be listed whole.
-	 *
-	 * @var array<string, array<string, int>|false>
-	 */
-	private $listings = array();
-
-	/**
-	 * Files linked and uploaded since this uploader was created.
-	 *
-	 * @var array{linked: int, uploaded: int}
-	 */
-	private $file_counts = array(
-		'linked'   => 0,
-		'uploaded' => 0,
-	);
-
-	/**
 	 * Constructor.
 	 *
 	 * @param ProviderInterface $provider Cloud provider.
@@ -97,85 +60,6 @@ class AttachmentUploader {
 		$slots = self::files_at_once();
 
 		return $slots > 1 ? min( 16, max( 3, intdiv( $slots, 4 ) ) ) : 1;
-	}
-
-	/**
-	 * Link files that are already in the bucket instead of uploading them.
-	 *
-	 * For media copied to the bucket with another tool first (rclone, the
-	 * AWS CLI…). A file counts as already there when an object with its
-	 * key exists and has exactly its size; anything else is uploaded as
-	 * usual. The attachment is still only marked offloaded once every file
-	 * is in the bucket and its main object is confirmed.
-	 *
-	 * @since 0.1.4
-	 *
-	 * @param bool $enable Whether to link existing objects.
-	 * @return void
-	 */
-	public function link_existing( $enable = true ) {
-		$this->link_existing = (bool) $enable;
-	}
-
-	/**
-	 * Files linked and uploaded so far.
-	 *
-	 * @since 0.1.4
-	 *
-	 * @return array{linked: int, uploaded: int}
-	 */
-	public function file_counts() {
-		return $this->file_counts;
-	}
-
-	/**
-	 * What linking would do for some attachments, without changing anything.
-	 *
-	 * For a dry run: reads the bucket, writes nothing.
-	 *
-	 * @since 0.1.4
-	 *
-	 * @param int[] $ids Attachment IDs.
-	 * @return array<int, array{files: int, present: int, upload_bytes: int}> Local files, files already in the bucket, bytes still to upload.
-	 */
-	public function link_preview( array $ids ) {
-		$report = array();
-
-		foreach ( $ids as $attachment_id ) {
-			$attachment_id = (int) $attachment_id;
-			$files         = self::collect_attachment_files( $attachment_id );
-
-			if ( empty( $files['main'] ) ) {
-				$report[ $attachment_id ] = array(
-					'files'        => 0,
-					'present'      => 0,
-					'upload_bytes' => 0,
-				);
-				continue;
-			}
-
-			$job = array(
-				'main'   => $files['main'][0],
-				'upload' => self::local_entries( $files ),
-			);
-
-			$present = $this->find_existing( array( $job ) );
-			$bytes   = 0;
-
-			foreach ( $job['upload'] as $entry ) {
-				if ( empty( $present[ $entry['key'] ] ) ) {
-					$bytes += self::local_size( $entry['file'] );
-				}
-			}
-
-			$report[ $attachment_id ] = array(
-				'files'        => count( $job['upload'] ),
-				'present'      => count( $present ),
-				'upload_bytes' => $bytes,
-			);
-		}
-
-		return $report;
 	}
 
 	/**
@@ -275,41 +159,25 @@ class AttachmentUploader {
 			}
 
 			$jobs[ $attachment_id ] = $job;
+			$files                  = array_merge( $files, $job['upload'] );
 		}
 
 		if ( empty( $jobs ) ) {
 			return $results;
 		}
 
-		// Files already in the bucket with the same size: nothing to send.
-		$present = $this->link_existing ? $this->find_existing( $jobs ) : array();
-
-		foreach ( $jobs as $job ) {
-			foreach ( $job['upload'] as $entry ) {
-				if ( empty( $present[ $entry['key'] ] ) ) {
-					$files[] = $entry;
-				}
-			}
-		}
-
 		$uploaded = empty( $files ) ? array() : $this->upload_all( $files );
 
-		$this->file_counts['linked']   += count( $present );
-		$this->file_counts['uploaded'] += count( array_filter( $uploaded ) );
-
-		$uploaded = $present + $uploaded;
-
-		// Confirm the main object of every attachment whose files all made
-		// it. A main object just seen in the bucket listing needs no check.
+		// Confirm the main object of every attachment whose files all made it.
 		$verify = array();
 
 		foreach ( $jobs as $job ) {
-			if ( $this->all_uploaded( $job, $uploaded ) && file_exists( $job['main']['file'] ) && empty( $present[ $job['main']['key'] ] ) ) {
+			if ( $this->all_uploaded( $job, $uploaded ) && file_exists( $job['main']['file'] ) ) {
 				$verify[] = $job['main']['key'];
 			}
 		}
 
-		$confirmed = $present + $this->confirm_all( $verify );
+		$confirmed = $this->confirm_all( $verify );
 
 		foreach ( $jobs as $attachment_id => $job ) {
 			$results[ $attachment_id ] = $this->finish( $attachment_id, $job, $uploaded, $confirmed, $metadata[ $attachment_id ] ?? null );
@@ -363,25 +231,9 @@ class AttachmentUploader {
 			return null;
 		}
 
-		return array(
-			'main'   => $files['main'][0],
-			'upload' => self::local_entries( $files ),
-		);
-	}
-
-	/**
-	 * An attachment's files that exist on disk.
-	 *
-	 * Metadata can reference files that never existed (e.g. cleaned up by
-	 * another plugin); those are skipped quietly.
-	 *
-	 * @since 0.1.4 Split out of prepare().
-	 *
-	 * @param array{main: array<int, array{file: string, key: string}>, sizes: array<int, array{file: string, key: string}>} $files Collected files.
-	 * @return array<int, array{file: string, key: string}>
-	 */
-	private static function local_entries( array $files ) {
-		return array_values(
+		// Metadata can reference files that never existed on disk (e.g.
+		// cleaned up by another plugin); skip those quietly.
+		$upload = array_values(
 			array_filter(
 				array_merge( $files['main'], $files['sizes'] ),
 				static function ( $entry ) {
@@ -389,96 +241,11 @@ class AttachmentUploader {
 				}
 			)
 		);
-	}
 
-	/**
-	 * Size of a local file in bytes, 0 when it cannot be read.
-	 *
-	 * @param string $file Absolute path.
-	 * @return int
-	 */
-	private static function local_size( $file ) {
-		// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- a vanished file simply has no size.
-		$size = @filesize( $file );
-
-		return false === $size ? 0 : (int) $size;
-	}
-
-	/**
-	 * Which of some prepared attachments' files are already in the bucket
-	 * with the same size as on disk.
-	 *
-	 * @since 0.1.4
-	 *
-	 * @param array<int, array{main: array{file: string, key: string}, upload: array<int, array{file: string, key: string}>}> $jobs Prepared attachments.
-	 * @return array<string, bool> Object key => true, for every file present.
-	 */
-	private function find_existing( array $jobs ) {
-		$present = array();
-
-		foreach ( $jobs as $job ) {
-			$sizes = $this->existing_sizes( $job );
-
-			foreach ( $job['upload'] as $entry ) {
-				$key = $entry['key'];
-
-				if ( isset( $sizes[ $key ] ) && self::local_size( $entry['file'] ) === $sizes[ $key ] ) {
-					$present[ $key ] = true;
-				}
-			}
-		}
-
-		return $present;
-	}
-
-	/**
-	 * Sizes of the objects that may belong to one attachment.
-	 *
-	 * Lists the attachment's whole folder (e.g. "2024/05/") once and reuses
-	 * it for the next attachments of that month, so a library costs about one
-	 * request per 1,000 files. A folder too big to list falls back to one
-	 * listing per attachment, then to one size lookup per file.
-	 *
-	 * @since 0.1.4
-	 *
-	 * @param array{main: array{file: string, key: string}, upload: array<int, array{file: string, key: string}>} $job Prepared attachment.
-	 * @return array<string, int> Object key => size.
-	 */
-	private function existing_sizes( array $job ) {
-		$main  = $job['main']['key'];
-		$slash = strrpos( $main, '/' );
-		$dir   = false === $slash ? '' : substr( $main, 0, $slash + 1 );
-
-		// Optional provider method (see AbstractS3Provider::list_object_sizes()).
-		if ( method_exists( $this->provider, 'list_object_sizes' ) ) {
-			if ( ! array_key_exists( $dir, $this->listings ) ) {
-				// Attachments arrive folder by folder; keep memory flat.
-				$this->listings = array_slice( $this->listings, 1 - self::LINK_LISTINGS_KEPT, null, true );
-
-				$this->listings[ $dir ] = $this->provider->list_object_sizes( $dir, self::LINK_LIST_PAGES );
-			}
-
-			if ( is_array( $this->listings[ $dir ] ) ) {
-				return $this->listings[ $dir ];
-			}
-		}
-
-		$keys  = wp_list_pluck( $job['upload'], 'key' );
-		$sizes = self::remote_sizes( $this->provider, $keys );
-
-		if ( ! empty( $sizes ) ) {
-			return $sizes;
-		}
-
-		foreach ( $keys as $key ) {
-			$size = $this->provider->object_size( $key );
-
-			if ( false !== $size ) {
-				$sizes[ $key ] = (int) $size;
-			}
-		}
-
-		return $sizes;
+		return array(
+			'main'   => $files['main'][0],
+			'upload' => $upload,
+		);
 	}
 
 	/**

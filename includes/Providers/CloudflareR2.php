@@ -38,20 +38,6 @@ class CloudflareR2 extends AbstractS3Provider {
 	}
 
 	/**
-	 * {@inheritDoc}
-	 *
-	 * @since 0.1.4
-	 *
-	 * @return array<string, string>
-	 */
-	protected function rclone_backend() {
-		return array(
-			'provider' => 'Cloudflare',
-			'endpoint' => Helpers::normalize_url( $this->credential( 'endpoint' ) ),
-		);
-	}
-
-	/**
 	 * Build the S3 client configured for R2.
 	 *
 	 * R2 requires the account endpoint and accepts region "auto".

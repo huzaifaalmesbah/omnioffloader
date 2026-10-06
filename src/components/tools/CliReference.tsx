@@ -3,7 +3,6 @@ import { __ } from '@wordpress/i18n';
 import { copy } from '@wordpress/icons';
 
 import { useCore } from '../../context/CoreContext';
-import { copyText } from '../../utils/clipboard';
 import { Card } from '../ui/Card';
 
 interface CliOption {
@@ -126,13 +125,6 @@ function getCommands(): CliCommand[] {
 						'omnioffloader'
 					),
 				},
-				{
-					command: 'wp omnioffloader offload --all --link-existing',
-					description: __(
-						'Already copied your uploads to the bucket (rclone, AWS CLI…)? Link them: only missing or different files are uploaded.',
-						'omnioffloader'
-					),
-				},
 			],
 			options: [
 				{
@@ -174,68 +166,6 @@ function getCommands(): CliCommand[] {
 					flag: '--concurrency=<number>',
 					description: __(
 						'Files uploaded at once for this run, 1–64 (VPS or dedicated server).',
-						'omnioffloader'
-					),
-				},
-				{
-					flag: '--link-existing',
-					description: __(
-						'Skip files already in the bucket with the same size. Needs Object Versioning off.',
-						'omnioffloader'
-					),
-				},
-			],
-		},
-		{
-			name: 'wp omnioffloader rclone',
-			summary: __(
-				'Print the rclone remote, copy command and link command for this site, built from its settings (bucket, endpoint, Path Prefix). The secret key is never printed.',
-				'omnioffloader'
-			),
-			view: 'tools',
-			viewLabel: __( 'Open Tools', 'omnioffloader' ),
-			examples: [
-				{
-					command: 'wp omnioffloader rclone',
-					description: __(
-						'Show the setup, with a placeholder for the secret key.',
-						'omnioffloader'
-					),
-				},
-				{
-					command: 'wp omnioffloader rclone --write-config',
-					description: __(
-						'Save the remote with your secret key to rclone’s config file, readable only by you.',
-						'omnioffloader'
-					),
-				},
-			],
-			options: [
-				{
-					flag: '--write-config',
-					description: __(
-						'Save the remote, with the secret key, instead of printing it.',
-						'omnioffloader'
-					),
-				},
-				{
-					flag: '--config-file=<file>',
-					description: __(
-						'rclone config file to write (default: rclone’s own).',
-						'omnioffloader'
-					),
-				},
-				{
-					flag: '--force',
-					description: __(
-						'Replace an existing "omnioffloader" remote.',
-						'omnioffloader'
-					),
-				},
-				{
-					flag: '--file-list=<file>',
-					description: __(
-						'Copy an exact list of media files instead of the year/month folders.',
 						'omnioffloader'
 					),
 				},
@@ -421,6 +351,41 @@ function getCommands(): CliCommand[] {
 			],
 		},
 	];
+}
+
+/**
+ * Copy text to the clipboard, falling back to a hidden textarea on
+ * non-secure (http://) admin URLs where the Clipboard API is unavailable.
+ *
+ * @param text Text to copy.
+ */
+async function copyText( text: string ): Promise< boolean > {
+	if ( window.isSecureContext && navigator.clipboard ) {
+		try {
+			await navigator.clipboard.writeText( text );
+			return true;
+		} catch {
+			// Fall through to the legacy path.
+		}
+	}
+
+	const area = document.createElement( 'textarea' );
+	area.value = text;
+	area.setAttribute( 'readonly', '' );
+	area.style.position = 'fixed';
+	area.style.opacity = '0';
+	document.body.appendChild( area );
+	area.select();
+
+	let ok = false;
+	try {
+		ok = document.execCommand( 'copy' );
+	} catch {
+		ok = false;
+	}
+
+	document.body.removeChild( area );
+	return ok;
 }
 
 interface CliReferenceProps {

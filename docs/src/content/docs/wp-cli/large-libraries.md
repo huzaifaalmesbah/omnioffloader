@@ -86,7 +86,15 @@ If `uname -m` shows `aarch64`, download `rclone-current-linux-arm64.zip` instead
 
 #### 2. Connect it to your bucket
 
-Use the same keys, endpoint and bucket as in OmniOffloader. Either run `rclone config` and answer the questions (new remote named `r2`, storage **Amazon S3 compatible**, then your provider, for example **Cloudflare R2**, your keys and endpoint, defaults for the rest), or write the config file `~/.config/rclone/rclone.conf` yourself. For Cloudflare R2:
+The quickest way: let OmniOffloader write the remote from its own settings, with your keys, endpoint and this site's folder:
+
+```bash
+wp omnioffloader rclone --write-config
+```
+
+It saves a remote named `omnioffloader` to rclone's config file and prints the copy and link commands for this site. The same setup is on **OmniOffloader → Tools**. See [`wp omnioffloader rclone`](/wp-cli/rclone/). Then skip to step 3, using `omnioffloader:` where the examples below say `r2:`.
+
+To set it up by hand instead, use the same keys, endpoint and bucket as in OmniOffloader. Either run `rclone config` and answer the questions (new remote named `r2`, storage **Amazon S3 compatible**, then your provider, for example **Cloudflare R2**, your keys and endpoint, defaults for the rest), or write the config file `~/.config/rclone/rclone.conf` yourself. For Cloudflare R2:
 
 ```ini
 [r2]
@@ -136,6 +144,7 @@ tail -f rclone.log
 - Leave out `/PREFIX` if you don't use a Path Prefix.
 - The `--include` line copies only the year/month folders, so logs and backups stay out of the bucket.
 - If the copy stops, run the same command again: it skips files that are already copied.
+- Always use `rclone copy`, never `rclone sync`. `sync` deletes files in the bucket that are not on your server, including the folder's ownership marker and, in a shared bucket, other sites' files.
 - `tail -f` only shows progress; Ctrl+C stops watching, not the copy.
 
 ### AWS CLI

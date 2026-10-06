@@ -72,6 +72,20 @@ class DigitalOceanSpaces extends AbstractS3Provider {
 	}
 
 	/**
+	 * {@inheritDoc}
+	 *
+	 * @since 0.1.4
+	 *
+	 * @return array<string, string>
+	 */
+	protected function rclone_backend() {
+		return array(
+			'provider' => 'DigitalOcean',
+			'endpoint' => Helpers::normalize_url( $this->credential( 'endpoint' ) ),
+		);
+	}
+
+	/**
 	 * Build the S3 client configured for DigitalOcean Spaces.
 	 *
 	 * @return S3Client

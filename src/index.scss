@@ -2583,6 +2583,60 @@
 	}
 }
 
+.smowp-rclone {
+	&__steps {
+		display: flex;
+		flex-direction: column;
+		gap: 18px;
+	}
+
+	&__step {
+		display: flex;
+		flex-direction: column;
+		gap: 8px;
+
+		h3 {
+			margin: 0;
+			font-size: 14px;
+		}
+
+		p {
+			margin: 0;
+			color: var( --smowp-text-muted );
+			overflow-wrap: anywhere;
+		}
+	}
+
+	&__block {
+		display: flex;
+		align-items: flex-start;
+		justify-content: space-between;
+		gap: 10px;
+		background: #1e1e1e;
+		border-radius: 8px;
+		padding: 8px 8px 8px 12px;
+
+		pre {
+			margin: 0;
+			min-width: 0;
+			color: #e5e7eb;
+			font-size: 12.5px;
+			line-height: 1.6;
+			white-space: pre-wrap;
+			overflow-wrap: anywhere;
+		}
+
+		.components-button {
+			color: #e5e7eb;
+			flex-shrink: 0;
+
+			&:hover:not( :disabled ) {
+				color: #ffffff;
+			}
+		}
+	}
+}
+
 // Respect reduced-motion preferences.
 @media ( prefers-reduced-motion: reduce ) {
 	#omnioffloader-admin-app *,

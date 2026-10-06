@@ -14,6 +14,7 @@ Every bulk job in OmniOffloader can also run from the terminal with [WP-CLI](htt
 | [`wp omnioffloader retention`](/wp-cli/retention/) | Apply a retention policy to media that is already offloaded. |
 | [`wp omnioffloader status`](/wp-cli/status/) | Show the provider, connection, Safe mode, media counts and running jobs. |
 | [`wp omnioffloader stop`](/wp-cli/stop/) | Stop the running job from any terminal. |
+| [`wp omnioffloader rclone`](/wp-cli/rclone/) | Print or save the rclone setup for this site, built from its settings. |
 | [Large libraries](/wp-cli/large-libraries/) | Copy with rclone or a similar tool, then link with `offload --link-existing`. |
 
 The same reference, with copy buttons, is on the **OmniOffloader → Tools** screen.

@@ -78,6 +78,23 @@ class S3Compatible extends AbstractS3Provider {
 	}
 
 	/**
+	 * {@inheritDoc}
+	 *
+	 * @since 0.1.4
+	 *
+	 * @return array<string, string>
+	 */
+	protected function rclone_backend() {
+		return array(
+			'provider'         => 'Other',
+			'region'           => '' !== $this->credential( 'region' ) ? $this->credential( 'region' ) : 'us-east-1',
+			'endpoint'         => Helpers::normalize_url( $this->credential( 'endpoint' ) ),
+			// rclone defaults to path style; follow this site's choice.
+			'force_path_style' => in_array( $this->credential( 'path_style' ), array( '1', 'true', true ), true ) ? 'true' : 'false',
+		);
+	}
+
+	/**
 	 * Build the S3 client configured for generic S3-compatible endpoints.
 	 *
 	 * @return S3Client

@@ -48,6 +48,7 @@ wp --exec="define( 'OMNIOFFLOADER_DISABLE_ENGINE', true );" eval-file tests/inte
 wp --exec="define( 'OMNIOFFLOADER_DISABLE_ENGINE', true );" eval-file tests/integration-folder-claim.php
 wp --exec="define( 'OMNIOFFLOADER_DISABLE_ENGINE', true );" eval-file tests/integration-link-existing.php
 wp --exec="define( 'OMNIOFFLOADER_DISABLE_ENGINE', true );" eval-file tests/integration-concurrency.php
+wp --exec="define( 'OMNIOFFLOADER_DISABLE_ENGINE', true );" eval-file tests/integration-rclone.php
 wp --exec="define( 'OMNIOFFLOADER_DISABLE_ENGINE', true );" eval-file tests/seed-attachments.php 20 myprefix
 wp eval-file tests/integration-bulk-rest.php   # needs real credentials; hits the live bucket
 ```
@@ -79,11 +80,11 @@ includes/
 │                       #   Wasabi, S3Compatible
 ├── Services/           # AttachmentUploader, AttachmentRestorer (Bring Back), LocalCleaner,
 │                       #   RetentionApplier, AbstractBulkProcessor + BulkOffloadProcessor /
-│                       #   BulkRestoreProcessor / BulkRetentionProcessor
+│                       #   BulkRestoreProcessor / BulkRetentionProcessor, RcloneSetup
 ├── Offload/            # Offloader + Observers/ — one WordPress hook per observer class
 ├── Admin/              # Settings (menu + React app enqueue)
 ├── Cli/                # CommandRegistrar, OffloadCommand, RestoreCommand, RetentionCommand,
-│                       #   StatusCommand, StopCommand; CliJobGuard (shared lock/stop/detached runs)
+│                       #   StatusCommand, StopCommand, RcloneCommand; CliJobGuard (shared lock/stop/detached runs)
 ├── Traits/             # OptionsHelper, AttachmentHelper
 └── templates/          # admin-app.php (#omnioffloader-admin-app mount point)
 ```
@@ -123,7 +124,7 @@ Queue state statuses: `idle` · `running` · `done` · `cancelled` · `failed`.
 
 That's it. `credential_fields()` is served as JSON to the React app, which renders the form generically — **zero JS changes per provider**.
 
-`AbstractS3Provider` handles the rest (plus the optional `list_object_sizes()` that `RetentionApplier` uses to verify an attachment's files in one request): `upload_file()` switches to `MultipartUploader` above `MULTIPART_THRESHOLD` (64 MB, filter `omnioffloader_multipart_threshold`) and aborts the multipart upload on failure; the optional batch methods `upload_files()`, `download_files()` and `objects_exist()` (all `method_exists`-checked by callers, which fall back to the single-file methods) run through one `Aws\CommandPool` at `OptionsHelper::files_at_once()` (setting `transfer_speed` low/balanced/fast → 1/3/6, custom → `transfer_concurrency`, filter `omnioffloader_transfer_concurrency`, clamped to 10; CLI `offload --concurrency` sets `Helpers::set_transfer_concurrency_override()` up to 64, which wins over both, `batch_size()` grows to one attachment per 4 slots ≤16, multipart parts stay ≤ `MAX_PART_CONCURRENCY` 10) — one PHP process, never extra workers. `AttachmentUploader::upload_many()` pools several attachments (`batch_size()`: 3, or 1 on Low) and confirms their main keys together; `upload()` is `upload_many()` of one. `link_existing()` (CLI `offload --link-existing`, for libraries pre-copied with rclone) skips files already in the bucket at the same size: `existing_sizes()` lists the attachment's whole folder once (cache of 2 folders, ≤200 pages), falling back to `remote_sizes()` then `object_size()`; the CLI orders attachments by `_wp_attached_file` so each folder is listed once, and refuses with Object Versioning on. `AttachmentRestorer` checks existing local copies with one `remote_sizes()` listing per attachment and downloads the rest through `download_files()`; providers build their client through `client_config()`, which sets `request_checksum_calculation => when_required`; every call carries `connect_timeout`; ACL is omitted unless `omnioffloader_object_acl` returns one (R2 rejects the header, so never add it unconditionally).
+`AbstractS3Provider` handles the rest (plus the optional `list_object_sizes()` that `RetentionApplier` uses to verify an attachment's files in one request, and the optional `rclone_settings()` — override `rclone_backend()` — that `Services\RcloneSetup` turns into an rclone remote; the secret only with `$with_secret`, used solely by `wp omnioffloader rclone --write-config`): `upload_file()` switches to `MultipartUploader` above `MULTIPART_THRESHOLD` (64 MB, filter `omnioffloader_multipart_threshold`) and aborts the multipart upload on failure; the optional batch methods `upload_files()`, `download_files()` and `objects_exist()` (all `method_exists`-checked by callers, which fall back to the single-file methods) run through one `Aws\CommandPool` at `OptionsHelper::files_at_once()` (setting `transfer_speed` low/balanced/fast → 1/3/6, custom → `transfer_concurrency`, filter `omnioffloader_transfer_concurrency`, clamped to 10; CLI `offload --concurrency` sets `Helpers::set_transfer_concurrency_override()` up to 64, which wins over both, `batch_size()` grows to one attachment per 4 slots ≤16, multipart parts stay ≤ `MAX_PART_CONCURRENCY` 10) — one PHP process, never extra workers. `AttachmentUploader::upload_many()` pools several attachments (`batch_size()`: 3, or 1 on Low) and confirms their main keys together; `upload()` is `upload_many()` of one. `link_existing()` (CLI `offload --link-existing`, for libraries pre-copied with rclone) skips files already in the bucket at the same size: `existing_sizes()` lists the attachment's whole folder once (cache of 2 folders, ≤200 pages), falling back to `remote_sizes()` then `object_size()`; the CLI orders attachments by `_wp_attached_file` so each folder is listed once, and refuses with Object Versioning on. `AttachmentRestorer` checks existing local copies with one `remote_sizes()` listing per attachment and downloads the rest through `download_files()`; providers build their client through `client_config()`, which sets `request_checksum_calculation => when_required`; every call carries `connect_timeout`; ACL is omitted unless `omnioffloader_object_acl` returns one (R2 rejects the header, so never add it unconditionally).
 
 ### Frontend (`src/` — TypeScript React SPA)
 
@@ -142,7 +143,7 @@ src/
 │   │                   #   SaveBar (sticky bottom save bar), MainLayout
 │   ├── ui/             # Card, ProgressBar, StatCard, ActivityLog, BatchScopeSelector
 │   ├── settings/       # CredentialFields, TestConnection
-│   └── tools/          # RetentionSyncCard, CliReference (mirrors includes/Cli docblocks —
+│   └── tools/          # RetentionSyncCard, RcloneCard, CliReference (mirrors includes/Cli docblocks —
 │                       #   update it and docs/…/wp-cli/ whenever a command or flag changes)
 └── utils/              # constants.ts holds RouteMeta[] (icon/title/subtitle per page —
                         #   Sidebar and Header render from this one source)
@@ -164,7 +165,7 @@ Progress polling (`useBulkOffload`, `useBringBack`, `useRetentionSync`) uses a *
 All mutations via REST; `@wordpress/api-fetch` sends the nonce. Every route: explicit `permission_callback` (`manage_options`; only the read-only `/offload/attachment-status` uses `upload_files`), `args` with type/sanitize callbacks **plus `'validate_callback' => 'rest_validate_request_arg'`** (core skips schema checks — type, enum, min/max — when only a sanitizer is given), `WP_REST_Server` method constants, `rest_ensure_response()` / `WP_Error` with status + stable `omnioffloader_*` error codes.
 
 - `GET/POST /core/settings` · `GET /core/providers` · `GET /core/stats` (includes `safe_mode`) · `POST /core/safe-mode/live` · `POST /core/folder-claim/take-over`
-- `GET/POST /provider/credentials` · `POST /provider/test-connection` — all take a provider arg
+- `GET/POST /provider/credentials` · `POST /provider/test-connection` — all take a provider arg · `GET /provider/rclone` (active provider, no args; Tools rclone card — the secret is always a placeholder)
 - `POST /offload/attachment/{id}` · `POST /offload/bulk` · `GET /offload/bulk/progress` · `POST /offload/bulk/cancel` · `GET /offload/errors`
 - `GET /bring-back/preflight` · `POST /bring-back/attachment/{id}` · `POST /bring-back/bulk` · `GET /bring-back/bulk/progress` · `POST /bring-back/bulk/cancel`
 - `POST /bulk/action` (Media Library bulk offload/restore of selected IDs, `maxItems` 1000, `manage_options`) · `GET /offload/attachment-status` (Media Library live badges, `upload_files`, read-only)

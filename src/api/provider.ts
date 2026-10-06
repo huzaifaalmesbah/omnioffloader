@@ -1,7 +1,11 @@
 import apiFetch from '@wordpress/api-fetch';
 import { addQueryArgs } from '@wordpress/url';
 
-import type { CredentialsResponse, TestConnectionResponse } from '../types';
+import type {
+	CredentialsResponse,
+	RcloneSetupResponse,
+	TestConnectionResponse,
+} from '../types';
 
 const BASE = '/omnioffloader/v1';
 
@@ -38,4 +42,8 @@ export function testConnection(
 				: {} ),
 		},
 	} );
+}
+
+export function fetchRcloneSetup(): Promise< RcloneSetupResponse > {
+	return apiFetch( { path: `${ BASE }/provider/rclone` } );
 }

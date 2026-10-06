@@ -119,6 +119,13 @@ function getCommands(): CliCommand[] {
 					),
 				},
 				{
+					command: 'wp omnioffloader offload --all --concurrency=32',
+					description: __(
+						'Upload 32 files at once on a VPS; faster for large libraries.',
+						'omnioffloader'
+					),
+				},
+				{
 					command: 'wp omnioffloader offload --all --link-existing',
 					description: __(
 						'Already copied your uploads to the bucket (rclone, AWS CLI…)? Link them: only missing or different files are uploaded.',
@@ -159,6 +166,13 @@ function getCommands(): CliCommand[] {
 					flag: '--force',
 					description: __(
 						'Run even while an admin bulk job is active.',
+						'omnioffloader'
+					),
+				},
+				{
+					flag: '--concurrency=<number>',
+					description: __(
+						'Files uploaded at once for this run, 1–64 (VPS or dedicated server).',
 						'omnioffloader'
 					),
 				},

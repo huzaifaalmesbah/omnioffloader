@@ -58,17 +58,49 @@ A file that your host's time limit cuts short is reported and skipped, never ret
 
 How many files move at the same time is set by [Transfer Speed](/features/transfer-speed/). A faster setting finishes sooner on a server that can handle it.
 
-## Large libraries
+## Large libraries: use WP-CLI
 
-On the Offload page, the **Run this job from WP-CLI** panel's **View command** button opens the command in the WP-CLI reference on the Tools screen. For libraries of **5,000 items or more** the panel recommends it. WP-CLI is usually faster, needs no open browser tab, and is not affected by web request time limits:
+:::tip[Recommended for 5,000 items or more]
+If you have SSH access to your server, offload a big library with [WP-CLI](/wp-cli/) instead of this screen. On the Offload page, the **Run this job from WP-CLI** panel's **View command** button opens the command in the WP-CLI reference on the Tools screen.
+:::
 
-```bash
-wp omnioffloader offload --all
-```
+Why WP-CLI is the better choice for a big library:
 
-See [`wp omnioffloader offload`](/wp-cli/offload/).
+- **Faster.** `--concurrency` uploads up to 64 files at once for that run. The admin screen stays at the Transfer Speed setting (at most 10).
+- **No browser needed.** Nothing depends on an open tab or on WordPress's background requests, which some hosts slow down or block.
+- **No web time limits.** A web request is stopped after 30 to 60 seconds on most hosts. A terminal command is not.
+- **Easy to follow.** A progress bar, or a log file you can check from anywhere, plus `wp omnioffloader status` with the speed and time left.
+- **Safe to stop and continue.** Media that is already offloaded is skipped, so running the same command again picks up where it stopped.
 
-For tens of thousands of items on a VPS or dedicated server, `wp omnioffloader offload --all --concurrency=32` (up to 64) uploads many more files at once. Try it on a short run first, for example with `--limit=500`.
+<Steps>
+
+1. **See what would be offloaded.** Nothing is uploaded:
+
+   ```bash
+   wp omnioffloader offload --all --dry-run
+   ```
+
+2. **Try a small batch first**, and check a few images on your site:
+
+   ```bash
+   wp omnioffloader offload --all --limit=500
+   ```
+
+3. **Offload the rest in the background.** It keeps running after you close the terminal and writes its progress to `offload.log` in your home folder. On a VPS or dedicated server, start with `--concurrency=32`; on shared hosting, leave it out:
+
+   ```bash
+   nohup wp omnioffloader offload --all --concurrency=32 > ~/offload.log 2>&1 &
+   ```
+
+4. **Watch it** with `tail -f ~/offload.log` (Ctrl+C only stops watching), or `wp omnioffloader status` for the speed and time left.
+
+5. **Stop it** at any time with `wp omnioffloader stop`. Run the command from step 3 again to continue.
+
+</Steps>
+
+Run these from your WordPress folder, or add `--path=<wordpress-folder>`. For every option, see [`wp omnioffloader offload`](/wp-cli/offload/); for watching and timing a long run, see [Long runs and log files](/wp-cli/long-runs/).
+
+No SSH access? This screen does the same job. It runs in the background on the server, so you can close the tab and come back.
 
 ## One job at a time
 

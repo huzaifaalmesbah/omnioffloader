@@ -127,6 +127,36 @@ class ProviderController extends BaseController {
 	}
 
 	/**
+	 * On a multisite network, a site administrator may not point the
+	 * plugin at a private or local address: the server would make
+	 * requests into its own network and report what it found. A network
+	 * administrator may (a self-hosted MinIO, for example). Single sites
+	 * allow it, since their administrator owns the server.
+	 *
+	 * @since 0.1.4
+	 *
+	 * @param string $endpoint Endpoint URL from the request.
+	 * @return \WP_Error|null
+	 */
+	private static function endpoint_refusal( $endpoint ) {
+		$endpoint = trim( (string) $endpoint );
+
+		if ( '' === $endpoint || ! is_multisite() || current_user_can( 'manage_network_options' ) ) {
+			return null;
+		}
+
+		if ( false !== wp_http_validate_url( $endpoint ) ) {
+			return null;
+		}
+
+		return new \WP_Error(
+			'omnioffloader_endpoint_not_allowed',
+			__( 'On a multisite network, only a network administrator can use a private or local endpoint address. Use the provider\'s public endpoint, or ask a network administrator.', 'omnioffloader' ),
+			array( 'status' => 403 )
+		);
+	}
+
+	/**
 	 * POST /provider/credentials
 	 *
 	 * @param WP_REST_Request $request Request.
@@ -169,6 +199,12 @@ class ProviderController extends BaseController {
 			}
 
 			$to_save[ $name ] = $value;
+		}
+
+		$refused = self::endpoint_refusal( $to_save['endpoint'] ?? '' );
+
+		if ( null !== $refused ) {
+			return $refused;
 		}
 
 		// A provider keeps one bucket, so media offloaded to the old one could
@@ -218,7 +254,7 @@ class ProviderController extends BaseController {
 	 * POST /provider/test-connection
 	 *
 	 * @param WP_REST_Request $request Request.
-	 * @return \WP_REST_Response
+	 * @return \WP_REST_Response|\WP_Error
 	 */
 	public function test_connection_response( WP_REST_Request $request ) {
 		if ( ! class_exists( \Aws\S3\S3Client::class ) ) {
@@ -240,6 +276,13 @@ class ProviderController extends BaseController {
 			foreach ( $credentials as $field_name => $field_val ) {
 				$sanitized[ sanitize_key( (string) $field_name ) ] = sanitize_text_field( (string) $field_val );
 			}
+
+			$refused = self::endpoint_refusal( $sanitized['endpoint'] ?? '' );
+
+			if ( null !== $refused ) {
+				return $refused;
+			}
+
 			$provider->set_credential_overrides( $sanitized );
 		}
 

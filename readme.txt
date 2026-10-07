@@ -325,6 +325,7 @@ Depending on the provider you select:
 
 * Switching to another storage provider no longer breaks media you already offloaded: it keeps loading from the provider it was offloaded to (through its saved settings), Mirror Delete deletes it there, and Move Media brings it over to the new provider.
 * The bucket can no longer be changed while media is offloaded to it, which used to break those URLs and Bring Back. Settings warns under the Bucket field, with the steps: Bring Back, change the bucket, offload again.
+* Bulk jobs: cancelling and immediately starting again no longer lets the cancelled run's worker carry on inside the new one (processing items the new run did not choose, with its settings, and counting them in its progress).
 * Cover and Media & Text blocks no longer rewrite links to other files from the same upload folder (another image or a PDF inside the block) to the cloud. Only the block's own media is rewritten, so those links no longer break.
 * WP-CLI: closing the SSH window during `wp omnioffloader offload`, `restore` or `retention` now releases the job lock right away, as Ctrl+C does. Before, the next run was refused for up to 10 minutes.
 * WP-CLI: media the run was transferring when it was interrupted (Ctrl+C, a closed window, a killed process) no longer shows "Offloading..." or "Restoring..." in the Media Library forever. It goes back to its real status and the next run picks it up.

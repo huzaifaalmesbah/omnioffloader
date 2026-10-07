@@ -69,6 +69,37 @@ update_option( BulkRestoreProcessor::STATE_OPTION, array( 'status' => 'done' ), 
 $queued = $queue->start( false, array( $local_id ) );
 omnioffloader_queue_check( 0 === $queued && 'idle' === BulkRestoreProcessor::get_state()['status'], 'state set to idle' );
 
+echo "\nTest 3: a worker whose run was cancelled and restarted\n";
+
+// Private members of the shared base class.
+$base           = OmniOffloader\Services\AbstractBulkProcessor::class;
+$run_stopped    = new ReflectionMethod( $base, 'run_stopped' );
+$record_results = new ReflectionMethod( $base, 'record_results' );
+$pass_run       = new ReflectionProperty( $base, 'pass_run' );
+$superseded     = new ReflectionProperty( $base, 'superseded' );
+foreach ( array( $run_stopped, $record_results, $pass_run, $superseded ) as $reflected ) {
+	$reflected->setAccessible( true );
+}
+
+// The worker's pass began in run A.
+update_option( BulkRestoreProcessor::STATE_OPTION, array( 'status' => 'running', 'run' => 'run-a', 'total' => 5, 'processed' => 1 ), false );
+$pass_run->setValue( $queue, 'run-a' );
+$superseded->setValue( $queue, false );
+omnioffloader_queue_check( false === $run_stopped->invoke( $queue ), 'its own run: carries on' );
+
+// Cancelled and started again: run B owns the queue now.
+update_option( BulkRestoreProcessor::STATE_OPTION, array( 'status' => 'running', 'run' => 'run-b', 'total' => 3, 'processed' => 0 ), false );
+omnioffloader_queue_check( true === $run_stopped->invoke( $queue ), 'replaced run: stops' );
+omnioffloader_queue_check( true === $superseded->getValue( $queue ), 'knows it was superseded (so it does not purge the new queue)' );
+$record_results->invoke( $queue, array( $local_id => true ) );
+$state = BulkRestoreProcessor::get_state();
+omnioffloader_queue_check( 0 === (int) $state['processed'] && 'run-b' === $state['run'], "its result is not counted in the new run" );
+
+// A plain cancel still stops it.
+update_option( BulkRestoreProcessor::STATE_OPTION, array( 'status' => 'cancelled', 'run' => 'run-a' ), false );
+$superseded->setValue( $queue, false );
+omnioffloader_queue_check( true === $run_stopped->invoke( $queue ) && false === $superseded->getValue( $queue ), 'a cancel stops it as before' );
+
 echo "\nCleanup…\n";
 wp_delete_post( $local_id, true );
 

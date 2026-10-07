@@ -135,6 +135,20 @@ abstract class AbstractBulkProcessor extends WP_Background_Process {
 	private $halt_message = '';
 
 	/**
+	 * The run this pass works for (the state's 'run' when the pass began).
+	 *
+	 * @var string
+	 */
+	private $pass_run = '';
+
+	/**
+	 * Whether a newer run replaced the one this pass started for.
+	 *
+	 * @var bool
+	 */
+	private $superseded = false;
+
+	/**
 	 * Heartbeat listener renewing the process lock mid-transfer, during a pass.
 	 *
 	 * @var \Closure|null
@@ -304,6 +318,9 @@ abstract class AbstractBulkProcessor extends WP_Background_Process {
 			// Failures since the last success, including ones a connection
 			// check explained away.
 			'fail_run'     => 0,
+			// Identifies the run, so a worker of a cancelled run cannot carry
+			// on inside the next one.
+			'run'          => '',
 		);
 	}
 
@@ -434,6 +451,7 @@ abstract class AbstractBulkProcessor extends WP_Background_Process {
 			$extra_state,
 			array(
 				'status'       => 'running',
+				'run'          => wp_generate_uuid4(),
 				'total'        => $total,
 				'processed'    => 0,
 				'errors'       => 0,
@@ -553,6 +571,8 @@ abstract class AbstractBulkProcessor extends WP_Background_Process {
 		// Read before the first item: the uploader calls set_time_limit(0),
 		// which rewrites max_execution_time for the rest of the request.
 		$this->pass_seconds = $this->pass_time_limit();
+		$this->pass_run     = (string) ( static::get_state()['run'] ?? '' );
+		$this->superseded   = false;
 
 		$this->lock_process();
 
@@ -610,7 +630,15 @@ abstract class AbstractBulkProcessor extends WP_Background_Process {
 					$this->update( $batch->key, $batch->data );
 				}
 
-				$verdict = $this->breaker_verdict( $this->run_group( $group ) );
+				$outcomes = $this->run_group( $group );
+
+				// Replaced by a newer run mid-group: its breaker is not ours.
+				if ( $this->superseded ) {
+					$stopped = true;
+					break;
+				}
+
+				$verdict = $this->breaker_verdict( $outcomes );
 
 				if ( '' !== $this->halt_message ) {
 					$verdict            = $this->halt_message;
@@ -650,6 +678,14 @@ abstract class AbstractBulkProcessor extends WP_Background_Process {
 		Helpers::defer_media_stats_flush( false );
 
 		if ( $aborted ) {
+			return $this->maybe_wp_die();
+		}
+
+		if ( $stopped && $this->superseded ) {
+			// The queue belongs to a newer run now: leave it alone and wake its
+			// worker, which may have found the mutex taken by this pass.
+			$this->dispatch();
+
 			return $this->maybe_wp_die();
 		}
 
@@ -849,7 +885,21 @@ abstract class AbstractBulkProcessor extends WP_Background_Process {
 	 * @return bool
 	 */
 	private function run_stopped() {
-		return 'running' !== static::get_state()['status'];
+		$state = static::get_state();
+
+		if ( 'running' !== $state['status'] ) {
+			return true;
+		}
+
+		// Cancelled and started again while this pass held its batch in
+		// memory: the queue now belongs to the new run.
+		if ( (string) ( $state['run'] ?? '' ) !== $this->pass_run ) {
+			$this->superseded = true;
+
+			return true;
+		}
+
+		return false;
 	}
 
 	/**
@@ -1004,7 +1054,16 @@ abstract class AbstractBulkProcessor extends WP_Background_Process {
 	 * @return void
 	 */
 	protected function record_results( array $outcomes, $track_streak = true ) {
-		$state    = static::get_state();
+		$state = static::get_state();
+
+		// A group that finished after its run was cancelled and replaced:
+		// its outcomes are not the new run's.
+		if ( (string) ( $state['run'] ?? '' ) !== $this->pass_run ) {
+			$this->superseded = true;
+
+			return;
+		}
+
 		$recent   = isset( $state['recent'] ) && is_array( $state['recent'] ) ? $state['recent'] : array();
 		$streak   = (int) $state['streak'];
 		$fail_run = (int) $state['fail_run'];

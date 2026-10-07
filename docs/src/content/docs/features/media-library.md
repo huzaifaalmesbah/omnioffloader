@@ -61,7 +61,7 @@ Select several attachments, then choose from the **Bulk actions** menu:
 You can select up to 1,000 attachments at once. For more, use [Bulk Offload](/features/bulk-offload/), [Bring Back](/features/bring-back/) or [WP-CLI](/wp-cli/).
 
 :::note
-If another OmniOffloader job is already running, the action waits: *"Another OmniOffloader job is running. Wait for it to finish, then try again."*
+If another OmniOffloader job is already running, the action is refused with a notice: *"Another OmniOffloader job is running. Wait for it to finish, then try again."*
 :::
 
 ## Who can use these actions

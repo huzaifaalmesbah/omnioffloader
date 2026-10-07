@@ -64,8 +64,8 @@ Enter the domain only, starting with `https://`. Do not add the bucket name or a
 
 After you fill in the fields, click **Test Connection**. It checks the values currently in the form, so you can test before you save.
 
-- **Connection successful.** OmniOffloader reached your bucket with these keys.
-- **Connection failed: …** The text after the colon is the error from your provider. Most often the keys are wrong, the key has no access to the bucket, or the bucket name, region or endpoint has a typo.
+- **Connected:** OmniOffloader reached your bucket with these keys.
+- **Not connected**, with *Connection failed: …*: the text after the colon is the error from your provider. Most often the keys are wrong, the key has no access to the bucket, or the bucket name, region or endpoint has a typo.
 
 If another site already uses the bucket folder, the test still succeeds but shows a warning. See [Sharing one bucket between sites](/features/shared-bucket/).
 
@@ -78,7 +78,8 @@ Test Connection checks that the bucket can be reached. It does **not** check tha
 Each offloaded attachment remembers the provider and bucket it was offloaded to.
 
 - **Another provider:** media you already offloaded keeps loading from the old provider, through its saved settings (keep them). New uploads go to the new provider. Move the old media over with **Tools → Move Media to the Current Folder** or [`wp omnioffloader move`](/wp-cli/move/).
-- **Another bucket with the same provider:** a provider keeps one bucket in its settings, so media in the old bucket could no longer load or be brought back. The bucket can't be changed while media is offloaded to it: bring it all back first ([Bring Back](/features/bring-back/)), then change the bucket and offload again. Settings warns under the **Bucket** field before you save.
+- **Another bucket with the same provider:** a provider keeps one bucket in its settings, so media in the old bucket could no longer load or be brought back. The bucket can't be changed while media is offloaded to it: bring it all back first ([Bring Back](/features/bring-back/)), then change the bucket and offload again. Settings warns under the **Bucket Name** field before you save.
+- **The bucket's endpoint or region:** these say where the bucket is, so they are locked the same way while media is offloaded there. A region may only contain letters, numbers and dashes, for example `eu-central-1`.
 
 ## Set up your provider
 

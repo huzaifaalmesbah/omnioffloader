@@ -39,11 +39,15 @@ You can change the prefix at any time. Each attachment remembers the folder it w
 
 Nothing breaks, but your media is then split across two folders. When media is offloaded, Settings says so under the field, and **Save changes** asks you to confirm the change. Once saved, Settings shows how many attachments are outside the current folder, with the WP-CLI commands to move them (recommended) and a **Move media in Tools** button.
 
+![Settings after a Path Prefix change: media outside the current folder, the recommended WP-CLI move commands with copy buttons, and a Move media in Tools button](/images/screenshots/path-prefix-move-marked.png)
+
 [`wp omnioffloader status`](/wp-cli/status/) shows the current folder and how many offloaded attachments are in other folders.
 
 #### Move existing media to the new folder
 
 Go to **OmniOffloader → Tools → Move Media to the Current Folder**, or run [`wp omnioffloader move`](/wp-cli/move/). The card only appears when some media is outside the current folder. It shows how many attachments are in other folders, and **Move Media** starts the move with a progress bar and a Cancel button, like Bulk Offload.
+
+![Tools → Move Media to the Current Folder: the current folder, media in other folders, a custom batch option and the Move Media button](/images/screenshots/move-media-marked.png)
 
 Within the same bucket, your storage provider copies each attachment's files into the new folder itself: nothing is downloaded, and the files on your server are not touched. Each old copy is deleted once its new copy is confirmed. A file that can't be copied that way (larger than 5 GB) is moved through your server instead.
 

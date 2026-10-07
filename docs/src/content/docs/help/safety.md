@@ -27,7 +27,7 @@ If something fails, the attachment keeps at least one valid copy, on the server 
 
 ### One bulk job at a time
 
-Offload, Bring Back and retention jobs read and delete the same files, so only one runs at a time. This applies whether the job was started from the admin screens, the Media Library or [WP-CLI](/wp-cli/).
+Offload, Bring Back, retention and move jobs read and delete the same files, so only one runs at a time. This applies whether the job was started from the admin screens, the Media Library or [WP-CLI](/wp-cli/).
 
 ### Only administrators move media
 

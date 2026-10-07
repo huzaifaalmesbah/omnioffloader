@@ -57,7 +57,7 @@ Save logs in your home folder (`~/offload.log`), not inside `public_html` or `wp
 :::
 
 :::tip[A job that asks a question]
-Without a terminal, nobody can answer a question. A job that would ask one (`restore --delete-cloud`, or `retention` with a stricter policy) needs `--yes`, or it stops with a message asking for it.
+Without a terminal, nobody can answer a question. A job that would ask one (`restore --delete-cloud`, `retention` with a stricter policy, or `move` without `--keep-old`) needs `--yes`, or it stops with a message asking for it.
 :::
 
 ## 2. Check that it started
@@ -83,7 +83,7 @@ wp omnioffloader status
 ```
 Running now: WP-CLI offload (in the background, process 2480717)
   Progress:   50 of 63,966 (0.1%), 0 failed
-  Started:    2026-10-06 11:30 (23 seconds ago)
+  Started:    2026-10-06 11:30 (23 secs ago)
   Transfers:  64 files at once
   Log:        /home/example/offload.log (watch it: tail -f /home/example/offload.log)
   Stop:       wp omnioffloader stop
@@ -211,7 +211,7 @@ The last lines of the log show the result:
 tail -n 3 ~/offload.log
 ```
 
-Some failures are normal on a big, old library. Find them in **Media → Library** with the OmniOffloader filter set to **Failed**; each one shows its error.
+Some failures are normal on a big, old library. Find them in **Media → Library** (list view): a failed item shows **Failed — …** or **Offload failed** in the OmniOffloader status column, with its error.
 
 | Error | Meaning |
 | --- | --- |
@@ -232,8 +232,8 @@ rm ~/offload.log
 | `Error: A bulk offload started from the admin screen is running…` | Only one job runs at a time. Wait for it to finish, or cancel it on the admin screen. |
 | `Error: Safe mode is on…` | The site looks like a staging or local copy, so nothing is uploaded. See [Safe mode](/features/safe-mode/). |
 | `Success: Nothing to offload.` | Everything is already offloaded. |
-| `status` shows `NOT RUNNING` | The job was killed (for example, the server restarted). Start the same command again; it continues where it stopped. |
+| `status` says the run *ended without cleaning up* | The job was killed (for example, the server restarted). Start the same command again; it continues where it stopped. |
 | Some media still shows **Offloading...** after the job ended | The job was killed so hard that it couldn't clean up (`kill -9`, a server restart). Run `wp omnioffloader stop` or start the command again: either one finds the job gone and resets those attachments. |
 | The job stopped when you closed the terminal | It was started without `nohup` (or without `&`). Start it again as shown in [step 1](#1-start-the-job-with-a-log-file); it continues where it stopped. |
-| `Error: … cannot be answered without a terminal … Add --yes.` | The job would ask a question (Bring Back with `--delete-cloud`, or retention), which a background job can't answer. Add `--yes`. |
+| `Error: … cannot be answered without a terminal … Add --yes.` | The job would ask a question (Bring Back with `--delete-cloud`, retention, or `move` without `--keep-old`), which a background job can't answer. Add `--yes`. |
 | `nohup: ignoring input` at the top of the log | Normal. `nohup` says it won't read from the keyboard. |

@@ -50,6 +50,8 @@ Safe mode and the shared-bucket check identify your site by its saved **Site Add
 
 Supported per site. Each site in a network has its own settings, credentials and background queues.
 
+Only a network administrator can point a provider at a private or local endpoint address (for example a MinIO server on the internal network). Site administrators must use a public endpoint, so a sub-site can't make the server send requests into its own network.
+
 :::note
 Multisite has not had a dedicated test pass yet. Treat large networks as unverified for now, and test on a staging network first.
 :::

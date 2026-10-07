@@ -36,11 +36,11 @@ After activation, you'll find **OmniOffloader** in the WordPress admin menu, wit
 
 | Screen | What it's for |
 | --- | --- |
-| **Dashboard** | Overview and quick status |
+| **Dashboard** | Overview and quick status: **Active**, or **Safe mode** on a copy of the site, and whether your site still loads media from the server (Serve Media from Cloud off) |
 | **Settings** | Provider, credentials, retention policy and behaviour |
 | **Offload** | Move existing media to the cloud |
 | **Bring Back** | Restore media to your server |
-| **Tools** | Apply a new retention policy to existing media, and the WP-CLI reference |
+| **Tools** | Apply a new retention policy to existing media, move media into the current bucket folder, and the WP-CLI reference |
 
 The Media Library also gets a status column, badges, row actions and bulk actions. See [Media Library integration](/features/media-library/).
 

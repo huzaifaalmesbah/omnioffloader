@@ -188,7 +188,7 @@ How many files are uploaded or downloaded at the same time. This overrides the [
 | `$concurrency` | `int` | From the setting: Low `1`, Balanced `3`, Fast `6`, or the Custom number. |
 | `$speed` | `string` | `'low'`, `'balanced'`, `'fast'` or `'custom'`. |
 
-The result is kept between 1 and 10. A `wp omnioffloader offload --concurrency` value wins over both the setting and this filter for that run.
+The result is kept between 1 and 10. A `wp omnioffloader offload --concurrency` or `move --concurrency` value wins over both the setting and this filter for that run.
 
 ```php
 // Go slower during business hours.
@@ -222,7 +222,7 @@ How many failures in a row make a bulk job started from the admin check the conn
 | Parameter | Type | Description |
 | --- | --- | --- |
 | `$limit` | `int` | Default `10`. `0` turns the check off. |
-| `$action` | `string` | `'bulk_offload'`, `'bulk_restore'` or `'bulk_retention'`. |
+| `$action` | `string` | `'bulk_offload'`, `'bulk_restore'`, `'bulk_retention'` or `'bulk_move'`. |
 
 WP-CLI commands use their own fixed limit of 10.
 

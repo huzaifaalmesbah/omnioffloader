@@ -133,7 +133,50 @@ class CoreController extends BaseController {
 
 		$before = self::get_settings();
 		$after  = array_merge( $before, $settings );
-		$moved  = FolderClaim::prefix( $before ) !== FolderClaim::prefix( $after )
+
+		// Offloaded media keeps the folder it was offloaded to, so a new
+		// Path Prefix would split the library across two folders. Bring it
+		// back first. In Safe mode a new folder is usually the fix (another
+		// site's folder, or a copy that needs its own), so it stays allowed.
+		$old_folder = FolderClaim::prefix( $before );
+		$new_folder = FolderClaim::prefix( $after );
+
+		/**
+		 * Filter whether the Path Prefix is locked while media is offloaded.
+		 *
+		 * Return false to allow a change anyway, for example while moving
+		 * media between folders with your own script. Existing media then
+		 * stays in its current folder.
+		 *
+		 * @since 0.1.4
+		 *
+		 * @param bool $locked Default true.
+		 */
+		$locked = (bool) apply_filters( 'omnioffloader_lock_path_prefix', true );
+
+		if ( $locked && $new_folder !== $old_folder && ! SafeMode::is_active() ) {
+			$offloaded = (int) Helpers::get_media_stats( true )['offloaded'];
+
+			if ( $offloaded > 0 ) {
+				return new \WP_Error(
+					'omnioffloader_prefix_locked',
+					sprintf(
+						/* translators: 1: number of offloaded attachments, 2: bucket folder. */
+						_n(
+							'%1$s offloaded attachment is stored in %2$s. To change the Path Prefix, first bring all media back to the server (Bring Back), then change it and offload again.',
+							'%1$s offloaded attachments are stored in %2$s. To change the Path Prefix, first bring all media back to the server (Bring Back), then change it and offload again.',
+							$offloaded,
+							'omnioffloader'
+						),
+						number_format_i18n( $offloaded ),
+						'' !== $old_folder ? $old_folder : __( 'the bucket root', 'omnioffloader' )
+					),
+					array( 'status' => 409 )
+				);
+			}
+		}
+
+		$moved = $new_folder !== $old_folder
 			|| (string) ( $before['provider'] ?? '' ) !== (string) ( $after['provider'] ?? '' );
 
 		// Refuse a folder another site sharing the bucket already uses, before

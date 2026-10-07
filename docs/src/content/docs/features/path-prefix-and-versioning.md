@@ -31,11 +31,17 @@ Use a path prefix when:
 - **several sites share one bucket**. Each site needs its own prefix. See [Sharing one bucket](/features/shared-bucket/).
 
 :::note[Changing the prefix later]
-Each attachment remembers the path it was offloaded to. A new prefix only applies to media offloaded after the change. Media already in the cloud stays where it is and keeps loading.
+Each attachment remembers the path it was offloaded to, so a new prefix would only apply to media offloaded after the change, and your media would end up split across two folders.
 
-When you change the prefix while media is offloaded, Settings shows how many attachments stay in the old folder before you save. [`wp omnioffloader status`](/wp-cli/status/) shows the current folder and how many offloaded attachments are in other folders.
+To prevent that, the prefix can't be changed while media is offloaded. Settings shows the steps instead:
 
-To move existing media into the new folder, [bring it back](/features/bring-back/) and offload it again.
+1. Bring all media back to the server with [Bring Back](/features/bring-back/).
+2. Change the Path Prefix and save.
+3. Offload your media again. It goes to the new folder.
+
+In [Safe mode](/features/safe-mode/) the prefix can still be changed, because a new folder is often the fix there: another site uses this folder, or a staging copy needs a folder of its own. Settings then shows that existing media stays in its current folder.
+
+[`wp omnioffloader status`](/wp-cli/status/) shows the current folder and how many offloaded attachments are in other folders.
 :::
 
 ## Object Versioning

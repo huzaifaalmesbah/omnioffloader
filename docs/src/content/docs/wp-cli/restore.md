@@ -65,6 +65,18 @@ Restore, then delete the cloud copies, without the prompt:
 wp omnioffloader restore --all --delete-cloud --yes
 ```
 
+Restore everything in the background, keep it running after you close the terminal, and write its progress to a log file (see [Long runs and log files](/wp-cli/long-runs/)):
+
+```bash
+nohup wp omnioffloader restore --all > ~/restore.log 2>&1 &
+```
+
+With `--delete-cloud` in the background, add `--yes`: nobody can answer the question, so without it the command stops and asks for it.
+
+```bash
+nohup wp omnioffloader restore --all --delete-cloud --yes > ~/restore.log 2>&1 &
+```
+
 ## Deleting cloud copies
 
 :::danger

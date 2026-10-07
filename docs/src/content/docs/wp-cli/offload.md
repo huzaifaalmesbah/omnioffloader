@@ -54,6 +54,14 @@ Offload the whole library, keep it running after you close the terminal, and wri
 nohup wp omnioffloader offload --all > ~/offload.log 2>&1 &
 ```
 
+The same in the background on a VPS, 64 files at once:
+
+```bash
+nohup wp omnioffloader offload --all --concurrency=64 > ~/offload.log 2>&1 &
+```
+
+Follow it with `tail -f ~/offload.log` or `wp omnioffloader status`, and end it with [`wp omnioffloader stop`](/wp-cli/stop/).
+
 Upload 32 files at the same time on a VPS; try a short run first and time it:
 
 ```bash

@@ -73,6 +73,12 @@ Download local copies of everything again:
 wp omnioffloader retention --policy=0
 ```
 
+Apply the saved policy in the background, keep it running after you close the terminal, and write its progress to a log file (see [Long runs and log files](/wp-cli/long-runs/)). Add `--yes`: when the policy deletes local files the command asks first, and a background job can't answer:
+
+```bash
+nohup wp omnioffloader retention --yes > ~/retention.log 2>&1 &
+```
+
 Export the dry run for a spreadsheet or a script:
 
 ```bash

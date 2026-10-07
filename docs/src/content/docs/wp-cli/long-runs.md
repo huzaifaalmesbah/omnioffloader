@@ -7,7 +7,9 @@ sidebar:
 
 A big job, such as offloading tens of thousands of attachments, can take hours. This page shows how to run it so it keeps going after you close the terminal, how to follow its progress in a log file, and how to work out how long it still needs.
 
-Everything here works the same for `offload`, `restore` and `retention`. The examples use `offload`.
+Everything here works the same for `offload`, `restore` and `retention`. The examples use `offload`; [Commands for each job](#commands-for-each-job) lists the others.
+
+You can also run the job inside `screen` or `tmux`: start it there, detach, and reattach later to see its progress bar.
 
 ## 1. Start the job with a log file
 
@@ -32,6 +34,22 @@ The terminal answers with something like this. **It is not an error**: it is the
 ```
 [1] 2480717
 ```
+
+### Commands for each job
+
+Copy the one you need. Each one runs in the background and writes to its own log file in your home folder.
+
+| Job | Command |
+| --- | --- |
+| Offload everything | `nohup wp omnioffloader offload --all > ~/offload.log 2>&1 &` |
+| Offload faster on a VPS | `nohup wp omnioffloader offload --all --concurrency=64 > ~/offload.log 2>&1 &` |
+| Bring Back everything, keep the cloud copies | `nohup wp omnioffloader restore --all > ~/restore.log 2>&1 &` |
+| Bring Back, then delete the cloud copies | `nohup wp omnioffloader restore --all --delete-cloud --yes > ~/restore.log 2>&1 &` |
+| Apply the saved retention policy | `nohup wp omnioffloader retention --yes > ~/retention.log 2>&1 &` |
+
+Run a [dry run](/wp-cli/#try-it-first-with---dry-run) in the terminal first if you are not sure what a job will do: add `--dry-run` and leave out `nohup`, `&` and the log file.
+
+If WordPress is not in the folder you are in, add `--path=/path/to/wordpress` after `wp`.
 
 :::caution[Keep log files out of your website folder]
 Save logs in your home folder (`~/offload.log`), not inside `public_html` or `wp-content`. Files there can be opened in a browser. A log only holds counts and times, but it should still not be public.
@@ -160,6 +178,8 @@ wp omnioffloader stop
 
 The job finishes the files it is uploading, then exits. Nothing is left half done.
 
+You can also end it with `kill` and the process number from `status` or the top of the log (`kill 2480717`). The job then stops at once instead of finishing its current files, and cleans up like `stop` does (when PHP's `pcntl` extension is available). Use `stop` when you can.
+
 :::note[Media Library after a stop]
 While a job runs, the attachments it is working on show **Offloading...** or **Restoring...** in **Media → Library**. However the job ends (`stop`, `kill`, a closed window or a server restart), those attachments go back to their real status. The next run picks up any it didn't finish. After a server restart or `kill -9`, this happens when `wp omnioffloader stop` or a new run finds the job gone.
 :::
@@ -203,4 +223,6 @@ rm ~/offload.log
 | `Success: Nothing to offload.` | Everything is already offloaded. |
 | `status` shows `NOT RUNNING` | The job was killed (for example, the server restarted). Start the same command again; it continues where it stopped. |
 | Some media still shows **Offloading...** after the job ended | The job was killed so hard that it couldn't clean up (`kill -9`, a server restart). Run `wp omnioffloader stop` or start the command again: either one finds the job gone and resets those attachments. |
+| The job stopped when you closed the terminal | It was started without `nohup` (or without `&`). Start it again as shown in [step 1](#1-start-the-job-with-a-log-file); it continues where it stopped. |
+| `Error: … cannot be answered without a terminal … Add --yes.` | The job would ask a question (Bring Back with `--delete-cloud`, or retention), which a background job can't answer. Add `--yes`. |
 | `nohup: ignoring input` at the top of the log | Normal. `nohup` says it won't read from the keyboard. |

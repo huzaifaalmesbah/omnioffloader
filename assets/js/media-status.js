@@ -17,6 +17,15 @@
 
 	var pollTimer = null;
 
+	// Poll interval while something runs: starts fast, eases off while
+	// nothing changes, and is reset as soon as a status changes. A failed
+	// poll waits longer instead of stopping the badges for good.
+	var POLL_MIN = 1800;
+	var POLL_MAX = 6000;
+	var POLL_STEP = 600;
+	var POLL_FAILED_MAX = 12000;
+	var pollDelay = POLL_MIN;
+
 	function scheduleInFlightPoll(delay) {
 		if (pollTimer) {
 			clearTimeout(pollTimer);
@@ -547,6 +556,7 @@
 
 			isBulkRunning = (bulk && bulk.active) ? true : false;
 			var hasProcessingItems = false;
+			var changed = false;
 
 			if (statuses && typeof statuses === 'object') {
 				$.each(statuses, function(id, data) {
@@ -557,6 +567,12 @@
 					var statusKey = data.status;
 					if (statusKey === 'processing' || statusKey === 'queued') {
 						hasProcessingItems = true;
+					}
+
+					var shownStatus = $('.omnioffloader-status-cell[data-attachment-id="' + id + '"]').attr('data-status') ||
+						$('.attachments .attachment[data-id="' + id + '"]').attr('data-omnioffloader-status') || '';
+					if (shownStatus && shownStatus !== statusKey) {
+						changed = true;
 					}
 
 					// Update list view cell
@@ -659,7 +675,22 @@
 
 			// Keep polling if a bulk job is running or any items on screen are in flight
 			if (isBulkRunning || hasProcessingItems) {
-				scheduleInFlightPoll(1800);
+				pollDelay = changed ? POLL_MIN : Math.min(POLL_MAX, pollDelay + POLL_STEP);
+				scheduleInFlightPoll(pollDelay);
+			} else {
+				pollDelay = POLL_MIN;
+			}
+		}).fail(function() {
+			// Keep the badges alive through a server hiccup, but slower.
+			var stillActive = isBulkRunning;
+			$.each(getVisibleAttachmentStates(), function(i, item) {
+				if (item.status === 'processing' || item.status === 'queued') {
+					stillActive = true;
+				}
+			});
+			if (stillActive) {
+				pollDelay = Math.min(POLL_FAILED_MAX, Math.max(pollDelay, POLL_MIN) * 2);
+				scheduleInFlightPoll(pollDelay);
 			}
 		}).always(function() {
 			inFlightCheckRunning = false;

@@ -12,3 +12,4 @@ define( 'OMNIOFFLOADER_URL', 'https://example.com/wp-content/plugins/omnioffload
 define( 'OMNIOFFLOADER_ASSETS_URL', OMNIOFFLOADER_URL . 'assets/' );
 define( 'OMNIOFFLOADER_BASENAME', 'omnioffloader/omnioffloader.php' );
 define( 'OMNIOFFLOADER_FILE', OMNIOFFLOADER_DIR . 'omnioffloader.php' );
+define( 'OMNIOFFLOADER_DOCS_URL', 'https://example.com/docs/' );

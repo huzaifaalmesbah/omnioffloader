@@ -146,11 +146,6 @@ class Plugin {
 	private const CLI_JOB_LOCK_TTL = 600;
 
 	/**
-	 * Public user documentation.
-	 */
-	public const DOCS_URL = 'https://omnioffloader.vercel.app/';
-
-	/**
 	 * Announce a running WP-CLI job so admin-started jobs of every type wait.
 	 *
 	 * A CLI run never writes queue state, so without this the admin screens
@@ -523,7 +518,7 @@ class Plugin {
 
 		$meta[] = sprintf(
 			'<a href="%1$s" target="_blank" rel="noopener noreferrer">%2$s</a>',
-			esc_url( self::DOCS_URL ),
+			esc_url( OMNIOFFLOADER_DOCS_URL ),
 			esc_html__( 'Documentation', 'omnioffloader' )
 		);
 

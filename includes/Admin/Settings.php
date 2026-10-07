@@ -135,6 +135,7 @@ class Settings {
 				'sdk_loaded' => class_exists( \Aws\S3\S3Client::class ),
 				'upload_url' => wp_get_upload_dir()['baseurl'],
 				'media_url'  => admin_url( 'upload.php' ),
+				'docs_url'   => OMNIOFFLOADER_DOCS_URL,
 			)
 		);
 

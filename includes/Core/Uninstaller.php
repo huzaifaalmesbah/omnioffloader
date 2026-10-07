@@ -44,6 +44,7 @@ class Uninstaller {
 		// Cached folder check only; the marker in the bucket stays, so a
 		// reinstall on the same address finds its own folder again.
 		delete_option( 'omnioffloader_folder_claims' );
+		delete_option( 'omnioffloader_folders_used' );
 		delete_option( 'omnioffloader_first_activated_version' );
 		delete_option( 'omnioffloader_cli_run' );
 		delete_option( 'omnioffloader_cli_stop' );

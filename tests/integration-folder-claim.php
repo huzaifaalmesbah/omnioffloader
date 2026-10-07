@@ -18,10 +18,6 @@ if ( ! defined( 'OMNIOFFLOADER_SAFE_MODE' ) ) {
 	define( 'OMNIOFFLOADER_SAFE_MODE', false );
 }
 
-// This site may have offloaded media; the Path Prefix lock would refuse
-// every folder change before the folder check runs.
-add_filter( 'omnioffloader_lock_path_prefix', '__return_false' );
-
 use OmniOffloader\Core\FolderClaim;
 use OmniOffloader\Core\SafeMode;
 use OmniOffloader\Tests\MockProvider;
@@ -118,6 +114,7 @@ function omnioffloader_post_settings( array $changes ) {
 $original_settings    = get_option( 'omnioffloader_settings', array() );
 $original_credentials = get_option( 'omnioffloader_credentials', array() );
 $original_claims      = get_option( FolderClaim::OPTION );
+$original_folders     = get_option( FolderClaim::FOLDERS_OPTION );
 
 $bucket_dir                   = get_temp_dir() . 'omnioffloader-claim-bucket-' . time();
 SmowpClaimMockProvider::$dir = $bucket_dir;
@@ -264,6 +261,43 @@ omnioffloader_check( null === FolderClaim::active_conflict(), 'no conflict repor
 remove_filter( 'omnioffloader_check_folder_claim', '__return_false' );
 
 // ---------------------------------------------------------------------------
+// Test 7 — old folders after a Path Prefix change stay protected.
+// ---------------------------------------------------------------------------
+echo "\nTest 7: a folder the site moved away from\n";
+$omnioffloader_set_prefix = static function ( $prefix ) {
+	update_option( 'omnioffloader_settings', array_merge( get_option( 'omnioffloader_settings' ), array( 'path_prefix_active' => true, 'path_prefix' => $prefix ) ), true );
+};
+$omnioffloader_bucket     = (string) $provider->get_bucket();
+
+omnioffloader_be_site( 'site-a.example' );
+delete_option( FolderClaim::FOLDERS_OPTION );
+$omnioffloader_set_prefix( 'site-a' );
+omnioffloader_check( ! FolderClaim::blocks( $provider ), 'first folder claimed' );
+$omnioffloader_set_prefix( 'site-a-new' );
+omnioffloader_check( ! FolderClaim::blocks( $provider, array( 'site-a/2026/09/old.jpg', 'site-a-new/2026/10/new.jpg' ) ), 'old and new folder both writable' );
+omnioffloader_check( array( 'site-a/', 'site-a-new/' ) === FolderClaim::folders_used( 'mock', $omnioffloader_bucket ), 'both folders remembered' );
+omnioffloader_check( 'site-a/' === FolderClaim::folder_of( 'site-a/2026/09/old.jpg', array( 'site-a/', 'site-a-new/' ), 'site-a-new/' ), 'key mapped to its old folder' );
+omnioffloader_check( 'site-a-new/' === FolderClaim::folder_of( 'site-a-new/2026/10/new.jpg', array( 'site-a/', 'site-a-new/' ), 'site-a-new/' ), 'similar name not mistaken for it' );
+omnioffloader_check( 'site-a.example' === omnioffloader_marker_owner( $bucket_dir, 'site-a/' ), 'old folder keeps this site\'s marker' );
+
+// Another site (its own database) takes the old folder over.
+$omnioffloader_site_a_folders = get_option( FolderClaim::FOLDERS_OPTION );
+omnioffloader_be_site( 'site-b.example' );
+delete_option( FolderClaim::FOLDERS_OPTION );
+$omnioffloader_set_prefix( 'site-a' );
+FolderClaim::take_over( $provider );
+
+// Back on site A.
+omnioffloader_be_site( 'site-a.example' );
+update_option( FolderClaim::FOLDERS_OPTION, $omnioffloader_site_a_folders, true );
+$omnioffloader_set_prefix( 'site-a-new' );
+omnioffloader_check( FolderClaim::blocks( $provider, array( 'site-a/2026/09/old.jpg' ) ), 'writes in the taken-over old folder blocked' );
+omnioffloader_check( ! FolderClaim::blocks( $provider, array( 'site-a-new/2026/10/new.jpg' ) ), 'writes in the current folder still allowed' );
+omnioffloader_check( ! FolderClaim::blocks( $provider ) && 'folder' !== SafeMode::reason(), 'current folder not in Safe mode' );
+$omnioffloader_lost = FolderClaim::lost_folders();
+omnioffloader_check( 1 === count( $omnioffloader_lost ) && 'site-a/' === $omnioffloader_lost[0]['folder'] && 'site-b.example' === $omnioffloader_lost[0]['owner'], 'the lost folder is reported' );
+
+// ---------------------------------------------------------------------------
 // Cleanup.
 // ---------------------------------------------------------------------------
 echo "\nCleanup…\n";
@@ -273,6 +307,11 @@ if ( false === $original_claims ) {
 	delete_option( FolderClaim::OPTION );
 } else {
 	update_option( FolderClaim::OPTION, $original_claims, true );
+}
+if ( false === $original_folders ) {
+	delete_option( FolderClaim::FOLDERS_OPTION );
+} else {
+	update_option( FolderClaim::FOLDERS_OPTION, $original_folders, true );
 }
 
 global $wp_filesystem;

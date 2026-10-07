@@ -24,7 +24,6 @@ OmniOffloader has filters and actions for the parts of offloading you may want t
 | [`omnioffloader_free_disk_space`](#omnioffloader_free_disk_space) | Report the real free space in a hosting quota. |
 | [`omnioffloader_cpanel_quota_file`](#omnioffloader_cpanel_quota_file) | Point to cPanel's quota file on a custom layout. |
 | [`omnioffloader_check_folder_claim`](#omnioffloader_check_folder_claim) | Turn off the shared-bucket folder check. |
-| [`omnioffloader_lock_path_prefix`](#omnioffloader_lock_path_prefix) | Allow a Path Prefix change while media is offloaded. |
 | [`omnioffloader_log_provider_errors`](#omnioffloader_log_provider_errors) | Write provider errors to the PHP error log. |
 | [`omnioffloader_cloud_providers`](#omnioffloader_cloud_providers) | Register your own storage provider. |
 
@@ -280,20 +279,6 @@ Only turn this off when two sites deliberately write into the same folder and ne
 
 ```php
 add_filter( 'omnioffloader_check_folder_claim', '__return_false' );
-```
-
-### `omnioffloader_lock_path_prefix`
-
-Whether the Path Prefix is locked while media is offloaded. See [Path Prefix](/features/path-prefix-and-versioning/). In Safe mode it is never locked.
-
-| Parameter | Type | Description |
-| --- | --- | --- |
-| `$locked` | `bool` | Default `true`. |
-
-Return `false` to allow a change anyway, for example while you move media between folders with your own script. Media already offloaded then stays in its current folder, and only later offloads use the new one.
-
-```php
-add_filter( 'omnioffloader_lock_path_prefix', '__return_false' );
 ```
 
 ### `omnioffloader_log_provider_errors`

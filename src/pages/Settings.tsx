@@ -19,38 +19,13 @@ import { safeModeReasonText } from '../components/layout/SafeModeBanner';
 import { fetchRetentionPreflight } from '../api/retention';
 import { useCore } from '../context/CoreContext';
 import { providerGuidePath } from '../utils/docs';
+import { folderLabel, uploadFolder } from '../utils/folder';
 import { radioKeyDown, radioTabIndex } from '../utils/radioGroup';
 import {
 	RetentionPolicy,
 	type RetentionPreflight,
-	type Settings,
 	type TransferSpeed,
 } from '../types';
-
-/**
- * The bucket folder new offloads go to, as FolderClaim::prefix() builds it:
- * "folder/", or '' for the bucket root.
- *
- * @param settings Settings.
- * @return Folder with a trailing slash, or ''.
- */
-function uploadFolder( settings: Settings ): string {
-	if ( ! settings.path_prefix_active ) {
-		return '';
-	}
-
-	// Like Helpers::sanitize_path(): no empty, "." or ".." segments.
-	const prefix = settings.path_prefix
-		.replace( /\\/g, '/' )
-		.split( '/' )
-		.map( ( segment ) => segment.trim() )
-		.filter(
-			( segment ) => !! segment && segment !== '.' && segment !== '..'
-		)
-		.join( '/' );
-
-	return prefix ? `${ prefix }/` : '';
-}
 
 interface SettingsProps {
 	onNavigate: ( view: string ) => void;
@@ -96,11 +71,6 @@ export function SettingsPage( { onNavigate }: SettingsProps ) {
 		!! savedSettings &&
 		offloadedCount > 0 &&
 		savedFolder !== uploadFolder( settings );
-	// The server refuses the change (omnioffloader_prefix_locked), except in
-	// Safe mode, where a new folder is usually the fix.
-	const prefixLocked = ! stats?.safe_mode?.active;
-	const folderLabel = ( folder: string ) =>
-		folder || __( 'the bucket root', 'omnioffloader' );
 	const keepsLocalFiles =
 		settings.retention_policy === RetentionPolicy.RetainLocal;
 
@@ -520,81 +490,7 @@ export function SettingsPage( { onNavigate }: SettingsProps ) {
 					/>
 				) }
 
-				{ folderChanges && prefixLocked && (
-					<Notice
-						status="error"
-						isDismissible={ false }
-						className="smowp-prefix-notice"
-						actions={ [
-							{
-								label: __( 'Open Bring Back', 'omnioffloader' ),
-								onClick: () => onNavigate( 'bring-back' ),
-								variant: 'primary',
-							},
-							{
-								label: __( 'Undo change', 'omnioffloader' ),
-								onClick: () =>
-									savedSettings &&
-									updateSettings( {
-										path_prefix_active:
-											savedSettings.path_prefix_active,
-										path_prefix: savedSettings.path_prefix,
-									} ),
-								variant: 'secondary',
-							},
-						] }
-					>
-						<p>
-							<strong>
-								{ sprintf(
-									/* translators: 1: number of offloaded attachments, 2: bucket folder. */
-									_n(
-										'%1$s offloaded attachment is stored in %2$s, so the Path Prefix cannot be changed now.',
-										'%1$s offloaded attachments are stored in %2$s, so the Path Prefix cannot be changed now.',
-										offloadedCount,
-										'omnioffloader'
-									),
-									offloadedCount.toLocaleString(),
-									folderLabel( savedFolder )
-								) }
-							</strong>
-						</p>
-						<ol>
-							<li>
-								{ __(
-									'Bring all media back to the server with Bring Back.',
-									'omnioffloader'
-								) }
-							</li>
-							<li>
-								{ __(
-									'Change the Path Prefix here and save.',
-									'omnioffloader'
-								) }
-							</li>
-							<li>
-								{ __(
-									'Offload your media again: it goes to the new folder.',
-									'omnioffloader'
-								) }
-							</li>
-						</ol>
-						<p>
-							{ savedSettings?.retention_policy ===
-							RetentionPolicy.RetainLocal
-								? __(
-										'With Retain Local Files your files are still on this server, so Bring Back downloads nothing and finishes quickly. Choose “Delete from Cloud After Restore” there to empty the old folder.',
-										'omnioffloader'
-									)
-								: __(
-										'Your retention policy removed local files, so Bring Back downloads them first. Check the free disk space on the Bring Back page before you start.',
-										'omnioffloader'
-									) }
-						</p>
-					</Notice>
-				) }
-
-				{ folderChanges && ! prefixLocked && (
+				{ folderChanges && (
 					<Notice
 						status="warning"
 						isDismissible={ false }
@@ -603,8 +499,8 @@ export function SettingsPage( { onNavigate }: SettingsProps ) {
 						{ sprintf(
 							/* translators: 1: number of offloaded attachments, 2: current bucket folder, 3: new bucket folder. */
 							_n(
-								'%1$s offloaded attachment stays in %2$s and keeps working from there. Only media offloaded from now on goes to %3$s. To move existing media, bring it back and offload it again.',
-								'%1$s offloaded attachments stay in %2$s and keep working from there. Only media offloaded from now on goes to %3$s. To move existing media, bring it back and offload it again.',
+								'%1$s offloaded attachment stays in %2$s and keeps working from there. Only media offloaded from now on goes to %3$s. To move existing media into the new folder later, run: wp omnioffloader move --all',
+								'%1$s offloaded attachments stay in %2$s and keep working from there. Only media offloaded from now on goes to %3$s. To move existing media into the new folder later, run: wp omnioffloader move --all',
 								offloadedCount,
 								'omnioffloader'
 							),

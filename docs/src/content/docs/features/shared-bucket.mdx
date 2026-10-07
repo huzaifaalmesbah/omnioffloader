@@ -43,6 +43,15 @@ To prevent this, each site **claims** its folder. It writes a small marker file 
 
 The marker is never deleted, not even when you uninstall the plugin.
 
+### Folders a site moved away from
+
+After you change a site's Path Prefix, its older media stays in the old folder and keeps loading from there (see [Changing the prefix later](/features/path-prefix-and-versioning/#changing-the-prefix-later)). The site still uploads to and deletes from that folder for that media, for example with Mirror Delete. So:
+
+- the old folder keeps this site's marker, and another site trying to use it is refused, and
+- each upload or delete is checked against the folder it really goes to, not just the current one.
+
+If another site takes over the old folder anyway, this site stops writing to and deleting from it. Its media there still loads. `wp omnioffloader status` shows a warning, and [`wp omnioffloader move`](/wp-cli/move/) moves that media into the current folder.
+
 ## If another site uses your folder
 
 If a site finds another site's marker in its folder, it switches to [Safe mode](/features/safe-mode/):

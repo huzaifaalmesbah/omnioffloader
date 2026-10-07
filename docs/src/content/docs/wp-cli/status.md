@@ -2,7 +2,7 @@
 title: wp omnioffloader status
 description: Check the provider, the bucket connection, Safe mode, media counts and running jobs from the terminal.
 sidebar:
-  order: 5
+  order: 6
 ---
 
 Shows what is running right now, then the provider settings, the bucket connection, Safe mode and media counts. It changes nothing, so you can run it as often as you like, from any terminal.
@@ -100,7 +100,8 @@ Running now: nothing. The WP-CLI offload run (process 11030) ended without clean
 - **Provider, Bucket, CDN domain:** the active provider and where media is served from.
 - **Connection:** `OK` when the bucket can be reached. Otherwise a warning with the provider's error.
 - **Safe mode:** `off (live site)`, or `ON` with the reason, for example `WP_ENVIRONMENT_TYPE is "staging"` or `the site address changed from … to …`. See [Safe mode](/features/safe-mode/).
-- **Folder:** the bucket folder new offloads go to, set by the [Path Prefix](/features/path-prefix-and-versioning/), or `bucket root`. When some offloaded media is in other folders, because the prefix changed after it was offloaded, a second line says how many. That media keeps working from where it is.
+- **Folder:** the bucket folder new offloads go to, set by the [Path Prefix](/features/path-prefix-and-versioning/), or `bucket root`. When some offloaded media is in other folders, because the prefix changed after it was offloaded, a second line says how many. That media keeps working from where it is. [`wp omnioffloader move`](/wp-cli/move/) moves it into the current folder.
+- **Warning: Folder … is now used by another site:** a folder this site moved away from was taken over by another site sharing the bucket. Its older media there still loads, but this site no longer writes to or deletes from that folder. Move it with `wp omnioffloader move`. See [Sharing one bucket](/features/shared-bucket/#folders-a-site-moved-away-from).
 - **Media:** total attachments, how many are offloaded (and what share), and how many are only local. Counted fresh each time.
 - **Last Bulk Offload / Bring Back / retention update from the admin screen:** the result of the last bulk job started from the admin screen, and how long ago it ran.
 - **Older retention policy:** shown when some offloaded media still follows a policy you changed later. See [`wp omnioffloader retention`](/wp-cli/retention/).

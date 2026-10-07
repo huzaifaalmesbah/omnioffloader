@@ -367,6 +367,7 @@ Depending on the provider you select:
 * Media Library: picking Offload or Bring Back for items that have nothing to do (already offloaded, or already local) while a bulk job of the same kind runs no longer stops that job.
 * Media Library: a single Offload or Bring Back still in progress keeps its badge while another tab is open.
 * Media Library: status checks slow down while nothing changes (from every 1.8 up to every 6 seconds) and keep going after a failed check instead of freezing until the tab is focused again. The status shows the provider's name (for example "Cloudflare R2") instead of its internal key.
+* Uninstalling with `wp plugin uninstall --deactivate` no longer shows a PHP warning ("Constant OMNIOFFLOADER_DIR already defined").
 * Settings: a save error stays visible until you change something or save again, and a save that stored the provider details but not the other settings says so. The Path Prefix field shows the folder name as it will be saved ("My Media" becomes "My-Media").
 
 = 0.1.3 =

@@ -19,7 +19,7 @@ Open **OmniOffloader → Offload**. The page shows three numbers: **Total Librar
 
 1. Choose how much to offload:
    - **All Local Media**: every eligible attachment on your server.
-   - **Custom Amount**: a set number. Pick a preset (**5**, **10**, **25**, **50**, **100**) or type any number.
+   - **Custom Amount**: a set number. Pick a preset (**5**, **10**, **25**, **50**, **100**, **250**, **500**; only those below the number of eligible attachments are shown) or type any number.
 
 2. Click **Start Bulk Offload**. The button shows how many attachments will run, for example **Start Bulk Offload (25 of 1200)**.
 
@@ -72,7 +72,7 @@ For tens of thousands of items on a VPS or dedicated server, `wp omnioffloader o
 
 ## One job at a time
 
-Only one bulk job runs at a time: Bulk Offload, [Bring Back](/features/bring-back/) or a [retention update](/features/retention-policies/#apply-a-policy-to-existing-media). This applies whether the job was started from these screens, the Media Library or WP-CLI. Two jobs never touch the same files.
+Only one bulk job runs at a time: Bulk Offload, [Bring Back](/features/bring-back/), a [retention update](/features/retention-policies/#apply-a-policy-to-existing-media) or a [move to the current folder](/features/path-prefix-and-versioning/#move-existing-media-to-the-new-folder). This applies whether the job was started from these screens, the Media Library or WP-CLI. Two jobs never touch the same files.
 
 ## Single attachments
 

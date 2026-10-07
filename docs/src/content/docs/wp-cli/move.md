@@ -7,6 +7,8 @@ sidebar:
 
 Moves offloaded media into the folder new offloads go to, including media offloaded to an earlier provider or bucket. The admin screen with the same job is **OmniOffloader → Tools → Move Media to the Current Folder**, shown when some media is outside the current folder.
 
+![Tools → Move Media to the Current Folder, the admin screen for the same job](/images/screenshots/move-media-marked.png)
+
 Each attachment remembers the folder it was offloaded to. After you change the [Path Prefix](/features/path-prefix-and-versioning/#changing-the-prefix-later), older media stays in the old folder and keeps loading from there. `move` brings that media into the current folder, so everything is in one place again.
 
 For each attachment outside the current folder:

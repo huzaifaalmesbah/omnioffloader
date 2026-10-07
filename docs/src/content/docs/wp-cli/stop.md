@@ -62,7 +62,7 @@ A run started without `nohup` stops when you close the terminal, like any comman
 
 ## A run that was killed
 
-If a run was killed without cleaning up (for example `kill -9`, or the server restarted), its lock is left behind. On the same server, the next command sees that the process is gone, clears the lock and starts. `status` shows such a run as `NOT RUNNING`, and `stop` clears it too.
+If a run was killed without cleaning up (for example `kill -9`, or the server restarted), its lock is left behind. On the same server, the next command sees that the process is gone, clears the lock and starts. `status` shows it as *Running now: nothing. The WP-CLI … run (process …) ended without cleaning up*, and `stop` clears it too.
 
 ## Media Library after a stop
 

@@ -26,7 +26,7 @@ OmniOffloader 0.1.4
 
 Running now: WP-CLI offload (in the background, process 11030)
   Progress:   3,420 of 59,177 (5.8%), 2 failed
-  Started:    2026-10-07 04:45 (25 minutes ago)
+  Started:    2026-10-07 04:45 (25 mins ago)
   Speed:      137 attachments per minute
   Time left:  about 6 hours 48 mins (finishes around 2026-10-07 11:33, site time)
   Transfers:  64 files at once
@@ -103,7 +103,7 @@ Running now: nothing. The WP-CLI offload run (process 11030) ended without clean
 - **Folder:** the bucket folder new offloads go to, set by the [Path Prefix](/features/path-prefix-and-versioning/), or `bucket root`. When some offloaded media is in another folder, bucket or provider, because a setting changed after it was offloaded, a second line says how many. That media keeps working from where it is. [`wp omnioffloader move`](/wp-cli/move/) moves it into the current folder.
 - **Warning: Folder … is now used by another site:** a folder this site moved away from was taken over by another site sharing the bucket. Its older media there still loads, but this site no longer writes to or deletes from that folder. Move it with `wp omnioffloader move`. See [Sharing one bucket](/features/shared-bucket/#folders-a-site-moved-away-from).
 - **Media:** total attachments, how many are offloaded (and what share), and how many are only local. Counted fresh each time.
-- **Last Bulk Offload / Bring Back / retention update from the admin screen:** the result of the last bulk job started from the admin screen, and how long ago it ran.
+- **Last Bulk Offload / Bring Back / retention update / folder move from the admin screen:** the result of the last bulk job started from the admin screen, and how long ago it ran.
 - **Older retention policy:** shown when some offloaded media still follows a policy you changed later. See [`wp omnioffloader retention`](/wp-cli/retention/).
 
 When a site's bucket folder is used by another site, the Safe mode line names that site and asks you to give this site its own Path Prefix. See [Sharing one bucket](/features/shared-bucket/).

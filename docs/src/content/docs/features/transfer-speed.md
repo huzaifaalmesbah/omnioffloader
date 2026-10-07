@@ -30,6 +30,7 @@ The setting matters most when you move media that is already in your library:
 - Media Library bulk actions
 - [Bring Back](/features/bring-back/)
 - Applying a [retention policy](/features/retention-policies/) to existing media
+- [Moving media to the current folder](/features/path-prefix-and-versioning/#move-existing-media-to-the-new-folder)
 - WP-CLI commands such as [`wp omnioffloader offload`](/wp-cli/offload/)
 - Large multipart uploads (files above 64 MB)
 
@@ -41,7 +42,7 @@ New uploads also follow it, but they are offloaded in the background as they arr
 - On a small shared plan, or if your host reports high resource use, choose **Low**.
 - On a VPS or dedicated server, try **Fast**.
 - Use **Custom** if you want a number between these.
-- For a one-off WP-CLI offload of a large library on a VPS, `wp omnioffloader offload --concurrency=<1–64>` goes beyond 10 for that run only. See [`wp omnioffloader offload`](/wp-cli/offload/).
+- For a one-off WP-CLI offload of a large library on a VPS, `wp omnioffloader offload --concurrency=<1–64>` goes beyond 10 for that run only, and so does `wp omnioffloader move --concurrency`. See [`wp omnioffloader offload`](/wp-cli/offload/).
 
 :::note
 Speed also depends on how quickly your server reaches your storage provider, how large your files are, and how many thumbnail sizes your theme creates.

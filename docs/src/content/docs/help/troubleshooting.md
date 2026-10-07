@@ -28,7 +28,7 @@ Start here. OmniOffloader records every failure with the reason:
 
 If fields are locked, their values come from `wp-config.php` constants. Fix them there. See [Credentials in wp-config.php](/providers/wp-config-credentials/).
 
-Test Connection can also report **Connection successful, but see the warning below.** Read the warning. It usually means the bucket folder is used by another site. See [Folder used by another site](#folder-used-by-another-site).
+Test Connection can also show **Connected** with a warning below it. Read the warning. It usually means the bucket folder is used by another site. See [Folder used by another site](#folder-used-by-another-site).
 
 ## Images don't load after offloading
 
@@ -53,7 +53,7 @@ While you test, keep the retention policy on **Retain Local Files**. All files s
 - **Large files.** One very large video can take a while. The job keeps its lock while bytes are moving, so it is not stuck.
 - **A file cut short.** If your host's time limit stops a transfer, that attachment is reported and skipped, and the job moves on. It is not retried forever.
 
-Only one job (offload, Bring Back or retention) runs at a time. If a job will not start, check whether another one is running, possibly from WP-CLI.
+Only one job (offload, Bring Back, retention or move) runs at a time. If a job will not start, check whether another one is running, possibly from WP-CLI.
 
 ## A bulk job stopped after several failures
 

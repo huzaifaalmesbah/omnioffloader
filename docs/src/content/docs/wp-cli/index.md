@@ -19,6 +19,8 @@ Every bulk job in OmniOffloader can also run from the terminal with [WP-CLI](htt
 
 The same reference, with copy buttons, is on the **OmniOffloader → Tools** screen.
 
+![The WP-CLI reference on the Tools screen: how to run a long job in the background, then every command with examples and copy buttons](/images/screenshots/wp-cli-marked.png)
+
 ## When to use WP-CLI
 
 - **Large libraries.** A terminal command is not limited by the browser or by short web request time limits. On libraries of 5,000 items or more, the Bulk Offload and Bring Back screens suggest the matching command. For tens of thousands of items, add [`--concurrency`](/wp-cli/offload/) to upload many files at once.
@@ -64,7 +66,7 @@ The commands check these values before they start:
 
 - `--limit` must be a positive whole number. A typo such as `--limit=5O` is an error. It never means "the whole library".
 - `--ids` and `--all` can't be used together.
-- `offload` and `restore` need either `--all` or `--ids`.
+- `offload`, `restore` and `move` need either `--all` or `--ids`.
 
 ### Confirmations and `--yes`
 
@@ -72,12 +74,13 @@ Commands that delete files ask before they start:
 
 - `restore --delete-cloud` asks before it deletes cloud copies.
 - `retention` asks before it deletes local files.
+- `move` asks before it deletes the old copies (not with `--keep-old`).
 
 Add `--yes` to skip the question, for example in a script. Without a terminal to answer in (a cron job, `nohup … &`, or output sent to a file) the question can't be asked, so these commands stop with a message asking for `--yes` instead of waiting.
 
 ### One job at a time
 
-Offload, Bring Back and retention jobs never run at the same time. They read and delete the same files, so the plugin allows one job at a time. This applies to jobs started from the admin screens, the Media Library and WP-CLI.
+Offload, Bring Back, retention and move jobs never run at the same time. They read and delete the same files, so the plugin allows one job at a time. This applies to jobs started from the admin screens, the Media Library and WP-CLI.
 
 When another job is running, the command stops with a message like this:
 
@@ -85,7 +88,7 @@ When another job is running, the command stops with a message like this:
 Error: A bulk offload started from the admin screen is running. Wait for it to finish, cancel it there, or pass --force.
 ```
 
-While a command runs, it holds a lock. The admin screens see the lock and will not start a second job. The lock is renewed after every attachment, and while a large file is still transferring. It is released when the command ends, also when you press **Ctrl-C** (when PHP's `pcntl` extension is available, which is common for the command line).
+While a command runs, it holds a lock. The admin screens see the lock and will not start a second job. The lock is renewed every 30 seconds, and while a large file is still transferring. It is released when the command ends, also when you press **Ctrl-C** (when PHP's `pcntl` extension is available, which is common for the command line).
 
 Closing the terminal also stops the command and releases its lock. To keep a job running after you close the terminal, start it with [`nohup … &`](/wp-cli/long-runs/). To stop a running job from another terminal, use [`wp omnioffloader stop`](/wp-cli/stop/).
 
@@ -99,13 +102,13 @@ If a command was killed in a way that left the lock behind (for example `kill -9
 
 On a staging, development or local copy of your site, [Safe mode](/features/safe-mode/) is on. Then:
 
-- `offload` refuses to run (except with `--dry-run`).
+- `offload` and `move` refuse to run (except with `--dry-run`).
 - `restore` refuses to run, unless **Allow Bring Back on a copy (download only)** is on in Settings. Even then, `--delete-cloud` is never allowed.
 - `status` shows why Safe mode is on.
 
 ### Transfer Speed
 
-The commands follow the **Transfer Speed** setting, just like the admin screens. A faster setting moves more files at the same time inside the same PHP process. See [Transfer Speed](/features/transfer-speed/).
+The commands follow the **Transfer Speed** setting, just like the admin screens. A faster setting moves more files at the same time inside the same PHP process. `offload --concurrency` and `move --concurrency` override it for that run, up to 64 files at once. See [Transfer Speed](/features/transfer-speed/).
 
 ### Stopping on repeated failures
 

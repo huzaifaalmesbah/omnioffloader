@@ -11,6 +11,7 @@ use OmniOffloader\Core\Helpers;
 use OmniOffloader\Core\SafeMode;
 use OmniOffloader\Offload\ObserverInterface;
 use OmniOffloader\Providers\ProviderInterface;
+use OmniOffloader\Services\AttachmentRestorer;
 use OmniOffloader\Traits\AttachmentHelper;
 use OmniOffloader\Traits\OptionsHelper;
 
@@ -76,11 +77,15 @@ class DeleteObserver implements ObserverInterface {
 
 		$keys = self::collect_delete_keys( $attachment_id );
 
-		// Delete from cloud provider.
+		// Delete from the provider it was offloaded to: after a provider
+		// switch, that provider's saved settings still reach its bucket.
 		$stored_provider = (string) get_post_meta( $attachment_id, 'omnioffloader_provider', true );
+		$provider        = '' === $stored_provider || $stored_provider === $this->provider->get_key()
+			? $this->provider
+			: AttachmentRestorer::provider_for( $attachment_id );
 
-		if ( '' === $stored_provider || $stored_provider === $this->provider->get_key() ) {
-			$this->provider->delete_objects( $keys );
+		if ( null !== $provider ) {
+			$provider->delete_objects( $keys );
 		}
 	}
 }

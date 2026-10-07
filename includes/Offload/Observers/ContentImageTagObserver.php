@@ -349,7 +349,7 @@ class ContentImageTagObserver implements ObserverInterface {
 	 * @return string
 	 */
 	private function replace_attachment_url_in_content( $content, $attachment_id ) {
-		$domain = $this->provider->get_domain();
+		$domain = self::cloud_domain( $attachment_id, $this->provider );
 		if ( '' === $domain ) {
 			return $content;
 		}

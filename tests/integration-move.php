@@ -146,6 +146,15 @@ add_filter(
 );
 
 $provider = new OmnioffloaderMoveMockProvider();
+
+// The mock is the active provider, with its bucket, for this run only.
+$mock_bucket = static function ( $credentials ) {
+	$credentials         = is_array( $credentials ) ? $credentials : array();
+	$credentials['mock'] = array( 'bucket' => 'mock-bucket' );
+
+	return $credentials;
+};
+add_filter( 'option_omnioffloader_credentials', $mock_bucket );
 $original = get_option( 'omnioffloader_settings', array() );
 $prefix   = static function ( $folder ) use ( $original ) {
 	update_option(
@@ -153,6 +162,7 @@ $prefix   = static function ( $folder ) use ( $original ) {
 		array_merge(
 			$original,
 			array(
+				'provider'           => 'mock',
 				'path_prefix_active' => true,
 				'path_prefix'        => $folder,
 				'retention_policy'   => 2,

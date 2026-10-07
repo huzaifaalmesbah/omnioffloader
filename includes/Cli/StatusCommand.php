@@ -104,7 +104,7 @@ class StatusCommand {
 			$elsewhere = Helpers::count_offloaded_elsewhere( $prefix );
 
 			if ( $elsewhere > 0 ) {
-				WP_CLI::log( sprintf( '            %s offloaded attachment(s) are in other folders (offloaded before the Path Prefix changed). They keep working from there.', number_format_i18n( $elsewhere ) ) );
+				WP_CLI::log( sprintf( '            %s offloaded attachment(s) are in another folder, bucket or provider (offloaded under an earlier setting). They keep working from there.', number_format_i18n( $elsewhere ) ) );
 			}
 
 			foreach ( FolderClaim::lost_folders() as $lost ) {

@@ -22,6 +22,8 @@ export function CredentialFields( { provider }: CredentialFieldsProps ) {
 		credentialsFields,
 		loadProviderCredentials,
 		addNotice,
+		stats,
+		savedSettings,
 	} = useCore();
 
 	const fields = credentialsFields[ provider ] ?? null;
@@ -61,16 +63,41 @@ export function CredentialFields( { provider }: CredentialFieldsProps ) {
 							)
 						: field.placeholder;
 
-				const help = field.locked
-					? sprintf(
-							/* translators: %s: wp-config constant name. */
-							__(
-								'Locked by the %s constant in wp-config.php.',
-								'omnioffloader'
-							),
-							`${ constPrefix }${ provider.toUpperCase() }_${ field.name.toUpperCase() }`
-						)
-					: field.description;
+				// Media in the saved bucket would lose its URLs; the server
+				// refuses the change (omnioffloader_bucket_locked).
+				const bucketChanges =
+					'bucket' === field.name &&
+					provider === savedSettings?.provider &&
+					'' !== field.value &&
+					value.trim() !== field.value &&
+					( stats?.offloaded ?? 0 ) > 0 &&
+					! stats?.safe_mode?.active;
+
+				let help: React.ReactNode = field.description;
+
+				if ( field.locked ) {
+					help = sprintf(
+						/* translators: %s: wp-config constant name. */
+						__(
+							'Locked by the %s constant in wp-config.php.',
+							'omnioffloader'
+						),
+						`${ constPrefix }${ provider.toUpperCase() }_${ field.name.toUpperCase() }`
+					);
+				} else if ( bucketChanges ) {
+					help = (
+						<span className="smowp-field-warning">
+							{ sprintf(
+								/* translators: %s: bucket name. */
+								__(
+									'Media is offloaded to "%s". Bring it all back first (Bring Back), then change the bucket and offload again — otherwise its URLs break.',
+									'omnioffloader'
+								),
+								field.value
+							) }
+						</span>
+					);
+				}
 
 				if ( field.type === 'checkbox' ) {
 					const isChecked = value === '1' || value === 'true';

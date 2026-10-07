@@ -5,7 +5,7 @@ sidebar:
   order: 5
 ---
 
-Moves offloaded media into the folder new offloads go to. The admin screen with the same job is **OmniOffloader → Tools → Move Media to the Current Folder**, shown when some media is outside the current folder.
+Moves offloaded media into the folder new offloads go to, including media offloaded to an earlier provider or bucket. The admin screen with the same job is **OmniOffloader → Tools → Move Media to the Current Folder**, shown when some media is outside the current folder.
 
 Each attachment remembers the folder it was offloaded to. After you change the [Path Prefix](/features/path-prefix-and-versioning/#changing-the-prefix-later), older media stays in the old folder and keeps loading from there. `move` brings that media into the current folder, so everything is in one place again.
 
@@ -15,7 +15,7 @@ For each attachment outside the current folder:
 2. The copies are checked, and the attachment switches to the new folder: its URLs change right away.
 3. The old copies are deleted.
 
-When a file can't be copied that way (larger than 5 GB, or the attachment is in another bucket), that attachment is moved **through your server** instead: it is brought back, offloaded again into the current folder (your [retention policy](/features/retention-policies/) then cleans up the local files, as for any offload), and then its old copies are deleted.
+When a file can't be copied that way (larger than 5 GB, or the attachment is in another bucket or with another provider), that attachment is moved **through your server** instead: it is brought back, offloaded again into the current folder (your [retention policy](/features/retention-policies/) then cleans up the local files, as for any offload), and then its old copies are deleted.
 
 ## Synopsis
 

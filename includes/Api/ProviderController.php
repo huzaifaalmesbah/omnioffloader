@@ -171,6 +171,33 @@ class ProviderController extends BaseController {
 			$to_save[ $name ] = $value;
 		}
 
+		// A provider keeps one bucket, so media offloaded to the old one could
+		// no longer load or be brought back. Bring it back first. In Safe mode
+		// a bucket of its own is how a copy stops sharing the live one.
+		$old_bucket = Helpers::get_credential( $provider_key, 'bucket' );
+
+		if ( isset( $to_save['bucket'] ) && '' !== $old_bucket && trim( $to_save['bucket'] ) !== $old_bucket && ! SafeMode::is_active() ) {
+			$offloaded = Helpers::count_offloaded_in_bucket( $provider_key, $old_bucket );
+
+			if ( $offloaded > 0 ) {
+				return new \WP_Error(
+					'omnioffloader_bucket_locked',
+					sprintf(
+						/* translators: 1: number of offloaded attachments, 2: bucket name. */
+						_n(
+							'%1$s offloaded attachment is stored in the bucket "%2$s". Changing the bucket would break its URL and Bring Back. First bring all media back to the server (Bring Back), then change the bucket and offload again.',
+							'%1$s offloaded attachments are stored in the bucket "%2$s". Changing the bucket would break their URLs and Bring Back. First bring all media back to the server (Bring Back), then change the bucket and offload again.',
+							$offloaded,
+							'omnioffloader'
+						),
+						number_format_i18n( $offloaded ),
+						$old_bucket
+					),
+					array( 'status' => 409 )
+				);
+			}
+		}
+
 		if ( ! empty( $to_save ) ) {
 			self::update_provider_credentials( $provider_key, $to_save );
 

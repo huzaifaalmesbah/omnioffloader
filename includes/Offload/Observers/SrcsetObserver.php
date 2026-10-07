@@ -66,7 +66,7 @@ class SrcsetObserver implements ObserverInterface {
 			return $sources;
 		}
 
-		$domain = $this->provider->get_domain();
+		$domain = self::cloud_domain( $attachment_id, $this->provider );
 
 		if ( '' === $domain ) {
 			return $sources;

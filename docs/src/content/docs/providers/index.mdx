@@ -73,6 +73,13 @@ If another site already uses the bucket folder, the test still succeeds but show
 Test Connection checks that the bucket can be reached. It does **not** check that visitors can load files from your custom domain. After your first offload, open an offloaded image in a new browser tab to confirm it loads.
 :::
 
+## Switching provider or bucket later
+
+Each offloaded attachment remembers the provider and bucket it was offloaded to.
+
+- **Another provider:** media you already offloaded keeps loading from the old provider, through its saved settings (keep them). New uploads go to the new provider. Move the old media over with **Tools → Move Media to the Current Folder** or [`wp omnioffloader move`](/wp-cli/move/).
+- **Another bucket with the same provider:** a provider keeps one bucket in its settings, so media in the old bucket could no longer load or be brought back. The bucket can't be changed while media is offloaded to it: bring it all back first ([Bring Back](/features/bring-back/)), then change the bucket and offload again. Settings warns under the **Bucket** field before you save.
+
 ## Set up your provider
 
 <CardGrid>

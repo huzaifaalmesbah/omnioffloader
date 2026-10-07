@@ -71,7 +71,7 @@ class UrlRewriteObserver implements ObserverInterface {
 			return $url;
 		}
 
-		$domain = $this->provider->get_domain();
+		$domain = self::cloud_domain( $attachment_id, $this->provider );
 
 		if ( '' === $domain ) {
 			return $url;
@@ -112,7 +112,7 @@ class UrlRewriteObserver implements ObserverInterface {
 		}
 
 		$filename = wp_basename( (string) wp_parse_url( $image[0], PHP_URL_PATH ) );
-		$domain   = $this->provider->get_domain();
+		$domain   = self::cloud_domain( $attachment_id, $this->provider );
 
 		if ( '' !== $domain && self::is_served_from_cloud( $attachment_id, $filename ) ) {
 			$image[0] = trailingslashit( $domain ) . self::get_offload_path( $attachment_id ) . $filename;

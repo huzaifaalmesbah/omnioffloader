@@ -13,9 +13,11 @@ import { cloudUpload } from '@wordpress/icons';
 import { CredentialFields } from '../components/settings/CredentialFields';
 import { TestConnection } from '../components/settings/TestConnection';
 import { Card } from '../components/ui/Card';
+import { DocsLink } from '../components/ui/DocsLink';
 import { safeModeReasonText } from '../components/layout/SafeModeBanner';
 import { fetchRetentionPreflight } from '../api/retention';
 import { useCore } from '../context/CoreContext';
+import { providerGuidePath } from '../utils/docs';
 import { radioKeyDown, radioTabIndex } from '../utils/radioGroup';
 import {
 	RetentionPolicy,
@@ -58,6 +60,7 @@ export function SettingsPage( { onNavigate }: SettingsProps ) {
 		<div className="smowp-page">
 			<Card
 				title={ __( 'Cloud Provider', 'omnioffloader' ) }
+				docs="providers/"
 				description={ __(
 					'Choose your cloud storage provider where your WordPress media library is offloaded.',
 					'omnioffloader'
@@ -147,6 +150,29 @@ export function SettingsPage( { onNavigate }: SettingsProps ) {
 							( p ) => p.key === settings.provider
 						) && (
 							<>
+								<p className="smowp-muted">
+									{ __(
+										'Need a bucket, access keys or a CDN address?',
+										'omnioffloader'
+									) }{ ' ' }
+									<DocsLink
+										path={ providerGuidePath(
+											settings.provider
+										) }
+									>
+										{ sprintf(
+											/* translators: %s: provider name. */
+											__(
+												'Follow the %s setup guide',
+												'omnioffloader'
+											),
+											providers.find(
+												( p ) =>
+													p.key === settings.provider
+											)?.name ?? settings.provider
+										) }
+									</DocsLink>
+								</p>
 								<CredentialFields
 									provider={ settings.provider }
 								/>
@@ -160,6 +186,7 @@ export function SettingsPage( { onNavigate }: SettingsProps ) {
 
 			<Card
 				title={ __( 'Retention Policy', 'omnioffloader' ) }
+				docs="features/retention-policies/"
 				description={ __(
 					'What happens to local files after a successful offload.',
 					'omnioffloader'
@@ -215,15 +242,18 @@ export function SettingsPage( { onNavigate }: SettingsProps ) {
 							'omnioffloader'
 						) }
 						help={
-							settings.serve_from_cloud
-								? __(
-										'Your site loads offloaded media from your cloud storage or CDN. Turn off to keep loading it from this server, with the cloud as a backup copy.',
-										'omnioffloader'
-									)
-								: __(
-										'Your site loads media from this server; the cloud keeps a copy. Turn on when your CDN is ready — every offloaded file switches over at once, nothing is uploaded again. Clear your page cache after changing this.',
-										'omnioffloader'
-									)
+							<>
+								{ settings.serve_from_cloud
+									? __(
+											'Your site loads offloaded media from your cloud storage or CDN. Turn off to keep loading it from this server, with the cloud as a backup copy.',
+											'omnioffloader'
+										)
+									: __(
+											'Your site loads media from this server; the cloud keeps a copy. Turn on when your CDN is ready — every offloaded file switches over at once, nothing is uploaded again. Clear your page cache after changing this.',
+											'omnioffloader'
+										) }{ ' ' }
+								<DocsLink path="features/url-rewriting/#offload-now-serve-from-the-cdn-later" />
+							</>
 						}
 						checked={ settings.serve_from_cloud }
 						onChange={ ( serve_from_cloud: boolean ) =>
@@ -279,10 +309,15 @@ export function SettingsPage( { onNavigate }: SettingsProps ) {
 			<Card title={ __( 'Behavior', 'omnioffloader' ) }>
 				<ToggleControl
 					label={ __( 'Background Cloud Offload', 'omnioffloader' ) }
-					help={ __(
-						'Offload newly uploaded media in the background so local uploads finish instantly without waiting for cloud transfers.',
-						'omnioffloader'
-					) }
+					help={
+						<>
+							{ __(
+								'Offload newly uploaded media in the background so local uploads finish instantly without waiting for cloud transfers.',
+								'omnioffloader'
+							) }{ ' ' }
+							<DocsLink path="features/automatic-offload/#background-uploads" />
+						</>
+					}
 					checked={ settings.async_upload }
 					onChange={ ( async_upload: boolean ) =>
 						updateSettings( { async_upload } )
@@ -293,10 +328,15 @@ export function SettingsPage( { onNavigate }: SettingsProps ) {
 				<div className="smowp-setting-row">
 					<SelectControl
 						label={ __( 'Transfer Speed', 'omnioffloader' ) }
-						help={ __(
-							'How many files move between your server and the cloud at the same time. Faster settings finish Bulk Offload and Bring Back sooner and still use a single PHP process; choose Low on small shared hosting plans. WP-CLI uses this setting too.',
-							'omnioffloader'
-						) }
+						help={
+							<>
+								{ __(
+									'How many files move between your server and the cloud at the same time. Faster settings finish Bulk Offload and Bring Back sooner and still use a single PHP process; choose Low on small shared hosting plans. WP-CLI uses this setting too.',
+									'omnioffloader'
+								) }{ ' ' }
+								<DocsLink path="features/transfer-speed/" />
+							</>
+						}
 						value={ settings.transfer_speed }
 						options={ [
 							{
@@ -367,10 +407,15 @@ export function SettingsPage( { onNavigate }: SettingsProps ) {
 
 				<ToggleControl
 					label={ __( 'Mirror Delete', 'omnioffloader' ) }
-					help={ __(
-						'When an attachment is deleted in WordPress, also delete its files from the cloud, so they stop being publicly reachable and stop costing storage. Deletes cannot be undone; turn on versioning in your bucket if you want a safety net. Never runs on a staging or dev copy of the site (Safe mode).',
-						'omnioffloader'
-					) }
+					help={
+						<>
+							{ __(
+								'When an attachment is deleted in WordPress, also delete its files from the cloud, so they stop being publicly reachable and stop costing storage. Deletes cannot be undone; turn on versioning in your bucket if you want a safety net. Never runs on a staging or dev copy of the site (Safe mode).',
+								'omnioffloader'
+							) }{ ' ' }
+							<DocsLink path="features/mirror-delete/" />
+						</>
+					}
 					checked={ settings.mirror_delete }
 					onChange={ ( mirror_delete: boolean ) =>
 						updateSettings( { mirror_delete } )
@@ -380,10 +425,15 @@ export function SettingsPage( { onNavigate }: SettingsProps ) {
 
 				<ToggleControl
 					label={ __( 'Object Versioning', 'omnioffloader' ) }
-					help={ __(
-						'Add a timestamp segment to object keys so CDN caches never serve stale files after re-uploads.',
-						'omnioffloader'
-					) }
+					help={
+						<>
+							{ __(
+								'Add a timestamp segment to object keys so CDN caches never serve stale files after re-uploads.',
+								'omnioffloader'
+							) }{ ' ' }
+							<DocsLink path="features/path-prefix-and-versioning/" />
+						</>
+					}
 					checked={ settings.object_versioning }
 					onChange={ ( object_versioning: boolean ) =>
 						updateSettings( { object_versioning } )
@@ -393,10 +443,15 @@ export function SettingsPage( { onNavigate }: SettingsProps ) {
 
 				<ToggleControl
 					label={ __( 'Custom Path Prefix', 'omnioffloader' ) }
-					help={ __(
-						'Store objects under a custom prefix inside the bucket. Sharing one bucket between several sites (for example example.com and blog.example.com)? Give each site its own prefix: a site will not upload into a folder another site already uses.',
-						'omnioffloader'
-					) }
+					help={
+						<>
+							{ __(
+								'Store objects under a custom prefix inside the bucket. Sharing one bucket between several sites (for example example.com and blog.example.com)? Give each site its own prefix: a site will not upload into a folder another site already uses.',
+								'omnioffloader'
+							) }{ ' ' }
+							<DocsLink path="features/path-prefix-and-versioning/" />
+						</>
+					}
 					checked={ settings.path_prefix_active }
 					onChange={ ( path_prefix_active: boolean ) =>
 						updateSettings( { path_prefix_active } )
@@ -418,7 +473,10 @@ export function SettingsPage( { onNavigate }: SettingsProps ) {
 				) }
 			</Card>
 
-			<Card title={ __( 'Staging & Dev Copies', 'omnioffloader' ) }>
+			<Card
+				title={ __( 'Staging & Dev Copies', 'omnioffloader' ) }
+				docs="features/safe-mode/"
+			>
 				<p className="smowp-muted">
 					{ stats?.safe_mode?.active
 						? __(
@@ -475,7 +533,10 @@ export function SettingsPage( { onNavigate }: SettingsProps ) {
 				/>
 			</Card>
 
-			<Card title={ __( 'Uninstall', 'omnioffloader' ) }>
+			<Card
+				title={ __( 'Uninstall', 'omnioffloader' ) }
+				docs="help/safety/#deleting-uninstalling-the-plugin"
+			>
 				<ToggleControl
 					label={ __(
 						'Remove all data on uninstall',

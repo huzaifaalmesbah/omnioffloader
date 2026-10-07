@@ -131,6 +131,7 @@ export function BringBackPage() {
 		<div className="smowp-page">
 			<Card
 				title={ __( 'Bring Back', 'omnioffloader' ) }
+				docs="features/bring-back/"
 				description={ __(
 					'Restore offloaded media from the cloud back to your server. Downloads are atomic and verified — an attachment only switches back to local URLs once every file is safely on disk.',
 					'omnioffloader'
@@ -733,6 +734,7 @@ export function BringBackPage() {
 
 			<Card
 				title={ __( 'Single attachments', 'omnioffloader' ) }
+				docs="features/media-library/"
 				description={ __(
 					'You can also bring back one file at a time from the Media Library list — use the "Bring Back" row action on any offloaded attachment. Each attachment restores from the provider it was offloaded to, even if you switched providers since.',
 					'omnioffloader'

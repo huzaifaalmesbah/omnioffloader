@@ -1,10 +1,10 @@
-import { Button, ExternalLink } from '@wordpress/components';
+import { Button } from '@wordpress/components';
 import { __ } from '@wordpress/i18n';
 import { copy } from '@wordpress/icons';
 
 import { useCore } from '../../context/CoreContext';
-import { docsUrl } from '../../utils/docs';
 import { Card } from '../ui/Card';
+import { DocsLink } from '../ui/DocsLink';
 
 interface CliOption {
 	flag: string;
@@ -22,7 +22,7 @@ interface CliCommand {
 	/** Admin screen that runs the same job, as a view key. */
 	view: string;
 	viewLabel: string;
-	/** Docs page for the command, as a docsUrl() path. */
+	/** Docs page for the command, e.g. 'wp-cli/offload/'. */
 	docs: string;
 	examples: CliExample[];
 	options: CliOption[];
@@ -503,21 +503,13 @@ export function CliReference( { onNavigate }: CliReferenceProps ) {
 	return (
 		<Card
 			title={ __( 'WP-CLI Commands', 'omnioffloader' ) }
+			docs="wp-cli/"
 			description={ __(
 				'Every bulk job can also run from the terminal over SSH. That is the most reliable option for large libraries, cron schedules, or hosts that time out long admin requests. Run commands from your WordPress directory, or add --path=<wordpress-dir>. Admin jobs and CLI commands never run at the same time.',
 				'omnioffloader'
 			) }
 		>
 			<div className="smowp-cli">
-				<p className="smowp-cli__links">
-					<ExternalLink href={ docsUrl( 'wp-cli/' ) }>
-						{ __( 'WP-CLI guide', 'omnioffloader' ) }
-					</ExternalLink>
-					<ExternalLink href={ docsUrl( 'wp-cli/long-runs/' ) }>
-						{ __( 'Long runs and log files', 'omnioffloader' ) }
-					</ExternalLink>
-				</p>
-
 				<section className="smowp-cli__background">
 					<div className="smowp-cli__head">
 						<h3>
@@ -526,9 +518,9 @@ export function CliReference( { onNavigate }: CliReferenceProps ) {
 								'omnioffloader'
 							) }
 						</h3>
-						<ExternalLink href={ docsUrl( 'wp-cli/long-runs/' ) }>
+						<DocsLink path={ 'wp-cli/long-runs/' }>
 							{ __( 'Step-by-step guide', 'omnioffloader' ) }
-						</ExternalLink>
+						</DocsLink>
 					</div>
 					<p className="smowp-cli__summary">
 						{ __(
@@ -562,9 +554,9 @@ export function CliReference( { onNavigate }: CliReferenceProps ) {
 										{ cmd.viewLabel }
 									</Button>
 								) }
-								<ExternalLink href={ docsUrl( cmd.docs ) }>
+								<DocsLink path={ cmd.docs }>
 									{ __( 'Docs', 'omnioffloader' ) }
-								</ExternalLink>
+								</DocsLink>
 							</div>
 						</div>
 						<p className="smowp-cli__summary">{ cmd.summary }</p>

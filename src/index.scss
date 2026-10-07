@@ -377,6 +377,24 @@
 			color: var( --smowp-text-muted );
 		}
 	}
+
+	&__title {
+		display: flex;
+		align-items: baseline;
+		justify-content: space-between;
+		gap: 8px 16px;
+		flex-wrap: wrap;
+	}
+}
+
+// "Learn more" / "Documentation" links to the public docs.
+.smowp-docs-link {
+	font-size: 12.5px;
+	white-space: nowrap;
+}
+
+.smowp-header__docs {
+	margin-left: auto;
 }
 
 // Hero banner (Dashboard)
@@ -2489,13 +2507,6 @@
 		border: 1px solid var( --smowp-border );
 		border-radius: var( --smowp-radius-sm );
 		padding: 16px 18px;
-	}
-
-	&__links {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 6px 20px;
-		margin: 0;
 	}
 
 	&__background {

@@ -150,6 +150,16 @@ Before a big Bring Back, check that the server has room: the Bring Back page sho
 
 </Steps>
 
+:::note[Fastest: a VPS or dedicated server]
+Bring Back downloads as many files at once as the [Transfer Speed](/features/transfer-speed/) setting allows, from WP-CLI too (`restore` has no `--concurrency` option). For the fastest restore, set **Transfer Speed** to **Fast** (6 files at once) or **Custom** (up to 10) in Settings, then run it in the background:
+
+```bash
+nohup wp omnioffloader restore --all > ~/restore.log 2>&1 &
+```
+
+Check the free disk space first: the Bring Back page shows the estimated download. On shared hosting, keep **Low** or **Balanced**. To compare speeds before the big run, see [Test the speed before a big run](/wp-cli/long-runs/#5-test-the-speed-before-a-big-run).
+:::
+
 To delete the cloud copies too, add `--delete-cloud --yes`. Each attachment's cloud files are deleted only after all of them are verified on the server, and this can't be undone, so keep the cloud copies until you have checked your site. See [Deleting cloud copies](/wp-cli/restore/#deleting-cloud-copies).
 
 Run these from your WordPress folder, or add `--path=<wordpress-folder>`. For every option, see [`wp omnioffloader restore`](/wp-cli/restore/); for watching and timing a long run, see [Long runs and log files](/wp-cli/long-runs/).

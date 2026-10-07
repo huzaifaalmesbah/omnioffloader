@@ -127,6 +127,30 @@ export function BringBackPage() {
 		);
 	}
 
+	const handleStart = () => {
+		// Never on a copy of the site.
+		const removeCloud = deleteCloud && ! safeMode;
+
+		// Permanent, like the CLI's --delete-cloud, which also asks first.
+		if (
+			removeCloud &&
+			// eslint-disable-next-line no-alert
+			! window.confirm(
+				__(
+					'Delete each file from your cloud storage once it is restored and checked on this server? Deleted cloud files cannot be recovered unless your bucket keeps versions.',
+					'omnioffloader'
+				)
+			)
+		) {
+			return;
+		}
+
+		void start(
+			removeCloud,
+			scopeMode === 'custom' ? customCount : undefined
+		);
+	};
+
 	return (
 		<div className="smowp-page">
 			<Card
@@ -559,15 +583,7 @@ export function BringBackPage() {
 											className="smowp-btn-primary"
 											disabled={ busy }
 											isBusy={ busy }
-											onClick={ () =>
-												void start(
-													// Never on a copy of the site.
-													deleteCloud && ! safeMode,
-													scopeMode === 'custom'
-														? customCount
-														: undefined
-												)
-											}
+											onClick={ handleStart }
 										>
 											{ buttonLabel }
 										</Button>

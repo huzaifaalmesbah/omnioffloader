@@ -30,7 +30,8 @@ Use a path prefix when:
 - your bucket also holds other files, and you want to keep WordPress media in its own folder, or
 - **several sites share one bucket**. Each site needs its own prefix. See [Sharing one bucket](/features/shared-bucket/).
 
-:::note[Changing the prefix later]
+### Changing the prefix later
+
 Each attachment remembers the path it was offloaded to, so a new prefix would only apply to media offloaded after the change, and your media would end up split across two folders.
 
 To prevent that, the prefix can't be changed while media is offloaded. Settings shows the steps instead:
@@ -39,10 +40,27 @@ To prevent that, the prefix can't be changed while media is offloaded. Settings 
 2. Change the Path Prefix and save.
 3. Offload your media again. It goes to the new folder.
 
+How long this takes depends on your [retention policy](/features/retention-policies/):
+
+| Policy | Bring Back downloads | Free disk space needed |
+| --- | --- | --- |
+| Retain Local Files | nothing: the files are still on the server | none |
+| Smart Local Cleanup | the thumbnail sizes | some |
+| Full Cloud Migration | everything | the size of your library |
+
+With **Retain Local Files**, Bring Back only removes the offload records, so even a big library finishes quickly. Choose **Delete from Cloud After Restore** to empty the old folder in your bucket: every file is on your server, so nothing is lost. With **Keep Cloud Copies** the old folder stays and keeps using storage.
+
+For a large library, use WP-CLI:
+
+```bash
+wp omnioffloader restore --all --delete-cloud --yes
+# Change the Path Prefix in Settings, then:
+nohup wp omnioffloader offload --all --concurrency=32 > ~/offload.log 2>&1 &
+```
+
 In [Safe mode](/features/safe-mode/) the prefix can still be changed, because a new folder is often the fix there: another site uses this folder, or a staging copy needs a folder of its own. Settings then shows that existing media stays in its current folder.
 
 [`wp omnioffloader status`](/wp-cli/status/) shows the current folder and how many offloaded attachments are in other folders.
-:::
 
 ## Object Versioning
 

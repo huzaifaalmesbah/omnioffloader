@@ -579,6 +579,18 @@ export function SettingsPage( { onNavigate }: SettingsProps ) {
 								) }
 							</li>
 						</ol>
+						<p>
+							{ savedSettings?.retention_policy ===
+							RetentionPolicy.RetainLocal
+								? __(
+										'With Retain Local Files your files are still on this server, so Bring Back downloads nothing and finishes quickly. Choose “Delete from Cloud After Restore” there to empty the old folder.',
+										'omnioffloader'
+									)
+								: __(
+										'Your retention policy removed local files, so Bring Back downloads them first. Check the free disk space on the Bring Back page before you start.',
+										'omnioffloader'
+									) }
+						</p>
 					</Notice>
 				) }
 

@@ -8,13 +8,17 @@ import {
 	type ScopeMode,
 } from '../components/ui/BatchScopeSelector';
 import { Card } from '../components/ui/Card';
+import { CliHint } from '../components/ui/CliHint';
 import { ProgressBar } from '../components/ui/ProgressBar';
 import { RunAnnouncer } from '../components/ui/RunAnnouncer';
 import { useCore } from '../context/CoreContext';
-import { LARGE_LIBRARY } from '../utils/constants';
 import { useBulkOffload } from '../hooks/useBulkOffload';
 
-export function OffloadPage() {
+interface OffloadProps {
+	onNavigate: ( view: string, section?: string ) => void;
+}
+
+export function OffloadPage( { onNavigate }: OffloadProps ) {
 	const { stats } = useCore();
 	const { state, busy, start, cancel, showProgress, dismiss } =
 		useBulkOffload();
@@ -211,14 +215,13 @@ export function OffloadPage() {
 								</p>
 							) }
 
-							{ localCount >= LARGE_LIBRARY && (
-								<p className="smowp-muted">
-									{ __(
-										'Large library? Running this from WP-CLI is usually faster and needs no open browser tab:',
-										'omnioffloader'
-									) }{ ' ' }
-									<code>wp omnioffloader offload --all</code>
-								</p>
+							{ localCount > 0 && (
+								<CliHint
+									command="offload"
+									example="wp omnioffloader offload --all"
+									count={ localCount }
+									onNavigate={ onNavigate }
+								/>
 							) }
 
 							{ localCount > 0 && (

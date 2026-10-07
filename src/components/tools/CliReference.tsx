@@ -522,6 +522,15 @@ function getBackgroundSteps(): CliExample[] {
 	];
 }
 
+/**
+ * Element id of a command's section, so other pages can link straight to it.
+ *
+ * @param command Command name after `wp omnioffloader`, e.g. 'offload'.
+ */
+export function cliSectionId( command: string ): string {
+	return `omnioffloader-cli-${ command }`;
+}
+
 interface CommandRowProps {
 	example: CliExample;
 	onCopy: ( command: string ) => void;
@@ -616,7 +625,14 @@ export function CliReference( { onNavigate }: CliReferenceProps ) {
 				</section>
 
 				{ getCommands().map( ( cmd ) => (
-					<section key={ cmd.name } className="smowp-cli__command">
+					<section
+						key={ cmd.name }
+						id={ cliSectionId(
+							cmd.name.replace( 'wp omnioffloader ', '' )
+						) }
+						tabIndex={ -1 }
+						className="smowp-cli__command"
+					>
 						<div className="smowp-cli__head">
 							<code className="smowp-cli__name">
 								{ cmd.name }

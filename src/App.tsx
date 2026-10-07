@@ -90,10 +90,10 @@ export function App() {
 			page = <SettingsPage onNavigate={ navigate } />;
 			break;
 		case 'offload':
-			page = <OffloadPage />;
+			page = <OffloadPage onNavigate={ navigate } />;
 			break;
 		case 'bring-back':
-			page = <BringBackPage />;
+			page = <BringBackPage onNavigate={ navigate } />;
 			break;
 		case 'tools':
 			page = <ToolsPage onNavigate={ navigate } />;

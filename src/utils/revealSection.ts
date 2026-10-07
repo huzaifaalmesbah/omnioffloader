@@ -1,6 +1,9 @@
 /** How long to wait for a section that renders after its data loads. */
 const WAIT_MS = 10000;
 
+/** How long the page must stay unchanged before the jump. */
+const QUIET_MS = 250;
+
 /** Space left between the covering bars and the section. */
 const GAP = 16;
 
@@ -23,14 +26,33 @@ function coveredTop(): number {
 }
 
 /**
- * Jump to a section and move focus to it. Cards often render only once their
- * data has loaded, so this waits for the element to appear.
+ * Jump to a section and move focus to it, once the page has settled: the
+ * section exists and nothing has changed for a moment. Cards render after
+ * their data loads, either the section itself or cards above it that would
+ * push it down after an early jump.
  *
  * @param id Element id of the section.
  * @return Stops waiting (for an effect cleanup).
  */
 export function revealSection( id: string ): () => void {
-	const reveal = ( element: HTMLElement ) => {
+	let quiet = 0;
+	let timer = 0;
+
+	const stop = () => {
+		observer.disconnect();
+		window.clearTimeout( quiet );
+		window.clearTimeout( timer );
+	};
+
+	const settle = () => {
+		const element = document.getElementById( id );
+
+		// Not rendered yet: wait for the next change.
+		if ( ! element ) {
+			return;
+		}
+
+		stop();
 		window.scrollTo(
 			0,
 			element.getBoundingClientRect().top +
@@ -42,28 +64,13 @@ export function revealSection( id: string ): () => void {
 		element.focus( { preventScroll: true } );
 	};
 
-	const element = document.getElementById( id );
-
-	if ( element ) {
-		reveal( element );
-		return () => {};
-	}
-
-	let timer = 0;
 	const observer = new MutationObserver( () => {
-		const found = document.getElementById( id );
-
-		if ( found ) {
-			stop();
-			reveal( found );
-		}
+		window.clearTimeout( quiet );
+		quiet = window.setTimeout( settle, QUIET_MS );
 	} );
-	const stop = () => {
-		observer.disconnect();
-		window.clearTimeout( timer );
-	};
 
 	observer.observe( document.body, { childList: true, subtree: true } );
+	quiet = window.setTimeout( settle, QUIET_MS );
 	timer = window.setTimeout( stop, WAIT_MS );
 
 	return stop;

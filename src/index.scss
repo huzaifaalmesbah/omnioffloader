@@ -407,8 +407,10 @@
 	font-size: 12.5px;
 }
 
-// A card a link brings into view takes focus; no ring on the whole card.
-.smowp-card[id]:focus {
+// A card or WP-CLI command a link brings into view takes focus; no ring
+// on the whole section.
+.smowp-card[id]:focus,
+.smowp-cli__command[id]:focus {
 	outline: none;
 }
 

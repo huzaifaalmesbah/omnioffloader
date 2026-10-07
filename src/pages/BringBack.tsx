@@ -8,18 +8,22 @@ import {
 	type ScopeMode,
 } from '../components/ui/BatchScopeSelector';
 import { Card } from '../components/ui/Card';
+import { CliHint } from '../components/ui/CliHint';
 import { useConfirm } from '../components/ui/ConfirmDialog';
 import { ProgressBar } from '../components/ui/ProgressBar';
 import { RunAnnouncer } from '../components/ui/RunAnnouncer';
 import { useCore } from '../context/CoreContext';
-import { LARGE_LIBRARY } from '../utils/constants';
 import { useBringBack } from '../hooks/useBringBack';
 import { formatBytes } from '../utils/formatBytes';
 import { radioKeyDown, radioTabIndex } from '../utils/radioGroup';
 
 const DELETE_CLOUD_OPTIONS: readonly boolean[] = [ false, true ];
 
-export function BringBackPage() {
+interface BringBackProps {
+	onNavigate: ( view: string, section?: string ) => void;
+}
+
+export function BringBackPage( { onNavigate }: BringBackProps ) {
 	const { stats, savedSettings: settings } = useCore();
 	const askConfirm = useConfirm();
 	const { preflight, state, busy, start, cancel, showProgress, dismiss } =
@@ -253,14 +257,13 @@ export function BringBackPage() {
 								</p>
 							) }
 
-							{ offloadedCount >= LARGE_LIBRARY && (
-								<p className="smowp-muted">
-									{ __(
-										'Large library? Running this from WP-CLI is usually faster and needs no open browser tab:',
-										'omnioffloader'
-									) }{ ' ' }
-									<code>wp omnioffloader restore --all</code>
-								</p>
+							{ offloadedCount > 0 && (
+								<CliHint
+									command="restore"
+									example="wp omnioffloader restore --all"
+									count={ offloadedCount }
+									onNavigate={ onNavigate }
+								/>
 							) }
 
 							{ preflight && offloadedCount > 0 && (

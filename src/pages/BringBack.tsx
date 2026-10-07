@@ -1,4 +1,4 @@
-import { Button, Notice, Tooltip } from '@wordpress/components';
+import { Button, Notice } from '@wordpress/components';
 import { useEffect, useState } from '@wordpress/element';
 import { __, sprintf, _n } from '@wordpress/i18n';
 
@@ -416,6 +416,9 @@ export function BringBackPage() {
 										<div
 											role="radio"
 											aria-checked={ ! deleteCloud }
+											aria-disabled={
+												running || offloadedCount === 0
+											}
 											tabIndex={ radioTabIndex(
 												DELETE_CLOUD_OPTIONS,
 												false,
@@ -488,6 +491,9 @@ export function BringBackPage() {
 										<div
 											role="radio"
 											aria-checked={ deleteCloud }
+											aria-disabled={
+												running || offloadedCount === 0
+											}
 											tabIndex={ radioTabIndex(
 												DELETE_CLOUD_OPTIONS,
 												true,
@@ -563,27 +569,24 @@ export function BringBackPage() {
 							{ ! running && (
 								<div className="smowp-bulk-action__btn-wrap">
 									{ isDisabled && disabledReason ? (
-										<Tooltip
-											text={ disabledReason }
-											className="smowp-tooltip"
-											placement="top-start"
-										>
-											<span
-												className="smowp-btn-disabled-wrap"
-												tabIndex={ 0 }
-												role="button"
-												aria-disabled="true"
+										<>
+											<Button
+												variant="primary"
+												className="smowp-btn-primary"
+												disabled
+												accessibleWhenDisabled
+												aria-describedby="smowp-bring-back-disabled-reason"
+												isBusy={ busy }
 											>
-												<Button
-													variant="primary"
-													className="smowp-btn-primary"
-													disabled
-													isBusy={ busy }
-												>
-													{ buttonLabel }
-												</Button>
-											</span>
-										</Tooltip>
+												{ buttonLabel }
+											</Button>
+											<p
+												id="smowp-bring-back-disabled-reason"
+												className="smowp-disabled-reason"
+											>
+												{ disabledReason }
+											</p>
+										</>
 									) : (
 										<Button
 											variant="primary"
@@ -598,6 +601,17 @@ export function BringBackPage() {
 								</div>
 							) }
 						</div>
+
+						{ /* Always mounted, so the start of a run is announced too. */ }
+						<RunAnnouncer
+							status={
+								showProgress && state ? state.status : 'idle'
+							}
+							processed={ state?.processed ?? 0 }
+							total={ state?.total ?? 0 }
+							errors={ state?.errors ?? 0 }
+							message={ state?.message }
+						/>
 
 						{ showProgress && state && (
 							<div
@@ -687,13 +701,6 @@ export function BringBackPage() {
 									value={ state.processed }
 									max={ state.total }
 									showPercentage={ false }
-								/>
-								<RunAnnouncer
-									status={ state.status }
-									processed={ state.processed }
-									total={ state.total }
-									errors={ state.errors }
-									message={ state.message }
 								/>
 
 								{ state.status === 'failed' &&

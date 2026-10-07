@@ -317,6 +317,10 @@ Depending on the provider you select:
 * New documentation page [Long runs and log files](https://omnioffloader.vercel.app/wp-cli/long-runs/): start a big job with a log file, watch it, work out the speed and time left, and what to do when it ends.
 * A lock left behind by a killed run (for example after a server restart) is cleared by the next command on the same server, instead of blocking it for 10 minutes.
 
+**Documentation links**
+
+* Every OmniOffloader screen links to the documentation: a **Documentation** link in the page header, **Learn more** on each section and setting, and a setup guide for the selected storage provider. The Tools page shows how to run a long WP-CLI job in the background.
+
 **Fixes**
 
 * WP-CLI: closing the SSH window during `wp omnioffloader offload`, `restore` or `retention` now releases the job lock right away, as Ctrl+C does. Before, the next run was refused for up to 10 minutes.

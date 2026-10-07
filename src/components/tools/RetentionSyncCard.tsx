@@ -76,6 +76,7 @@ export function RetentionSyncCard() {
 				'Apply Retention Policy to Existing Media',
 				'omnioffloader'
 			) }
+			docs="features/retention-policies/#apply-a-policy-to-existing-media"
 			description={ __(
 				'Changing the retention policy only affects new uploads. Use this to bring media you offloaded earlier in line with the current policy. Attachments stay offloaded — only the copies kept on your server change.',
 				'omnioffloader'

@@ -113,6 +113,7 @@ export function DashboardPage( { onNavigate }: DashboardProps ) {
 
 			<Card
 				title={ __( 'Quick Actions', 'omnioffloader' ) }
+				docs="getting-started/quick-start/"
 				description={ __(
 					'Manage your media library and cloud storage settings.',
 					'omnioffloader'

@@ -92,6 +92,7 @@ export function OffloadPage() {
 		<div className="smowp-page">
 			<Card
 				title={ __( 'Bulk Offload', 'omnioffloader' ) }
+				docs="features/bulk-offload/"
 				description={ __(
 					'Move your existing media library to the cloud. Processing runs in the background — you can leave this page and come back.',
 					'omnioffloader'
@@ -464,6 +465,7 @@ export function OffloadPage() {
 
 			<Card
 				title={ __( 'Single attachments', 'omnioffloader' ) }
+				docs="features/media-library/"
 				description={ __(
 					'You can also offload one file at a time from the Media Library list — use the "Offload now" row action. Offload state is shown in each attachment\'s details, and the library can be filtered by Offloaded / Local only.',
 					'omnioffloader'

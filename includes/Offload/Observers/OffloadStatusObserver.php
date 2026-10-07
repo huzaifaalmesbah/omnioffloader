@@ -694,6 +694,8 @@ class OffloadStatusObserver implements ObserverInterface {
 					'offloadNow' => __( 'Offload now', 'omnioffloader' ),
 					'bringBack'  => __( 'Bring Back', 'omnioffloader' ),
 					'queued'     => __( 'Queued...', 'omnioffloader' ),
+					'failedTry'  => __( 'OmniOffloader could not complete that action. Please try again.', 'omnioffloader' ),
+					'dismiss'    => __( 'Dismiss this notice.', 'omnioffloader' ),
 				),
 			)
 		);

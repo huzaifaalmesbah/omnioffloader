@@ -35,6 +35,40 @@
 	}
 
 	/**
+	 * Show why an action failed, as a dismissible admin notice.
+	 *
+	 * The message comes from the server (a WP_Error) and is set as text,
+	 * never as markup.
+	 *
+	 * @param {Object} xhr jQuery XHR of the failed request.
+	 */
+	function showActionError(xhr) {
+		var i18n = config.i18n || {};
+		var message = (xhr && xhr.responseJSON && xhr.responseJSON.message)
+			? String(xhr.responseJSON.message)
+			: (i18n.failedTry || 'The action could not be completed. Please try again.');
+
+		var $notice = $('<div class="notice notice-error is-dismissible omnioffloader-action-error"><p></p></div>');
+		$notice.find('p').text(message);
+		$notice.append(
+			$('<button type="button" class="notice-dismiss"><span class="screen-reader-text"></span></button>')
+		);
+		$notice.find('.screen-reader-text').text(i18n.dismiss || 'Dismiss this notice.');
+		$notice.on('click', '.notice-dismiss', function() {
+			$notice.remove();
+		});
+
+		$('.omnioffloader-action-error').remove();
+
+		var $anchor = $('.wp-header-end').first();
+		if ($anchor.length) {
+			$anchor.after($notice);
+		} else {
+			$('#wpbody-content .wrap').first().prepend($notice);
+		}
+	}
+
+	/**
 	 * Build HTML for grid view badges.
 	 *
 	 * @param {Object|string} data Attachment status data or status key.
@@ -236,8 +270,10 @@
 			if (statusKey === 'processing' || statusKey === 'queued') {
 				scheduleInFlightPoll(1500);
 			}
-		}).fail(function() {
-			window.location.reload();
+		}).fail(function(xhr) {
+			// Show the reason and put the item back as the server sees it.
+			showActionError(xhr);
+			checkInFlight(true);
 		});
 	});
 
@@ -372,8 +408,10 @@
 			if (statusKey === 'processing' || statusKey === 'queued') {
 				scheduleInFlightPoll(1500);
 			}
-		}).fail(function() {
-			window.location.reload();
+		}).fail(function(xhr) {
+			// Show the reason and put the item back as the server sees it.
+			showActionError(xhr);
+			checkInFlight(true);
 		});
 	});
 
@@ -721,7 +759,8 @@
 			}).done(function() {
 				isBulkRunning = true;
 				scheduleInFlightPoll(1000);
-			}).fail(function() {
+			}).fail(function(xhr) {
+				showActionError(xhr);
 				scheduleInFlightPoll(1500);
 			});
 		}

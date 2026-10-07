@@ -325,6 +325,8 @@ Depending on the provider you select:
 
 * Switching to another storage provider no longer breaks media you already offloaded: it keeps loading from the provider it was offloaded to (through its saved settings), Mirror Delete deletes it there, and Move Media brings it over to the new provider.
 * The bucket can no longer be changed while media is offloaded to it, which used to break those URLs and Bring Back. Settings warns under the Bucket field, with the steps: Bring Back, change the bucket, offload again.
+* Media Library: when Offload or Bring Back fails, the reason is shown as a notice (for example Safe mode, or another job running) instead of the page silently reloading; a failed bulk action shows it too.
+* Settings: a save error stays visible until you change something or save again, and a save that stored the provider details but not the other settings says so.
 * WP-CLI: `wp omnioffloader retention` now stops after repeated failures when the storage provider can't be reached, and stops at once when the server runs out of disk space, like `restore`.
 * Background upload of new media: a large file is no longer uploaded twice at the same time (the worker lock lasts through the transfer and only one worker runs), and an upload the server keeps stopping (time or memory limit) is marked failed after three tries instead of being retried forever.
 * Bulk jobs: cancelling and immediately starting again no longer lets the cancelled run's worker carry on inside the new one (processing items the new run did not choose, with its settings, and counting them in its progress).

@@ -7,8 +7,6 @@
 
 namespace OmniOffloader\Offload\Observers;
 
-use OmniOffloader\Core\FolderClaim;
-use OmniOffloader\Core\Helpers;
 use OmniOffloader\Core\SafeMode;
 use OmniOffloader\Offload\ObserverInterface;
 use OmniOffloader\Providers\ProviderInterface;
@@ -586,9 +584,7 @@ class OffloadStatusObserver implements ObserverInterface {
 	}
 
 	/**
-	 * The "Folder:" row: where the attachment's files are in the bucket,
-	 * and a note when that is not the folder new offloads go to (offloaded
-	 * before a Path Prefix change).
+	 * The "Folder:" row: where the attachment's files are in the bucket.
 	 *
 	 * @since 0.1.4
 	 *
@@ -596,22 +592,9 @@ class OffloadStatusObserver implements ObserverInterface {
 	 * @return string
 	 */
 	private function render_folder_row( $post_id ) {
-		$path   = self::get_offload_path( $post_id );
-		$folder = '' !== $path ? $path : __( 'bucket root', 'omnioffloader' );
-		$note   = '';
+		$path = self::get_offload_path( $post_id );
 
-		if ( Helpers::is_offloaded_elsewhere( $post_id, FolderClaim::prefix() ) ) {
-			$current = FolderClaim::prefix();
-			$note    = '<span class="omnioffloader-meta-box-note">' . esc_html(
-				sprintf(
-					/* translators: %s: the current bucket folder, e.g. "shop/". */
-					__( 'Not in the current folder (%s). Move it from Tools → Move Media to the Current Folder.', 'omnioffloader' ),
-					'' !== $current ? $current : __( 'bucket root', 'omnioffloader' )
-				)
-			) . '</span>';
-		}
-
-		return '<div class="omnioffloader-meta-box-row"><span class="omnioffloader-meta-box-label">' . esc_html__( 'Folder:', 'omnioffloader' ) . '</span><span class="omnioffloader-meta-box-val"><code>' . esc_html( $folder ) . '</code>' . $note . '</span></div>';
+		return '<div class="omnioffloader-meta-box-row"><span class="omnioffloader-meta-box-label">' . esc_html__( 'Folder:', 'omnioffloader' ) . '</span><span class="omnioffloader-meta-box-val"><code>' . esc_html( '' !== $path ? $path : __( 'bucket root', 'omnioffloader' ) ) . '</code></span></div>';
 	}
 
 	/**

@@ -168,4 +168,19 @@ export interface CliJob {
 	failed: number;
 	/** Unix time the run started; 0 when unknown. */
 	started: number;
+	/** Unix time the run last reported progress; 0 when unknown. */
+	updated: number;
+	/** Attachments per minute since the start; 0 until a minute in. */
+	per_minute: number;
+	/** Estimated seconds left; 0 until a minute in, or when done. */
+	seconds_left: number;
+	/** Files transferred at the same time; 0 when unknown. */
+	files_at_once: number;
+	/** Started without a terminal (nohup, cron). */
+	background: boolean;
+	pid: number;
+	/** Log file of a background run; '' when none. */
+	log: string;
+	/** `wp omnioffloader stop` was asked: it finishes the files in progress. */
+	stopping: boolean;
 }

@@ -203,7 +203,8 @@ class CoreController extends BaseController {
 	 *
 	 * Reported only while the run's claim is alive: it is renewed every
 	 * 30 seconds and expires on its own when the process dies, so a killed
-	 * run never shows as running. Two small reads, no media queries.
+	 * run never shows as running. Three small reads (claim, run record, stop
+	 * flag), no media queries; the same figures as `wp omnioffloader status`.
 	 *
 	 * @since 0.1.4
 	 *
@@ -219,17 +220,42 @@ class CoreController extends BaseController {
 			$run = null;
 		}
 
+		$processed = (int) ( $run['processed'] ?? 0 );
+		$total     = (int) ( $run['total'] ?? 0 );
+		$started   = (int) ( $run['started'] ?? 0 );
+		$updated   = (int) ( $run['updated'] ?? 0 );
+
+		// Speed and time left as `wp omnioffloader status` shows them: the
+		// average since the start, once the run is a minute old.
+		$per_minute = 0.0;
+		$seconds    = 0;
+		$elapsed    = max( 1, $updated - $started );
+
+		if ( $processed > 0 && $started > 0 && $updated > 0 && $elapsed >= MINUTE_IN_SECONDS ) {
+			$per_minute = round( $processed * MINUTE_IN_SECONDS / $elapsed, 1 );
+			$seconds    = $total > $processed ? (int) round( ( $total - $processed ) / ( $processed / $elapsed ) ) : 0;
+		}
+
 		return rest_ensure_response(
 			array(
-				'running'   => '' !== $job,
-				'job'       => $job,
-				'processed' => (int) ( $run['processed'] ?? 0 ),
-				'total'     => (int) ( $run['total'] ?? 0 ),
-				'failed'    => (int) ( $run['failed'] ?? 0 ),
-				'started'   => (int) ( $run['started'] ?? 0 ),
+				'running'       => '' !== $job,
+				'job'           => $job,
+				'processed'     => $processed,
+				'total'         => $total,
+				'failed'        => (int) ( $run['failed'] ?? 0 ),
+				'started'       => $started,
+				'updated'       => $updated,
+				'per_minute'    => $per_minute,
+				'seconds_left'  => $seconds,
+				'files_at_once' => (int) ( $run['files_at_once'] ?? 0 ),
+				'background'    => ! empty( $run['background'] ),
+				'pid'           => (int) ( $run['pid'] ?? 0 ),
+				'log'           => (string) ( $run['log'] ?? '' ),
+				'stopping'      => '' !== $job && Plugin::cli_stop_requested(),
 			)
 		);
 	}
+
 
 	/**
 	 * GET /core/stats

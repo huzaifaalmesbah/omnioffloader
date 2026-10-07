@@ -1,11 +1,11 @@
 ---
 title: wp omnioffloader stop
-description: Stop a running offload, Bring Back or retention job from any terminal, and keep long jobs running after you close the terminal.
+description: Stop a running offload, Bring Back, retention or move job from any terminal, and keep long jobs running after you close the terminal.
 sidebar:
   order: 7
 ---
 
-Stops the offload, Bring Back or retention job that is running. It works from any terminal: a new SSH window, a script or a cron job.
+Stops the offload, Bring Back, retention or move job that is running. It works from any terminal: a new SSH window, a script or a cron job.
 
 - **A WP-CLI run** (in a terminal or started with `nohup … &`) finishes the file it is transferring, then exits and releases its lock. No file is left half uploaded or half downloaded.
 - **A bulk job started from the admin screen** is cancelled, like its **Cancel** button does.

@@ -22,7 +22,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 class StopCommand {
 
 	/**
-	 * Stop the running offload, restore or retention job.
+	 * Stop the running offload, restore, retention or move job.
 	 *
 	 * Works from any terminal. A WP-CLI run — in a terminal or started with
 	 * `nohup … &` — finishes the file it is transferring, then exits

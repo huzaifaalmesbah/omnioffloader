@@ -33,8 +33,8 @@ export function SaveBar() {
 				message: sprintf(
 					/* translators: 1: number of offloaded attachments, 2: current bucket folder, 3: new bucket folder. */
 					_n(
-						'%1$s offloaded attachment stays in %2$s and keeps working from there. Only media offloaded from now on goes to %3$s. You can move existing media later from Tools.',
-						'%1$s offloaded attachments stay in %2$s and keep working from there. Only media offloaded from now on goes to %3$s. You can move existing media later from Tools.',
+						'%1$s offloaded attachment stays in %2$s and keeps working from there. Only media offloaded from now on goes to %3$s. You can move existing media later from Tools → Move Media to the Current Folder.',
+						'%1$s offloaded attachments stay in %2$s and keep working from there. Only media offloaded from now on goes to %3$s. You can move existing media later from Tools → Move Media to the Current Folder.',
 						offloaded,
 						'omnioffloader'
 					),

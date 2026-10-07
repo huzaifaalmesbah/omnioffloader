@@ -93,7 +93,7 @@ You can restore one file at a time:
 - **Attachment edit screen**: use the **Bring Back** button in the OmniOffloader box.
 - **Media Library bulk actions**: select several attachments and choose **Bring Back to Server**.
 
-These always keep the cloud copy. To delete cloud copies after restoring, use the Bring Back page with **Delete from Cloud After Restore**, or [`wp omnioffloader restore --delete-cloud`](/wp-cli/restore/#deleting-cloud-copies). See [Media Library](/features/media-library/).
+These keep the cloud copy. The one exception: picked in the Media Library while a bulk Bring Back that deletes cloud copies is running, they join that run and follow its choice. To delete cloud copies after restoring, use the Bring Back page with **Delete from Cloud After Restore**, or [`wp omnioffloader restore --delete-cloud`](/wp-cli/restore/#deleting-cloud-copies). See [Media Library](/features/media-library/).
 
 ## How Bring Back keeps your media safe
 

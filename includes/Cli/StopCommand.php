@@ -49,11 +49,17 @@ class StopCommand {
 	public function __invoke( $args, $assoc_args ) {
 		unset( $args );
 
+		$wait = trim( (string) ( $assoc_args['wait'] ?? '120' ) );
+
+		if ( '' === $wait || ! ctype_digit( $wait ) ) {
+			WP_CLI::error( sprintf( '--wait must be a whole number of seconds, got "%s".', $wait ) );
+		}
+
 		$plugin  = Plugin::get_instance();
 		$cli_job = get_site_transient( Plugin::cli_job_lock_key() );
 
 		if ( is_string( $cli_job ) && '' !== $cli_job ) {
-			$this->stop_cli_run( $plugin, $cli_job, max( 0, (int) ( $assoc_args['wait'] ?? 120 ) ) );
+			$this->stop_cli_run( $plugin, $cli_job, (int) $wait );
 
 			return;
 		}

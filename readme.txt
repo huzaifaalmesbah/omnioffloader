@@ -320,6 +320,7 @@ Depending on the provider you select:
 **Fixes**
 
 * WP-CLI: closing the SSH window during `wp omnioffloader offload`, `restore` or `retention` now releases the job lock right away, as Ctrl+C does. Before, the next run was refused for up to 10 minutes.
+* WP-CLI: `wp omnioffloader stop --wait=<seconds>` refuses a value that is not a number, instead of not waiting at all.
 
 = 0.1.3 =
 

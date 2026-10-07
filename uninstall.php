@@ -13,7 +13,11 @@ if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
 	die;
 }
 
-define( 'OMNIOFFLOADER_DIR', plugin_dir_path( __FILE__ ) );
+// Already defined when the plugin was loaded in this request (for example
+// `wp plugin uninstall --deactivate`).
+if ( ! defined( 'OMNIOFFLOADER_DIR' ) ) {
+	define( 'OMNIOFFLOADER_DIR', plugin_dir_path( __FILE__ ) );
+}
 
 if ( file_exists( OMNIOFFLOADER_DIR . 'vendor/autoload.php' ) ) {
 	require_once OMNIOFFLOADER_DIR . 'vendor/autoload.php';

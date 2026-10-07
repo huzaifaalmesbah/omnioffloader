@@ -329,6 +329,7 @@ Depending on the provider you select:
 * Full Cloud Migration and Smart Local Cleanup: a new upload no longer reuses a file name that another attachment still has in your cloud storage (the original of a scaled image, a thumbnail size, a PDF preview or an edit backup), which could overwrite that attachment's files.
 * Bring Back with "Delete from Cloud After Restore" no longer deletes cloud files it did not download, such as the original WordPress keeps after you edit an image. Only files that are now on your server are removed from the cloud.
 * Picking Offload or Bring Back in the Media Library for items that have nothing to do (already offloaded, or already local) while a bulk job of the same kind runs no longer stops that job.
+* Safe mode: **This is the live site** now asks for confirmation before turning Safe mode off, since clicking it on a staging copy lets that copy write to the live site's cloud storage. If it fails, the real reason is shown.
 
 = 0.1.3 =
 

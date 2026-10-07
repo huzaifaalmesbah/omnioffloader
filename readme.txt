@@ -338,6 +338,7 @@ Depending on the provider you select:
 * New `wp omnioffloader move`: moves media offloaded under an earlier Path Prefix into the current folder, one attachment at a time (Bring Back, offload again, then delete the old copies once the new ones are verified). Supports `--dry-run`, `--ids`, `--limit`, `--keep-old` and `--concurrency` (up to 64 files at once).
 * New **Tools → Move Media to the Current Folder**: the same move from the admin screen, with a progress bar and Cancel. Shown only when some media is outside the current folder.
 * The OmniOffloader box on an attachment's edit screen shows its bucket **Folder**, marked *Not in the current folder* when the Path Prefix changed after it was offloaded.
+* Confirmations (Bring Back that deletes cloud copies, a bucket folder change, moving media, Safe mode's live-site and folder buttons) now use the plugin's own dialog with clear button labels, instead of the browser's OK / Cancel box.
 * Sharing a bucket: a folder this site moved away from keeps its claim, and every upload or delete is now checked against the folder it really goes to. If another site takes over an old folder, this site stops writing to and deleting from it, and `wp omnioffloader status` warns about it.
 
 = 0.1.3 =

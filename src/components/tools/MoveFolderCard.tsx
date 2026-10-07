@@ -9,6 +9,7 @@ import { folderLabel } from '../../utils/folder';
 import { ActivityLog } from '../ui/ActivityLog';
 import { BatchScopeSelector, type ScopeMode } from '../ui/BatchScopeSelector';
 import { Card } from '../ui/Card';
+import { useConfirm } from '../ui/ConfirmDialog';
 import { ProgressBar } from '../ui/ProgressBar';
 import { RunAnnouncer } from '../ui/RunAnnouncer';
 
@@ -22,6 +23,7 @@ export function MoveFolderCard() {
 	const { stats, isDirty, savedSettings } = useCore();
 	const { preflight, state, busy, start, cancel, showProgress, dismiss } =
 		useMoveSync();
+	const askConfirm = useConfirm();
 
 	const [ scopeMode, setScopeMode ] = useState< ScopeMode >( 'all' );
 	const [ customCount, setCustomCount ] = useState< number >( 10 );
@@ -55,23 +57,24 @@ export function MoveFolderCard() {
 	const keepsLocal =
 		savedSettings?.retention_policy === RetentionPolicy.RetainLocal;
 
-	const handleStart = () => {
-		if (
-			// eslint-disable-next-line no-alert
-			! window.confirm(
-				sprintf(
-					/* translators: 1: number of attachments, 2: bucket folder. */
-					_n(
-						'Move %1$s attachment into %2$s? Each old copy is deleted once its new copy is confirmed.',
-						'Move %1$s attachments into %2$s? Each old copy is deleted once its new copy is confirmed.',
-						count,
-						'omnioffloader'
-					),
-					count.toLocaleString(),
-					folder
-				)
-			)
-		) {
+	const handleStart = async () => {
+		const ok = await askConfirm( {
+			title: __( 'Move media to the current folder?', 'omnioffloader' ),
+			message: sprintf(
+				/* translators: 1: number of attachments, 2: bucket folder. */
+				_n(
+					'%1$s attachment moves into %2$s. Its old copy is deleted once the new copy is confirmed.',
+					'%1$s attachments move into %2$s. Each old copy is deleted once its new copy is confirmed.',
+					count,
+					'omnioffloader'
+				),
+				count.toLocaleString(),
+				folder
+			),
+			confirmLabel: __( 'Move media', 'omnioffloader' ),
+		} );
+
+		if ( ! ok ) {
 			return;
 		}
 
@@ -180,7 +183,7 @@ export function MoveFolderCard() {
 								className="smowp-btn-primary"
 								disabled={ ! canStart }
 								isBusy={ busy }
-								onClick={ handleStart }
+								onClick={ () => void handleStart() }
 							>
 								{ isCustom
 									? sprintf(

@@ -4,6 +4,7 @@ import { __, _n, sprintf } from '@wordpress/i18n';
 
 import { useCore } from '../../context/CoreContext';
 import { folderLabel, uploadFolder } from '../../utils/folder';
+import { useConfirm } from '../ui/ConfirmDialog';
 
 export function SaveBar() {
 	const {
@@ -15,8 +16,9 @@ export function SaveBar() {
 		savedSettings,
 		stats,
 	} = useCore();
+	const askConfirm = useConfirm();
 
-	const handleSave = () => {
+	const handleSave = async () => {
 		const offloaded = stats?.offloaded ?? 0;
 		const from = savedSettings ? uploadFolder( savedSettings ) : '';
 		const to = settings ? uploadFolder( settings ) : '';
@@ -26,21 +28,22 @@ export function SaveBar() {
 			savedSettings &&
 			offloaded > 0 &&
 			from !== to &&
-			// eslint-disable-next-line no-alert
-			! window.confirm(
-				sprintf(
+			! ( await askConfirm( {
+				title: __( 'Change the bucket folder?', 'omnioffloader' ),
+				message: sprintf(
 					/* translators: 1: number of offloaded attachments, 2: current bucket folder, 3: new bucket folder. */
 					_n(
-						'Change the bucket folder anyway? %1$s offloaded attachment stays in %2$s; only media offloaded from now on goes to %3$s.',
-						'Change the bucket folder anyway? %1$s offloaded attachments stay in %2$s; only media offloaded from now on goes to %3$s.',
+						'%1$s offloaded attachment stays in %2$s and keeps working from there. Only media offloaded from now on goes to %3$s. You can move existing media later from Tools.',
+						'%1$s offloaded attachments stay in %2$s and keep working from there. Only media offloaded from now on goes to %3$s. You can move existing media later from Tools.',
 						offloaded,
 						'omnioffloader'
 					),
 					offloaded.toLocaleString(),
 					folderLabel( from ),
 					folderLabel( to )
-				)
-			)
+				),
+				confirmLabel: __( 'Change folder and save', 'omnioffloader' ),
+			} ) )
 		) {
 			return;
 		}
@@ -90,7 +93,7 @@ export function SaveBar() {
 					className="smowp-savebar__button"
 					disabled={ ! isDirty || isSaving }
 					isBusy={ isSaving }
-					onClick={ handleSave }
+					onClick={ () => void handleSave() }
 				>
 					{ isSaving
 						? __( 'Saving…', 'omnioffloader' )

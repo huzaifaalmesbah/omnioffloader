@@ -23,7 +23,7 @@ The same reference, with copy buttons, is on the **OmniOffloader → Tools** scr
 
 ## When to use WP-CLI
 
-- **Large libraries.** A terminal command is not limited by the browser or by short web request time limits. The Bulk Offload and Bring Back screens show the matching command, with a link to it in the WP-CLI reference on the Tools screen, and recommend it for libraries of 5,000 items or more. For tens of thousands of items, add [`--concurrency`](/wp-cli/offload/) to upload many files at once.
+- **Large libraries.** A terminal command is not limited by the browser or by short web request time limits. The Bulk Offload and Bring Back screens have a **Run this job from WP-CLI** panel: **View command** opens the matching command in the WP-CLI reference on the Tools screen. For libraries of 5,000 items or more the panel recommends it. For tens of thousands of items, add [`--concurrency`](/wp-cli/offload/) to upload many files at once.
 - **SSH access.** You can run a job on the server directly and watch a progress bar.
 - **Long jobs.** Start it with `nohup … &` and close the terminal; the job keeps going and writes its progress to a log file. See [Long runs and log files](/wp-cli/long-runs/).
 - **Scheduled work.** Use `--limit` with a cron job to work through a big library in small chunks, for example 500 attachments each night.

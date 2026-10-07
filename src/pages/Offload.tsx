@@ -218,7 +218,6 @@ export function OffloadPage( { onNavigate }: OffloadProps ) {
 							{ localCount > 0 && (
 								<CliHint
 									command="offload"
-									example="wp omnioffloader offload --all"
 									count={ localCount }
 									onNavigate={ onNavigate }
 								/>

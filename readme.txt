@@ -325,6 +325,7 @@ Depending on the provider you select:
 
 * Switching to another storage provider no longer breaks media you already offloaded: it keeps loading from the provider it was offloaded to (through its saved settings), Mirror Delete deletes it there, and Move Media brings it over to the new provider.
 * The bucket can no longer be changed while media is offloaded to it, which used to break those URLs and Bring Back. Settings warns under the Bucket field, with the steps: Bring Back, change the bucket, offload again.
+* Dashboard: the status no longer says "Connected & Active" just because credentials are saved. It shows **Active**, or **Safe mode** on a copy of the site, and says when your site still loads media from the server (Serve Media from Cloud off).
 * Media Library: status updates check less often while nothing changes (down to every 6 seconds instead of every 1.8), and keep going after a failed check instead of freezing until the tab is focused again.
 * Media Library: when Offload or Bring Back fails, the reason is shown as a notice (for example Safe mode, or another job running) instead of the page silently reloading; a failed bulk action shows it too.
 * Settings: a save error stays visible until you change something or save again, and a save that stored the provider details but not the other settings says so.

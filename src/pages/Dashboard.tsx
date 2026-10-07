@@ -32,6 +32,26 @@ export function DashboardPage( { onNavigate }: DashboardProps ) {
 	const offloadedPct =
 		total > 0 ? Math.round( ( offloaded / total ) * 100 ) : 0;
 
+	// "Configured" means credentials are saved; the connection itself is
+	// checked by Test Connection, so the hero does not claim it.
+	const safeMode = !! stats?.safe_mode?.active;
+	let summary: string = __(
+		'New uploads are offloaded automatically and served from your cloud storage or CDN.',
+		'omnioffloader'
+	);
+
+	if ( safeMode ) {
+		summary = __(
+			'Safe mode is on: nothing is uploaded to or deleted from your cloud storage. Media already offloaded still loads from it.',
+			'omnioffloader'
+		);
+	} else if ( settings && ! settings.serve_from_cloud ) {
+		summary = __(
+			'New uploads are offloaded automatically. Your site still loads media from this server, because Serve Media from Cloud is off.',
+			'omnioffloader'
+		);
+	}
+
 	return (
 		<div className="smowp-page">
 			<div className="smowp-hero smowp-card">
@@ -40,12 +60,18 @@ export function DashboardPage( { onNavigate }: DashboardProps ) {
 				</span>
 				<div className="smowp-hero__text">
 					<div className="smowp-hero__badge-wrap">
-						{ stats?.configured ? (
+						{ stats?.configured && safeMode && (
+							<span className="smowp-hero__setup-badge">
+								{ __( 'Safe mode', 'omnioffloader' ) }
+							</span>
+						) }
+						{ stats?.configured && ! safeMode && (
 							<span className="smowp-hero__live-badge">
 								<span className="smowp-badge-pulse" />
-								{ __( 'Connected & Active', 'omnioffloader' ) }
+								{ __( 'Active', 'omnioffloader' ) }
 							</span>
-						) : (
+						) }
+						{ ! stats?.configured && (
 							<span className="smowp-hero__setup-badge">
 								{ __( 'Setup Required', 'omnioffloader' ) }
 							</span>
@@ -55,17 +81,14 @@ export function DashboardPage( { onNavigate }: DashboardProps ) {
 						{ stats?.configured && providerName
 							? sprintf(
 									/* translators: %s: cloud provider name. */
-									__( 'Connected to %s', 'omnioffloader' ),
+									__( 'Using %s', 'omnioffloader' ),
 									providerName
 								)
 							: __( 'Not configured yet', 'omnioffloader' ) }
 					</h2>
 					<p>
 						{ stats?.configured
-							? __(
-									'New uploads are offloaded automatically and served from your custom domain.',
-									'omnioffloader'
-								)
+							? summary
 							: __(
 									'Add your cloud storage credentials to get started.',
 									'omnioffloader'

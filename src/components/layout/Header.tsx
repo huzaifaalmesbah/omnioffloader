@@ -22,7 +22,8 @@ export function Header( { activeView }: HeaderProps ) {
 			return;
 		}
 
-		heading.current?.focus();
+		// App owns the scroll position; focusing must not move it.
+		heading.current?.focus( { preventScroll: true } );
 	}, [ activeView ] );
 
 	return (

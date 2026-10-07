@@ -12,20 +12,27 @@ interface SidebarProps {
 export function Sidebar( { activeView, onNavigate }: SidebarProps ) {
 	const navRef = useRef< HTMLElement | null >( null );
 
+	// On narrow screens the menu scrolls sideways: centre the active item.
+	// Only the menu scrolls, never the page (App owns the page position).
 	useEffect( () => {
-		if ( ! navRef.current ) {
+		const nav = navRef.current;
+		const active = nav?.querySelector< HTMLElement >( '.is-active' );
+
+		if ( ! nav || ! active ) {
 			return;
 		}
-		const activeEl = navRef.current.querySelector(
-			'.is-active'
-		) as HTMLElement | null;
-		if ( activeEl ) {
-			activeEl.scrollIntoView( {
-				behavior: 'smooth',
-				block: 'nearest',
-				inline: 'nearest',
-			} );
-		}
+
+		const offset =
+			active.getBoundingClientRect().left -
+			nav.getBoundingClientRect().left;
+
+		nav.scrollTo( {
+			left:
+				nav.scrollLeft +
+				offset -
+				( nav.clientWidth - active.offsetWidth ) / 2,
+			behavior: 'smooth',
+		} );
 	}, [ activeView ] );
 
 	return (

@@ -221,6 +221,9 @@
 .smowp-content {
 	flex: 1;
 	padding: 28px 32px;
+	// App restores each page's scroll position before its cards load; the
+	// browser's scroll anchoring would push it down as they appear.
+	overflow-anchor: none;
 
 	&.has-savebar {
 		padding-bottom: calc( var( --smowp-savebar-height ) + 28px );
@@ -404,13 +407,9 @@
 	font-size: 12.5px;
 }
 
-// A card a link brings into view: clear the admin bar, no focus ring.
-.smowp-card[id] {
-	scroll-margin-top: 48px;
-
-	&:focus {
-		outline: none;
-	}
+// A card a link brings into view takes focus; no ring on the whole card.
+.smowp-card[id]:focus {
+	outline: none;
 }
 
 // Path Prefix change notice under the field.

@@ -69,6 +69,20 @@ trait CliJobGuard {
 	private $guard_run = null;
 
 	/**
+	 * When the locks were last renewed / the run record last written.
+	 *
+	 * @var int
+	 */
+	private $guard_renewed = 0;
+
+	/**
+	 * When the run record was last written.
+	 *
+	 * @var int
+	 */
+	private $guard_reported = 0;
+
+	/**
 	 * Items between progress lines in a detached run's log.
 	 *
 	 * @var int
@@ -276,21 +290,33 @@ trait CliJobGuard {
 	/**
 	 * Keep the claim alive; call after every item.
 	 *
-	 * Renewed per item rather than every N items: one transient write is
-	 * nothing next to a network transfer, while N large files could outlast
-	 * the 10 minute lock and let an admin job start alongside this one.
+	 * Renewed by time (every 30 seconds), never every N items: N large files
+	 * could outlast the 10 minute lock and let an admin job start alongside
+	 * this one. A single long transfer renews it through the heartbeat.
 	 *
 	 * @param int $processed Items processed so far.
 	 * @param int $failed    Items failed so far.
 	 * @return void
 	 */
 	private function keep_job_alive( $processed, $failed = 0 ) {
-		$this->renew_job();
+		$now = time();
+
+		// Time-based, not every N items: the locks last 10 minutes and a long
+		// transfer renews them through the heartbeat, so every 30 seconds is
+		// plenty. Per item, a 65,000 item run made ~300,000 option writes.
+		if ( $now - $this->guard_renewed >= 30 ) {
+			$this->renew_job();
+		}
 
 		if ( null !== $this->guard_run ) {
 			$this->guard_run['processed'] = (int) $processed;
 			$this->guard_run['failed']    = (int) $failed;
-			Plugin::set_cli_run( $this->guard_run );
+
+			// Fresh enough for `status`; end_job() writes the final counts.
+			if ( $now - $this->guard_reported >= 5 ) {
+				Plugin::set_cli_run( $this->guard_run );
+				$this->guard_reported = $now;
+			}
 
 			// No progress bar without a terminal; the log gets a line instead.
 			if ( $this->guard_run['background'] && 0 === $processed % self::$log_progress_every ) {
@@ -402,6 +428,8 @@ trait CliJobGuard {
 	 * @return void
 	 */
 	private function renew_job() {
+		$this->guard_renewed = time();
+
 		if ( null !== $this->guard_queue ) {
 			$this->guard_queue->claim_lock();
 		}
@@ -438,6 +466,9 @@ trait CliJobGuard {
 			$record = Plugin::get_cli_run( true );
 
 			if ( null === $record || (int) ( $record['pid'] ?? 0 ) === (int) $this->guard_run['pid'] ) {
+				// The record is written every few seconds; store the final
+				// counts before it becomes the "last run" for `status`.
+				Plugin::set_cli_run( $this->guard_run );
 				Plugin::clear_cli_run();
 			}
 

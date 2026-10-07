@@ -1,5 +1,5 @@
 import { Button } from '@wordpress/components';
-import { __ } from '@wordpress/i18n';
+import { __, sprintf } from '@wordpress/i18n';
 import { copy } from '@wordpress/icons';
 
 import { useCore } from '../../context/CoreContext';
@@ -67,6 +67,13 @@ function getCommands(): CliCommand[] {
 					command: 'wp omnioffloader stop',
 					description: __(
 						'Stop it and wait until it has ended.',
+						'omnioffloader'
+					),
+				},
+				{
+					command: 'wp omnioffloader stop --wait=0',
+					description: __(
+						'Ask it to stop and return right away.',
 						'omnioffloader'
 					),
 				},
@@ -472,6 +479,13 @@ function getCommands(): CliCommand[] {
 						'omnioffloader'
 					),
 				},
+				{
+					flag: '--format=<table|json|csv>',
+					description: __(
+						'Output format of a dry run (default table).',
+						'omnioffloader'
+					),
+				},
 			],
 		},
 	];
@@ -560,7 +574,11 @@ function CommandRow( { example, onCopy }: CommandRowProps ) {
 			<Button
 				icon={ copy }
 				size="small"
-				label={ __( 'Copy command', 'omnioffloader' ) }
+				label={ sprintf(
+					/* translators: %s: a WP-CLI command. */
+					__( 'Copy command: %s', 'omnioffloader' ),
+					example.command
+				) }
 				onClick={ () => onCopy( example.command ) }
 			/>
 		</li>

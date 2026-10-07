@@ -86,6 +86,32 @@ trait AttachmentHelper {
 	}
 
 	/**
+	 * A provider's display name for labels, e.g. "Cloudflare R2".
+	 *
+	 * @since 0.1.4
+	 *
+	 * @param string $provider_key Provider key; empty for "Cloud".
+	 * @return string
+	 */
+	public static function provider_name( $provider_key ) {
+		static $names = array();
+
+		if ( '' === $provider_key ) {
+			return __( 'Cloud', 'omnioffloader' );
+		}
+
+		if ( ! isset( $names[ $provider_key ] ) ) {
+			try {
+				$names[ $provider_key ] = \OmniOffloader\Providers\ProviderRegistry::create( $provider_key )->get_name();
+			} catch ( \InvalidArgumentException $e ) {
+				$names[ $provider_key ] = $provider_key;
+			}
+		}
+
+		return $names[ $provider_key ];
+	}
+
+	/**
 	 * Whether one file of an attachment loads from the cloud.
 	 *
 	 * @since 0.1.4
@@ -673,12 +699,20 @@ trait AttachmentHelper {
 			$offloaded_at = (int) get_post_meta( $attachment_id, 'omnioffloader_offloaded_at', true );
 			$date_str     = $offloaded_at > 0 ? (string) wp_date( (string) get_option( 'date_format' ), $offloaded_at ) : '';
 
-			$label = sprintf(
-				/* translators: 1: provider key, 2: formatted date */
-				__( 'Offloaded — %1$s%2$s', 'omnioffloader' ),
-				'' !== $provider_key ? $provider_key : __( 'Cloud', 'omnioffloader' ),
-				'' !== $date_str ? ' · ' . $date_str : ''
-			);
+			$provider_name = self::provider_name( $provider_key );
+
+			$label = '' !== $date_str
+				? sprintf(
+					/* translators: 1: storage provider name, 2: formatted date */
+					__( 'Offloaded — %1$s · %2$s', 'omnioffloader' ),
+					$provider_name,
+					$date_str
+				)
+				: sprintf(
+					/* translators: %s: storage provider name */
+					__( 'Offloaded — %s', 'omnioffloader' ),
+					$provider_name
+				);
 
 			return array(
 				'status'       => 'offloaded',

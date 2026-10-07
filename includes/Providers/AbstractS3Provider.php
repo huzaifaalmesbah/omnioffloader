@@ -25,6 +25,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 abstract class AbstractS3Provider implements ProviderInterface {
 
 	/**
+	 * Normalised public domain, once read (see get_domain()).
+	 *
+	 * @var string|null
+	 */
+	private $domain = null;
+
+	/**
 	 * Max objects per DeleteObjects request (S3 API limit).
 	 */
 	protected const MAX_DELETE_OBJECTS = 1000;
@@ -182,7 +189,13 @@ abstract class AbstractS3Provider implements ProviderInterface {
 	 * @return string
 	 */
 	public function get_domain() {
-		return Helpers::normalize_url( $this->credential( 'domain' ) );
+		// Read on every rewritten URL (each image, size and srcset entry);
+		// normalised once per provider instance.
+		if ( null === $this->domain ) {
+			$this->domain = Helpers::normalize_url( $this->credential( 'domain' ) );
+		}
+
+		return $this->domain;
 	}
 
 	/**

@@ -39,7 +39,7 @@ export function Sidebar( { activeView, onNavigate }: SidebarProps ) {
 						{ PLUGIN_NAME }
 					</span>
 					<span className="smowp-sidebar__version">
-						v{ window.omnioffloader?.version || '0.1.3' }
+						v{ window.omnioffloader?.version ?? '' }
 					</span>
 				</div>
 			</div>

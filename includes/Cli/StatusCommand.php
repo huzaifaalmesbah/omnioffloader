@@ -197,7 +197,9 @@ class StatusCommand {
 		$processed = (int) $run['processed'];
 		$total     = (int) $run['total'];
 		$started   = (int) $run['started'];
-		$updated   = (int) ( $run['updated'] ?? $started );
+		// A run started before 0.1.4's status changes has no 'updated';
+		// it reports after every attachment, so "now" is close enough.
+		$updated = (int) ( $run['updated'] ?? time() );
 
 		if ( false === $alive ) {
 			WP_CLI::log( sprintf( 'Running now: nothing. The WP-CLI %s run (process %d) ended without cleaning up, for example a server restart or kill -9.', $job, $pid ) );

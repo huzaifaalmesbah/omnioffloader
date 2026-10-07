@@ -282,6 +282,23 @@ $log4 = get_post_meta( $id4, 'omnioffloader_error_log', true );
 omnioffloader_check( is_array( $log4 ) && ! empty( $log4 ), 'failure logged to omnioffloader_error_log' );
 
 // ---------------------------------------------------------------------------
+// Test 4b — An original that was never uploaded does not block Bring Back.
+// ---------------------------------------------------------------------------
+echo "\nTest 4b: pre-scaled original missing before offload\n";
+
+$id4b = omnioffloader_make_attachment( 'omnioffloader-restore-noorig.jpg' );
+
+// Metadata names an original that was gone before the offload (an
+// optimizer deleted it), so its object never existed.
+$meta4b                   = wp_get_attachment_metadata( $id4b );
+$meta4b['original_image'] = 'omnioffloader-restore-noorig-never-uploaded.jpg';
+wp_update_attachment_metadata( $id4b, $meta4b );
+
+omnioffloader_check( true === $restorer->restore( $id4b, false ), 'restore() succeeded' );
+omnioffloader_check( file_exists( get_attached_file( $id4b ) ), 'attached file restored locally' );
+omnioffloader_check( ! get_post_meta( $id4b, 'omnioffloader_offloaded', true ), 'offload meta cleared' );
+
+// ---------------------------------------------------------------------------
 // Test 5 — Preflight: counts offloaded items, checks disk space.
 // ---------------------------------------------------------------------------
 echo "\nTest 5: preflight\n";
@@ -302,6 +319,7 @@ wp_delete_attachment( $id2, true );
 wp_delete_attachment( $id2b, true );
 wp_delete_attachment( $id3, true );
 wp_delete_attachment( $id4, true );
+wp_delete_attachment( $id4b, true );
 update_option( 'omnioffloader_settings', $original_settings, true );
 Helpers::flush_media_stats();
 

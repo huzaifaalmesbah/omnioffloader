@@ -414,6 +414,19 @@
 	outline: none;
 }
 
+// A job screen while a WP-CLI job runs (components/ui/CliJobNotice).
+.smowp-cli-job-notice.components-notice {
+	margin: 0 0 16px;
+
+	p {
+		margin: 4px 0;
+	}
+
+	.smowp-progress-wrapper {
+		margin: 8px 0;
+	}
+}
+
 // Offload / Bring Back: pointer to the job's WP-CLI command in Tools.
 .smowp-cli-hint {
 	display: flex;

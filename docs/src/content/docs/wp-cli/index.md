@@ -88,7 +88,7 @@ When another job is running, the command stops with a message like this:
 Error: A bulk offload started from the admin screen is running. Wait for it to finish, cancel it there, or pass --force.
 ```
 
-While a command runs, it holds a lock. The admin screens see the lock and will not start a second job. The lock is renewed every 30 seconds, and while a large file is still transferring. It is released when the command ends, also when you press **Ctrl-C** (when PHP's `pcntl` extension is available, which is common for the command line).
+While a command runs, it holds a lock. The admin screens see the lock and will not start a second job: the Offload, Bring Back and Tools screens show which WP-CLI job is running, with its progress, and their Start buttons wait until it finishes. The lock is renewed every 30 seconds, and while a large file is still transferring. It is released when the command ends, also when you press **Ctrl-C** (when PHP's `pcntl` extension is available, which is common for the command line).
 
 Closing the terminal also stops the command and releases its lock. To keep a job running after you close the terminal, start it with [`nohup … &`](/wp-cli/long-runs/). To stop a running job from another terminal, use [`wp omnioffloader stop`](/wp-cli/stop/).
 

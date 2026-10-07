@@ -338,6 +338,7 @@ Depending on the provider you select:
 * The WP-CLI reference on the Tools screen covers the new `move` and `stop` commands and how to keep a job running with `nohup`.
 * The Offload and Bring Back pages have a **Run this job from WP-CLI** panel whose **View command** button opens the command in the WP-CLI reference on the Tools screen (recommended for libraries of 5,000+ items).
 * Every OmniOffloader screen links to the documentation: a **Documentation** link in the page header, **Learn more** on each section and setting, and a setup guide for the selected storage provider.
+* While a WP-CLI job runs, the Offload, Bring Back and Tools screens show which one, with its progress and how to follow or stop it, and their Start buttons wait until it finishes. They check when you open them or come back to the tab, and poll only while a WP-CLI job runs.
 * Each page keeps its scroll position when you switch pages and come back, and links to a section open the page right at it.
 * Confirmations (Bring Back that deletes cloud copies, a bucket folder change, moving media, Safe mode's live-site and folder buttons) use the plugin's own dialog with clear button labels, instead of the browser's OK / Cancel box.
 * Dashboard: the status no longer says "Connected & Active" just because credentials are saved. It shows **Active**, or **Safe mode** on a copy of the site, and says when your site still loads media from the server (Serve Media from Cloud off).

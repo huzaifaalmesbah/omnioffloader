@@ -171,10 +171,10 @@ class Helpers {
 	}
 
 	/**
-	 * count_offloaded_elsewhere() for the admin screens, which ask on every
-	 * Settings and Tools visit: cached for an hour per provider, bucket and
-	 * folder, so a settings change misses the cache, and cleared with the
-	 * media stats whenever an offload, Bring Back or move changes media.
+	 * Cached count_offloaded_elsewhere() for the admin screens, which ask on
+	 * every Settings and Tools visit: kept for an hour per provider, bucket
+	 * and folder, so a settings change misses the cache, and cleared with
+	 * the media stats whenever an offload, Bring Back or move changes media.
 	 *
 	 * @since 0.1.4
 	 *

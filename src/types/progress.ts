@@ -152,3 +152,20 @@ export interface MovePreflight {
 	/** Offloaded attachments stored outside it. */
 	elsewhere: number;
 }
+
+/** A bulk job type; WP-CLI runs one of these at a time. */
+export type JobType = 'offload' | 'restore' | 'retention' | 'move';
+
+/**
+ * Mirrors CoreController::get_cli_job_response(): the WP-CLI job running
+ * now. Counts are 0 until the run first reports.
+ */
+export interface CliJob {
+	running: boolean;
+	job: JobType | '';
+	processed: number;
+	total: number;
+	failed: number;
+	/** Unix time the run started; 0 when unknown. */
+	started: number;
+}

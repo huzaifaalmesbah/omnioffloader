@@ -8,6 +8,7 @@ import { folderLabel } from '../../utils/folder';
 import { ActivityLog } from '../ui/ActivityLog';
 import { BatchScopeSelector, type ScopeMode } from '../ui/BatchScopeSelector';
 import { Card } from '../ui/Card';
+import { CliJobNotice } from '../ui/CliJobNotice';
 import { useConfirm } from '../ui/ConfirmDialog';
 import { ProgressBar } from '../ui/ProgressBar';
 import { RunAnnouncer } from '../ui/RunAnnouncer';
@@ -22,7 +23,7 @@ export const MOVE_CARD_ID = 'omnioffloader-move-media';
  * sites never change the prefix.
  */
 export function MoveFolderCard() {
-	const { stats, isDirty } = useCore();
+	const { stats, isDirty, cliJob } = useCore();
 	const { preflight, state, busy, start, cancel, showProgress, dismiss } =
 		useMoveSync();
 	const askConfirm = useConfirm();
@@ -52,6 +53,7 @@ export function MoveFolderCard() {
 	const canStart =
 		! busy &&
 		! running &&
+		! cliJob &&
 		! isDirty &&
 		! safeMode &&
 		elsewhere > 0 &&
@@ -91,6 +93,8 @@ export function MoveFolderCard() {
 				'omnioffloader'
 			) }
 		>
+			<CliJobNotice page="move" />
+
 			{ isDirty && (
 				<p className="smowp-warning">
 					{ __(

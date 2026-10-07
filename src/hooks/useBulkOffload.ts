@@ -6,7 +6,7 @@ import {
 	startBulkOffload,
 } from '../api/offload';
 import { useCore } from '../context/CoreContext';
-import { errorMessage } from '../utils/errorHelper';
+import { errorMessage, isJobRunningError } from '../utils/errorHelper';
 import type { BulkState } from '../types';
 
 const POLL_MIN = 2000;
@@ -17,7 +17,7 @@ const POLL_STEP = 250;
  * Polling state machine for the bulk offload queue.
  */
 export function useBulkOffload() {
-	const { addNotice, refreshStats } = useCore();
+	const { addNotice, refreshStats, recheckCliJob } = useCore();
 	const [ state, setState ] = useState< BulkState | null >( null );
 	const [ busy, setBusy ] = useState( false );
 	// A finished run stays in the option forever; only surface the result of a
@@ -203,6 +203,10 @@ export function useBulkOffload() {
 			} catch ( error: unknown ) {
 				addNotice( 'error', errorMessage( error ) );
 				setSessionRun( false );
+				// Another job runs, possibly from WP-CLI: show it now.
+				if ( isJobRunningError( error ) ) {
+					recheckCliJob();
+				}
 				// Re-sync with actual server state so optimistic state never stays frozen.
 				fetchBulkProgress()
 					.then( ( fresh ) => setState( fresh ) )
@@ -211,7 +215,7 @@ export function useBulkOffload() {
 				setBusy( false );
 			}
 		},
-		[ addNotice, refreshStats, startPolling ]
+		[ addNotice, refreshStats, startPolling, recheckCliJob ]
 	);
 
 	const cancel = useCallback( async () => {

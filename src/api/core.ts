@@ -1,6 +1,7 @@
 import apiFetch from '@wordpress/api-fetch';
 
 import type {
+	CliJob,
 	MediaStats,
 	ProviderInfo,
 	SafeModeStatus,
@@ -53,6 +54,14 @@ export function fetchStats( refresh = false ): Promise< MediaStats > {
 		: `?_t=${ Date.now() }`;
 	return apiFetch( {
 		path: `${ BASE }/core/stats${ query }`,
+		cache: 'no-store',
+	} );
+}
+
+/** The WP-CLI job running now, if any (see useCliJob). */
+export function fetchCliJob(): Promise< CliJob > {
+	return apiFetch( {
+		path: `${ BASE }/core/cli-job?_t=${ Date.now() }`,
 		cache: 'no-store',
 	} );
 }

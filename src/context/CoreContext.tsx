@@ -20,8 +20,10 @@ import {
 	saveCredentials,
 	testConnection,
 } from '../api/provider';
+import { useCliJob } from '../hooks/useCliJob';
 import { errorMessage } from '../utils/errorHelper';
 import type {
+	CliJob,
 	CredentialField,
 	MediaStats,
 	ProviderInfo,
@@ -64,6 +66,10 @@ interface CoreContextValue {
 	addNotice: ( status: Notice[ 'status' ], message: string ) => void;
 	removeNotice: ( id: number ) => void;
 	refreshStats: ( force?: boolean ) => void;
+	/** The WP-CLI job running now, or null. */
+	cliJob: CliJob | null;
+	/** Check again now, e.g. after a Start was refused because a job runs. */
+	recheckCliJob: () => void;
 }
 
 const CoreContext = createContext< CoreContextValue | null >( null );
@@ -195,6 +201,9 @@ export function CoreProvider( { children }: { children: React.ReactNode } ) {
 			} );
 	}, [] );
 
+	// When a WP-CLI job ends, its media counts changed.
+	const { cliJob, recheckCliJob } = useCliJob( refreshStats );
+
 	const isDirty = settingsDirty || Object.keys( credentialDraft ).length > 0;
 
 	// Warn before leaving the page with unsaved changes.
@@ -321,6 +330,8 @@ export function CoreProvider( { children }: { children: React.ReactNode } ) {
 			addNotice,
 			removeNotice,
 			refreshStats,
+			cliJob,
+			recheckCliJob,
 		} ),
 		[
 			loading,
@@ -343,6 +354,8 @@ export function CoreProvider( { children }: { children: React.ReactNode } ) {
 			addNotice,
 			removeNotice,
 			refreshStats,
+			cliJob,
+			recheckCliJob,
 		]
 	);
 

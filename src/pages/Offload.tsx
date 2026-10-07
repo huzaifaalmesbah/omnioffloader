@@ -9,6 +9,7 @@ import {
 } from '../components/ui/BatchScopeSelector';
 import { Card } from '../components/ui/Card';
 import { CliHint } from '../components/ui/CliHint';
+import { CliJobNotice, cliJobTitle } from '../components/ui/CliJobNotice';
 import { ProgressBar } from '../components/ui/ProgressBar';
 import { RunAnnouncer } from '../components/ui/RunAnnouncer';
 import { useCore } from '../context/CoreContext';
@@ -19,7 +20,7 @@ interface OffloadProps {
 }
 
 export function OffloadPage( { onNavigate }: OffloadProps ) {
-	const { stats } = useCore();
+	const { stats, cliJob } = useCore();
 	const { state, busy, start, cancel, showProgress, dismiss } =
 		useBulkOffload();
 
@@ -44,9 +45,12 @@ export function OffloadPage( { onNavigate }: OffloadProps ) {
 	const isCustomInvalid =
 		scopeMode === 'custom' && ( ! customCount || customCount < 1 );
 	const safeMode = !! stats?.safe_mode?.active;
-	const isDisabled = busy || localCount === 0 || isCustomInvalid || safeMode;
+	const isDisabled =
+		busy || !! cliJob || localCount === 0 || isCustomInvalid || safeMode;
 	let disabledReason: string = '';
-	if ( safeMode ) {
+	if ( cliJob ) {
+		disabledReason = cliJobTitle( cliJob.job );
+	} else if ( safeMode ) {
 		disabledReason = __(
 			'Safe mode is on: this site looks like a copy, so nothing is uploaded to your cloud storage.',
 			'omnioffloader'
@@ -102,6 +106,8 @@ export function OffloadPage( { onNavigate }: OffloadProps ) {
 					'omnioffloader'
 				) }
 			>
+				<CliJobNotice page="offload" />
+
 				{ ! stats?.configured && (
 					<p className="smowp-muted">
 						{ __(

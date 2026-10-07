@@ -9,6 +9,7 @@ namespace OmniOffloader\Api;
 
 use OmniOffloader\Core\FolderClaim;
 use OmniOffloader\Core\Helpers;
+use OmniOffloader\Core\Plugin;
 use OmniOffloader\Core\SafeMode;
 use OmniOffloader\Providers\ProviderRegistry;
 use OmniOffloader\Traits\OptionsHelper;
@@ -75,6 +76,8 @@ class CoreController extends BaseController {
 		);
 
 		$this->register_get_route( '/core/providers', array( $this, 'get_providers_response' ) );
+
+		$this->register_get_route( '/core/cli-job', array( $this, 'get_cli_job_response' ) );
 
 		$this->register_post_route( '/core/safe-mode/live', array( $this, 'confirm_live_site_response' ) );
 
@@ -191,6 +194,41 @@ class CoreController extends BaseController {
 		}
 
 		return rest_ensure_response( $providers );
+	}
+
+	/**
+	 * GET /core/cli-job — the WP-CLI job running now, so the admin screens
+	 * can say so and keep their Start buttons off (the start routes refuse
+	 * anyway while it runs).
+	 *
+	 * Reported only while the run's claim is alive: it is renewed every
+	 * 30 seconds and expires on its own when the process dies, so a killed
+	 * run never shows as running. Two small reads, no media queries.
+	 *
+	 * @since 0.1.4
+	 *
+	 * @return \WP_REST_Response
+	 */
+	public function get_cli_job_response() {
+		$claim = get_site_transient( Plugin::cli_job_lock_key() );
+		$job   = is_string( $claim ) ? $claim : '';
+		$run   = '' !== $job ? Plugin::get_cli_run( true ) : null;
+
+		// The record is this run's only when it names the same job.
+		if ( null !== $run && $job !== (string) $run['job'] ) {
+			$run = null;
+		}
+
+		return rest_ensure_response(
+			array(
+				'running'   => '' !== $job,
+				'job'       => $job,
+				'processed' => (int) ( $run['processed'] ?? 0 ),
+				'total'     => (int) ( $run['total'] ?? 0 ),
+				'failed'    => (int) ( $run['failed'] ?? 0 ),
+				'started'   => (int) ( $run['started'] ?? 0 ),
+			)
+		);
 	}
 
 	/**

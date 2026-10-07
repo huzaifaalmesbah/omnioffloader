@@ -108,13 +108,53 @@ These keep the cloud copy. The one exception: picked in the Media Library while 
 
 Files that are still on your server are checked against the cloud with one request per attachment. Missing files download side by side, following your [Transfer Speed](/features/transfer-speed/) setting.
 
-For large libraries, WP-CLI is usually faster and needs no open browser tab:
+## Large libraries: use WP-CLI
 
-```bash
-wp omnioffloader restore --all
-```
+:::tip[Recommended for 5,000 items or more]
+If you have SSH access to your server, bring back a big library with [WP-CLI](/wp-cli/) instead of this screen. On the Bring Back page, the **Run this job from WP-CLI** panel's **View command** button opens the command in the WP-CLI reference on the Tools screen.
+:::
 
-On the Bring Back page, the **Run this job from WP-CLI** panel's **View command** button opens this command in the WP-CLI reference on the Tools screen. See [`wp omnioffloader restore`](/wp-cli/restore/).
+Why WP-CLI is the better choice for a big library:
+
+- **No browser needed.** Nothing depends on an open tab or on WordPress's background requests, which some hosts slow down or block.
+- **No web time limits.** A web request is stopped after 30 to 60 seconds on most hosts. A terminal command is not.
+- **Easy to follow.** A progress bar, or a log file you can check from anywhere, plus `wp omnioffloader status` with the speed and time left.
+- **Safe to stop and continue.** Media that is already back on the server is skipped, so running the same command again picks up where it stopped.
+- **Stops cleanly when the disk fills up**, with how much space it needs, instead of failing file after file.
+
+Before a big Bring Back, check that the server has room: the Bring Back page shows the estimated download and the free disk space.
+
+<Steps>
+
+1. **See what would be restored.** Nothing is downloaded:
+
+   ```bash
+   wp omnioffloader restore --all --dry-run
+   ```
+
+2. **Try a small batch first**, and check a few images on your site:
+
+   ```bash
+   wp omnioffloader restore --all --limit=500
+   ```
+
+3. **Restore the rest in the background.** It keeps running after you close the terminal and writes its progress to `restore.log` in your home folder. Cloud copies are kept:
+
+   ```bash
+   nohup wp omnioffloader restore --all > ~/restore.log 2>&1 &
+   ```
+
+4. **Watch it** with `tail -f ~/restore.log` (Ctrl+C only stops watching), or `wp omnioffloader status` for the speed and time left.
+
+5. **Stop it** at any time with `wp omnioffloader stop`. Run the command from step 3 again to continue.
+
+</Steps>
+
+To delete the cloud copies too, add `--delete-cloud --yes`. Each attachment's cloud files are deleted only after all of them are verified on the server, and this can't be undone, so keep the cloud copies until you have checked your site. See [Deleting cloud copies](/wp-cli/restore/#deleting-cloud-copies).
+
+Run these from your WordPress folder, or add `--path=<wordpress-folder>`. For every option, see [`wp omnioffloader restore`](/wp-cli/restore/); for watching and timing a long run, see [Long runs and log files](/wp-cli/long-runs/).
+
+No SSH access? This screen does the same job. It runs in the background on the server, so you can close the tab and come back.
 
 ## On a staging or local copy
 

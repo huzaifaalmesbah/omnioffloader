@@ -286,6 +286,88 @@ function getCommands(): CliCommand[] {
 			],
 		},
 		{
+			name: 'wp omnioffloader move',
+			summary: __(
+				'Move media offloaded under an earlier Path Prefix into the current folder: each attachment is brought back, offloaded again, and its old copies deleted, one at a time.',
+				'omnioffloader'
+			),
+			view: 'settings',
+			viewLabel: __( 'Open Settings', 'omnioffloader' ),
+			docs: 'wp-cli/move/',
+			examples: [
+				{
+					command: 'wp omnioffloader move --all --dry-run',
+					description: __( 'List what would move.', 'omnioffloader' ),
+				},
+				{
+					command: 'wp omnioffloader move --all',
+					description: __(
+						'Move everything into the current folder.',
+						'omnioffloader'
+					),
+				},
+				{
+					command:
+						'nohup wp omnioffloader move --all --yes > ~/move.log 2>&1 &',
+					description: __(
+						'The same in the background; --yes is needed because nobody can answer the prompt.',
+						'omnioffloader'
+					),
+				},
+			],
+			options: [
+				{
+					flag: '--all',
+					description: __(
+						'Every offloaded attachment outside the current folder.',
+						'omnioffloader'
+					),
+				},
+				{
+					flag: '--ids=<ids>',
+					description: __(
+						'Comma-separated attachment IDs.',
+						'omnioffloader'
+					),
+				},
+				{
+					flag: '--limit=<number>',
+					description: __(
+						'Stop after this many attachments.',
+						'omnioffloader'
+					),
+				},
+				{
+					flag: '--keep-old',
+					description: __(
+						'Keep the old copies in the old folder.',
+						'omnioffloader'
+					),
+				},
+				{
+					flag: '--yes',
+					description: __(
+						'Skip the confirmation prompt.',
+						'omnioffloader'
+					),
+				},
+				{
+					flag: '--dry-run',
+					description: __(
+						'Show what would happen, change nothing.',
+						'omnioffloader'
+					),
+				},
+				{
+					flag: '--force',
+					description: __(
+						'Run even while an admin bulk job is active.',
+						'omnioffloader'
+					),
+				},
+			],
+		},
+		{
 			name: 'wp omnioffloader retention',
 			summary: __(
 				'Apply a retention policy to media that is already offloaded. A stricter policy deletes verified local files (refused while Serve Media from Cloud is off); a looser one downloads local copies again.',

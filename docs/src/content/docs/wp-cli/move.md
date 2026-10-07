@@ -1,0 +1,76 @@
+---
+title: wp omnioffloader move
+description: Move media offloaded under an earlier Path Prefix into the current bucket folder, one attachment at a time.
+sidebar:
+  order: 5
+---
+
+Moves offloaded media into the folder new offloads go to.
+
+Each attachment remembers the folder it was offloaded to. After you change the [Path Prefix](/features/path-prefix-and-versioning/#changing-the-prefix-later), older media stays in the old folder and keeps loading from there. `move` brings that media into the current folder, so everything is in one place again.
+
+For each attachment outside the current folder, it:
+
+1. brings it back to the server and checks every file,
+2. offloads it again into the current folder and checks it is there (your [retention policy](/features/retention-policies/) then cleans up the local files, as for any offload), and
+3. deletes its old copies, only for files that are now in the new folder.
+
+It works one attachment at a time. Even with Full Cloud Migration, only one attachment's files need room on the server at once.
+
+## Synopsis
+
+```bash
+wp omnioffloader move (--all | --ids=<ids>) [--limit=<number>] [--keep-old] [--yes] [--dry-run] [--force]
+```
+
+## Options
+
+| Option | Description |
+| --- | --- |
+| `--all` | Move every offloaded attachment that is outside the current folder. |
+| `--ids=<ids>` | Comma-separated attachment IDs to move. IDs already in the current folder are skipped. |
+| `--limit=<number>` | Stop after this many attachments. |
+| `--keep-old` | Keep the old copies in the old folder. |
+| `--yes` | Skip the confirmation question (needed in the background). |
+| `--dry-run` | List what would move, change nothing. |
+| `--force` | Run even while a bulk job started from the admin screen is active. |
+
+## Examples
+
+See what would move:
+
+```bash
+wp omnioffloader move --all --dry-run
+```
+
+```
+Would move 1240 attachment(s) into shop/:
+  53  Team photo  (now in 2026/08/)
+  112  Product video  (now in 2026/09/)
+```
+
+Move everything, in the background, with a log file (see [Long runs and log files](/wp-cli/long-runs/)):
+
+```bash
+nohup wp omnioffloader move --all --yes > ~/move.log 2>&1 &
+```
+
+Follow it with `wp omnioffloader status` and stop it with [`wp omnioffloader stop`](/wp-cli/stop/). Run the same command again to continue: attachments already moved are skipped.
+
+## Safety
+
+- The old copies are deleted only after the new ones are confirmed in the bucket.
+- If the new upload fails, the attachment stays on the server and loads from there. Run `wp omnioffloader offload --all` later to offload it.
+- Edit backups and other extra files that are not uploaded again keep their old copies.
+- Old copies in a folder that [another site took over](/features/shared-bucket/#folders-a-site-moved-away-from) are not deleted, because they may now be that site's files.
+- On a staging or development copy ([Safe mode](/features/safe-mode/)), the command refuses to run. A dry run still works.
+
+## Disk space and time
+
+| Retention policy | What each move downloads |
+| --- | --- |
+| Retain Local Files | nothing: the files are already on the server |
+| Smart Local Cleanup | the thumbnail sizes |
+| Full Cloud Migration | every file of the attachment |
+
+The command stops with a clear message when the server runs out of space.

@@ -7,7 +7,7 @@ import {
 	startBulkMove,
 } from '../api/move';
 import { useCore } from '../context/CoreContext';
-import { errorMessage } from '../utils/errorHelper';
+import { errorMessage, isJobRunningError } from '../utils/errorHelper';
 import type { MoveBulkState, MovePreflight } from '../types';
 
 const POLL_MIN = 2000;
@@ -20,7 +20,7 @@ const POLL_STEP = 250;
  * Same chained-timeout polling as useRetentionSync.
  */
 export function useMoveSync() {
-	const { addNotice, refreshStats } = useCore();
+	const { addNotice, refreshStats, recheckCliJob } = useCore();
 	const [ preflight, setPreflight ] = useState< MovePreflight | null >(
 		null
 	);
@@ -214,6 +214,10 @@ export function useMoveSync() {
 			} catch ( error: unknown ) {
 				addNotice( 'error', errorMessage( error ) );
 				setSessionRun( false );
+				// Another job runs, possibly from WP-CLI: show it now.
+				if ( isJobRunningError( error ) ) {
+					recheckCliJob();
+				}
 				fetchMoveProgress()
 					.then( ( fresh ) => setState( fresh ) )
 					.catch( () => setState( null ) );
@@ -221,7 +225,7 @@ export function useMoveSync() {
 				setBusy( false );
 			}
 		},
-		[ addNotice, preflight, refreshPreflight, startPolling ]
+		[ addNotice, preflight, refreshPreflight, startPolling, recheckCliJob ]
 	);
 
 	const cancel = useCallback( async () => {

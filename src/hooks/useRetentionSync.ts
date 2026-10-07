@@ -7,7 +7,7 @@ import {
 	startBulkRetention,
 } from '../api/retention';
 import { useCore } from '../context/CoreContext';
-import { errorMessage } from '../utils/errorHelper';
+import { errorMessage, isJobRunningError } from '../utils/errorHelper';
 import type { RetentionBulkState, RetentionPreflight } from '../types';
 
 const POLL_MIN = 2000;
@@ -20,7 +20,7 @@ const POLL_STEP = 250;
  * preflight counts.
  */
 export function useRetentionSync() {
-	const { addNotice, refreshStats } = useCore();
+	const { addNotice, refreshStats, recheckCliJob } = useCore();
 	const [ preflight, setPreflight ] = useState< RetentionPreflight | null >(
 		null
 	);
@@ -213,6 +213,10 @@ export function useRetentionSync() {
 			} catch ( error: unknown ) {
 				addNotice( 'error', errorMessage( error ) );
 				setSessionRun( false );
+				// Another job runs, possibly from WP-CLI: show it now.
+				if ( isJobRunningError( error ) ) {
+					recheckCliJob();
+				}
 				fetchRetentionProgress()
 					.then( ( fresh ) => setState( fresh ) )
 					.catch( () => setState( null ) );
@@ -220,7 +224,7 @@ export function useRetentionSync() {
 				setBusy( false );
 			}
 		},
-		[ addNotice, preflight, refreshPreflight, startPolling ]
+		[ addNotice, preflight, refreshPreflight, startPolling, recheckCliJob ]
 	);
 
 	const cancel = useCallback( async () => {

@@ -16,3 +16,18 @@ export function errorMessage( error: unknown ): string {
 
 	return __( 'Something went wrong. Please try again.', 'omnioffloader' );
 }
+
+/**
+ * Whether an apiFetch rejection is a start refused because another bulk job
+ * (possibly a WP-CLI run) is running.
+ *
+ * @param error
+ */
+export function isJobRunningError( error: unknown ): boolean {
+	return (
+		typeof error === 'object' &&
+		error !== null &&
+		'code' in error &&
+		( error as { code: unknown } ).code === 'omnioffloader_bulk_running'
+	);
+}

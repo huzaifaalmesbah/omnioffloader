@@ -7,7 +7,7 @@ import {
 	startBulkRestore,
 } from '../api/bringBack';
 import { useCore } from '../context/CoreContext';
-import { errorMessage } from '../utils/errorHelper';
+import { errorMessage, isJobRunningError } from '../utils/errorHelper';
 import type { RestoreBulkState, RestorePreflight } from '../types';
 
 const POLL_MIN = 2000;
@@ -19,7 +19,7 @@ const POLL_STEP = 250;
  * plus the disk-space preflight.
  */
 export function useBringBack() {
-	const { addNotice, refreshStats } = useCore();
+	const { addNotice, refreshStats, recheckCliJob } = useCore();
 	const [ preflight, setPreflight ] = useState< RestorePreflight | null >(
 		null
 	);
@@ -225,6 +225,10 @@ export function useBringBack() {
 			} catch ( error: unknown ) {
 				addNotice( 'error', errorMessage( error ) );
 				setSessionRun( false );
+				// Another job runs, possibly from WP-CLI: show it now.
+				if ( isJobRunningError( error ) ) {
+					recheckCliJob();
+				}
 				// Re-sync with actual server state so optimistic state never stays frozen.
 				fetchRestoreProgress()
 					.then( ( fresh ) => setState( fresh ) )
@@ -233,7 +237,13 @@ export function useBringBack() {
 				setBusy( false );
 			}
 		},
-		[ addNotice, refreshPreflight, refreshStats, startPolling ]
+		[
+			addNotice,
+			refreshPreflight,
+			refreshStats,
+			startPolling,
+			recheckCliJob,
+		]
 	);
 
 	const cancel = useCallback( async () => {

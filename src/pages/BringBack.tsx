@@ -9,6 +9,7 @@ import {
 } from '../components/ui/BatchScopeSelector';
 import { Card } from '../components/ui/Card';
 import { CliHint } from '../components/ui/CliHint';
+import { CliJobNotice, cliJobTitle } from '../components/ui/CliJobNotice';
 import { useConfirm } from '../components/ui/ConfirmDialog';
 import { ProgressBar } from '../components/ui/ProgressBar';
 import { RunAnnouncer } from '../components/ui/RunAnnouncer';
@@ -24,7 +25,7 @@ interface BringBackProps {
 }
 
 export function BringBackPage( { onNavigate }: BringBackProps ) {
-	const { stats, savedSettings: settings } = useCore();
+	const { stats, savedSettings: settings, cliJob } = useCore();
 	const askConfirm = useConfirm();
 	const { preflight, state, busy, start, cancel, showProgress, dismiss } =
 		useBringBack();
@@ -64,9 +65,15 @@ export function BringBackPage( { onNavigate }: BringBackProps ) {
 	// Safe mode turns Bring Back off unless the owner allowed it in Settings.
 	const bringBackBlocked = stats?.safe_mode?.bring_back === false;
 	const isDisabled =
-		busy || offloadedCount === 0 || isCustomInvalid || bringBackBlocked;
+		busy ||
+		!! cliJob ||
+		offloadedCount === 0 ||
+		isCustomInvalid ||
+		bringBackBlocked;
 	let disabledReason: string = '';
-	if ( bringBackBlocked ) {
+	if ( cliJob ) {
+		disabledReason = cliJobTitle( cliJob.job );
+	} else if ( bringBackBlocked ) {
 		disabledReason = __(
 			'Safe mode is on: Bring Back is turned off on this copy of the site. You can allow it (download only) in Settings.',
 			'omnioffloader'
@@ -172,6 +179,8 @@ export function BringBackPage( { onNavigate }: BringBackProps ) {
 					'omnioffloader'
 				) }
 			>
+				<CliJobNotice page="restore" />
+
 				{ ! stats?.configured && (
 					<p className="smowp-muted">
 						{ __(

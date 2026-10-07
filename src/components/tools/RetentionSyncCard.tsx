@@ -10,6 +10,7 @@ import { formatBytes } from '../../utils/formatBytes';
 import { ActivityLog } from '../ui/ActivityLog';
 import { BatchScopeSelector, type ScopeMode } from '../ui/BatchScopeSelector';
 import { Card } from '../ui/Card';
+import { CliJobNotice } from '../ui/CliJobNotice';
 import { ProgressBar } from '../ui/ProgressBar';
 import { RunAnnouncer } from '../ui/RunAnnouncer';
 
@@ -17,7 +18,7 @@ import { RunAnnouncer } from '../ui/RunAnnouncer';
  * Apply the saved retention policy to media offloaded under an older one.
  */
 export function RetentionSyncCard() {
-	const { stats, isDirty } = useCore();
+	const { stats, isDirty, cliJob } = useCore();
 	const { preflight, state, busy, start, cancel, showProgress, dismiss } =
 		useRetentionSync();
 
@@ -65,6 +66,7 @@ export function RetentionSyncCard() {
 	const canStart =
 		! busy &&
 		! running &&
+		! cliJob &&
 		! isDirty &&
 		eligible > 0 &&
 		! isCustomInvalid &&
@@ -82,6 +84,8 @@ export function RetentionSyncCard() {
 				'omnioffloader'
 			) }
 		>
+			<CliJobNotice page="retention" />
+
 			{ isDirty && (
 				<p className="smowp-warning">
 					{ __(

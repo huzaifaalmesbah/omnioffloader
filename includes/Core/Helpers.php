@@ -171,6 +171,31 @@ class Helpers {
 	}
 
 	/**
+	 * Offloaded attachments stored in a provider's bucket.
+	 *
+	 * @since 0.1.4
+	 *
+	 * @param string $provider_key Provider key.
+	 * @param string $bucket       Bucket name.
+	 * @return int
+	 */
+	public static function count_offloaded_in_bucket( $provider_key, $bucket ) {
+		global $wpdb;
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- one count when a bucket setting is saved.
+		return (int) $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT COUNT(*) FROM {$wpdb->postmeta} o
+				 INNER JOIN {$wpdb->postmeta} p ON p.post_id = o.post_id AND p.meta_key = 'omnioffloader_provider' AND p.meta_value = %s
+				 INNER JOIN {$wpdb->postmeta} b ON b.post_id = o.post_id AND b.meta_key = 'omnioffloader_bucket' AND b.meta_value = %s
+				 WHERE o.meta_key = 'omnioffloader_offloaded' AND o.meta_value = '1'",
+				$provider_key,
+				$bucket
+			)
+		);
+	}
+
+	/**
 	 * IDs of the attachments count_offloaded_elsewhere() counts, failed
 	 * ones last, for `wp omnioffloader move`.
 	 *
@@ -207,20 +232,45 @@ class Helpers {
 	 * @return bool
 	 */
 	public static function is_offloaded_elsewhere( $attachment_id, $prefix ) {
+		if ( '1' !== (string) get_post_meta( $attachment_id, 'omnioffloader_offloaded', true ) ) {
+			return false;
+		}
+
+		list( $provider, $bucket ) = self::active_location();
+
+		$stored_provider = (string) get_post_meta( $attachment_id, 'omnioffloader_provider', true );
+		$stored_bucket   = (string) get_post_meta( $attachment_id, 'omnioffloader_bucket', true );
+
+		// Offloaded to another provider or bucket (an older setting).
+		if ( ( '' !== $stored_provider && $stored_provider !== $provider ) || ( '' !== $stored_bucket && $stored_bucket !== $bucket ) ) {
+			return true;
+		}
+
 		$path     = (string) get_post_meta( $attachment_id, 'omnioffloader_path', true );
 		$attached = (string) get_post_meta( $attachment_id, '_wp_attached_file', true );
 		$dir      = dirname( $attached );
 		$dir      = ( '.' === $dir || '' === $dir ) ? '' : trailingslashit( $dir );
 
-		return '1' === (string) get_post_meta( $attachment_id, 'omnioffloader_offloaded', true )
-			&& 0 !== strpos( $path, $prefix . $dir );
+		return 0 !== strpos( $path, $prefix . $dir );
+	}
+
+	/**
+	 * The active provider key and its bucket.
+	 *
+	 * @return array{0: string, 1: string}
+	 */
+	private static function active_location() {
+		$provider = (string) Plugin::get_provider_key();
+
+		return array( $provider, '' !== $provider ? self::get_credential( $provider, 'bucket' ) : '' );
 	}
 
 	/**
 	 * FROM / WHERE of the "offloaded outside this folder" queries.
 	 *
-	 * An attachment is in the folder when its stored path starts with the
-	 * prefix plus its upload folder ("2026/09/", or "" at the root), which is
+	 * An attachment is in the folder when it was offloaded to the active
+	 * provider and bucket, and its stored path starts with the prefix plus
+	 * its upload folder ("2026/09/", or "" at the root), which is
 	 * _wp_attached_file without its file name.
 	 *
 	 * @param string $prefix Current folder.
@@ -229,13 +279,23 @@ class Helpers {
 	private static function elsewhere_sql( $prefix ) {
 		global $wpdb;
 
+		list( $provider, $bucket ) = self::active_location();
+
 		return $wpdb->prepare(
 			"FROM {$wpdb->postmeta} p
 			 INNER JOIN {$wpdb->postmeta} o ON o.post_id = p.post_id AND o.meta_key = 'omnioffloader_offloaded' AND o.meta_value = '1'
 			 INNER JOIN {$wpdb->postmeta} f ON f.post_id = p.post_id AND f.meta_key = '_wp_attached_file'
+			 LEFT JOIN {$wpdb->postmeta} pv ON pv.post_id = p.post_id AND pv.meta_key = 'omnioffloader_provider'
+			 LEFT JOIN {$wpdb->postmeta} bk ON bk.post_id = p.post_id AND bk.meta_key = 'omnioffloader_bucket'
 			 WHERE p.meta_key = 'omnioffloader_path'
-			 AND LEFT( p.meta_value, CHAR_LENGTH( %s ) + CHAR_LENGTH( f.meta_value ) - CHAR_LENGTH( SUBSTRING_INDEX( f.meta_value, '/', -1 ) ) )
-			     <> CONCAT( %s, LEFT( f.meta_value, CHAR_LENGTH( f.meta_value ) - CHAR_LENGTH( SUBSTRING_INDEX( f.meta_value, '/', -1 ) ) ) )",
+			 AND (
+			     ( pv.meta_value IS NOT NULL AND pv.meta_value <> '' AND pv.meta_value <> %s )
+			     OR ( bk.meta_value IS NOT NULL AND bk.meta_value <> '' AND bk.meta_value <> %s )
+			     OR LEFT( p.meta_value, CHAR_LENGTH( %s ) + CHAR_LENGTH( f.meta_value ) - CHAR_LENGTH( SUBSTRING_INDEX( f.meta_value, '/', -1 ) ) )
+			        <> CONCAT( %s, LEFT( f.meta_value, CHAR_LENGTH( f.meta_value ) - CHAR_LENGTH( SUBSTRING_INDEX( f.meta_value, '/', -1 ) ) ) )
+			 )",
+			$provider,
+			$bucket,
 			$prefix,
 			$prefix
 		);

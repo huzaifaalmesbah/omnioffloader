@@ -63,6 +63,29 @@ trait AttachmentHelper {
 	}
 
 	/**
+	 * The CDN / public domain an offloaded attachment is served from: the
+	 * one of the provider it was offloaded to, which is not the active one
+	 * after a provider switch. That provider's saved settings still hold it.
+	 *
+	 * @since 0.1.4
+	 *
+	 * @param int                                        $attachment_id Attachment ID.
+	 * @param \OmniOffloader\Providers\ProviderInterface $active        Active provider.
+	 * @return string Empty when unknown.
+	 */
+	public static function cloud_domain( $attachment_id, \OmniOffloader\Providers\ProviderInterface $active ) {
+		$stored = (string) get_post_meta( $attachment_id, 'omnioffloader_provider', true );
+
+		if ( '' === $stored || $stored === $active->get_key() ) {
+			return $active->get_domain();
+		}
+
+		$provider = \OmniOffloader\Services\AttachmentRestorer::provider_for( $attachment_id );
+
+		return null !== $provider ? $provider->get_domain() : '';
+	}
+
+	/**
 	 * Whether one file of an attachment loads from the cloud.
 	 *
 	 * @since 0.1.4

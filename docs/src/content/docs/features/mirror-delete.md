@@ -22,7 +22,7 @@ Change it in **Settings → Behavior → Mirror Delete**.
 
 Mirror Delete runs when an attachment is **deleted permanently** in WordPress, for example with **Delete permanently** in the Media Library. It only affects attachments that were offloaded.
 
-It only deletes from the provider that is active now. An attachment that was offloaded to a different provider, before you switched, is not deleted from that old provider.
+It deletes from the provider the attachment was offloaded to, also after you switched to another provider, as long as that provider's settings are still saved.
 
 ## When it never runs
 

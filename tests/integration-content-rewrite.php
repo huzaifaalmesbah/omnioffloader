@@ -14,6 +14,43 @@ require_once OMNIOFFLOADER_DIR . 'tests/MockProvider.php';
 use OmniOffloader\Offload\Observers\ContentImageTagObserver;
 use OmniOffloader\Tests\MockProvider;
 
+/**
+ * A provider with its own key and domain, for a provider switch.
+ */
+class OmnioffloaderRewriteOldProvider extends MockProvider {
+	/**
+	 * Bucket dir.
+	 *
+	 * @var string
+	 */
+	public static $dir = '';
+
+	/**
+	 * Constructor.
+	 */
+	public function __construct() {
+		parent::__construct( self::$dir );
+	}
+
+	/**
+	 * Key.
+	 *
+	 * @return string
+	 */
+	public function get_key() {
+		return 'mock_old';
+	}
+
+	/**
+	 * Domain.
+	 *
+	 * @return string
+	 */
+	public function get_domain() {
+		return 'https://old-cdn.example.test';
+	}
+}
+
 global $passed, $failed;
 $passed = 0;
 $failed = 0;
@@ -103,6 +140,24 @@ $out = $observer->rewrite_block(
 omnioffloader_rewrite_check( false !== strpos( $out, 'src="' . $url_a . '"' ), "A's main image stays local" );
 omnioffloader_rewrite_check( false !== strpos( $out, $cloud_thumb . ' 150w' ), "A's size points to the cloud" );
 omnioffloader_rewrite_check( false !== strpos( $out, 'href="' . $url_b . '"' ), "B's link stays local" );
+
+echo "\nTest 3: after a provider switch\n";
+update_option( 'omnioffloader_settings', array_merge( $original, array( 'serve_from_cloud' => true ) ), true );
+OmnioffloaderRewriteOldProvider::$dir = $bucket;
+add_filter(
+	'omnioffloader_cloud_providers',
+	static function ( $providers ) {
+		$providers['mock_old'] = OmnioffloaderRewriteOldProvider::class;
+
+		return $providers;
+	}
+);
+update_post_meta( $a, 'omnioffloader_provider', 'mock_old' );
+update_post_meta( $a, 'omnioffloader_retention', 0 );
+$url_rewrite = new OmniOffloader\Offload\Observers\UrlRewriteObserver( new MockProvider( $bucket ) );
+omnioffloader_rewrite_check( 'https://old-cdn.example.test/site-a/' . $subdir . wp_basename( $url_a ) === $url_rewrite->rewrite( $url_a, $a ), 'A keeps the domain of the provider it was offloaded to' );
+update_post_meta( $a, 'omnioffloader_provider', 'mock' );
+omnioffloader_rewrite_check( $cloud_a === $url_rewrite->rewrite( $url_a, $a ), 'media on the active provider uses its domain' );
 
 echo "\nCleanup…\n";
 wp_delete_attachment( $a, true );

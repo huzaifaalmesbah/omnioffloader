@@ -18,6 +18,10 @@ if ( ! defined( 'OMNIOFFLOADER_SAFE_MODE' ) ) {
 	define( 'OMNIOFFLOADER_SAFE_MODE', false );
 }
 
+// This site may have offloaded media; the Path Prefix lock would refuse
+// every folder change before the folder check runs.
+add_filter( 'omnioffloader_lock_path_prefix', '__return_false' );
+
 use OmniOffloader\Core\FolderClaim;
 use OmniOffloader\Core\SafeMode;
 use OmniOffloader\Tests\MockProvider;

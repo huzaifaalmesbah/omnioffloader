@@ -96,6 +96,9 @@ export function SettingsPage( { onNavigate }: SettingsProps ) {
 		!! savedSettings &&
 		offloadedCount > 0 &&
 		savedFolder !== uploadFolder( settings );
+	// The server refuses the change (omnioffloader_prefix_locked), except in
+	// Safe mode, where a new folder is usually the fix.
+	const prefixLocked = ! stats?.safe_mode?.active;
 	const folderLabel = ( folder: string ) =>
 		folder || __( 'the bucket root', 'omnioffloader' );
 	const keepsLocalFiles =
@@ -517,8 +520,74 @@ export function SettingsPage( { onNavigate }: SettingsProps ) {
 					/>
 				) }
 
-				{ folderChanges && (
-					<Notice status="warning" isDismissible={ false }>
+				{ folderChanges && prefixLocked && (
+					<Notice
+						status="error"
+						isDismissible={ false }
+						className="smowp-prefix-notice"
+						actions={ [
+							{
+								label: __( 'Open Bring Back', 'omnioffloader' ),
+								onClick: () => onNavigate( 'bring-back' ),
+								variant: 'primary',
+							},
+							{
+								label: __( 'Undo change', 'omnioffloader' ),
+								onClick: () =>
+									savedSettings &&
+									updateSettings( {
+										path_prefix_active:
+											savedSettings.path_prefix_active,
+										path_prefix: savedSettings.path_prefix,
+									} ),
+								variant: 'secondary',
+							},
+						] }
+					>
+						<p>
+							<strong>
+								{ sprintf(
+									/* translators: 1: number of offloaded attachments, 2: bucket folder. */
+									_n(
+										'%1$s offloaded attachment is stored in %2$s, so the Path Prefix cannot be changed now.',
+										'%1$s offloaded attachments are stored in %2$s, so the Path Prefix cannot be changed now.',
+										offloadedCount,
+										'omnioffloader'
+									),
+									offloadedCount.toLocaleString(),
+									folderLabel( savedFolder )
+								) }
+							</strong>
+						</p>
+						<ol>
+							<li>
+								{ __(
+									'Bring all media back to the server with Bring Back.',
+									'omnioffloader'
+								) }
+							</li>
+							<li>
+								{ __(
+									'Change the Path Prefix here and save.',
+									'omnioffloader'
+								) }
+							</li>
+							<li>
+								{ __(
+									'Offload your media again: it goes to the new folder.',
+									'omnioffloader'
+								) }
+							</li>
+						</ol>
+					</Notice>
+				) }
+
+				{ folderChanges && ! prefixLocked && (
+					<Notice
+						status="warning"
+						isDismissible={ false }
+						className="smowp-prefix-notice"
+					>
 						{ sprintf(
 							/* translators: 1: number of offloaded attachments, 2: current bucket folder, 3: new bucket folder. */
 							_n(

@@ -115,6 +115,9 @@ abstract class AbstractS3Provider implements ProviderInterface {
 	 * @return void
 	 */
 	public function set_credential_overrides( array $overrides ) {
+		// The cached domain may come from the saved settings.
+		$this->domain = null;
+
 		$this->credential_overrides = $overrides;
 		$this->client               = null;
 	}

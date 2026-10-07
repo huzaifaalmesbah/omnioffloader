@@ -157,6 +157,57 @@ class ProviderController extends BaseController {
 	}
 
 	/**
+	 * A region is a short code such as "eu-central-1". Some providers build
+	 * their endpoint from it (Wasabi: https://s3.{region}.wasabisys.com), so
+	 * anything else could change the host the server connects to.
+	 *
+	 * @since 0.1.4
+	 *
+	 * @param string $region Region from the request.
+	 * @return \WP_Error|null
+	 */
+	private static function region_refusal( $region ) {
+		$region = trim( (string) $region );
+
+		if ( '' === $region || 1 === preg_match( '/^[A-Za-z0-9-]+$/', $region ) ) {
+			return null;
+		}
+
+		return new \WP_Error(
+			'omnioffloader_invalid_region',
+			__( 'The region may only contain letters, numbers and dashes, for example eu-central-1.', 'omnioffloader' ),
+			array( 'status' => 400 )
+		);
+	}
+
+	/**
+	 * Which storage-location field a save changes, if any: the bucket, or
+	 * the endpoint or region that says where it is.
+	 *
+	 * @since 0.1.4
+	 *
+	 * @param string                $provider_key Provider key.
+	 * @param array<string, string> $to_save      Fields about to be saved.
+	 * @return string The changed field, or '' when none.
+	 */
+	private static function changed_location( $provider_key, array $to_save ) {
+		foreach ( array( 'bucket', 'endpoint', 'region' ) as $field ) {
+			if ( ! isset( $to_save[ $field ] ) ) {
+				continue;
+			}
+
+			$old = untrailingslashit( trim( Helpers::get_credential( $provider_key, $field ) ) );
+			$new = untrailingslashit( trim( $to_save[ $field ] ) );
+
+			if ( '' !== $old && $new !== $old ) {
+				return $field;
+			}
+		}
+
+		return '';
+	}
+
+	/**
 	 * POST /provider/credentials
 	 *
 	 * @param WP_REST_Request $request Request.
@@ -201,19 +252,22 @@ class ProviderController extends BaseController {
 			$to_save[ $name ] = $value;
 		}
 
-		$refused = self::endpoint_refusal( $to_save['endpoint'] ?? '' );
+		$refused = self::endpoint_refusal( $to_save['endpoint'] ?? '' ) ?? self::region_refusal( $to_save['region'] ?? '' );
 
 		if ( null !== $refused ) {
 			return $refused;
 		}
 
-		// A provider keeps one bucket, so media offloaded to the old one could
-		// no longer load or be brought back. Bring it back first. In Safe mode
-		// a bucket of its own is how a copy stops sharing the live one.
-		$old_bucket = Helpers::get_credential( $provider_key, 'bucket' );
+		// A provider keeps one storage location (bucket, plus the endpoint or
+		// region that says where it is), so media offloaded to the old one
+		// could no longer load or be brought back. Bring it back first. In
+		// Safe mode a location of its own is how a copy stops sharing the
+		// live one.
+		$moved = self::changed_location( $provider_key, $to_save );
 
-		if ( isset( $to_save['bucket'] ) && '' !== $old_bucket && trim( $to_save['bucket'] ) !== $old_bucket && ! SafeMode::is_active() ) {
-			$offloaded = Helpers::count_offloaded_in_bucket( $provider_key, $old_bucket );
+		if ( '' !== $moved && ! SafeMode::is_active() ) {
+			$old_bucket = Helpers::get_credential( $provider_key, 'bucket' );
+			$offloaded  = Helpers::count_offloaded_in_bucket( $provider_key, $old_bucket );
 
 			if ( $offloaded > 0 ) {
 				return new \WP_Error(
@@ -221,8 +275,8 @@ class ProviderController extends BaseController {
 					sprintf(
 						/* translators: 1: number of offloaded attachments, 2: bucket name. */
 						_n(
-							'%1$s offloaded attachment is stored in the bucket "%2$s". Changing the bucket would break its URL and Bring Back. First bring all media back to the server (Bring Back), then change the bucket and offload again.',
-							'%1$s offloaded attachments are stored in the bucket "%2$s". Changing the bucket would break their URLs and Bring Back. First bring all media back to the server (Bring Back), then change the bucket and offload again.',
+							'%1$s offloaded attachment is stored in the bucket "%2$s". Changing the bucket, its region or its endpoint would break its URL and Bring Back. First bring all media back to the server (Bring Back), then make the change and offload again.',
+							'%1$s offloaded attachments are stored in the bucket "%2$s". Changing the bucket, its region or its endpoint would break their URLs and Bring Back. First bring all media back to the server (Bring Back), then make the change and offload again.',
 							$offloaded,
 							'omnioffloader'
 						),
@@ -277,7 +331,7 @@ class ProviderController extends BaseController {
 				$sanitized[ sanitize_key( (string) $field_name ) ] = sanitize_text_field( (string) $field_val );
 			}
 
-			$refused = self::endpoint_refusal( $sanitized['endpoint'] ?? '' );
+			$refused = self::endpoint_refusal( $sanitized['endpoint'] ?? '' ) ?? self::region_refusal( $sanitized['region'] ?? '' );
 
 			if ( null !== $refused ) {
 				return $refused;

@@ -145,7 +145,12 @@ class BulkMoveProcessor extends AbstractBulkProcessor {
 			return true;
 		}
 
-		$short = AttachmentRestorer::disk_shortfall( $attachment_id );
+		if ( null === $this->mover ) {
+			$this->mover = new AttachmentMover( $this->provider );
+		}
+
+		// A copy inside the bucket downloads nothing.
+		$short = $this->mover->can_copy_in_bucket( $attachment_id ) ? 0 : AttachmentRestorer::disk_shortfall( $attachment_id );
 
 		if ( $short > 0 ) {
 			$this->item_messages[ $attachment_id ] = __( 'Not enough free disk space.', 'omnioffloader' );
@@ -158,10 +163,6 @@ class BulkMoveProcessor extends AbstractBulkProcessor {
 			);
 
 			return false;
-		}
-
-		if ( null === $this->mover ) {
-			$this->mover = new AttachmentMover( $this->provider );
 		}
 
 		$ok = $this->mover->move( $attachment_id );

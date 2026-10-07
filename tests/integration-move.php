@@ -53,6 +53,14 @@ class OmnioffloaderMoveMockProvider extends MockProvider {
 	public static $copy_fails = false;
 
 	/**
+	 * Fail only the copies of generated sizes (keys with -WxH), as a
+	 * throttled request would.
+	 *
+	 * @var bool
+	 */
+	public static $size_copy_fails = false;
+
+	/**
 	 * Constructor.
 	 */
 	public function __construct() {
@@ -80,9 +88,22 @@ class OmnioffloaderMoveMockProvider extends MockProvider {
 	 * @return array<string, bool>
 	 */
 	public function copy_objects( array $pairs, $concurrency = 1 ) {
-		return self::$copy_fails
-			? array_fill_keys( wp_list_pluck( $pairs, 'to' ), false )
-			: parent::copy_objects( $pairs, $concurrency );
+		if ( self::$copy_fails ) {
+			return array_fill_keys( wp_list_pluck( $pairs, 'to' ), false );
+		}
+
+		$copied = parent::copy_objects( $pairs, $concurrency );
+
+		if ( self::$size_copy_fails ) {
+			foreach ( $pairs as $pair ) {
+				if ( preg_match( '/-\d+x\d+\./', $pair['to'] ) ) {
+					@unlink( self::$dir . '/' . $pair['to'] ); // phpcs:ignore
+					$copied[ $pair['to'] ] = false;
+				}
+			}
+		}
+
+		return $copied;
 	}
 }
 
@@ -218,6 +239,19 @@ omnioffloader_move_check( true === $mover->move( $e ), 'move() returned success'
 omnioffloader_move_check( 0 < OmnioffloaderMoveMockProvider::$downloads, 'downloaded, then uploaded again' );
 omnioffloader_move_check( 0 === strpos( (string) get_post_meta( $e, 'omnioffloader_path', true ), 'move-new/' ), 'stored path is in the new folder' );
 omnioffloader_move_check( array() === array_filter( $old_e, array( $provider, 'object_exists' ) ), 'old copies deleted' );
+
+echo "\nTest 3b: a size fails to copy although it exists (throttled)\n";
+$f     = omnioffloader_move_attachment( 'move-test-f.jpg' );
+$prefix( 'move-old' );
+$uploader->upload( $f );
+$prefix( 'move-new' );
+OmnioffloaderMoveMockProvider::$size_copy_fails = true;
+OmnioffloaderMoveMockProvider::$downloads       = 0;
+omnioffloader_move_check( true === $mover->move( $f ), 'move() still succeeded' );
+OmnioffloaderMoveMockProvider::$size_copy_fails = false;
+omnioffloader_move_check( 0 < OmnioffloaderMoveMockProvider::$downloads, 'not switched on a partial copy: moved through the server instead' );
+omnioffloader_move_check( array() === array_filter( omnioffloader_move_keys( $f ), static fn( $key ) => ! $provider->object_exists( $key ) ), 'every file, sizes included, is in the new folder' );
+wp_delete_attachment( $f, true );
 
 echo "\nTest 4: the copy is not possible and the new upload fails\n";
 $skip = static fn( $should, $id ) => $id === $c ? false : $should;

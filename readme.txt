@@ -331,6 +331,7 @@ Depending on the provider you select:
 * Picking Offload or Bring Back in the Media Library for items that have nothing to do (already offloaded, or already local) while a bulk job of the same kind runs no longer stops that job.
 * Safe mode: **This is the live site** now asks for confirmation before turning Safe mode off, since clicking it on a staging copy lets that copy write to the live site's cloud storage. If it fails, the real reason is shown.
 * Bring Back (and loosening the retention policy) no longer fails for an image whose original was already gone before it was offloaded, for example removed by an image optimizer. Only the attachment's own file must be restored.
+* Bulk Bring Back with **Delete from Cloud After Restore** now asks for confirmation before it starts, as WP-CLI's `--delete-cloud` does.
 
 = 0.1.3 =
 

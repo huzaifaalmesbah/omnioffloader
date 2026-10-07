@@ -188,8 +188,9 @@ class MoveCommand {
 		$stopped   = false;
 
 		foreach ( $ids as $id ) {
-			// The attachment comes back to the server for a moment.
-			$no_room = AttachmentRestorer::disk_shortfall( $id );
+			// Moved through the server, the attachment comes back for a
+			// moment; a copy inside the bucket downloads nothing.
+			$no_room = $mover->can_copy_in_bucket( $id ) ? 0 : AttachmentRestorer::disk_shortfall( $id );
 
 			if ( $no_room > 0 ) {
 				break;

@@ -411,6 +411,20 @@ class ContentImageTagObserver implements ObserverInterface {
 			}
 		}
 
+		// Pre-edit sizes of an edited image: old post content may still link
+		// them, and they were offloaded with the attachment.
+		if ( $with_main ) {
+			$backups = get_post_meta( $attachment_id, '_wp_attachment_backup_sizes', true );
+
+			if ( is_array( $backups ) ) {
+				foreach ( $backups as $size_data ) {
+					if ( is_array( $size_data ) ) {
+						$files = array_merge( $files, self::files_from_size_data( $size_data ) );
+					}
+				}
+			}
+		}
+
 		$files = array_filter( $files, static fn( $file ) => '' !== $file );
 
 		if ( empty( $files ) ) {

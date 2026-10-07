@@ -266,7 +266,9 @@ class Helpers {
 	}
 
 	/**
-	 * FROM / WHERE of the "offloaded outside this folder" queries.
+	 * FROM / WHERE of the "offloaded outside this folder" queries. Compared
+	 * byte for byte (BINARY): bucket keys are case-sensitive, the column's
+	 * collation is not.
 	 *
 	 * An attachment is in the folder when it was offloaded to the active
 	 * provider and bucket, and its stored path starts with the prefix plus
@@ -289,10 +291,10 @@ class Helpers {
 			 LEFT JOIN {$wpdb->postmeta} bk ON bk.post_id = p.post_id AND bk.meta_key = 'omnioffloader_bucket'
 			 WHERE p.meta_key = 'omnioffloader_path'
 			 AND (
-			     ( pv.meta_value IS NOT NULL AND pv.meta_value <> '' AND pv.meta_value <> %s )
-			     OR ( bk.meta_value IS NOT NULL AND bk.meta_value <> '' AND bk.meta_value <> %s )
-			     OR LEFT( p.meta_value, CHAR_LENGTH( %s ) + CHAR_LENGTH( f.meta_value ) - CHAR_LENGTH( SUBSTRING_INDEX( f.meta_value, '/', -1 ) ) )
-			        <> CONCAT( %s, LEFT( f.meta_value, CHAR_LENGTH( f.meta_value ) - CHAR_LENGTH( SUBSTRING_INDEX( f.meta_value, '/', -1 ) ) ) )
+			     ( pv.meta_value IS NOT NULL AND pv.meta_value <> '' AND BINARY pv.meta_value <> BINARY %s )
+			     OR ( bk.meta_value IS NOT NULL AND bk.meta_value <> '' AND BINARY bk.meta_value <> BINARY %s )
+			     OR BINARY LEFT( p.meta_value, CHAR_LENGTH( %s ) + CHAR_LENGTH( f.meta_value ) - CHAR_LENGTH( SUBSTRING_INDEX( f.meta_value, '/', -1 ) ) )
+			        <> BINARY CONCAT( %s, LEFT( f.meta_value, CHAR_LENGTH( f.meta_value ) - CHAR_LENGTH( SUBSTRING_INDEX( f.meta_value, '/', -1 ) ) ) )
 			 )",
 			$provider,
 			$bucket,

@@ -120,6 +120,38 @@ class AttachmentMover {
 	}
 
 	/**
+	 * Whether the attachment can be moved by a copy inside the bucket: it is
+	 * in the active provider's bucket, and the provider can copy. Such a move
+	 * needs no disk space on this server.
+	 *
+	 * @param int $attachment_id Attachment ID.
+	 * @return bool
+	 */
+	public function can_copy_in_bucket( $attachment_id ) {
+		return method_exists( $this->provider, 'copy_objects' )
+			&& (string) get_post_meta( $attachment_id, 'omnioffloader_provider', true ) === $this->provider->get_key()
+			&& (string) get_post_meta( $attachment_id, 'omnioffloader_bucket', true ) === (string) $this->provider->get_bucket();
+	}
+
+	/**
+	 * The longest string all keys start with, for one listing request.
+	 *
+	 * @param string[] $keys Object keys.
+	 * @return string
+	 */
+	private static function common_prefix( array $keys ) {
+		$prefix = (string) array_shift( $keys );
+
+		foreach ( $keys as $key ) {
+			while ( '' !== $prefix && 0 !== strpos( (string) $key, $prefix ) ) {
+				$prefix = substr( $prefix, 0, -1 );
+			}
+		}
+
+		return $prefix;
+	}
+
+	/**
 	 * Move by copying inside the bucket: no download, no upload.
 	 *
 	 * @param int  $attachment_id Attachment ID.
@@ -132,9 +164,7 @@ class AttachmentMover {
 	private function move_in_bucket( $attachment_id, $delete_old ) {
 		$provider = $this->provider;
 
-		if ( ! method_exists( $provider, 'copy_objects' )
-			|| (string) get_post_meta( $attachment_id, 'omnioffloader_provider', true ) !== $provider->get_key()
-			|| (string) get_post_meta( $attachment_id, 'omnioffloader_bucket', true ) !== (string) $provider->get_bucket() ) {
+		if ( ! $this->can_copy_in_bucket( $attachment_id ) ) {
 			return null;
 		}
 
@@ -162,7 +192,8 @@ class AttachmentMover {
 			);
 		}
 
-		if ( '' === $main || empty( $pairs ) ) {
+		// Checked in can_copy_in_bucket() too; repeated where it is used.
+		if ( '' === $main || empty( $pairs ) || ! method_exists( $provider, 'copy_objects' ) ) {
 			return null;
 		}
 
@@ -177,15 +208,18 @@ class AttachmentMover {
 		);
 
 		// Offload skips files that were not on disk, so an object may never
-		// have existed. Any other failed copy (an object over 5 GB, an
-		// error) means this way does not work for the attachment.
+		// have existed. That needs a definite answer: a bucket listing. A HEAD
+		// request that errors (throttling, a timeout) would read as "missing"
+		// and switch the attachment to a folder without those files. Any
+		// other failed copy (an object over 5 GB, an error) means this way
+		// does not work for the attachment.
 		if ( ! empty( $failed ) ) {
-			$missing = wp_list_pluck( $failed, 'from' );
-			$exists  = method_exists( $provider, 'objects_exist' )
-				? $provider->objects_exist( $missing, AttachmentUploader::files_at_once() )
-				: array_combine( $missing, array_map( array( $provider, 'object_exists' ), $missing ) );
+			$sources = wp_list_pluck( $failed, 'from' );
+			$listed  = method_exists( $provider, 'list_object_sizes' )
+				? $provider->list_object_sizes( self::common_prefix( $sources ) )
+				: false;
 
-			if ( empty( $copied[ $pairs[ $main ]['to'] ] ) || in_array( true, $exists, true ) ) {
+			if ( empty( $copied[ $pairs[ $main ]['to'] ] ) || false === $listed || array() !== array_intersect_key( $listed, array_flip( $sources ) ) ) {
 				return $this->undo_copies( $attachment_id, $copied );
 			}
 		}

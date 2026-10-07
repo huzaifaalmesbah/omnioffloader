@@ -325,6 +325,9 @@ Depending on the provider you select:
 
 * Switching to another storage provider no longer breaks media you already offloaded: it keeps loading from the provider it was offloaded to (through its saved settings), Mirror Delete deletes it there, and Move Media brings it over to the new provider.
 * The bucket can no longer be changed while media is offloaded to it, which used to break those URLs and Bring Back. Settings warns under the Bucket field, with the steps: Bring Back, change the bucket, offload again.
+* Moving media to the current folder: a copy that fails because of a temporary error (for example throttling) no longer switches an attachment to the new folder with thumbnails missing; that attachment is moved through the server instead. A move inside the bucket no longer stops for lack of disk space, since it downloads nothing.
+* Sharing a bucket: folders a site used before this version are now known too, so their protection covers them.
+* The storage location is locked like the bucket: changing a provider's endpoint or region while media is offloaded there is refused too. A region may only contain letters, numbers and dashes.
 * Multisite: a site administrator can no longer point a provider at a private or local endpoint address (only a network administrator can), so a sub-site can't make the server send requests into its own network.
 * Accessibility: screen readers now hear when a bulk job starts, the result of Test Connection, and why a Start button is disabled (now also shown as text under the button instead of only in a tooltip); after switching pages, focus moves to the new page's title.
 * Dashboard: the status no longer says "Connected & Active" just because credentials are saved. It shows **Active**, or **Safe mode** on a copy of the site, and says when your site still loads media from the server (Serve Media from Cloud off).

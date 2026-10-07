@@ -212,10 +212,77 @@ class FolderClaim {
 	 * @return string[]
 	 */
 	public static function folders_used( $provider_key, $bucket ) {
-		$all  = get_option( self::FOLDERS_OPTION, array() );
-		$list = is_array( $all ) ? ( $all[ md5( $provider_key . '|' . $bucket ) ] ?? array() ) : array();
+		$all = get_option( self::FOLDERS_OPTION );
+
+		// First read since the list exists (0.1.4): folders used before it
+		// are only known from the media itself.
+		if ( ! is_array( $all ) ) {
+			$all = self::seed_folders();
+		}
+
+		$list = $all[ md5( $provider_key . '|' . $bucket ) ] ?? array();
 
 		return is_array( $list ) ? array_values( array_map( 'strval', $list ) ) : array();
+	}
+
+	/**
+	 * Build the folder list from the paths offloaded media is stored under,
+	 * per provider and bucket, and save it.
+	 *
+	 * A stored path is the folder, the upload folder and an optional version
+	 * segment ("shop/2026/09/[20260925143012/]"), so the folder is what comes
+	 * before the attachment's upload folder. Media at the uploads root has no
+	 * upload folder to anchor on and is skipped.
+	 *
+	 * @since 0.1.4
+	 *
+	 * @return array<string, string[]>
+	 */
+	private static function seed_folders() {
+		global $wpdb;
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- one-time seed of a stored list.
+		$rows = $wpdb->get_results(
+			"SELECT pv.meta_value AS provider, bk.meta_value AS bucket, p.meta_value AS path, MIN( f.meta_value ) AS attached
+			 FROM {$wpdb->postmeta} p
+			 INNER JOIN {$wpdb->postmeta} o ON o.post_id = p.post_id AND o.meta_key = 'omnioffloader_offloaded' AND o.meta_value = '1'
+			 INNER JOIN {$wpdb->postmeta} f ON f.post_id = p.post_id AND f.meta_key = '_wp_attached_file'
+			 INNER JOIN {$wpdb->postmeta} pv ON pv.post_id = p.post_id AND pv.meta_key = 'omnioffloader_provider'
+			 INNER JOIN {$wpdb->postmeta} bk ON bk.post_id = p.post_id AND bk.meta_key = 'omnioffloader_bucket'
+			 WHERE p.meta_key = 'omnioffloader_path'
+			 GROUP BY pv.meta_value, bk.meta_value, p.meta_value"
+		);
+
+		$all = array();
+
+		foreach ( (array) $rows as $row ) {
+			$dir = dirname( (string) $row->attached );
+
+			if ( '.' === $dir || '' === $dir ) {
+				continue;
+			}
+
+			$at = strpos( (string) $row->path, trailingslashit( $dir ) );
+
+			if ( false === $at ) {
+				continue;
+			}
+
+			$ref    = md5( (string) $row->provider . '|' . (string) $row->bucket );
+			$folder = substr( (string) $row->path, 0, $at );
+
+			if ( ! in_array( $folder, $all[ $ref ] ?? array(), true ) ) {
+				$all[ $ref ][] = $folder;
+			}
+		}
+
+		foreach ( $all as $ref => $list ) {
+			$all[ $ref ] = array_slice( $list, -self::MAX_FOLDERS );
+		}
+
+		update_option( self::FOLDERS_OPTION, $all, true );
+
+		return $all;
 	}
 
 	/**
@@ -261,8 +328,8 @@ class FolderClaim {
 	 * @return void
 	 */
 	private static function remember_folder( $provider_key, $bucket, $prefix ) {
-		$all = get_option( self::FOLDERS_OPTION, array() );
-		$all = is_array( $all ) ? $all : array();
+		$all = get_option( self::FOLDERS_OPTION );
+		$all = is_array( $all ) ? $all : self::seed_folders();
 		$ref = md5( $provider_key . '|' . $bucket );
 
 		$list = isset( $all[ $ref ] ) && is_array( $all[ $ref ] ) ? $all[ $ref ] : array();

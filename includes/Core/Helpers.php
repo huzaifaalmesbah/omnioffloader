@@ -156,7 +156,7 @@ class Helpers {
 	 * offloaded under an earlier Path Prefix (or none). They keep working,
 	 * since every attachment keeps the path it was offloaded to.
 	 *
-	 * One query; for WP-CLI status, not for page loads.
+	 * One query; for WP-CLI, not for page loads.
 	 *
 	 * @since 0.1.4
 	 *
@@ -166,22 +166,78 @@ class Helpers {
 	public static function count_offloaded_elsewhere( $prefix ) {
 		global $wpdb;
 
-		// In its folder when the stored path starts with the prefix plus the
-		// attachment's upload folder ("2026/09/", or "" at the root), which
-		// is _wp_attached_file without its file name.
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- one count for WP-CLI status.
-		return (int) $wpdb->get_var(
-			$wpdb->prepare(
-				"SELECT COUNT(*)
-				 FROM {$wpdb->postmeta} p
-				 INNER JOIN {$wpdb->postmeta} o ON o.post_id = p.post_id AND o.meta_key = 'omnioffloader_offloaded' AND o.meta_value = '1'
-				 INNER JOIN {$wpdb->postmeta} f ON f.post_id = p.post_id AND f.meta_key = '_wp_attached_file'
-				 WHERE p.meta_key = 'omnioffloader_path'
-				 AND LEFT( p.meta_value, CHAR_LENGTH( %s ) + CHAR_LENGTH( f.meta_value ) - CHAR_LENGTH( SUBSTRING_INDEX( f.meta_value, '/', -1 ) ) )
-				     <> CONCAT( %s, LEFT( f.meta_value, CHAR_LENGTH( f.meta_value ) - CHAR_LENGTH( SUBSTRING_INDEX( f.meta_value, '/', -1 ) ) ) )",
-				$prefix,
-				$prefix
-			)
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared -- one count for WP-CLI; the clauses are prepared in elsewhere_sql().
+		return (int) $wpdb->get_var( 'SELECT COUNT(*) ' . self::elsewhere_sql( $prefix ) );
+	}
+
+	/**
+	 * IDs of the attachments count_offloaded_elsewhere() counts, failed
+	 * ones last, for `wp omnioffloader move`.
+	 *
+	 * @since 0.1.4
+	 *
+	 * @param string $prefix Current folder (see count_offloaded_elsewhere()).
+	 * @param int    $limit  Most IDs; 0 for all.
+	 * @return int[]
+	 */
+	public static function offloaded_elsewhere_ids( $prefix, $limit = 0 ) {
+		global $wpdb;
+
+		$sql = 'SELECT p.post_id ' . self::elsewhere_sql( $prefix )
+			. " AND NOT EXISTS ( SELECT 1 FROM {$wpdb->postmeta} s WHERE s.post_id = p.post_id AND s.meta_key = 'omnioffloader_status' AND s.meta_value = 'failed' )";
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared -- CLI batch IDs; the clauses are prepared in elsewhere_sql().
+		$ids = array_map( 'intval', $wpdb->get_col( $sql . ' ORDER BY p.post_id ASC' ) );
+
+		// Failed ones last, so a broken item never holds up a restart.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared -- as above.
+		$failed = array_map( 'intval', $wpdb->get_col( 'SELECT p.post_id ' . self::elsewhere_sql( $prefix ) . " AND EXISTS ( SELECT 1 FROM {$wpdb->postmeta} s WHERE s.post_id = p.post_id AND s.meta_key = 'omnioffloader_status' AND s.meta_value = 'failed' ) ORDER BY p.post_id ASC" ) );
+		$ids    = array_merge( $ids, $failed );
+
+		return $limit > 0 ? array_slice( $ids, 0, $limit ) : $ids;
+	}
+
+	/**
+	 * Whether an offloaded attachment is stored outside a folder.
+	 *
+	 * @since 0.1.4
+	 *
+	 * @param int    $attachment_id Attachment ID.
+	 * @param string $prefix        Folder (see count_offloaded_elsewhere()).
+	 * @return bool
+	 */
+	public static function is_offloaded_elsewhere( $attachment_id, $prefix ) {
+		$path     = (string) get_post_meta( $attachment_id, 'omnioffloader_path', true );
+		$attached = (string) get_post_meta( $attachment_id, '_wp_attached_file', true );
+		$dir      = dirname( $attached );
+		$dir      = ( '.' === $dir || '' === $dir ) ? '' : trailingslashit( $dir );
+
+		return '1' === (string) get_post_meta( $attachment_id, 'omnioffloader_offloaded', true )
+			&& 0 !== strpos( $path, $prefix . $dir );
+	}
+
+	/**
+	 * FROM / WHERE of the "offloaded outside this folder" queries.
+	 *
+	 * An attachment is in the folder when its stored path starts with the
+	 * prefix plus its upload folder ("2026/09/", or "" at the root), which is
+	 * _wp_attached_file without its file name.
+	 *
+	 * @param string $prefix Current folder.
+	 * @return string Prepared SQL.
+	 */
+	private static function elsewhere_sql( $prefix ) {
+		global $wpdb;
+
+		return $wpdb->prepare(
+			"FROM {$wpdb->postmeta} p
+			 INNER JOIN {$wpdb->postmeta} o ON o.post_id = p.post_id AND o.meta_key = 'omnioffloader_offloaded' AND o.meta_value = '1'
+			 INNER JOIN {$wpdb->postmeta} f ON f.post_id = p.post_id AND f.meta_key = '_wp_attached_file'
+			 WHERE p.meta_key = 'omnioffloader_path'
+			 AND LEFT( p.meta_value, CHAR_LENGTH( %s ) + CHAR_LENGTH( f.meta_value ) - CHAR_LENGTH( SUBSTRING_INDEX( f.meta_value, '/', -1 ) ) )
+			     <> CONCAT( %s, LEFT( f.meta_value, CHAR_LENGTH( f.meta_value ) - CHAR_LENGTH( SUBSTRING_INDEX( f.meta_value, '/', -1 ) ) ) )",
+			$prefix,
+			$prefix
 		);
 	}
 

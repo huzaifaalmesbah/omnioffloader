@@ -12,6 +12,7 @@ Every bulk job in OmniOffloader can also run from the terminal with [WP-CLI](htt
 | [`wp omnioffloader offload`](/wp-cli/offload/) | Upload media to cloud storage. |
 | [`wp omnioffloader restore`](/wp-cli/restore/) | Bring Back: download offloaded media to the server again. |
 | [`wp omnioffloader retention`](/wp-cli/retention/) | Apply a retention policy to media that is already offloaded. |
+| [`wp omnioffloader move`](/wp-cli/move/) | Move media offloaded under an earlier Path Prefix into the current folder. |
 | [`wp omnioffloader status`](/wp-cli/status/) | Show the provider, connection, Safe mode, media counts and running jobs. |
 | [`wp omnioffloader stop`](/wp-cli/stop/) | Stop the running job from any terminal. |
 | [Long runs and log files](/wp-cli/long-runs/) | Run a big job in the background, watch its log, and work out the time left. |

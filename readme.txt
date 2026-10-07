@@ -325,6 +325,9 @@ Depending on the provider you select:
 
 * Switching to another storage provider no longer breaks media you already offloaded: it keeps loading from the provider it was offloaded to (through its saved settings), Mirror Delete deletes it there, and Move Media brings it over to the new provider.
 * The bucket can no longer be changed while media is offloaded to it, which used to break those URLs and Bring Back. Settings warns under the Bucket field, with the steps: Bring Back, change the bucket, offload again.
+* Bulk jobs: a run whose last worker was stopped by the server no longer shows "running" forever; it finishes on its own once it has been quiet for a minute and the admin screen checks on it. The background upload queue starts its next pass right away again.
+* Media Library: a single Offload or Bring Back still in progress keeps its badge while another tab is open.
+* WP-CLI: a run started with `--force` next to another one no longer releases the other run's lock when it ends, and stopping after the failure limit says whether the connection or the attachments are at fault.
 * Moving media to the current folder: a copy that fails because of a temporary error (for example throttling) no longer switches an attachment to the new folder with thumbnails missing; that attachment is moved through the server instead. A move inside the bucket no longer stops for lack of disk space, since it downloads nothing.
 * Sharing a bucket: folders a site used before this version are now known too, so their protection covers them.
 * The storage location is locked like the bucket: changing a provider's endpoint or region while media is offloaded there is refused too. A region may only contain letters, numbers and dashes.

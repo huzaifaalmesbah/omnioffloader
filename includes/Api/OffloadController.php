@@ -8,6 +8,7 @@
 namespace OmniOffloader\Api;
 
 use OmniOffloader\Core\FolderClaim;
+use OmniOffloader\Core\Helpers;
 use OmniOffloader\Core\Plugin;
 use OmniOffloader\Core\SafeMode;
 use OmniOffloader\Services\AbstractBulkProcessor;
@@ -638,6 +639,11 @@ class OffloadController extends BaseController {
 			$status = (string) get_post_meta( $id, 'omnioffloader_status', true );
 
 			if ( 'queued' !== $status && 'processing' !== $status ) {
+				continue;
+			}
+
+			// A single action in another request is still on it.
+			if ( Helpers::is_working( $id ) ) {
 				continue;
 			}
 

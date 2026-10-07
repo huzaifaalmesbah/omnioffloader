@@ -171,6 +171,61 @@ class Helpers {
 	}
 
 	/**
+	 * Attachments this request marked as being worked on.
+	 *
+	 * @var array<int, true>
+	 */
+	private static $working = array();
+
+	/**
+	 * Mark an attachment as being worked on by this request, outside any
+	 * bulk job or WP-CLI run (a single Offload or Bring Back, a synchronous
+	 * upload), so the Media Library's stale-status clean-up leaves its
+	 * "processing" badge alone. Jobs are detected as running anyway, and
+	 * batch their stats flush, which is how they are told apart here.
+	 *
+	 * Cleared when the request ends; expires on its own if it dies.
+	 *
+	 * @since 0.1.4
+	 *
+	 * @param int $attachment_id Attachment ID.
+	 * @return void
+	 */
+	public static function mark_working( $attachment_id ) {
+		if ( self::$defer_stats_flush ) {
+			return;
+		}
+
+		$attachment_id = (int) $attachment_id;
+
+		if ( empty( self::$working ) ) {
+			register_shutdown_function(
+				static function () {
+					foreach ( array_keys( self::$working ) as $id ) {
+						delete_transient( 'omnioffloader_working_' . $id );
+					}
+					self::$working = array();
+				}
+			);
+		}
+
+		self::$working[ $attachment_id ] = true;
+		set_transient( 'omnioffloader_working_' . $attachment_id, 1, 15 * MINUTE_IN_SECONDS );
+	}
+
+	/**
+	 * Whether a request is working on the attachment (see mark_working()).
+	 *
+	 * @since 0.1.4
+	 *
+	 * @param int $attachment_id Attachment ID.
+	 * @return bool
+	 */
+	public static function is_working( $attachment_id ) {
+		return (bool) get_transient( 'omnioffloader_working_' . (int) $attachment_id );
+	}
+
+	/**
 	 * Offloaded attachments stored in a provider's bucket.
 	 *
 	 * @since 0.1.4

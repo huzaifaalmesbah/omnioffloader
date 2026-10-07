@@ -152,6 +152,40 @@ class Helpers {
 	}
 
 	/**
+	 * Offloaded attachments stored outside the folder new offloads go to:
+	 * offloaded under an earlier Path Prefix (or none). They keep working,
+	 * since every attachment keeps the path it was offloaded to.
+	 *
+	 * One query; for WP-CLI status, not for page loads.
+	 *
+	 * @since 0.1.4
+	 *
+	 * @param string $prefix Current folder with a trailing slash, or '' for the bucket root (see FolderClaim::prefix()).
+	 * @return int
+	 */
+	public static function count_offloaded_elsewhere( $prefix ) {
+		global $wpdb;
+
+		// In its folder when the stored path starts with the prefix plus the
+		// attachment's upload folder ("2026/09/", or "" at the root), which
+		// is _wp_attached_file without its file name.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- one count for WP-CLI status.
+		return (int) $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT COUNT(*)
+				 FROM {$wpdb->postmeta} p
+				 INNER JOIN {$wpdb->postmeta} o ON o.post_id = p.post_id AND o.meta_key = 'omnioffloader_offloaded' AND o.meta_value = '1'
+				 INNER JOIN {$wpdb->postmeta} f ON f.post_id = p.post_id AND f.meta_key = '_wp_attached_file'
+				 WHERE p.meta_key = 'omnioffloader_path'
+				 AND LEFT( p.meta_value, CHAR_LENGTH( %s ) + CHAR_LENGTH( f.meta_value ) - CHAR_LENGTH( SUBSTRING_INDEX( f.meta_value, '/', -1 ) ) )
+				     <> CONCAT( %s, LEFT( f.meta_value, CHAR_LENGTH( f.meta_value ) - CHAR_LENGTH( SUBSTRING_INDEX( f.meta_value, '/', -1 ) ) ) )",
+				$prefix,
+				$prefix
+			)
+		);
+	}
+
+	/**
 	 * Media library counts for the stats endpoint.
 	 *
 	 * One indexed query on postmeta, cached in a short transient.

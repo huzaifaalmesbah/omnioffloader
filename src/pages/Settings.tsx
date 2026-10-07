@@ -1,6 +1,7 @@
 import {
 	Button,
 	Icon,
+	Notice,
 	RadioControl,
 	SelectControl,
 	TextControl,
@@ -22,15 +23,48 @@ import { radioKeyDown, radioTabIndex } from '../utils/radioGroup';
 import {
 	RetentionPolicy,
 	type RetentionPreflight,
+	type Settings,
 	type TransferSpeed,
 } from '../types';
+
+/**
+ * The bucket folder new offloads go to, as FolderClaim::prefix() builds it:
+ * "folder/", or '' for the bucket root.
+ *
+ * @param settings Settings.
+ * @return Folder with a trailing slash, or ''.
+ */
+function uploadFolder( settings: Settings ): string {
+	if ( ! settings.path_prefix_active ) {
+		return '';
+	}
+
+	// Like Helpers::sanitize_path(): no empty, "." or ".." segments.
+	const prefix = settings.path_prefix
+		.replace( /\\/g, '/' )
+		.split( '/' )
+		.map( ( segment ) => segment.trim() )
+		.filter(
+			( segment ) => !! segment && segment !== '.' && segment !== '..'
+		)
+		.join( '/' );
+
+	return prefix ? `${ prefix }/` : '';
+}
 
 interface SettingsProps {
 	onNavigate: ( view: string ) => void;
 }
 
 export function SettingsPage( { onNavigate }: SettingsProps ) {
-	const { settings, providers, updateSettings, isDirty, stats } = useCore();
+	const {
+		settings,
+		savedSettings,
+		providers,
+		updateSettings,
+		isDirty,
+		stats,
+	} = useCore();
 	const [ retentionPreflight, setRetentionPreflight ] =
 		useState< RetentionPreflight | null >( null );
 
@@ -53,6 +87,17 @@ export function SettingsPage( { onNavigate }: SettingsProps ) {
 	}
 
 	const providerKeys = providers.map( ( p ) => p.key );
+
+	// Offloaded media keeps the folder it was offloaded to; only new
+	// offloads follow a changed Path Prefix.
+	const savedFolder = savedSettings ? uploadFolder( savedSettings ) : '';
+	const offloadedCount = stats?.offloaded ?? 0;
+	const folderChanges =
+		!! savedSettings &&
+		offloadedCount > 0 &&
+		savedFolder !== uploadFolder( settings );
+	const folderLabel = ( folder: string ) =>
+		folder || __( 'the bucket root', 'omnioffloader' );
 	const keepsLocalFiles =
 		settings.retention_policy === RetentionPolicy.RetainLocal;
 
@@ -470,6 +515,23 @@ export function SettingsPage( { onNavigate }: SettingsProps ) {
 						__next40pxDefaultSize
 						__nextHasNoMarginBottom
 					/>
+				) }
+
+				{ folderChanges && (
+					<Notice status="warning" isDismissible={ false }>
+						{ sprintf(
+							/* translators: 1: number of offloaded attachments, 2: current bucket folder, 3: new bucket folder. */
+							_n(
+								'%1$s offloaded attachment stays in %2$s and keeps working from there. Only media offloaded from now on goes to %3$s. To move existing media, bring it back and offload it again.',
+								'%1$s offloaded attachments stay in %2$s and keep working from there. Only media offloaded from now on goes to %3$s. To move existing media, bring it back and offload it again.',
+								offloadedCount,
+								'omnioffloader'
+							),
+							offloadedCount.toLocaleString(),
+							folderLabel( savedFolder ),
+							folderLabel( uploadFolder( settings ) )
+						) }
+					</Notice>
 				) }
 			</Card>
 

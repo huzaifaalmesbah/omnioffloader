@@ -63,7 +63,7 @@ trait CliJobGuard {
 	/**
 	 * This run's record (see Plugin::set_cli_run()), while a job runs.
 	 *
-	 * @var array{job: string, pid: int, host: string, started: int, total: int, processed: int, failed: int, background: bool, log: string}|null
+	 * @var array{job: string, pid: int, host: string, started: int, total: int, processed: int, failed: int, background: bool, log: string, in_flight?: int[]}|null
 	 */
 	private $guard_run = null;
 
@@ -298,6 +298,37 @@ trait CliJobGuard {
 		// Long runs: stop the runtime object cache (and SAVEQUERIES log) growing.
 		if ( 0 === $processed % self::$clear_cache_every && function_exists( '\WP_CLI\Utils\wp_clear_object_cache' ) ) {
 			\WP_CLI\Utils\wp_clear_object_cache();
+		}
+	}
+
+	/**
+	 * Record the attachments about to be transferred, before their status
+	 * becomes "processing".
+	 *
+	 * Kept in the run record, so whoever ends the run — end_job() on any
+	 * exit, or the next command finding the process gone — can clear a
+	 * status the interrupted run never got to resolve.
+	 *
+	 * @param int[] $ids Attachment IDs.
+	 * @return void
+	 */
+	private function begin_items( array $ids ) {
+		if ( null !== $this->guard_run ) {
+			$this->guard_run['in_flight'] = array_values( array_map( 'intval', $ids ) );
+			Plugin::set_cli_run( $this->guard_run );
+		}
+	}
+
+	/**
+	 * The attachments from begin_items() have their final status.
+	 *
+	 * Written with the next keep_job_alive() rather than straight away.
+	 *
+	 * @return void
+	 */
+	private function end_items() {
+		if ( null !== $this->guard_run ) {
+			unset( $this->guard_run['in_flight'] );
 		}
 	}
 

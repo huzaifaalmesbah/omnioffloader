@@ -16,6 +16,7 @@ use OmniOffloader\Api\RetentionController;
 use OmniOffloader\Offload\Offloader;
 use OmniOffloader\Providers\ProviderInterface;
 use OmniOffloader\Providers\ProviderRegistry;
+use OmniOffloader\Services\AbstractBulkProcessor;
 use OmniOffloader\Services\AsyncUploadProcessor;
 use OmniOffloader\Services\BulkOffloadProcessor;
 use OmniOffloader\Services\BulkRestoreProcessor;
@@ -224,7 +225,7 @@ class Plugin {
 	 *
 	 * @since 0.1.4
 	 *
-	 * @param array{job: string, pid: int, host: string, started: int, total: int, processed: int, failed: int, background: bool, log: string} $run Run record.
+	 * @param array{job: string, pid: int, host: string, started: int, total: int, processed: int, failed: int, background: bool, log: string, in_flight?: int[]} $run Run record.
 	 * @return void
 	 */
 	public static function set_cli_run( array $run ) {
@@ -249,11 +250,21 @@ class Plugin {
 	/**
 	 * Forget the running WP-CLI job's record and any stop request.
 	 *
+	 * Attachments the run had in flight lose their "processing" status:
+	 * a run interrupted mid-batch (Ctrl-C, a kill, a fatal error) would
+	 * otherwise leave them showing "Offloading..." / "Restoring..." forever.
+	 *
 	 * @since 0.1.4
 	 *
 	 * @return void
 	 */
 	public static function clear_cli_run() {
+		$run = self::read_option_uncached( self::CLI_RUN_OPTION );
+
+		if ( is_array( $run ) && ! empty( $run['in_flight'] ) && is_array( $run['in_flight'] ) ) {
+			AbstractBulkProcessor::clear_pending_status( array_map( 'intval', $run['in_flight'] ) );
+		}
+
 		delete_option( self::CLI_RUN_OPTION );
 		delete_option( self::CLI_STOP_OPTION );
 	}

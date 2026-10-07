@@ -174,7 +174,9 @@ class OffloadCommand {
 
 		// A few attachments share one transfer pool (see upload_many()).
 		foreach ( array_chunk( $ids, AttachmentUploader::batch_size() ) as $chunk ) {
+			$this->begin_items( $chunk );
 			$results = $uploader->upload_many( $chunk );
+			$this->end_items();
 
 			foreach ( $chunk as $id ) {
 				if ( array_key_exists( $id, $results ) && null === $results[ $id ] ) {

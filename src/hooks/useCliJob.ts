@@ -69,7 +69,20 @@ export function useCliJob( onEnded: () => void ) {
 				}
 			} )
 			.catch( () => {
-				// Informational only; the start routes refuse a second job anyway.
+				// Informational only; the start routes refuse a second job
+				// anyway. A failed check while a job runs (a busy server, a
+				// network blip) must not freeze the notice: try again.
+				if (
+					active.current &&
+					wasRunning.current &&
+					! document.hidden
+				) {
+					timer.current = window.setTimeout( check, delay.current );
+					delay.current = Math.min(
+						POLL_MAX,
+						delay.current + POLL_STEP
+					);
+				}
 			} )
 			.finally( () => {
 				inFlight.current = false;

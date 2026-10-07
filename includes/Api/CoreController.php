@@ -236,6 +236,10 @@ class CoreController extends BaseController {
 			$seconds    = $total > $processed ? (int) round( ( $total - $processed ) / ( $processed / $elapsed ) ) : 0;
 		}
 
+		// The process and log path are server details: on a network only a
+		// network administrator sees them, not a site's administrator.
+		$server_details = ! is_multisite() || current_user_can( 'manage_network_options' );
+
 		return rest_ensure_response(
 			array(
 				'running'       => '' !== $job,
@@ -249,8 +253,8 @@ class CoreController extends BaseController {
 				'seconds_left'  => $seconds,
 				'files_at_once' => (int) ( $run['files_at_once'] ?? 0 ),
 				'background'    => ! empty( $run['background'] ),
-				'pid'           => (int) ( $run['pid'] ?? 0 ),
-				'log'           => (string) ( $run['log'] ?? '' ),
+				'pid'           => $server_details ? (int) ( $run['pid'] ?? 0 ) : 0,
+				'log'           => $server_details ? (string) ( $run['log'] ?? '' ) : '',
 				'stopping'      => '' !== $job && Plugin::cli_stop_requested(),
 				// Decided here, on the server's clock, not the browser's.
 				'quiet'         => $updated > 0 && time() - $updated > 2 * MINUTE_IN_SECONDS,

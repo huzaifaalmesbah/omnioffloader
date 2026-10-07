@@ -235,9 +235,26 @@ class FolderClaim {
 	 * @return void
 	 */
 	public static function seed() {
-		if ( ! is_array( get_option( self::FOLDERS_OPTION ) ) ) {
-			self::seed_folders();
+		if ( is_array( get_option( self::FOLDERS_OPTION ) ) ) {
+			return;
 		}
+
+		// Every request right after the update runs migrations until the new
+		// version is stored: let one of them scan, the others skip it (the
+		// list is also built on first use, so nothing is lost if this one
+		// dies). add_option() is atomic, unlike a transient's check-then-set.
+		$lock = 'omnioffloader_seeding_folders';
+
+		if ( ! add_option( $lock, time(), '', false ) ) {
+			if ( time() - (int) get_option( $lock ) < 5 * MINUTE_IN_SECONDS ) {
+				return;
+			}
+
+			update_option( $lock, time(), false );
+		}
+
+		self::seed_folders();
+		delete_option( $lock );
 	}
 
 	/**

@@ -99,7 +99,7 @@ Single restores follow the same "delete from cloud after restore" choice as the 
 
 - **Atomic writes.** Each file is downloaded to a temporary file first and moved into place only when it is complete. A half-downloaded file never replaces a good one.
 - **Verified before switching.** URLs only switch back to local once **every** file of the attachment is on disk.
-- **Cloud deletion is opt-in.** Deleting cloud files is off by default. When on, a cloud file is only deleted after the local copy is verified.
+- **Cloud deletion is opt-in.** Deleting cloud files is off by default. When on, a cloud file is only deleted after the local copy is verified. A file that is not on the server afterwards, such as the original kept from an image edit, stays in the cloud.
 - **Confined to uploads.** Restores never write outside your WordPress uploads folder.
 - **Partial downloads cleaned up.** If the server stops a restore mid-file, the leftover temporary file is removed.
 - **One job at a time.** Bring Back never runs together with Bulk Offload or a retention update. A single-item Bring Back is refused while a retention update is running.

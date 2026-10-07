@@ -226,6 +226,25 @@ foreach ( array_keys( $map2 ) as $key ) {
 omnioffloader_check( $cloud_gone, 'cloud objects deleted after verified restore' );
 
 // ---------------------------------------------------------------------------
+// Test 2b — delete_cloud keeps objects that were never downloaded.
+// ---------------------------------------------------------------------------
+echo "\nTest 2b: delete_cloud keeps an edit backup that is only in the cloud\n";
+
+$id2b   = omnioffloader_make_attachment( 'omnioffloader-restore-backup.jpg' );
+$map2b  = omnioffloader_file_map( $id2b );
+$key2b  = (string) array_key_first( $map2b );
+$bkey2b = trailingslashit( dirname( $key2b ) ) . 'omnioffloader-restore-backup-orig.jpg';
+
+// An image edited after offload: core recorded the pre-edit original as a
+// backup, and only the bucket has it.
+update_post_meta( $id2b, '_wp_attachment_backup_sizes', array( 'full-orig' => array( 'file' => 'omnioffloader-restore-backup-orig.jpg' ) ) );
+copy( trailingslashit( $bucket_dir ) . $key2b, trailingslashit( $bucket_dir ) . $bkey2b );
+
+omnioffloader_check( true === $restorer->restore( $id2b, true ), 'restore( delete_cloud ) returned success' );
+omnioffloader_check( ! $provider->object_exists( $key2b ), 'restored main object deleted from cloud' );
+omnioffloader_check( $provider->object_exists( $bkey2b ), 'backup with no local copy kept in cloud' );
+
+// ---------------------------------------------------------------------------
 // Test 3 — Skip-if-present: retention 0 restore re-downloads nothing.
 // ---------------------------------------------------------------------------
 echo "\nTest 3: retention 0 — restore skips files already on disk\n";
@@ -280,6 +299,7 @@ omnioffloader_check( is_bool( $preflight['disk_ok'] ), 'disk_ok computed' );
 echo "\nCleanup…\n";
 wp_delete_attachment( $id1, true );
 wp_delete_attachment( $id2, true );
+wp_delete_attachment( $id2b, true );
 wp_delete_attachment( $id3, true );
 wp_delete_attachment( $id4, true );
 update_option( 'omnioffloader_settings', $original_settings, true );

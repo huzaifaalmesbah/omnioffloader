@@ -80,7 +80,7 @@ nohup wp omnioffloader restore --all --delete-cloud --yes > ~/restore.log 2>&1 &
 ## Deleting cloud copies
 
 :::danger
-`--delete-cloud` removes files from your bucket. A cloud file is only deleted after its attachment was fully restored and checked on the server, but the delete itself can't be undone. Turn on versioning in your bucket if you want a safety net.
+`--delete-cloud` removes files from your bucket. A cloud file is only deleted after its attachment was fully restored and checked on the server, and only when that file is now on the server (an image's pre-edit original, for example, stays in the cloud), but the delete itself can't be undone. Turn on versioning in your bucket if you want a safety net.
 :::
 
 Without `--yes`, the command asks first:

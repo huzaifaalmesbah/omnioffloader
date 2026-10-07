@@ -332,6 +332,7 @@ Depending on the provider you select:
 * Safe mode: **This is the live site** now asks for confirmation before turning Safe mode off, since clicking it on a staging copy lets that copy write to the live site's cloud storage. If it fails, the real reason is shown.
 * Bring Back (and loosening the retention policy) no longer fails for an image whose original was already gone before it was offloaded, for example removed by an image optimizer. Only the attachment's own file must be restored.
 * Bulk Bring Back with **Delete from Cloud After Restore** now asks for confirmation before it starts, as WP-CLI's `--delete-cloud` does.
+* Media Library: an item stuck on "Queued for background offload" or "Offloading..." (for example when thumbnail generation failed, or the background queue was cleared) goes back to its real status by itself once no job is running.
 
 = 0.1.3 =
 

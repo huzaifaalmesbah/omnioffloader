@@ -10,6 +10,7 @@ namespace OmniOffloader\Api;
 use OmniOffloader\Core\FolderClaim;
 use OmniOffloader\Core\Plugin;
 use OmniOffloader\Core\SafeMode;
+use OmniOffloader\Services\AbstractBulkProcessor;
 use OmniOffloader\Services\AttachmentUploader;
 use OmniOffloader\Services\BulkOffloadProcessor;
 use OmniOffloader\Services\BulkRestoreProcessor;
@@ -26,6 +27,12 @@ if ( ! defined( 'ABSPATH' ) ) {
 class OffloadController extends BaseController {
 
 	use AttachmentHelper;
+
+	/**
+	 * Age after which an attachment's queued/processing status is stale
+	 * when no job is running (see clear_stale_statuses()).
+	 */
+	private const STALE_STATUS_SECONDS = 600;
 
 	/**
 	 * Register routes.
@@ -542,6 +549,8 @@ class OffloadController extends BaseController {
 			}
 		}
 
+		self::clear_stale_statuses( $id_list );
+
 		$statuses     = array();
 		$provider     = Plugin::get_instance()->get_provider();
 		$observer     = null;
@@ -606,5 +615,50 @@ class OffloadController extends BaseController {
 				'statuses' => (object) $statuses,
 			)
 		);
+	}
+
+	/**
+	 * Clear a "queued" / "processing" status nothing will ever resolve.
+	 *
+	 * An upload is marked queued before its thumbnails are generated; if that
+	 * fails, or the upload queue is cleared or never runs, the mark stayed
+	 * forever. Only cleared while no job could be working on the item, and
+	 * for attachments older than STALE_STATUS_SECONDS, so an upload still
+	 * generating thumbnails keeps its badge.
+	 *
+	 * @since 0.1.4
+	 *
+	 * @param int[] $ids Attachment IDs being polled (meta already primed).
+	 * @return void
+	 */
+	private static function clear_stale_statuses( array $ids ) {
+		$pending = array();
+
+		foreach ( $ids as $id ) {
+			$status = (string) get_post_meta( $id, 'omnioffloader_status', true );
+
+			if ( 'queued' !== $status && 'processing' !== $status ) {
+				continue;
+			}
+
+			$created = (int) get_post_time( 'U', true, $id );
+
+			if ( $created > 0 && time() - $created > self::STALE_STATUS_SECONDS ) {
+				$pending[] = (int) $id;
+			}
+		}
+
+		if ( empty( $pending ) ) {
+			return;
+		}
+
+		$plugin = Plugin::get_instance();
+		$async  = $plugin->get_async_upload();
+
+		if ( '' !== $plugin->get_active_bulk_job() || ( null !== $async && ! $async->is_idle() ) ) {
+			return;
+		}
+
+		AbstractBulkProcessor::clear_pending_status( $pending );
 	}
 }

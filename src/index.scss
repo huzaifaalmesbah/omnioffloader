@@ -392,20 +392,140 @@
 	margin: 16px 0 0;
 }
 
-// Confirmation dialog (components/ui/ConfirmDialog).
-.smowp-confirm {
-	max-width: 520px;
+// Confirmation dialog (components/ui/ConfirmDialog). The modal renders
+// outside #omnioffloader-admin-app, so it uses literal colours.
+.smowp-confirm-overlay {
+	background: rgba( 17, 24, 39, 0.45 );
+	backdrop-filter: blur( 2px );
+}
 
-	&__message {
-		color: var( --smowp-text );
-		line-height: 1.6;
+.smowp-confirm.components-modal__frame {
+	width: 480px;
+	max-width: calc( 100vw - 32px );
+	border-radius: 14px;
+	box-shadow: 0 20px 50px rgba( 15, 23, 42, 0.25 );
+
+	// WordPress positions the header absolutely; the content's top margin
+	// must stay equal to the header's height.
+	.components-modal__header {
+		height: 72px;
+		padding: 24px 20px 0 24px;
+		align-items: flex-start;
+		border-bottom: 0;
 	}
 
-	&__actions {
-		display: flex;
-		justify-content: flex-end;
-		gap: 8px;
-		margin-top: 24px;
+	.components-modal__header-icon-container {
+		display: inline-flex;
+		margin-right: 12px;
+	}
+
+	.components-modal__header-heading-container {
+		align-items: center;
+	}
+
+	.components-modal__header-heading {
+		font-size: 17px;
+		font-weight: 600;
+		line-height: 1.35;
+		color: #1e1e1e;
+	}
+
+	.components-modal__content {
+		margin-top: 72px;
+		padding: 8px 24px 24px 76px;
+	}
+}
+
+.smowp-confirm__icon {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 40px;
+	height: 40px;
+	border-radius: 50%;
+	background: #e7eff9;
+	color: #135dbe;
+
+	svg {
+		fill: currentColor;
+	}
+
+	.is-destructive & {
+		background: #fde8e8;
+		color: #b32d2e;
+	}
+}
+
+.smowp-confirm__message {
+	color: #50575e;
+	font-size: 14px;
+	line-height: 1.6;
+}
+
+.smowp-confirm__actions {
+	display: flex;
+	justify-content: flex-end;
+	gap: 10px;
+	margin-top: 24px;
+
+	.components-button {
+		height: 40px;
+		padding: 0 18px;
+		border-radius: 8px;
+		font-size: 13.5px;
+		font-weight: 600;
+		justify-content: center;
+		transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+	}
+
+	.smowp-confirm__cancel {
+		color: #1e1e1e;
+		background: #ffffff;
+		border: 1px solid #d0d5dd;
+
+		&:hover:not( :disabled ) {
+			background: #f4f6f8;
+			border-color: #b8bfc9;
+			color: #1e1e1e;
+		}
+	}
+
+	.smowp-confirm__ok {
+		color: #ffffff;
+		background: #135dbe;
+		border: 1px solid #135dbe;
+
+		&:hover:not( :disabled ),
+		&:focus:not( :disabled ) {
+			background: #0e4690;
+			border-color: #0e4690;
+			color: #ffffff;
+		}
+	}
+
+	.is-destructive & .smowp-confirm__ok {
+		background: #d63638;
+		border-color: #d63638;
+
+		&:hover:not( :disabled ),
+		&:focus:not( :disabled ) {
+			background: #b32d2e;
+			border-color: #b32d2e;
+		}
+	}
+}
+
+@media ( max-width: 480px ) {
+	.smowp-confirm.components-modal__frame .components-modal__content {
+		padding-left: 24px;
+	}
+
+	.smowp-confirm__actions {
+		flex-direction: column-reverse;
+
+		.components-button {
+			width: 100%;
+		}
 	}
 }
 

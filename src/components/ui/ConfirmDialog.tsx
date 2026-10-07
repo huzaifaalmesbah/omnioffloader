@@ -1,4 +1,4 @@
-import { Button, Modal } from '@wordpress/components';
+import { Button, Icon, Modal } from '@wordpress/components';
 import {
 	createContext,
 	useCallback,
@@ -7,6 +7,7 @@ import {
 	useState,
 } from '@wordpress/element';
 import { __ } from '@wordpress/i18n';
+import { caution, info } from '@wordpress/icons';
 
 export interface ConfirmOptions {
 	title: string;
@@ -71,24 +72,34 @@ export function ConfirmProvider( { children }: { children: React.ReactNode } ) {
 			{ options && (
 				<Modal
 					title={ options.title }
+					icon={
+						<span className="smowp-confirm__icon">
+							<Icon
+								icon={ options.isDestructive ? caution : info }
+								size={ 22 }
+							/>
+						</span>
+					}
 					onRequestClose={ () => answer( false ) }
-					className="smowp-confirm"
-					size="medium"
+					className={
+						'smowp-confirm' +
+						( options.isDestructive ? ' is-destructive' : '' )
+					}
+					overlayClassName="smowp-confirm-overlay"
 				>
 					<div className="smowp-confirm__message">
 						{ options.message }
 					</div>
 					<div className="smowp-confirm__actions">
 						<Button
-							variant="tertiary"
+							className="smowp-confirm__cancel"
 							onClick={ () => answer( false ) }
 						>
 							{ options.cancelLabel ??
 								__( 'Cancel', 'omnioffloader' ) }
 						</Button>
 						<Button
-							variant="primary"
-							isDestructive={ options.isDestructive }
+							className="smowp-confirm__ok"
 							onClick={ () => answer( true ) }
 						>
 							{ options.confirmLabel }

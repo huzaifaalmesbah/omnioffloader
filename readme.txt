@@ -327,6 +327,7 @@ Depending on the provider you select:
 * WP-CLI: media the run was transferring when it was interrupted (Ctrl+C, a closed window, a killed process) no longer shows "Offloading..." or "Restoring..." in the Media Library forever. It goes back to its real status and the next run picks it up.
 * WP-CLI: `wp omnioffloader stop --wait=<seconds>` refuses a value that is not a number, instead of not waiting at all.
 * Full Cloud Migration and Smart Local Cleanup: a new upload no longer reuses a file name that another attachment still has in your cloud storage (the original of a scaled image, a thumbnail size, a PDF preview or an edit backup), which could overwrite that attachment's files.
+* Bring Back with "Delete from Cloud After Restore" no longer deletes cloud files it did not download, such as the original WordPress keeps after you edit an image. Only files that are now on your server are removed from the cloud.
 
 = 0.1.3 =
 

@@ -150,7 +150,12 @@ class AttachmentRestorer {
 		}
 
 		// Collect delete keys while the offload meta (stored path) is intact.
-		$delete_keys = $delete_cloud ? self::collect_delete_keys( $attachment_id ) : array();
+		// Only objects whose file is now on the server: edit backups and
+		// filtered sidecar keys are never downloaded, so the bucket may hold
+		// their only copy (invariant #2).
+		$delete_keys = $delete_cloud
+			? self::keys_with_local_copy( self::collect_delete_keys( $attachment_id ), dirname( $files['main'][0]['file'] ) )
+			: array();
 
 		self::clear_offload_meta( $attachment_id );
 
@@ -176,6 +181,29 @@ class AttachmentRestorer {
 		}
 
 		return true;
+	}
+
+	/**
+	 * Object keys whose file exists in the attachment's local folder.
+	 *
+	 * Every file of an attachment lives in one folder, under the same name
+	 * as the last segment of its object key.
+	 *
+	 * @since 0.1.4
+	 *
+	 * @param string[] $keys      Object keys.
+	 * @param string   $local_dir The attachment's local folder.
+	 * @return string[]
+	 */
+	private static function keys_with_local_copy( array $keys, $local_dir ) {
+		return array_values(
+			array_filter(
+				$keys,
+				static function ( $key ) use ( $local_dir ) {
+					return is_file( trailingslashit( $local_dir ) . wp_basename( $key ) );
+				}
+			)
+		);
 	}
 
 	/**

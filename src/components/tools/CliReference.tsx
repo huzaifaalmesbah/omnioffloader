@@ -36,7 +36,7 @@ function getCommands(): CliCommand[] {
 		{
 			name: 'wp omnioffloader status',
 			summary: __(
-				'Show the provider, bucket, connection check, media counts and any running bulk job.',
+				'Show what is running now (progress, speed, time left, log file) or how the last WP-CLI job ended, then the provider, connection check and media counts.',
 				'omnioffloader'
 			),
 			view: 'dashboard',
@@ -45,7 +45,10 @@ function getCommands(): CliCommand[] {
 			examples: [
 				{
 					command: 'wp omnioffloader status',
-					description: __( 'Quick health check.', 'omnioffloader' ),
+					description: __(
+						'Check on a running job, or a quick health check.',
+						'omnioffloader'
+					),
 				},
 			],
 			options: [],

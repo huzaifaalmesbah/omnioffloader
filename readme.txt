@@ -333,6 +333,7 @@ Depending on the provider you select:
 * Bring Back (and loosening the retention policy) no longer fails for an image whose original was already gone before it was offloaded, for example removed by an image optimizer. Only the attachment's own file must be restored.
 * Bulk Bring Back with **Delete from Cloud After Restore** now asks for confirmation before it starts, as WP-CLI's `--delete-cloud` does.
 * Media Library: an item stuck on "Queued for background offload" or "Offloading..." (for example when thumbnail generation failed, or the background queue was cleared) goes back to its real status by itself once no job is running.
+* `wp omnioffloader status` starts with what is running now: progress with percentage, start time, speed, time left and expected finish, files transferred at once, log file and how to stop it. When nothing runs, it shows how the last WP-CLI job ended (finished, stopped or ended early) and the command to offload media that is still local.
 
 = 0.1.3 =
 

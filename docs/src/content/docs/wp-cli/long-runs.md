@@ -80,9 +80,12 @@ wp omnioffloader status
 ```
 
 ```
-WP-CLI offload: running — 50 of 63966 done, 0 failed, started 23 seconds ago (process 2480717, detached)
-  Log: /home/example/offload.log
-  Stop it with: wp omnioffloader stop
+Running now: WP-CLI offload (in the background, process 2480717)
+  Progress:   50 of 63,966 (0.1%), 0 failed
+  Started:    2026-10-06 11:30 (23 seconds ago)
+  Transfers:  64 files at once
+  Log:        /home/example/offload.log (watch it: tail -f /home/example/offload.log)
+  Stop:       wp omnioffloader stop
 ```
 
 If you see this, the job is running and you can close the terminal.
@@ -119,7 +122,14 @@ The log can also contain warnings from your theme or other plugins, such as `Und
 
 ## 4. Work out the speed and time left
 
-Take two progress lines and compare them. For example:
+The quickest way: run `wp omnioffloader status`. After the first minute it shows the speed, the time left and the expected finish time:
+
+```
+  Speed:      201 attachments per minute
+  Time left:  about 5 hours 5 mins (finishes around 2026-10-06 16:48, site time)
+```
+
+To work it out yourself, take two progress lines and compare them. For example:
 
 ```
 [2026-10-06 11:33:59] 675 of 63966 done, 0 failed.

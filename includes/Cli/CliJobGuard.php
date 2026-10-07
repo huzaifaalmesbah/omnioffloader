@@ -9,6 +9,7 @@ namespace OmniOffloader\Cli;
 
 use OmniOffloader\Core\Plugin;
 use OmniOffloader\Services\AbstractBulkProcessor;
+use OmniOffloader\Services\AttachmentUploader;
 use WP_CLI;
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -63,7 +64,7 @@ trait CliJobGuard {
 	/**
 	 * This run's record (see Plugin::set_cli_run()), while a job runs.
 	 *
-	 * @var array{job: string, pid: int, host: string, started: int, total: int, processed: int, failed: int, background: bool, log: string, in_flight?: int[]}|null
+	 * @var array{job: string, pid: int, host: string, started: int, total: int, processed: int, failed: int, background: bool, log: string, files_at_once?: int, in_flight?: int[]}|null
 	 */
 	private $guard_run = null;
 
@@ -215,15 +216,17 @@ trait CliJobGuard {
 		$detached = self::is_detached();
 
 		$this->guard_run = array(
-			'job'        => (string) $job,
-			'pid'        => (int) getmypid(),
-			'host'       => (string) gethostname(),
-			'started'    => time(),
-			'total'      => (int) $total,
-			'processed'  => 0,
-			'failed'     => 0,
-			'background' => $detached,
-			'log'        => $detached ? self::output_file() : '',
+			'job'           => (string) $job,
+			'pid'           => (int) getmypid(),
+			'host'          => (string) gethostname(),
+			'started'       => time(),
+			'total'         => (int) $total,
+			'processed'     => 0,
+			'failed'        => 0,
+			'background'    => $detached,
+			'log'           => $detached ? self::output_file() : '',
+			// Includes offload --concurrency, set before the job starts.
+			'files_at_once' => AttachmentUploader::files_at_once(),
 		);
 		Plugin::set_cli_run( $this->guard_run );
 

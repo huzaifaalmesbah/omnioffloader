@@ -213,6 +213,12 @@ class Plugin {
 	public const CLI_STOP_OPTION = 'omnioffloader_cli_stop';
 
 	/**
+	 * Option keeping the last WP-CLI job's record after it ended, for
+	 * `wp omnioffloader status`.
+	 */
+	public const CLI_LAST_RUN_OPTION = 'omnioffloader_cli_last_run';
+
+	/**
 	 * Record the running WP-CLI job: who runs it and how far it got.
 	 *
 	 * Lets `wp omnioffloader stop` reach it, `status` report it, and a new
@@ -220,10 +226,13 @@ class Plugin {
 	 *
 	 * @since 0.1.4
 	 *
-	 * @param array{job: string, pid: int, host: string, started: int, total: int, processed: int, failed: int, background: bool, log: string, in_flight?: int[]} $run Run record.
+	 * @param array{job: string, pid: int, host: string, started: int, total: int, processed: int, failed: int, background: bool, log: string, files_at_once?: int, in_flight?: int[]} $run Run record.
 	 * @return void
 	 */
 	public static function set_cli_run( array $run ) {
+		// When the run last reported, so a run that died can say roughly when.
+		$run['updated'] = time();
+
 		update_option( self::CLI_RUN_OPTION, $run, false );
 	}
 
@@ -260,8 +269,27 @@ class Plugin {
 			AbstractBulkProcessor::clear_pending_status( array_map( 'intval', $run['in_flight'] ) );
 		}
 
+		if ( is_array( $run ) && ! empty( $run['job'] ) ) {
+			unset( $run['in_flight'] );
+			$run['stopped'] = (bool) self::read_option_uncached( self::CLI_STOP_OPTION );
+			update_option( self::CLI_LAST_RUN_OPTION, $run, false );
+		}
+
 		delete_option( self::CLI_RUN_OPTION );
 		delete_option( self::CLI_STOP_OPTION );
+	}
+
+	/**
+	 * The last WP-CLI job's record, kept after it ended.
+	 *
+	 * @since 0.1.4
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	public static function get_cli_last_run() {
+		$run = get_option( self::CLI_LAST_RUN_OPTION );
+
+		return is_array( $run ) && ! empty( $run['job'] ) ? $run : null;
 	}
 
 	/**

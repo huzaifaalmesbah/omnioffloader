@@ -133,19 +133,32 @@ class ProviderController extends BaseController {
 	 * administrator may (a self-hosted MinIO, for example). Single sites
 	 * allow it, since their administrator owns the server.
 	 *
+	 * Without path-style addressing the SDK sends requests to
+	 * `{bucket}.{endpoint host}`, not to the endpoint itself, so that host
+	 * is checked too. A name that resolves differently by the time the
+	 * request is made (DNS rebinding) is not covered.
+	 *
 	 * @since 0.1.4
 	 *
-	 * @param string $endpoint Endpoint URL from the request.
+	 * @param string               $provider_key Provider key.
+	 * @param array<string, mixed> $values       Credential values from the request.
 	 * @return \WP_Error|null
 	 */
-	private static function endpoint_refusal( $endpoint ) {
-		$endpoint = trim( (string) $endpoint );
-
-		if ( '' === $endpoint || ! is_multisite() || current_user_can( 'manage_network_options' ) ) {
+	private static function endpoint_refusal( $provider_key, array $values ) {
+		if ( ! is_multisite() || current_user_can( 'manage_network_options' ) ) {
 			return null;
 		}
 
-		if ( false !== wp_http_validate_url( $endpoint ) ) {
+		$allowed = true;
+
+		foreach ( self::request_urls( $provider_key, $values ) as $url ) {
+			if ( false === wp_http_validate_url( $url ) ) {
+				$allowed = false;
+				break;
+			}
+		}
+
+		if ( $allowed ) {
 			return null;
 		}
 
@@ -154,6 +167,49 @@ class ProviderController extends BaseController {
 			__( 'On a multisite network, only a network administrator can use a private or local endpoint address. Use the provider\'s public endpoint, or ask a network administrator.', 'omnioffloader' ),
 			array( 'status' => 403 )
 		);
+	}
+
+	/**
+	 * Addresses the S3 client will send requests to for these credential
+	 * values: the custom endpoint, and `{bucket}.{endpoint host}` unless
+	 * path-style addressing is on. Empty when the request sets neither an
+	 * endpoint nor a bucket, or the provider has no custom endpoint.
+	 *
+	 * @since 0.1.4
+	 *
+	 * @param string               $provider_key Provider key.
+	 * @param array<string, mixed> $values       Credential values from the request.
+	 * @return string[]
+	 */
+	public static function request_urls( $provider_key, array $values ) {
+		// Only a request that sets where requests go is checked.
+		if ( '' === trim( (string) ( $values['endpoint'] ?? '' ) ) && '' === trim( (string) ( $values['bucket'] ?? '' ) ) ) {
+			return array();
+		}
+
+		$value = static function ( $field ) use ( $provider_key, $values ) {
+			$given = trim( (string) ( $values[ $field ] ?? '' ) );
+
+			return '' !== $given ? $given : trim( Helpers::get_credential( $provider_key, $field ) );
+		};
+
+		// The address the client is built from (see the providers).
+		$endpoint = Helpers::normalize_url( $value( 'endpoint' ) );
+
+		if ( '' === $endpoint ) {
+			return array();
+		}
+
+		$urls       = array( $endpoint );
+		$bucket     = $value( 'bucket' );
+		$path_style = in_array( $value( 'path_style' ), array( '1', 'true' ), true );
+		$parts      = wp_parse_url( $endpoint );
+
+		if ( '' !== $bucket && ! $path_style && is_array( $parts ) && ! empty( $parts['host'] ) ) {
+			$urls[] = ( $parts['scheme'] ?? 'https' ) . '://' . $bucket . '.' . $parts['host'] . ( isset( $parts['port'] ) ? ':' . $parts['port'] : '' );
+		}
+
+		return $urls;
 	}
 
 	/**
@@ -252,7 +308,7 @@ class ProviderController extends BaseController {
 			$to_save[ $name ] = $value;
 		}
 
-		$refused = self::endpoint_refusal( $to_save['endpoint'] ?? '' ) ?? self::region_refusal( $to_save['region'] ?? '' );
+		$refused = self::endpoint_refusal( $provider_key, $to_save ) ?? self::region_refusal( $to_save['region'] ?? '' );
 
 		if ( null !== $refused ) {
 			return $refused;
@@ -331,7 +387,7 @@ class ProviderController extends BaseController {
 				$sanitized[ sanitize_key( (string) $field_name ) ] = sanitize_text_field( (string) $field_val );
 			}
 
-			$refused = self::endpoint_refusal( $sanitized['endpoint'] ?? '' ) ?? self::region_refusal( $sanitized['region'] ?? '' );
+			$refused = self::endpoint_refusal( $provider_key, $sanitized ) ?? self::region_refusal( $sanitized['region'] ?? '' );
 
 			if ( null !== $refused ) {
 				return $refused;

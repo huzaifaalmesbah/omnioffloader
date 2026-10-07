@@ -226,6 +226,21 @@ class FolderClaim {
 	}
 
 	/**
+	 * Build the folder list once, if it doesn't exist yet. Run by the 0.1.4
+	 * migration so the one scan of offloaded media happens on update, not
+	 * on whichever upload or delete first needs the list.
+	 *
+	 * @since 0.1.4
+	 *
+	 * @return void
+	 */
+	public static function seed() {
+		if ( ! is_array( get_option( self::FOLDERS_OPTION ) ) ) {
+			self::seed_folders();
+		}
+	}
+
+	/**
 	 * Build the folder list from the paths offloaded media is stored under,
 	 * per provider and bucket, and save it.
 	 *

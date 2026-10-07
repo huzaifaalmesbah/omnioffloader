@@ -199,7 +199,7 @@ Credentials: `GET` returns secrets masked (`is_set: true`); `POST` ignores maske
 
 The policy is applied once at offload time (`LocalCleaner`). Changing the setting later does nothing to existing media until `RetentionApplier` runs (Tools page, `wp omnioffloader retention`). Stricter: every local file is verified in the bucket **by size** before deletion; missing objects are uploaded first; mismatches are kept and logged. Looser: `AttachmentRestorer::restore_local_copies()` downloads files while the attachment stays offloaded.
 
-**Transients:** `omnioffloader_media_stats`, `omnioffloader_restore_preflight`, `omnioffloader_retention_preflight`, `omnioffloader_activation_redirect`.
+**Transients:** `omnioffloader_media_stats`, `omnioffloader_restore_preflight`, `omnioffloader_retention_preflight`, `omnioffloader_move_preflight` (count of media outside the current folder for the admin screens, keyed by provider/bucket/folder, cleared by `flush_media_stats()`), `omnioffloader_activation_redirect`.
 
 **Cron:** watchdog event only while a bulk job runs; unschedule when idle.
 

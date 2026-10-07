@@ -84,7 +84,7 @@ class MoveController extends BaseController {
 		return rest_ensure_response(
 			array(
 				'folder'    => $folder,
-				'elsewhere' => Helpers::count_offloaded_elsewhere( $folder ),
+				'elsewhere' => Helpers::count_offloaded_elsewhere_cached( $folder ),
 			)
 		);
 	}

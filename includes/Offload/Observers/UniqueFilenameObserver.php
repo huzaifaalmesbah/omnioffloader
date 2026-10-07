@@ -60,11 +60,11 @@ class UniqueFilenameObserver implements ObserverInterface {
 		// Relative folder of the destination, e.g. "2026/08/".
 		$prefix = ltrim( substr( $dir, strlen( $base_dir ) ), '/' );
 		$name   = pathinfo( $filename, PATHINFO_FILENAME );
-		$taken  = $this->names_in_use( $prefix, $name );
+		$taken  = self::stems( $this->names_in_use( $prefix, $name ) );
 		$stem   = $name;
 		$number = 0;
 
-		while ( self::is_taken( $stem, $taken ) ) {
+		while ( isset( $taken[ strtolower( $stem ) ] ) ) {
 			++$number;
 			$stem = $name . '-' . $number;
 		}
@@ -73,23 +73,29 @@ class UniqueFilenameObserver implements ObserverInterface {
 	}
 
 	/**
-	 * Whether a file name stem collides with a name in use: the same name
-	 * in any format, or one of its generated variants.
+	 * The stems a set of file names takes, as a lookup set: a name blocks
+	 * its own stem in any format, and the stem it is a generated variant of
+	 * ("-scaled", "-rotated", "-150x150"). Lower case, since names differing
+	 * only in case collide on case-insensitive storage.
 	 *
-	 * @param string              $stem  File name without extension.
-	 * @param array<string, true> $taken File names in use in the folder.
-	 * @return bool
+	 * Built once per upload, so trying "-1", "-2", … is one lookup each.
+	 *
+	 * @since 0.1.4
+	 *
+	 * @param array<string, true> $files File names in use in the folder.
+	 * @return array<string, true>
 	 */
-	private static function is_taken( $stem, array $taken ) {
-		$pattern = '/^' . preg_quote( $stem, '/' ) . '(?:-scaled|-rotated|-\d+x\d+)?\.[^.\/]+$/i';
+	private static function stems( array $files ) {
+		$stems = array();
 
-		foreach ( array_keys( $taken ) as $file ) {
-			if ( preg_match( $pattern, $file ) ) {
-				return true;
-			}
+		foreach ( array_keys( $files ) as $file ) {
+			$stem = strtolower( pathinfo( (string) $file, PATHINFO_FILENAME ) );
+
+			$stems[ $stem ] = true;
+			$stems[ (string) preg_replace( '/(?:-scaled|-rotated|-\d+x\d+)$/', '', $stem ) ] = true;
 		}
 
-		return false;
+		return $stems;
 	}
 
 	/**

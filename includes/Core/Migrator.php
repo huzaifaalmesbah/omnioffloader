@@ -41,6 +41,10 @@ class Migrator {
 		if ( version_compare( $from_version, '0.1.3', '<' ) ) {
 			self::migrate_to_0_1_3();
 		}
+
+		if ( version_compare( $from_version, '0.1.4', '<' ) ) {
+			self::migrate_to_0_1_4();
+		}
 	}
 
 	/**
@@ -106,5 +110,23 @@ class Migrator {
 		}
 
 		delete_option( 'omnioffloader_secondary_credentials' );
+	}
+
+	/**
+	 * 0.1.4 — record the bucket folders this site used before 0.1.4.
+	 *
+	 * Folder claims now cover every folder the site has media in, kept in
+	 * omnioffloader_folders_used. Building it scans offloaded media once;
+	 * doing it here keeps that off the first upload after the update.
+	 *
+	 * Idempotent and safe inside a queue worker: it only reads media meta
+	 * and writes the one option, and skips it when the list exists.
+	 *
+	 * @since 0.1.4
+	 *
+	 * @return void
+	 */
+	private static function migrate_to_0_1_4() {
+		FolderClaim::seed();
 	}
 }

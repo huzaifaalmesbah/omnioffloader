@@ -171,6 +171,39 @@ class Helpers {
 	}
 
 	/**
+	 * count_offloaded_elsewhere() for the admin screens, which ask on every
+	 * Settings and Tools visit: cached for an hour per provider, bucket and
+	 * folder, so a settings change misses the cache, and cleared with the
+	 * media stats whenever an offload, Bring Back or move changes media.
+	 *
+	 * @since 0.1.4
+	 *
+	 * @param string $prefix Current folder (see count_offloaded_elsewhere()).
+	 * @return int
+	 */
+	public static function count_offloaded_elsewhere_cached( $prefix ) {
+		$key    = md5( implode( '|', self::active_location() ) . '|' . $prefix );
+		$cached = get_transient( 'omnioffloader_move_preflight' );
+
+		if ( is_array( $cached ) && ( $cached['key'] ?? '' ) === $key && isset( $cached['count'] ) ) {
+			return (int) $cached['count'];
+		}
+
+		$count = self::count_offloaded_elsewhere( $prefix );
+
+		set_transient(
+			'omnioffloader_move_preflight',
+			array(
+				'key'   => $key,
+				'count' => $count,
+			),
+			HOUR_IN_SECONDS
+		);
+
+		return $count;
+	}
+
+	/**
 	 * Attachments this request marked as being worked on.
 	 *
 	 * @var array<int, true>
@@ -425,13 +458,14 @@ class Helpers {
 		delete_transient( 'omnioffloader_media_stats' );
 		delete_transient( 'omnioffloader_restore_preflight' );
 		delete_transient( 'omnioffloader_retention_preflight' );
+		delete_transient( 'omnioffloader_move_preflight' );
 
 		// With a persistent object cache, delete_transient() only clears the
 		// cache; rows written to wp_options before the cache was enabled would
 		// otherwise resurface. Without one, delete_transient() already removed
 		// those rows, so this is skipped (it costs two queries per key).
 		if ( wp_using_ext_object_cache() ) {
-			foreach ( array( 'omnioffloader_media_stats', 'omnioffloader_restore_preflight', 'omnioffloader_retention_preflight' ) as $key ) {
+			foreach ( array( 'omnioffloader_media_stats', 'omnioffloader_restore_preflight', 'omnioffloader_retention_preflight', 'omnioffloader_move_preflight' ) as $key ) {
 				delete_option( '_transient_' . $key );
 				delete_option( '_transient_timeout_' . $key );
 			}

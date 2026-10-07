@@ -9,6 +9,7 @@ namespace OmniOffloader\Cli;
 
 use OmniOffloader\Core\Helpers;
 use OmniOffloader\Core\Plugin;
+use OmniOffloader\Services\AttachmentRestorer;
 use OmniOffloader\Services\RetentionApplier;
 use OmniOffloader\Traits\AttachmentHelper;
 use WP_CLI;
@@ -27,6 +28,17 @@ class RetentionCommand {
 
 	use AttachmentHelper;
 	use CliJobGuard;
+
+	/**
+	 * Failures in a row that trigger a connection check.
+	 */
+	private const FAILURE_LIMIT = 10;
+
+	/**
+	 * Failures in a row, as a multiple of FAILURE_LIMIT, that stop the run
+	 * even while the provider still answers.
+	 */
+	private const UNEXPLAINED_FAILURE_FACTOR = 10;
 
 	/**
 	 * Attachments primed per chunk in dry runs and counts.
@@ -189,12 +201,27 @@ class RetentionCommand {
 		$repaired  = 0;
 		$processed = 0;
 		$stopped   = false;
+		$streak    = 0;
+		$fail_run  = 0;
+		$aborted   = false;
+		$reason    = '';
+		$quota_hit = false;
 
 		foreach ( $ids as $id ) {
 			if ( $applier->apply( $id, $policy ) ) {
 				++$done;
+				$streak   = 0;
+				$fail_run = 0;
 			} else {
 				++$failed;
+				++$streak;
+				++$fail_run;
+
+				// Every later download would fail the same way.
+				if ( $applier->ran_out_of_disk() ) {
+					$quota_hit = true;
+					break;
+				}
 			}
 
 			$freed    += $applier->get_freed_bytes();
@@ -210,6 +237,23 @@ class RetentionCommand {
 				$stopped = true;
 				break;
 			}
+
+			// An unreachable bucket fails every attachment the same way; when
+			// it still answers, the attachments are at fault: carry on, up to
+			// a hard cap (as restore and offload do).
+			if ( $streak >= self::FAILURE_LIMIT ) {
+				$provider = AttachmentRestorer::provider_for( $id );
+				$check    = null !== $provider && $fail_run < self::FAILURE_LIMIT * self::UNEXPLAINED_FAILURE_FACTOR ? $provider->check_connection() : null;
+
+				if ( true === $check ) {
+					$streak = 0;
+					continue;
+				}
+
+				$reason  = is_wp_error( $check ) ? $check->get_error_message() . '. ' : '';
+				$aborted = true;
+				break;
+			}
 		}
 
 		$progress->finish();
@@ -223,6 +267,14 @@ class RetentionCommand {
 
 		if ( $freed > 0 ) {
 			WP_CLI::log( sprintf( 'Freed %s of local disk space.', size_format( $freed, 1 ) ) );
+		}
+
+		if ( $quota_hit ) {
+			WP_CLI::error( sprintf( 'Stopped: the server ran out of disk space, or the hosting plan\'s storage quota is used up (%d updated first). Free up space, then run the command again.', $done ) );
+		}
+
+		if ( $aborted ) {
+			WP_CLI::error( sprintf( 'Stopped after %d failures in a row (%d updated first). %sCheck the connection to your storage provider (see omnioffloader_error_log meta).', $fail_run, $done, $reason ) );
 		}
 
 		if ( $stopped ) {

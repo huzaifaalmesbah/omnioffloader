@@ -24,7 +24,6 @@ import { useCore } from '../context/CoreContext';
 import { providerGuidePath } from '../utils/docs';
 import { folderLabel, uploadFolder } from '../utils/folder';
 import { radioKeyDown, radioTabIndex } from '../utils/radioGroup';
-import { requestScroll } from '../utils/scrollTarget';
 import {
 	type MovePreflight,
 	RetentionPolicy,
@@ -33,7 +32,7 @@ import {
 } from '../types';
 
 interface SettingsProps {
-	onNavigate: ( view: string ) => void;
+	onNavigate: ( view: string, section?: string ) => void;
 }
 
 export function SettingsPage( { onNavigate }: SettingsProps ) {
@@ -594,10 +593,9 @@ export function SettingsPage( { onNavigate }: SettingsProps ) {
 									<Button
 										variant="secondary"
 										size="compact"
-										onClick={ () => {
-											requestScroll( MOVE_CARD_ID );
-											onNavigate( 'tools' );
-										} }
+										onClick={ () =>
+											onNavigate( 'tools', MOVE_CARD_ID )
+										}
 									>
 										{ __(
 											'Move media in Tools',

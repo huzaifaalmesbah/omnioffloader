@@ -7,6 +7,11 @@
 
 require_once OMNIOFFLOADER_DIR . 'tests/MockProvider.php';
 
+// Local test sites (*.test) are in Safe mode; this test exercises writes.
+if ( ! defined( 'OMNIOFFLOADER_SAFE_MODE' ) ) {
+	define( 'OMNIOFFLOADER_SAFE_MODE', false );
+}
+
 use OmniOffloader\Offload\Offloader;
 use OmniOffloader\Services\AsyncUploadProcessor;
 use OmniOffloader\Tests\MockProvider;

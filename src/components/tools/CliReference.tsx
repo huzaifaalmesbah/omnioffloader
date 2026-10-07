@@ -308,9 +308,9 @@ function getCommands(): CliCommand[] {
 				},
 				{
 					command:
-						'nohup wp omnioffloader move --all --yes > ~/move.log 2>&1 &',
+						'nohup wp omnioffloader move --all --yes --concurrency=32 > ~/move.log 2>&1 &',
 					description: __(
-						'The same in the background; --yes is needed because nobody can answer the prompt.',
+						'The same in the background, 32 files at once; --yes is needed because nobody can answer the prompt.',
 						'omnioffloader'
 					),
 				},
@@ -362,6 +362,13 @@ function getCommands(): CliCommand[] {
 					flag: '--force',
 					description: __(
 						'Run even while an admin bulk job is active.',
+						'omnioffloader'
+					),
+				},
+				{
+					flag: '--concurrency=<number>',
+					description: __(
+						'Files moved at once for this run, from 1 to 64. 32 is a good start on a VPS or dedicated server.',
 						'omnioffloader'
 					),
 				},

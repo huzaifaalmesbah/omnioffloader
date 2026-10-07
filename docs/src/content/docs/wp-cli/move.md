@@ -20,7 +20,7 @@ It works one attachment at a time. Even with Full Cloud Migration, only one atta
 ## Synopsis
 
 ```bash
-wp omnioffloader move (--all | --ids=<ids>) [--limit=<number>] [--keep-old] [--yes] [--dry-run] [--force]
+wp omnioffloader move (--all | --ids=<ids>) [--limit=<number>] [--keep-old] [--yes] [--dry-run] [--force] [--concurrency=<number>]
 ```
 
 ## Options
@@ -34,6 +34,7 @@ wp omnioffloader move (--all | --ids=<ids>) [--limit=<number>] [--keep-old] [--y
 | `--yes` | Skip the confirmation question (needed in the background). |
 | `--dry-run` | List what would move, change nothing. |
 | `--force` | Run even while a bulk job started from the admin screen is active. |
+| `--concurrency=<number>` | Files downloaded and uploaded at the same time, 1 to 64, instead of the [Transfer Speed](/features/transfer-speed/) setting (at most 10). For a VPS or dedicated server; start with 32. |
 
 ## Examples
 
@@ -49,11 +50,13 @@ Would move 1240 attachment(s) into shop/:
   112  Product video  (now in 2026/09/)
 ```
 
-Move everything, in the background, with a log file (see [Long runs and log files](/wp-cli/long-runs/)):
+Move everything in the background, 32 files at once, with a log file (see [Long runs and log files](/wp-cli/long-runs/)):
 
 ```bash
-nohup wp omnioffloader move --all --yes > ~/move.log 2>&1 &
+nohup wp omnioffloader move --all --yes --concurrency=32 > ~/move.log 2>&1 &
 ```
+
+`--yes` is needed in the background, because nobody can answer the confirmation question there.
 
 Follow it with `wp omnioffloader status` and stop it with [`wp omnioffloader stop`](/wp-cli/stop/). Run the same command again to continue: attachments already moved are skipped.
 

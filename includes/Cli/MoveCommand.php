@@ -76,12 +76,17 @@ class MoveCommand {
 	 * [--force]
 	 * : Run even when a bulk job started from the admin screen is active.
 	 *
+	 * [--concurrency=<number>]
+	 * : Files downloaded and uploaded at the same time for this run, 1 to 64,
+	 * instead of the Transfer Speed setting (at most 10). For a VPS or
+	 * dedicated server.
+	 *
 	 * ## EXAMPLES
 	 *
 	 *     wp omnioffloader move --all --dry-run
 	 *     wp omnioffloader move --all
 	 *     wp omnioffloader move --ids=12,15,42 --keep-old
-	 *     nohup wp omnioffloader move --all --yes > ~/move.log 2>&1 &
+	 *     nohup wp omnioffloader move --all --yes --concurrency=32 > ~/move.log 2>&1 &
 	 *
 	 * @param string[]              $args       Positional args (unused).
 	 * @param array<string, string> $assoc_args Named args.
@@ -96,6 +101,18 @@ class MoveCommand {
 
 		if ( null === $provider ) {
 			WP_CLI::error( 'No cloud provider is configured, so there is nowhere to move media to.' );
+		}
+
+		if ( isset( $assoc_args['concurrency'] ) ) {
+			$concurrency = (string) $assoc_args['concurrency'];
+
+			// A typo must not silently mean "the setting" or "64".
+			if ( ! ctype_digit( $concurrency ) || (int) $concurrency < 1 || (int) $concurrency > Helpers::MAX_CLI_CONCURRENCY ) {
+				WP_CLI::error( sprintf( '--concurrency must be a whole number from 1 to %d.', Helpers::MAX_CLI_CONCURRENCY ) );
+			}
+
+			// Covers both halves of a move: the download and the new upload.
+			Helpers::set_transfer_concurrency_override( (int) $concurrency );
 		}
 
 		if ( ! $is_dry ) {
@@ -153,6 +170,10 @@ class MoveCommand {
 
 		$mover    = new AttachmentMover( $provider );
 		$progress = \WP_CLI\Utils\make_progress_bar( 'Moving', count( $ids ) );
+
+		if ( Helpers::transfer_concurrency_override() > 0 ) {
+			WP_CLI::log( sprintf( 'Moving up to %d files at once.', Helpers::transfer_concurrency_override() ) );
+		}
 
 		$done      = 0;
 		$failed    = 0;

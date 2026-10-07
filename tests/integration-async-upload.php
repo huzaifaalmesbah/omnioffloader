@@ -129,6 +129,21 @@ omnioffloader_async_check( 0 === strpos( $cloud_url, 'https://cdn.example.test/'
 
 $subdir = get_post_meta( $id, 'omnioffloader_path', true );
 omnioffloader_async_check( $provider->object_exists( $subdir . wp_basename( $file ) ), 'file exists in cloud bucket' );
+omnioffloader_async_check( '' === get_post_meta( $id, 'omnioffloader_async_attempts', true ), 'attempt counter cleared after the upload' );
+
+// ---------------------------------------------------------------------------
+// Test 2b: an upload whose worker keeps being killed is given up
+// ---------------------------------------------------------------------------
+echo "\nTest 2b: an upload killed three times is marked failed, not retried forever\n";
+
+$id2 = omnioffloader_make_async_test_attachment( 'async-test-2.jpg' );
+update_post_meta( $id2, 'omnioffloader_async_attempts', 3 );
+omnioffloader_async_check( false === $task_method->invoke( $async_processor, $id2 ), 'task() drops it from the queue' );
+omnioffloader_async_check( 'failed' === get_post_meta( $id2, 'omnioffloader_status', true ), 'marked failed' );
+omnioffloader_async_check( ! get_post_meta( $id2, 'omnioffloader_offloaded', true ), 'not offloaded (stays on the server)' );
+omnioffloader_async_check( ! empty( get_post_meta( $id2, 'omnioffloader_error_log', true ) ), 'the reason is logged' );
+omnioffloader_async_check( '' === get_post_meta( $id2, 'omnioffloader_async_attempts', true ), 'attempt counter cleared' );
+wp_delete_attachment( $id2, true );
 
 // ---------------------------------------------------------------------------
 // Test 3: Purge stored queue data

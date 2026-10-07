@@ -43,6 +43,28 @@ class AsyncUploadProcessor extends WP_Background_Process {
 	protected $action = 'async_upload';
 
 	/**
+	 * Process lock lifetime. The parent's 60 seconds expire during one large
+	 * upload, letting a second worker start on the same item; the lock is
+	 * also renewed while bytes move (see handle()).
+	 *
+	 * @var int
+	 */
+	protected $queue_lock_time = 600;
+
+	/**
+	 * Tries before an upload whose worker keeps being killed (timeout,
+	 * memory) is given up and marked failed, instead of retried forever.
+	 */
+	private const MAX_ATTEMPTS = 3;
+
+	/**
+	 * Whether this request holds the worker mutex.
+	 *
+	 * @var bool
+	 */
+	private $holds_mutex = false;
+
+	/**
 	 * Cloud provider.
 	 *
 	 * @var ProviderInterface
@@ -69,6 +91,87 @@ class AsyncUploadProcessor extends WP_Background_Process {
 	}
 
 	/**
+	 * One worker at a time, with the lock renewed during long transfers.
+	 *
+	 * The process lock is a transient: checking and setting it are two
+	 * steps, so the loopback worker, the cron healthcheck and an admin poll
+	 * could all start on the same upload. A database lock is atomic.
+	 *
+	 * @since 0.1.4
+	 *
+	 * @return void|mixed
+	 */
+	protected function handle() {
+		if ( ! $this->acquire_worker_mutex() ) {
+			return $this->maybe_wp_die();
+		}
+
+		$renew = function () {
+			// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.DynamicHooknameFound -- the parent's own filter name.
+			set_site_transient( $this->identifier . '_process_lock', microtime(), (int) apply_filters( $this->identifier . '_queue_lock_time', $this->queue_lock_time ) );
+		};
+		add_action( 'omnioffloader_transfer_heartbeat', $renew );
+
+		try {
+			// The parent ends in wp_die() on a loopback request; the mutex is
+			// session-scoped, so it is released with the connection then.
+			return parent::handle();
+		} finally {
+			remove_action( 'omnioffloader_transfer_heartbeat', $renew );
+			$this->release_worker_mutex();
+		}
+	}
+
+	/**
+	 * Take the worker mutex without waiting; true where GET_LOCK() is missing.
+	 *
+	 * @return bool
+	 */
+	private function acquire_worker_mutex() {
+		global $wpdb;
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- advisory lock, must hit the server.
+		$got = $wpdb->get_var( $wpdb->prepare( 'SELECT GET_LOCK( %s, 0 )', $this->worker_mutex_name() ) );
+
+		if ( null === $got ) {
+			return true;
+		}
+
+		$this->holds_mutex = '1' === (string) $got;
+
+		return $this->holds_mutex;
+	}
+
+	/**
+	 * Release the worker mutex if this request holds it.
+	 *
+	 * @return void
+	 */
+	private function release_worker_mutex() {
+		global $wpdb;
+
+		if ( ! $this->holds_mutex ) {
+			return;
+		}
+
+		$this->holds_mutex = false;
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- advisory lock, must hit the server.
+		$wpdb->query( $wpdb->prepare( 'SELECT RELEASE_LOCK( %s )', $this->worker_mutex_name() ) );
+	}
+
+	/**
+	 * Name of this queue's worker mutex.
+	 *
+	 * @return string
+	 */
+	private function worker_mutex_name() {
+		global $wpdb;
+
+		return 'omnioffloader:' . md5( $wpdb->prefix . $this->identifier );
+	}
+
+	/**
 	 * Process one attachment ID from the queue.
 	 *
 	 * @param mixed $item Queue item (attachment ID).
@@ -88,6 +191,22 @@ class AsyncUploadProcessor extends WP_Background_Process {
 			return false;
 		}
 
+		// The parent removes an item only after it finishes, so a worker
+		// killed mid-upload leaves it queued; cap the retries.
+		$attempts = (int) get_post_meta( $attachment_id, 'omnioffloader_async_attempts', true ) + 1;
+
+		if ( $attempts > self::MAX_ATTEMPTS ) {
+			delete_post_meta( $attachment_id, 'omnioffloader_async_attempts' );
+			self::log_attachment_error(
+				$attachment_id,
+				__( 'The background upload was stopped by the server several times (time or memory limit). Offload it again from the Media Library, or with WP-CLI.', 'omnioffloader' )
+			);
+			update_post_meta( $attachment_id, 'omnioffloader_status', 'failed' );
+
+			return false;
+		}
+
+		update_post_meta( $attachment_id, 'omnioffloader_async_attempts', $attempts );
 		update_post_meta( $attachment_id, 'omnioffloader_status', 'processing' );
 
 		// One stats flush per worker pass instead of one per upload. A
@@ -100,6 +219,8 @@ class AsyncUploadProcessor extends WP_Background_Process {
 
 		$uploader = new AttachmentUploader( $this->provider );
 		$ok       = $uploader->upload( $attachment_id );
+
+		delete_post_meta( $attachment_id, 'omnioffloader_async_attempts' );
 
 		if ( ! $ok ) {
 			update_post_meta( $attachment_id, 'omnioffloader_status', 'failed' );

@@ -35,7 +35,7 @@ When you edit an attachment, an **OmniOffloader** box shows:
 
 - **Provider:** where the attachment is stored,
 - **Bucket:** the bucket it is in (administrators only),
-- **Folder:** the folder in the bucket, for example `shop/2026/09/` (administrators only),
+- **Folder:** the folder in the bucket, for example `shop/2026/09/` (administrators only), with *Not in the current folder* when the [Path Prefix](/features/path-prefix-and-versioning/#changing-the-prefix-later) changed after it was offloaded,
 - **Offloaded on:** the date and time,
 - **Local Storage:** what is still on the server, for example *Preserved on server (All files)*, *Original kept (Thumbnails cleaned)* or *Removed from server (Cloud only)*,
 

@@ -21,6 +21,8 @@ export function useCliJob( onEnded: () => void ) {
 	const delay = useRef( POLL_MIN );
 	const inFlight = useRef( false );
 	const wasRunning = useRef( false );
+	const last = useRef( '' );
+	const active = useRef( true );
 	const endedRef = useRef( onEnded );
 	endedRef.current = onEnded;
 
@@ -34,9 +36,18 @@ export function useCliJob( onEnded: () => void ) {
 
 		fetchCliJob()
 			.then( ( fresh ) => {
-				const running = fresh.running;
+				if ( ! active.current ) {
+					return;
+				}
 
-				setJob( running ? fresh : null );
+				const running = fresh.running;
+				const key = running ? JSON.stringify( fresh ) : '';
+
+				// The whole admin app reads this: re-render only on change.
+				if ( key !== last.current ) {
+					last.current = key;
+					setJob( running ? fresh : null );
+				}
 
 				if ( wasRunning.current && ! running ) {
 					endedRef.current();
@@ -66,6 +77,7 @@ export function useCliJob( onEnded: () => void ) {
 	}, [] );
 
 	useEffect( () => {
+		active.current = true;
 		check();
 
 		const onVisible = () => {
@@ -78,6 +90,7 @@ export function useCliJob( onEnded: () => void ) {
 		document.addEventListener( 'visibilitychange', onVisible );
 
 		return () => {
+			active.current = false;
 			document.removeEventListener( 'visibilitychange', onVisible );
 			window.clearTimeout( timer.current );
 		};

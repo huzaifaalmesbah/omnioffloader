@@ -8,7 +8,7 @@ import { folderLabel } from '../../utils/folder';
 import { ActivityLog } from '../ui/ActivityLog';
 import { BatchScopeSelector, type ScopeMode } from '../ui/BatchScopeSelector';
 import { Card } from '../ui/Card';
-import { CliJobNotice } from '../ui/CliJobNotice';
+import { cliJobTitle } from '../ui/CliJobNotice';
 import { useConfirm } from '../ui/ConfirmDialog';
 import { ProgressBar } from '../ui/ProgressBar';
 import { RunAnnouncer } from '../ui/RunAnnouncer';
@@ -93,8 +93,6 @@ export function MoveFolderCard() {
 				'omnioffloader'
 			) }
 		>
-			<CliJobNotice page="move" />
-
 			{ isDirty && (
 				<p className="smowp-warning">
 					{ __(
@@ -182,6 +180,11 @@ export function MoveFolderCard() {
 								variant="primary"
 								className="smowp-btn-primary"
 								disabled={ ! canStart }
+								aria-describedby={
+									cliJob
+										? 'smowp-move-disabled-reason'
+										: undefined
+								}
 								isBusy={ busy }
 								onClick={ () => void handleStart() }
 							>
@@ -204,6 +207,14 @@ export function MoveFolderCard() {
 											count
 										) }
 							</Button>
+							{ cliJob && (
+								<p
+									id="smowp-move-disabled-reason"
+									className="smowp-disabled-reason"
+								>
+									{ cliJobTitle( cliJob.job ) }
+								</p>
+							) }
 						</div>
 					) }
 				</div>

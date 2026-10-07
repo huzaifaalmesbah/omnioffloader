@@ -108,6 +108,14 @@ If the log shows an error instead, or `status` shows nothing running, see [If so
 `tail -f` keeps showing new lines until you press **Ctrl+C**. That only stops the watching. The job itself keeps running.
 :::
 
+### In the admin screens
+
+You can also follow the job from WordPress. While it runs, the **Offload**, **Bring Back** and **Tools** screens show which WP-CLI job is running, with the same figures as `wp omnioffloader status`: progress, failures, start time, speed, time left and expected finish, files at once, the process and the log file. Their **Start** buttons wait until the job ends, since only one job runs at a time.
+
+![The Offload screen while a WP-CLI offload runs: progress, speed, time left, files at once, process and log file, with Start Bulk Offload waiting](/images/screenshots/cli-job-running-marked.png)
+
+The screens check when you open them or come back to the tab, and while a WP-CLI job runs they update every 5 to 15 seconds. With no job running they make no extra requests.
+
 ## What the lines mean
 
 | Line | Meaning |

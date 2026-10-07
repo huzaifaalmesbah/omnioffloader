@@ -252,6 +252,8 @@ class CoreController extends BaseController {
 				'pid'           => (int) ( $run['pid'] ?? 0 ),
 				'log'           => (string) ( $run['log'] ?? '' ),
 				'stopping'      => '' !== $job && Plugin::cli_stop_requested(),
+				// Decided here, on the server's clock, not the browser's.
+				'quiet'         => $updated > 0 && time() - $updated > 2 * MINUTE_IN_SECONDS,
 			)
 		);
 	}

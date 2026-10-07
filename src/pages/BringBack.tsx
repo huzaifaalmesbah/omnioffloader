@@ -179,7 +179,7 @@ export function BringBackPage( { onNavigate }: BringBackProps ) {
 					'omnioffloader'
 				) }
 			>
-				<CliJobNotice page="restore" />
+				<CliJobNotice />
 
 				{ ! stats?.configured && (
 					<p className="smowp-muted">

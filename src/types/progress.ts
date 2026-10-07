@@ -183,4 +183,6 @@ export interface CliJob {
 	log: string;
 	/** `wp omnioffloader stop` was asked: it finishes the files in progress. */
 	stopping: boolean;
+	/** No progress reported for over 2 minutes: likely a large file. */
+	quiet: boolean;
 }

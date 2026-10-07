@@ -10,7 +10,7 @@ import { formatBytes } from '../../utils/formatBytes';
 import { ActivityLog } from '../ui/ActivityLog';
 import { BatchScopeSelector, type ScopeMode } from '../ui/BatchScopeSelector';
 import { Card } from '../ui/Card';
-import { CliJobNotice } from '../ui/CliJobNotice';
+import { CliJobNotice, cliJobTitle } from '../ui/CliJobNotice';
 import { ProgressBar } from '../ui/ProgressBar';
 import { RunAnnouncer } from '../ui/RunAnnouncer';
 
@@ -84,7 +84,7 @@ export function RetentionSyncCard() {
 				'omnioffloader'
 			) }
 		>
-			<CliJobNotice page="retention" />
+			<CliJobNotice />
 
 			{ isDirty && (
 				<p className="smowp-warning">
@@ -269,6 +269,11 @@ export function RetentionSyncCard() {
 								variant="primary"
 								className="smowp-btn-primary"
 								disabled={ ! canStart }
+								aria-describedby={
+									cliJob
+										? 'smowp-retention-disabled-reason'
+										: undefined
+								}
 								isBusy={ busy }
 								onClick={ () =>
 									void start(
@@ -297,6 +302,14 @@ export function RetentionSyncCard() {
 											count
 										) }
 							</Button>
+							{ cliJob && (
+								<p
+									id="smowp-retention-disabled-reason"
+									className="smowp-disabled-reason"
+								>
+									{ cliJobTitle( cliJob.job ) }
+								</p>
+							) }
 						</div>
 					) }
 				</div>

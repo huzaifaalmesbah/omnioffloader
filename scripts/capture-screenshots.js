@@ -739,6 +739,44 @@ async function main() {
       ]
     },
 
+    // 12b. A WP-CLI offload running: the Offload screen says so and waits
+    {
+      id: 12,
+      slug: 'cli-job-running',
+      wpOrgNum: null,
+      width: 1440,
+      height: 900,
+      title: 'WP-CLI Job Running (Offload Screen)',
+      url: 'https://wp71.test/wp-admin/admin.php?page=omnioffloader&view=offload',
+      mocks: [
+        {
+          path: '/omnioffloader/v1/core/cli-job',
+          data: {
+            running: true,
+            job: 'offload',
+            processed: 1250,
+            total: 5000,
+            failed: 3,
+            started: Math.floor(Date.now() / 1000) - 1500,
+            updated: Math.floor(Date.now() / 1000) - 2,
+            per_minute: 50,
+            seconds_left: 4500,
+            files_at_once: 32,
+            background: true,
+            pid: 21575,
+            log: '/home/example/offload.log',
+            stopping: false,
+            quiet: false
+          }
+        }
+      ],
+      waitFor: '.smowp-cli-job-notice',
+      annotations: [
+        { selector: '.smowp-cli-job-notice', num: 1, label: 'WP-CLI Job Running: Progress, Speed, Time Left & Log File', position: 'top-right', offsetY: -16 },
+        { selector: '.smowp-bulk-action__btn-wrap button', num: 2, label: 'Start Waits Until the WP-CLI Job Ends', position: 'right', offsetX: 18 }
+      ]
+    },
+
     // 13. Move Media to the Current Folder (Tools Screen)
     {
       id: 13,

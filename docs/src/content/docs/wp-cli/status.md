@@ -19,7 +19,9 @@ This command has no options.
 
 ## While a job runs
 
-The first lines show the running job. For a WP-CLI job, for example one started with [`nohup … &`](/wp-cli/long-runs/):
+The first lines show the running job. The **Offload**, **Bring Back** and **Tools** screens show the same figures for a running WP-CLI job (see [In the admin screens](/wp-cli/long-runs/#in-the-admin-screens)).
+
+For a WP-CLI job, for example one started with [`nohup … &`](/wp-cli/long-runs/):
 
 ```
 OmniOffloader 0.1.4

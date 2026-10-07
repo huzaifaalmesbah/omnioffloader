@@ -6,9 +6,6 @@ import { useCore } from '../../context/CoreContext';
 import type { CliJob, JobType } from '../../types';
 import { ProgressBar } from './ProgressBar';
 
-/** No report for this long: a large file is probably still transferring. */
-const QUIET_SECONDS = 120;
-
 /**
  * "A WP-CLI … is running." for a job type.
  *
@@ -147,26 +144,18 @@ function facts( job: CliJob ): string[] {
 	return list;
 }
 
-interface CliJobNoticeProps {
-	/** The job this screen starts; its own CLI run also shows progress. */
-	page: JobType;
-}
-
 /**
- * Shown on a job screen while a WP-CLI job runs: only one job runs at a
- * time, so the screen's Start button waits for it. The figures are the ones
+ * Shown at the top of each job screen (Offload, Bring Back, Tools) while a
+ * WP-CLI job runs: only one job runs at a time, so their Start buttons wait. The figures are the ones
  * `wp omnioffloader status` shows, from the same run record.
  */
-export function CliJobNotice( { page }: CliJobNoticeProps ) {
+export function CliJobNotice() {
 	const { cliJob } = useCore();
 
 	if ( ! cliJob ) {
 		return null;
 	}
 
-	const quiet =
-		cliJob.updated > 0 &&
-		Date.now() / 1000 - cliJob.updated > QUIET_SECONDS;
 	const details = facts( cliJob );
 
 	return (
@@ -196,7 +185,7 @@ export function CliJobNotice( { page }: CliJobNoticeProps ) {
 						cliJob.failed.toLocaleString()
 					) }
 			</p>
-			{ cliJob.job === page && cliJob.total > 0 && (
+			{ cliJob.total > 0 && (
 				<ProgressBar
 					value={ cliJob.processed }
 					max={ cliJob.total }
@@ -208,7 +197,7 @@ export function CliJobNotice( { page }: CliJobNoticeProps ) {
 					{ details.join( ' · ' ) }
 				</p>
 			) }
-			{ quiet && (
+			{ cliJob.quiet && (
 				<p className="smowp-cli-job-notice__facts">
 					{ __(
 						'No progress for a few minutes: a large file may still be transferring.',

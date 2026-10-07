@@ -106,7 +106,7 @@ export function OffloadPage( { onNavigate }: OffloadProps ) {
 					'omnioffloader'
 				) }
 			>
-				<CliJobNotice page="offload" />
+				<CliJobNotice />
 
 				{ ! stats?.configured && (
 					<p className="smowp-muted">

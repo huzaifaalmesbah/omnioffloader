@@ -323,6 +323,7 @@ Depending on the provider you select:
 
 **Fixes**
 
+* Cover and Media & Text blocks no longer rewrite links to other files from the same upload folder (another image or a PDF inside the block) to the cloud. Only the block's own media is rewritten, so those links no longer break.
 * WP-CLI: closing the SSH window during `wp omnioffloader offload`, `restore` or `retention` now releases the job lock right away, as Ctrl+C does. Before, the next run was refused for up to 10 minutes.
 * WP-CLI: media the run was transferring when it was interrupted (Ctrl+C, a closed window, a killed process) no longer shows "Offloading..." or "Restoring..." in the Media Library forever. It goes back to its real status and the next run picks it up.
 * WP-CLI: `wp omnioffloader stop --wait=<seconds>` refuses a value that is not a number, instead of not waiting at all.

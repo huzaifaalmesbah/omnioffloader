@@ -369,23 +369,21 @@ class ContentImageTagObserver implements ObserverInterface {
 
 		$cloud_base = trailingslashit( $domain ) . self::get_offload_path( $attachment_id );
 
-		if ( 'sizes' === self::cloud_serving( $attachment_id ) ) {
-			return $this->replace_size_urls_in_content( $content, $attachment_id, $local_base, $cloud_base );
-		}
+		// Only this attachment's own files: block markup (a Cover or Media &
+		// Text block holds its inner blocks) can also link other files from
+		// the same upload folder, which may be local or in another bucket
+		// folder. Generated sizes only while the main files stay local.
+		$with_main = 'all' === self::cloud_serving( $attachment_id );
 
-		// Handle both http:// and https:// variations in stored content.
-		$searches = array(
-			set_url_scheme( $local_base, 'http' ),
-			set_url_scheme( $local_base, 'https' ),
-		);
-
-		return str_replace( $searches, $cloud_base, $content );
+		return $this->replace_file_urls_in_content( $content, $attachment_id, $local_base, $cloud_base, $with_main );
 	}
 
 	/**
-	 * Point only an attachment's generated sizes at the cloud, for Smart
-	 * Cleanup media while "Serve media from cloud" is off: its main files
-	 * are still on the server and keep their local URLs.
+	 * Point an attachment's own file URLs at the cloud, file by file.
+	 *
+	 * Without the main files, only the generated sizes move: Smart Cleanup
+	 * media while "Serve media from cloud" is off keeps its main files on the
+	 * server, under their local URLs.
 	 *
 	 * @since 0.1.4
 	 *
@@ -393,26 +391,30 @@ class ContentImageTagObserver implements ObserverInterface {
 	 * @param int    $attachment_id Attachment ID.
 	 * @param string $local_base    Local directory URL, trailing slash.
 	 * @param string $cloud_base    Cloud directory URL, trailing slash.
+	 * @param bool   $with_main     Also the main file, original and root sources.
 	 * @return string
 	 */
-	private function replace_size_urls_in_content( $content, $attachment_id, $local_base, $cloud_base ) {
+	private function replace_file_urls_in_content( $content, $attachment_id, $local_base, $cloud_base, $with_main ) {
 		$metadata = wp_get_attachment_metadata( $attachment_id );
+		$main     = self::main_filenames( $attachment_id );
+		$files    = $with_main ? $main : array();
 
-		if ( ! is_array( $metadata ) || empty( $metadata['sizes'] ) || ! is_array( $metadata['sizes'] ) ) {
-			return $content;
-		}
-
-		$main  = self::main_filenames( $attachment_id );
-		$files = array();
-
-		foreach ( $metadata['sizes'] as $size_data ) {
-			if ( is_array( $size_data ) ) {
-				foreach ( self::files_from_size_data( $size_data ) as $file ) {
-					if ( ! in_array( $file, $main, true ) ) {
-						$files[] = $file;
+		if ( is_array( $metadata ) && ! empty( $metadata['sizes'] ) && is_array( $metadata['sizes'] ) ) {
+			foreach ( $metadata['sizes'] as $size_data ) {
+				if ( is_array( $size_data ) ) {
+					foreach ( self::files_from_size_data( $size_data ) as $file ) {
+						if ( $with_main || ! in_array( $file, $main, true ) ) {
+							$files[] = $file;
+						}
 					}
 				}
 			}
+		}
+
+		$files = array_filter( $files, static fn( $file ) => '' !== $file );
+
+		if ( empty( $files ) ) {
+			return $content;
 		}
 
 		// Longest first, so no filename is replaced as the prefix of another.

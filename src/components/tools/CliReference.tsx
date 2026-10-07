@@ -1,8 +1,9 @@
-import { Button } from '@wordpress/components';
+import { Button, ExternalLink } from '@wordpress/components';
 import { __ } from '@wordpress/i18n';
 import { copy } from '@wordpress/icons';
 
 import { useCore } from '../../context/CoreContext';
+import { docsUrl } from '../../utils/docs';
 import { Card } from '../ui/Card';
 
 interface CliOption {
@@ -21,6 +22,8 @@ interface CliCommand {
 	/** Admin screen that runs the same job, as a view key. */
 	view: string;
 	viewLabel: string;
+	/** Docs page for the command, as a docsUrl() path. */
+	docs: string;
 	examples: CliExample[];
 	options: CliOption[];
 }
@@ -38,6 +41,7 @@ function getCommands(): CliCommand[] {
 			),
 			view: 'dashboard',
 			viewLabel: __( 'Open Dashboard', 'omnioffloader' ),
+			docs: 'wp-cli/status/',
 			examples: [
 				{
 					command: 'wp omnioffloader status',
@@ -54,6 +58,7 @@ function getCommands(): CliCommand[] {
 			),
 			view: 'dashboard',
 			viewLabel: __( 'Open Dashboard', 'omnioffloader' ),
+			docs: 'wp-cli/stop/',
 			examples: [
 				{
 					command: 'wp omnioffloader stop',
@@ -81,6 +86,7 @@ function getCommands(): CliCommand[] {
 			),
 			view: 'offload',
 			viewLabel: __( 'Open Offload', 'omnioffloader' ),
+			docs: 'wp-cli/offload/',
 			examples: [
 				{
 					command: 'wp omnioffloader offload --all --dry-run',
@@ -121,7 +127,15 @@ function getCommands(): CliCommand[] {
 				{
 					command: 'wp omnioffloader offload --all --concurrency=32',
 					description: __(
-						'Upload 32 files at once on a VPS; faster for large libraries.',
+						'Upload 32 files at once on a VPS or dedicated server; much faster for large libraries. Any number from 1 to 64 works: start with 32, try 64 on a fast connection.',
+						'omnioffloader'
+					),
+				},
+				{
+					command:
+						'nohup wp omnioffloader offload --all --concurrency=32 > ~/offload.log 2>&1 &',
+					description: __(
+						'The same in the background: keeps running after you close the terminal. Follow it with tail -f ~/offload.log, end it with wp omnioffloader stop.',
 						'omnioffloader'
 					),
 				},
@@ -165,7 +179,7 @@ function getCommands(): CliCommand[] {
 				{
 					flag: '--concurrency=<number>',
 					description: __(
-						'Files uploaded at once for this run, 1–64 (VPS or dedicated server).',
+						'Files uploaded at once for this run, from 1 to 64. 32 is a good start on a VPS or dedicated server. Without it, the Transfer Speed setting applies (up to 10).',
 						'omnioffloader'
 					),
 				},
@@ -179,6 +193,7 @@ function getCommands(): CliCommand[] {
 			),
 			view: 'bring-back',
 			viewLabel: __( 'Open Bring Back', 'omnioffloader' ),
+			docs: 'wp-cli/restore/',
 			examples: [
 				{
 					command: 'wp omnioffloader restore --all --dry-run',
@@ -275,6 +290,7 @@ function getCommands(): CliCommand[] {
 			),
 			view: 'tools',
 			viewLabel: __( 'Use the card above', 'omnioffloader' ),
+			docs: 'wp-cli/retention/',
 			examples: [
 				{
 					command: 'wp omnioffloader retention --dry-run',
@@ -404,13 +420,68 @@ async function copyText( text: string ): Promise< boolean > {
 	return ok;
 }
 
+/**
+ * Steps of a background run, shown above the command list.
+ */
+function getBackgroundSteps(): CliExample[] {
+	return [
+		{
+			command:
+				'nohup wp omnioffloader offload --all --concurrency=32 > ~/offload.log 2>&1 &',
+			description: __(
+				'1. Start: keeps running after you close the terminal and writes its progress to offload.log in your home folder.',
+				'omnioffloader'
+			),
+		},
+		{
+			command: 'tail -f ~/offload.log',
+			description: __(
+				'2. Watch: a line every 25 attachments. Ctrl+C only stops watching; the job keeps going. Or run wp omnioffloader status.',
+				'omnioffloader'
+			),
+		},
+		{
+			command: 'wp omnioffloader stop',
+			description: __(
+				'3. Stop, from any terminal: it finishes the files in progress first. Run the start command again to continue.',
+				'omnioffloader'
+			),
+		},
+	];
+}
+
+interface CommandRowProps {
+	example: CliExample;
+	onCopy: ( command: string ) => void;
+}
+
+/**
+ * One command with its description and a copy button.
+ */
+function CommandRow( { example, onCopy }: CommandRowProps ) {
+	return (
+		<li className="smowp-cli__example">
+			<div className="smowp-cli__example-text">
+				<code>{ example.command }</code>
+				<span>{ example.description }</span>
+			</div>
+			<Button
+				icon={ copy }
+				size="small"
+				label={ __( 'Copy command', 'omnioffloader' ) }
+				onClick={ () => onCopy( example.command ) }
+			/>
+		</li>
+	);
+}
+
 interface CliReferenceProps {
 	onNavigate: ( view: string ) => void;
 }
 
 /**
- * Reference for every `wp omnioffloader` command, with copy buttons and a
- * link to the admin screen that runs the same job.
+ * Reference for every `wp omnioffloader` command, with copy buttons, a
+ * link to the admin screen that runs the same job, and its docs page.
  */
 export function CliReference( { onNavigate }: CliReferenceProps ) {
 	const { addNotice } = useCore();
@@ -438,45 +509,73 @@ export function CliReference( { onNavigate }: CliReferenceProps ) {
 			) }
 		>
 			<div className="smowp-cli">
+				<p className="smowp-cli__links">
+					<ExternalLink href={ docsUrl( 'wp-cli/' ) }>
+						{ __( 'WP-CLI guide', 'omnioffloader' ) }
+					</ExternalLink>
+					<ExternalLink href={ docsUrl( 'wp-cli/long-runs/' ) }>
+						{ __( 'Long runs and log files', 'omnioffloader' ) }
+					</ExternalLink>
+				</p>
+
+				<section className="smowp-cli__background">
+					<div className="smowp-cli__head">
+						<h3>
+							{ __(
+								'Run a long job in the background',
+								'omnioffloader'
+							) }
+						</h3>
+						<ExternalLink href={ docsUrl( 'wp-cli/long-runs/' ) }>
+							{ __( 'Step-by-step guide', 'omnioffloader' ) }
+						</ExternalLink>
+					</div>
+					<p className="smowp-cli__summary">
+						{ __(
+							'For a large library, start the job in the background and close the terminal. --concurrency uploads several files at once: any number from 1 to 64. Start with 32 on a VPS or dedicated server, try 64 on a fast connection.',
+							'omnioffloader'
+						) }
+					</p>
+					<ul className="smowp-cli__examples">
+						{ getBackgroundSteps().map( ( step ) => (
+							<CommandRow
+								key={ step.command }
+								example={ step }
+								onCopy={ handleCopy }
+							/>
+						) ) }
+					</ul>
+				</section>
+
 				{ getCommands().map( ( cmd ) => (
 					<section key={ cmd.name } className="smowp-cli__command">
 						<div className="smowp-cli__head">
 							<code className="smowp-cli__name">
 								{ cmd.name }
 							</code>
-							{ cmd.view !== 'tools' && (
-								<Button
-									variant="link"
-									onClick={ () => onNavigate( cmd.view ) }
-								>
-									{ cmd.viewLabel }
-								</Button>
-							) }
+							<div className="smowp-cli__actions">
+								{ cmd.view !== 'tools' && (
+									<Button
+										variant="link"
+										onClick={ () => onNavigate( cmd.view ) }
+									>
+										{ cmd.viewLabel }
+									</Button>
+								) }
+								<ExternalLink href={ docsUrl( cmd.docs ) }>
+									{ __( 'Docs', 'omnioffloader' ) }
+								</ExternalLink>
+							</div>
 						</div>
 						<p className="smowp-cli__summary">{ cmd.summary }</p>
 
 						<ul className="smowp-cli__examples">
 							{ cmd.examples.map( ( example ) => (
-								<li
+								<CommandRow
 									key={ example.command }
-									className="smowp-cli__example"
-								>
-									<div className="smowp-cli__example-text">
-										<code>{ example.command }</code>
-										<span>{ example.description }</span>
-									</div>
-									<Button
-										icon={ copy }
-										size="small"
-										label={ __(
-											'Copy command',
-											'omnioffloader'
-										) }
-										onClick={ () =>
-											handleCopy( example.command )
-										}
-									/>
-								</li>
+									example={ example }
+									onCopy={ handleCopy }
+								/>
 							) ) }
 						</ul>
 

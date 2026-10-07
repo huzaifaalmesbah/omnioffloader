@@ -6,6 +6,8 @@ interface OmnioffloaderGlobal {
 	readonly sdk_loaded: boolean;
 	readonly upload_url: string;
 	readonly media_url: string;
+	/** Public docs home, from OMNIOFFLOADER_DOCS_URL. Build links with utils/docs. */
+	readonly docs_url: string;
 }
 
 declare global {

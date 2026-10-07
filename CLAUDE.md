@@ -195,7 +195,7 @@ The policy is applied once at offload time (`LocalCleaner`). Changing the settin
 
 **Cron:** watchdog event only while a bulk job runs; unschedule when idle.
 
-**Constants:** `OMNIOFFLOADER_SAFE_MODE` (true/false — force Safe mode), `OMNIOFFLOADER_VERSION`, `OMNIOFFLOADER_DIR`, `OMNIOFFLOADER_URL`, `OMNIOFFLOADER_ASSETS_URL`, `OMNIOFFLOADER_BASENAME`, `OMNIOFFLOADER_FILE`, plus `OMNIOFFLOADER_DISABLE_ENGINE` (kill switch).
+**Constants:** `OMNIOFFLOADER_SAFE_MODE` (true/false — force Safe mode), `OMNIOFFLOADER_VERSION`, `OMNIOFFLOADER_DIR`, `OMNIOFFLOADER_URL`, `OMNIOFFLOADER_ASSETS_URL`, `OMNIOFFLOADER_BASENAME`, `OMNIOFFLOADER_FILE`, `OMNIOFFLOADER_DOCS_URL` (the only place the docs domain is written — PHP uses it directly, the admin app via `docsUrl()` in `src/utils/docs.ts`), plus `OMNIOFFLOADER_DISABLE_ENGINE` (kill switch).
 
 ## Public Hooks
 

@@ -2491,6 +2491,37 @@
 		padding: 16px 18px;
 	}
 
+	&__links {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 6px 20px;
+		margin: 0;
+	}
+
+	&__background {
+		border: 1px solid var( --smowp-accent-tint );
+		border-left: 4px solid var( --smowp-accent );
+		border-radius: var( --smowp-radius-sm );
+		background: var( --smowp-accent-tint );
+		padding: 16px 18px;
+
+		h3 {
+			margin: 0;
+			font-size: 14px;
+			color: var( --smowp-accent-dark );
+		}
+
+		.smowp-cli__summary {
+			color: var( --smowp-text );
+		}
+	}
+
+	&__actions {
+		display: flex;
+		align-items: center;
+		gap: 16px;
+	}
+
 	&__head {
 		display: flex;
 		align-items: center;

@@ -31,6 +31,7 @@ define( 'OMNIOFFLOADER_URL', plugin_dir_url( __FILE__ ) );
 define( 'OMNIOFFLOADER_ASSETS_URL', OMNIOFFLOADER_URL . 'assets/' );
 define( 'OMNIOFFLOADER_BASENAME', plugin_basename( __FILE__ ) );
 define( 'OMNIOFFLOADER_FILE', __FILE__ );
+define( 'OMNIOFFLOADER_DOCS_URL', 'https://omnioffloader.vercel.app/' );
 
 /**
  * Admin notice shown when the bundled libraries are missing.

@@ -334,6 +334,7 @@ Depending on the provider you select:
 * Bulk Bring Back with **Delete from Cloud After Restore** now asks for confirmation before it starts, as WP-CLI's `--delete-cloud` does.
 * Media Library: an item stuck on "Queued for background offload" or "Offloading..." (for example when thumbnail generation failed, or the background queue was cleared) goes back to its real status by itself once no job is running.
 * `wp omnioffloader status` starts with what is running now: progress with percentage, start time, speed, time left and expected finish, files transferred at once, log file and how to stop it. When nothing runs, it shows how the last WP-CLI job ended (finished, stopped or ended early) and the command to offload media that is still local.
+* Path Prefix: changing it while media is offloaded now shows, before you save, that existing media stays in its current folder and only new offloads use the new one. `wp omnioffloader status` shows the current folder and how many offloaded attachments are in other folders.
 
 = 0.1.3 =
 

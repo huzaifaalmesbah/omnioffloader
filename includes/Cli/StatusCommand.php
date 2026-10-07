@@ -96,6 +96,17 @@ class StatusCommand {
 			WP_CLI::log( 'Safe mode:  off (live site)' );
 		}
 
+		if ( null !== $provider ) {
+			$prefix = FolderClaim::prefix();
+			WP_CLI::log( 'Folder:     ' . ( '' !== $prefix ? $prefix . ' (Path Prefix; new offloads go here)' : 'bucket root (no Path Prefix)' ) );
+
+			$elsewhere = Helpers::count_offloaded_elsewhere( $prefix );
+
+			if ( $elsewhere > 0 ) {
+				WP_CLI::log( sprintf( '            %s offloaded attachment(s) are in other folders (offloaded before the Path Prefix changed). They keep working from there.', number_format_i18n( $elsewhere ) ) );
+			}
+		}
+
 		// Counted now: the cached numbers can be minutes old mid-run.
 		$stats = Helpers::get_media_stats( true );
 		WP_CLI::log( '' );

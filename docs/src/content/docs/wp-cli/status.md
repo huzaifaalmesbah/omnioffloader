@@ -38,6 +38,7 @@ Bucket:     my-media
 CDN domain: https://media.example.com
 Connection: OK
 Safe mode:  off (live site)
+Folder:     shop/ (Path Prefix; new offloads go here)
 
 Media: 59,177 total — 3,420 offloaded (5.8%), 55,757 local
 ```
@@ -99,6 +100,7 @@ Running now: nothing. The WP-CLI offload run (process 11030) ended without clean
 - **Provider, Bucket, CDN domain:** the active provider and where media is served from.
 - **Connection:** `OK` when the bucket can be reached. Otherwise a warning with the provider's error.
 - **Safe mode:** `off (live site)`, or `ON` with the reason, for example `WP_ENVIRONMENT_TYPE is "staging"` or `the site address changed from … to …`. See [Safe mode](/features/safe-mode/).
+- **Folder:** the bucket folder new offloads go to, set by the [Path Prefix](/features/path-prefix-and-versioning/), or `bucket root`. When some offloaded media is in other folders, because the prefix changed after it was offloaded, a second line says how many. That media keeps working from where it is.
 - **Media:** total attachments, how many are offloaded (and what share), and how many are only local. Counted fresh each time.
 - **Last Bulk Offload / Bring Back / retention update from the admin screen:** the result of the last bulk job started from the admin screen, and how long ago it ran.
 - **Older retention policy:** shown when some offloaded media still follows a policy you changed later. See [`wp omnioffloader retention`](/wp-cli/retention/).

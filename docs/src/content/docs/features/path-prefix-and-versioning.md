@@ -32,6 +32,10 @@ Use a path prefix when:
 
 :::note[Changing the prefix later]
 Each attachment remembers the path it was offloaded to. A new prefix only applies to media offloaded after the change. Media already in the cloud stays where it is and keeps loading.
+
+When you change the prefix while media is offloaded, Settings shows how many attachments stay in the old folder before you save. [`wp omnioffloader status`](/wp-cli/status/) shows the current folder and how many offloaded attachments are in other folders.
+
+To move existing media into the new folder, [bring it back](/features/bring-back/) and offload it again.
 :::
 
 ## Object Versioning

@@ -44,6 +44,27 @@
 	}
 
 	/**
+	 * Repaint one item from the server after a failed action.
+	 *
+	 * Its optimistic "processing" look is forgotten, so the next status check
+	 * sends the real markup; a check already in flight gets a follow-up.
+	 *
+	 * @param {number} attachmentId Attachment ID.
+	 */
+	function refreshItem(attachmentId) {
+		$('.omnioffloader-status-cell[data-attachment-id="' + attachmentId + '"]').attr('data-status', '');
+		$('.omnioffloader-meta-box-wrap[data-attachment-id="' + attachmentId + '"]').attr('data-status', '');
+		$('.omnioffloader-details-badge[data-attachment-id="' + attachmentId + '"]').attr('data-status', '');
+		$('.attachments .attachment[data-id="' + attachmentId + '"]').attr('data-omnioffloader-status', '');
+
+		if (inFlightCheckRunning) {
+			scheduleInFlightPoll(800);
+		} else {
+			checkInFlight(true);
+		}
+	}
+
+	/**
 	 * Show why an action failed, as a dismissible admin notice.
 	 *
 	 * The message comes from the server (a WP_Error) and is set as text,
@@ -282,7 +303,7 @@
 		}).fail(function(xhr) {
 			// Show the reason and put the item back as the server sees it.
 			showActionError(xhr);
-			checkInFlight(true);
+			refreshItem(attachmentId);
 		});
 	});
 
@@ -420,7 +441,7 @@
 		}).fail(function(xhr) {
 			// Show the reason and put the item back as the server sees it.
 			showActionError(xhr);
-			checkInFlight(true);
+			refreshItem(attachmentId);
 		});
 	});
 

@@ -56,7 +56,7 @@ function getCommands(): CliCommand[] {
 		{
 			name: 'wp omnioffloader stop',
 			summary: __(
-				'Stop the running offload, Bring Back or retention job, from any terminal. A WP-CLI run finishes the file it is transferring first; an admin job is cancelled.',
+				'Stop the running offload, Bring Back, retention or move job, from any terminal. A WP-CLI run finishes the file it is transferring first; an admin job is cancelled.',
 				'omnioffloader'
 			),
 			view: 'dashboard',

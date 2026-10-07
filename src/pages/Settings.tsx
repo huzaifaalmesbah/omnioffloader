@@ -499,8 +499,8 @@ export function SettingsPage( { onNavigate }: SettingsProps ) {
 						{ sprintf(
 							/* translators: 1: number of offloaded attachments, 2: current bucket folder, 3: new bucket folder. */
 							_n(
-								'%1$s offloaded attachment stays in %2$s and keeps working from there. Only media offloaded from now on goes to %3$s. To move existing media into the new folder later, run: wp omnioffloader move --all',
-								'%1$s offloaded attachments stay in %2$s and keep working from there. Only media offloaded from now on goes to %3$s. To move existing media into the new folder later, run: wp omnioffloader move --all',
+								'%1$s offloaded attachment stays in %2$s and keeps working from there. Only media offloaded from now on goes to %3$s. To move existing media into the new folder later, use Tools → Move Media to the Current Folder (or wp omnioffloader move --all).',
+								'%1$s offloaded attachments stay in %2$s and keep working from there. Only media offloaded from now on goes to %3$s. To move existing media into the new folder later, use Tools → Move Media to the Current Folder (or wp omnioffloader move --all).',
 								offloadedCount,
 								'omnioffloader'
 							),

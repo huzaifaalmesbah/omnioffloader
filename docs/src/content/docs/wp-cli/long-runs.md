@@ -1,13 +1,13 @@
 ---
 title: Long runs and log files
-description: Run a big offload, Bring Back or retention job in the background, save its progress to a log file, watch it, check the speed and time left, and stop it.
+description: Run a big offload, Bring Back, retention or move job in the background, save its progress to a log file, watch it, check the speed and time left, and stop it.
 sidebar:
   order: 8
 ---
 
 A big job, such as offloading tens of thousands of attachments, can take hours. This page shows how to run it so it keeps going after you close the terminal, how to follow its progress in a log file, and how to work out how long it still needs.
 
-Everything here works the same for `offload`, `restore` and `retention`. The examples use `offload`; [Commands for each job](#commands-for-each-job) lists the others.
+Everything here works the same for `offload`, `restore`, `retention` and `move`. The examples use `offload`; [Commands for each job](#commands-for-each-job) lists the others.
 
 You can also run the job inside `screen` or `tmux`: start it there, detach, and reattach later to see its progress bar.
 
@@ -46,6 +46,7 @@ Copy the one you need. Each one runs in the background and writes to its own log
 | Bring Back everything, keep the cloud copies | `nohup wp omnioffloader restore --all > ~/restore.log 2>&1 &` |
 | Bring Back, then delete the cloud copies | `nohup wp omnioffloader restore --all --delete-cloud --yes > ~/restore.log 2>&1 &` |
 | Apply the saved retention policy | `nohup wp omnioffloader retention --yes > ~/retention.log 2>&1 &` |
+| Move media into the current folder | `nohup wp omnioffloader move --all --yes --concurrency=32 > ~/move.log 2>&1 &` |
 
 Run a [dry run](/wp-cli/#try-it-first-with---dry-run) in the terminal first if you are not sure what a job will do: add `--dry-run` and leave out `nohup`, `&` and the log file.
 

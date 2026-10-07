@@ -196,6 +196,19 @@ trait AttachmentHelper {
 			return self::get_offload_path( $attachment_id );
 		}
 
+		return self::current_subdir( $attachment_id );
+	}
+
+	/**
+	 * The cloud subdir an attachment gets under the current settings, even
+	 * when it was offloaded elsewhere — where a move puts it.
+	 *
+	 * @since 0.1.4
+	 *
+	 * @param int $attachment_id Attachment ID.
+	 * @return string
+	 */
+	public static function current_subdir( $attachment_id ) {
 		$settings = \OmniOffloader\Core\Plugin::get_settings();
 
 		$prefix = '';

@@ -288,7 +288,7 @@ function getCommands(): CliCommand[] {
 		{
 			name: 'wp omnioffloader move',
 			summary: __(
-				'Move media offloaded under an earlier Path Prefix into the current folder: each attachment is brought back, offloaded again, and its old copies deleted, one at a time.',
+				'Move media offloaded under an earlier Path Prefix into the current folder. Within the same bucket the files are copied inside your cloud storage, nothing is downloaded; old copies are deleted once the new ones are confirmed.',
 				'omnioffloader'
 			),
 			view: 'tools',

@@ -43,11 +43,12 @@ class MoveCommand {
 	 * Move offloaded media into the current bucket folder.
 	 *
 	 * Media keeps the folder it was offloaded to, so after a Path Prefix
-	 * change it is split across folders. This brings each attachment in
-	 * another folder back to the server, offloads it again into the current
-	 * folder, and then deletes its old copies. One attachment at a time, so
-	 * even with Full Cloud Migration only one attachment's files need room
-	 * on the server.
+	 * change it is split across folders. Within the same bucket, the storage
+	 * provider copies each attachment's files into the current folder itself
+	 * (nothing is downloaded), the attachment switches to the new folder, and
+	 * the old copies are deleted. A file that cannot be copied that way (over
+	 * 5 GB, or in another bucket) is moved through the server instead: Bring
+	 * Back, then a fresh offload.
 	 *
 	 * Every step is verified: the old copies are deleted only after the new
 	 * ones are confirmed, and an attachment whose new upload fails stays on
@@ -77,7 +78,7 @@ class MoveCommand {
 	 * : Run even when a bulk job started from the admin screen is active.
 	 *
 	 * [--concurrency=<number>]
-	 * : Files downloaded and uploaded at the same time for this run, 1 to 64,
+	 * : Files copied, downloaded or uploaded at the same time, 1 to 64,
 	 * instead of the Transfer Speed setting (at most 10). For a VPS or
 	 * dedicated server.
 	 *

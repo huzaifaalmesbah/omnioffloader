@@ -45,7 +45,7 @@ Nothing breaks, but your media is then split across two folders. When media is o
 
 Go to **OmniOffloader → Tools → Move Media to the Current Folder**, or run [`wp omnioffloader move`](/wp-cli/move/). The card only appears when some media is outside the current folder. It shows how many attachments are in other folders, and **Move Media** starts the move with a progress bar and a Cancel button, like Bulk Offload.
 
-Each attachment outside the current folder is brought back, offloaded again into the new folder, and its old copies are deleted once the new ones are confirmed. One attachment at a time, so even with Full Cloud Migration only one attachment's files need room on the server.
+Within the same bucket, your storage provider copies each attachment's files into the new folder itself: nothing is downloaded, and the files on your server are not touched. Each old copy is deleted once its new copy is confirmed. A file that can't be copied that way (larger than 5 GB) is moved through your server instead.
 
 From WP-CLI:
 
@@ -60,7 +60,7 @@ For a large library, run it in the background:
 nohup wp omnioffloader move --all --yes --concurrency=32 > ~/move.log 2>&1 &
 ```
 
-How long it takes depends on your [retention policy](/features/retention-policies/): with **Retain Local Files** the files are already on the server, so only the upload to the new folder takes time. With **Smart Local Cleanup** or **Full Cloud Migration**, each attachment is downloaded first.
+Within the same bucket it is quick and needs no disk space on your server, whatever your [retention policy](/features/retention-policies/).
 
 ## Object Versioning
 

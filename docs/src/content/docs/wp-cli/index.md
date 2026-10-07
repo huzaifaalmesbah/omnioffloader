@@ -109,10 +109,12 @@ The commands follow the **Transfer Speed** setting, just like the admin screens.
 
 ### Stopping on repeated failures
 
-`offload` and `restore` watch for failures in a row. After 10 failures in a row, they check the connection to your storage provider:
+`offload`, `restore`, `retention` and `move` watch for failures in a row. After 10 failures in a row, they check the connection to your storage provider:
 
 - If the provider does not answer, the command stops and shows the provider's error.
 - If the provider answers, the failures come from the attachments themselves (for example files missing on disk). The command keeps going and the errors stay in each attachment's error log. It still stops after 100 failures in a row.
+
+`restore`, `retention` and `move` also stop at once when the server runs out of disk space, with a message saying so.
 
 Attachments that failed in an earlier run are processed last, so a restart is not held up by the same broken files.
 

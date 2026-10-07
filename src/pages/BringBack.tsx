@@ -8,6 +8,7 @@ import {
 	type ScopeMode,
 } from '../components/ui/BatchScopeSelector';
 import { Card } from '../components/ui/Card';
+import { useConfirm } from '../components/ui/ConfirmDialog';
 import { ProgressBar } from '../components/ui/ProgressBar';
 import { RunAnnouncer } from '../components/ui/RunAnnouncer';
 import { useCore } from '../context/CoreContext';
@@ -20,6 +21,7 @@ const DELETE_CLOUD_OPTIONS: readonly boolean[] = [ false, true ];
 
 export function BringBackPage() {
 	const { stats, savedSettings: settings } = useCore();
+	const askConfirm = useConfirm();
 	const { preflight, state, busy, start, cancel, showProgress, dismiss } =
 		useBringBack();
 	const [ deleteCloud, setDeleteCloud ] = useState(
@@ -127,20 +129,25 @@ export function BringBackPage() {
 		);
 	}
 
-	const handleStart = () => {
+	const handleStart = async () => {
 		// Never on a copy of the site.
 		const removeCloud = deleteCloud && ! safeMode;
 
 		// Permanent, like the CLI's --delete-cloud, which also asks first.
 		if (
 			removeCloud &&
-			// eslint-disable-next-line no-alert
-			! window.confirm(
-				__(
-					'Delete each file from your cloud storage once it is restored and checked on this server? Deleted cloud files cannot be recovered unless your bucket keeps versions.',
+			! ( await askConfirm( {
+				title: __( 'Delete the cloud copies?', 'omnioffloader' ),
+				message: __(
+					'Each file is deleted from your cloud storage once it is restored and checked on this server. Deleted cloud files cannot be recovered unless your bucket keeps versions.',
 					'omnioffloader'
-				)
-			)
+				),
+				confirmLabel: __(
+					'Bring back and delete from cloud',
+					'omnioffloader'
+				),
+				isDestructive: true,
+			} ) )
 		) {
 			return;
 		}
@@ -583,7 +590,7 @@ export function BringBackPage() {
 											className="smowp-btn-primary"
 											disabled={ busy }
 											isBusy={ busy }
-											onClick={ handleStart }
+											onClick={ () => void handleStart() }
 										>
 											{ buttonLabel }
 										</Button>

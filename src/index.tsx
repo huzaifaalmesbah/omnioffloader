@@ -1,6 +1,7 @@
 import { createRoot } from '@wordpress/element';
 
 import { App } from './App';
+import { ConfirmProvider } from './components/ui/ConfirmDialog';
 import { CoreProvider } from './context/CoreContext';
 import './index.scss';
 
@@ -13,7 +14,9 @@ document.addEventListener( 'DOMContentLoaded', () => {
 
 	createRoot( mount ).render(
 		<CoreProvider>
-			<App />
+			<ConfirmProvider>
+				<App />
+			</ConfirmProvider>
 		</CoreProvider>
 	);
 } );

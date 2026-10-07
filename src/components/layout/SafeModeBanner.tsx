@@ -6,6 +6,7 @@ import { confirmLiveSite, takeOverFolder } from '../../api/core';
 import { useCore } from '../../context/CoreContext';
 import type { SafeModeStatus } from '../../types';
 import { errorMessage } from '../../utils/errorHelper';
+import { useConfirm } from '../ui/ConfirmDialog';
 
 /**
  * Why this site is treated as a copy, in words.
@@ -80,6 +81,7 @@ interface SafeModeBannerProps {
  */
 export function SafeModeBanner( { onNavigate }: SafeModeBannerProps ) {
 	const { stats, refreshStats, addNotice } = useCore();
+	const askConfirm = useConfirm();
 	const [ busy, setBusy ] = useState( false );
 	const safeMode = stats?.safe_mode;
 
@@ -88,20 +90,22 @@ export function SafeModeBanner( { onNavigate }: SafeModeBannerProps ) {
 	}
 
 	if ( 'folder' === safeMode.reason ) {
-		const takeOver = () => {
-			if (
-				// eslint-disable-next-line no-alert
-				! window.confirm(
-					sprintf(
-						/* translators: %s: other site's address. */
-						__(
-							'Only continue if %s no longer uses this folder, or it is this same site at its old address. If both sites keep writing here, they will overwrite and delete each other’s files.',
-							'omnioffloader'
-						),
-						safeMode.folder_owner
-					)
-				)
-			) {
+		const takeOver = async () => {
+			const ok = await askConfirm( {
+				title: __( 'Take over this folder?', 'omnioffloader' ),
+				message: sprintf(
+					/* translators: %s: other site's address. */
+					__(
+						'Only continue if %s no longer uses this folder, or it is this same site at its old address. If both sites keep writing here, they will overwrite and delete each other’s files.',
+						'omnioffloader'
+					),
+					safeMode.folder_owner
+				),
+				confirmLabel: __( 'Take over the folder', 'omnioffloader' ),
+				isDestructive: true,
+			} );
+
+			if ( ! ok ) {
 				return;
 			}
 
@@ -153,7 +157,7 @@ export function SafeModeBanner( { onNavigate }: SafeModeBannerProps ) {
 						variant="tertiary"
 						isBusy={ busy }
 						disabled={ busy }
-						onClick={ takeOver }
+						onClick={ () => void takeOver() }
 					>
 						{ __(
 							'This folder belongs to this site',
@@ -165,21 +169,23 @@ export function SafeModeBanner( { onNavigate }: SafeModeBannerProps ) {
 		);
 	}
 
-	const confirm = () => {
-		if (
-			// eslint-disable-next-line no-alert
-			! window.confirm(
-				sprintf(
-					/* translators: 1: this site's address, 2: live site address. */
-					__(
-						'Only continue if the live site really moved to %1$s. If this is a staging or development copy of %2$s, it will upload to and delete from the live site’s cloud storage, and the live site may stop uploading.',
-						'omnioffloader'
-					),
-					safeMode.current_address,
-					safeMode.live_address
-				)
-			)
-		) {
+	const confirm = async () => {
+		const ok = await askConfirm( {
+			title: __( 'Is this the live site?', 'omnioffloader' ),
+			message: sprintf(
+				/* translators: 1: this site's address, 2: live site address. */
+				__(
+					'Only continue if the live site really moved to %1$s. If this is a staging or development copy of %2$s, it will upload to and delete from the live site’s cloud storage, and the live site may stop uploading.',
+					'omnioffloader'
+				),
+				safeMode.current_address,
+				safeMode.live_address
+			),
+			confirmLabel: __( 'Yes, this is the live site', 'omnioffloader' ),
+			isDestructive: true,
+		} );
+
+		if ( ! ok ) {
 			return;
 		}
 
@@ -229,7 +235,7 @@ export function SafeModeBanner( { onNavigate }: SafeModeBannerProps ) {
 					variant="secondary"
 					isBusy={ busy }
 					disabled={ busy }
-					onClick={ confirm }
+					onClick={ () => void confirm() }
 				>
 					{ __(
 						'This is the live site (it moved to a new address)',

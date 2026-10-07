@@ -392,6 +392,23 @@
 	margin: 16px 0 0;
 }
 
+// Confirmation dialog (components/ui/ConfirmDialog).
+.smowp-confirm {
+	max-width: 520px;
+
+	&__message {
+		color: var( --smowp-text );
+		line-height: 1.6;
+	}
+
+	&__actions {
+		display: flex;
+		justify-content: flex-end;
+		gap: 8px;
+		margin-top: 24px;
+	}
+}
+
 // "Learn more" / "Documentation" links to the public docs.
 .smowp-docs-link {
 	font-size: 12.5px;

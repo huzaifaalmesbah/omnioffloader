@@ -414,6 +414,60 @@
 	outline: none;
 }
 
+// Offload / Bring Back: pointer to the job's WP-CLI command in Tools.
+.smowp-cli-hint {
+	display: flex;
+	align-items: center;
+	gap: 14px;
+	margin: 16px 0 0;
+	padding: 14px 16px;
+	border: 1px solid rgba( 19, 93, 190, 0.25 );
+	border-radius: var( --smowp-radius-sm );
+	background: var( --smowp-accent-tint );
+
+	&__icon {
+		display: inline-flex;
+		flex-shrink: 0;
+		align-items: center;
+		justify-content: center;
+		width: 36px;
+		height: 36px;
+		border-radius: 9px;
+		background: var( --smowp-surface );
+		color: var( --smowp-accent );
+	}
+
+	&__text {
+		flex: 1;
+		min-width: 0;
+
+		strong {
+			margin-right: 8px;
+			color: var( --smowp-accent-dark );
+		}
+
+		p {
+			margin: 2px 0 0;
+			color: var( --smowp-text-muted );
+			font-size: 13px;
+		}
+	}
+
+	&__button.components-button {
+		flex-shrink: 0;
+		background: var( --smowp-surface );
+	}
+
+	@media ( max-width: 600px ) {
+		flex-wrap: wrap;
+
+		&__button.components-button {
+			width: 100%;
+			justify-content: center;
+		}
+	}
+}
+
 // Path Prefix change notice under the field.
 .smowp-prefix-notice.components-notice {
 	margin: 16px 0 0;

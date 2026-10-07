@@ -316,7 +316,7 @@ Depending on the provider you select:
 * New `wp omnioffloader stop` ends the running job from any terminal. A WP-CLI run finishes the file it is transferring first; a job started from the admin screen is cancelled.
 * `wp omnioffloader status` shows a running WP-CLI job: progress, failures, process and log file.
 * The WP-CLI reference on the Tools screen lists the new `stop` command and how to keep a job running with `nohup`.
-* The Offload and Bring Back pages show the matching WP-CLI command, with **See the command in Tools** to open its entry in the WP-CLI reference.
+* The Offload and Bring Back pages have a **Run this job from WP-CLI** panel whose **View command** button opens the command in the WP-CLI reference on the Tools screen (recommended for libraries of 5,000+ items).
 * New documentation page [Long runs and log files](https://omnioffloader.vercel.app/wp-cli/long-runs/): start a big job with a log file, watch it, work out the speed and time left, and what to do when it ends.
 * A lock left behind by a killed run (for example after a server restart) is cleared by the next command on the same server, instead of blocking it for 10 minutes.
 

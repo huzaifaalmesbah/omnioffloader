@@ -1,5 +1,6 @@
-import { Button } from '@wordpress/components';
+import { Button, Icon } from '@wordpress/components';
 import { __ } from '@wordpress/i18n';
+import { code } from '@wordpress/icons';
 
 import { cliSectionId } from '../tools/CliReference';
 import { LARGE_LIBRARY } from '../../utils/constants';
@@ -7,41 +8,51 @@ import { LARGE_LIBRARY } from '../../utils/constants';
 interface CliHintProps {
 	/** Command name after `wp omnioffloader`, e.g. 'offload'. */
 	command: string;
-	/** Example to show, e.g. 'wp omnioffloader offload --all'. */
-	example: string;
-	/** Attachments the job would handle; a large library gets a stronger hint. */
+	/** Attachments the job would handle; a large library is told to prefer it. */
 	count: number;
 	onNavigate: ( view: string, section?: string ) => void;
 }
 
 /**
- * The WP-CLI command for a bulk job, with a link to its entry in the Tools
- * page's WP-CLI reference.
+ * A panel pointing to the bulk job's command in the Tools page's WP-CLI
+ * reference, recommended for large libraries.
  */
-export function CliHint( {
-	command,
-	example,
-	count,
-	onNavigate,
-}: CliHintProps ) {
+export function CliHint( { command, count, onNavigate }: CliHintProps ) {
+	const large = count >= LARGE_LIBRARY;
+
 	return (
-		<p className="smowp-muted">
-			{ count >= LARGE_LIBRARY
-				? __(
-						'Large library? Running this from WP-CLI is usually faster and needs no open browser tab:',
-						'omnioffloader'
-					)
-				: __(
-						'The same job also runs from WP-CLI:',
-						'omnioffloader'
-					) }{ ' ' }
-			<code>{ example }</code>{ ' ' }
+		<div className="smowp-cli-hint">
+			<span className="smowp-cli-hint__icon" aria-hidden="true">
+				<Icon icon={ code } size={ 20 } />
+			</span>
+			<div className="smowp-cli-hint__text">
+				<strong>
+					{ __( 'Run this job from WP-CLI', 'omnioffloader' ) }
+				</strong>
+				{ large && (
+					<span className="smowp-badge smowp-badge--accent">
+						{ __( 'Recommended', 'omnioffloader' ) }
+					</span>
+				) }
+				<p>
+					{ large
+						? __(
+								'For a library this size, the terminal is usually faster and needs no open browser tab.',
+								'omnioffloader'
+							)
+						: __(
+								'The same job from the terminal over SSH: no open browser tab, and no web request time limits.',
+								'omnioffloader'
+							) }
+				</p>
+			</div>
 			<Button
-				variant="link"
+				variant="secondary"
+				className="smowp-cli-hint__button"
 				onClick={ () => onNavigate( 'tools', cliSectionId( command ) ) }
 			>
-				{ __( 'See the command in Tools', 'omnioffloader' ) }
+				{ __( 'View command', 'omnioffloader' ) }
 			</Button>
-		</p>
+		</div>
 	);
 }

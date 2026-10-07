@@ -260,7 +260,6 @@ export function BringBackPage( { onNavigate }: BringBackProps ) {
 							{ offloadedCount > 0 && (
 								<CliHint
 									command="restore"
-									example="wp omnioffloader restore --all"
 									count={ offloadedCount }
 									onNavigate={ onNavigate }
 								/>

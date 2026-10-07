@@ -141,6 +141,18 @@ class AsyncUploadProcessor extends WP_Background_Process {
 	}
 
 	/**
+	 * Whether nothing is queued or running, read from the queue itself
+	 * rather than the _has_queue flag.
+	 *
+	 * @since 0.1.4
+	 *
+	 * @return bool
+	 */
+	public function is_idle() {
+		return ! $this->is_processing() && $this->is_queue_empty();
+	}
+
+	/**
 	 * Process pending items inline if loopback dispatch is delayed.
 	 *
 	 * @return void

@@ -404,9 +404,86 @@
 	font-size: 12.5px;
 }
 
+// A card a link brings into view: clear the admin bar, no focus ring.
+.smowp-card[id] {
+	scroll-margin-top: 48px;
+
+	&:focus {
+		outline: none;
+	}
+}
+
 // Path Prefix change notice under the field.
 .smowp-prefix-notice.components-notice {
 	margin: 16px 0 0;
+
+	p {
+		margin: 0 0 8px;
+	}
+}
+
+.smowp-prefix-notice__options {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.smowp-prefix-notice__option {
+	margin: 0 0 8px;
+
+	&:last-child {
+		margin-bottom: 0;
+	}
+
+	// WP-CLI is the faster route for a whole library: set it apart.
+	&.is-recommended {
+		padding: 10px 12px;
+		border: 1px solid rgba( 19, 93, 190, 0.25 );
+		border-radius: var( --smowp-radius-sm );
+		background: var( --smowp-accent-tint );
+	}
+}
+
+.smowp-copy-command {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 10px;
+	margin-top: 8px;
+	padding: 8px 8px 8px 12px;
+	border-radius: 8px;
+	background: var( --smowp-surface );
+
+	code {
+		padding: 0;
+		background: none;
+		color: var( --smowp-accent-dark );
+		font-size: 12.5px;
+		font-weight: 600;
+		overflow-wrap: anywhere;
+		user-select: all;
+	}
+
+	.components-button {
+		flex-shrink: 0;
+		color: var( --smowp-accent );
+
+		&:hover:not( :disabled ) {
+			color: var( --smowp-accent-dark );
+		}
+	}
+}
+
+.smowp-prefix-notice__option .smowp-docs-link {
+	display: inline-block;
+	margin-top: 8px;
+}
+
+.smowp-prefix-notice__cmd-label {
+	display: block;
+	margin-top: 10px;
+	font-size: 12.5px;
+	color: var( --smowp-text-muted );
 }
 
 // Confirmation dialog (components/ui/ConfirmDialog). The modal renders

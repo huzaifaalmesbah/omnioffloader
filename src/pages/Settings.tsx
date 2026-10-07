@@ -14,14 +14,19 @@ import { cloudUpload } from '@wordpress/icons';
 import { CredentialFields } from '../components/settings/CredentialFields';
 import { TestConnection } from '../components/settings/TestConnection';
 import { Card } from '../components/ui/Card';
+import { CopyCommand } from '../components/ui/CopyCommand';
 import { DocsLink } from '../components/ui/DocsLink';
+import { MOVE_CARD_ID } from '../components/tools/MoveFolderCard';
 import { safeModeReasonText } from '../components/layout/SafeModeBanner';
+import { fetchMovePreflight } from '../api/move';
 import { fetchRetentionPreflight } from '../api/retention';
 import { useCore } from '../context/CoreContext';
 import { providerGuidePath } from '../utils/docs';
 import { folderLabel, uploadFolder } from '../utils/folder';
 import { radioKeyDown, radioTabIndex } from '../utils/radioGroup';
+import { requestScroll } from '../utils/scrollTarget';
 import {
+	type MovePreflight,
 	RetentionPolicy,
 	type RetentionPreflight,
 	type TransferSpeed,
@@ -42,9 +47,11 @@ export function SettingsPage( { onNavigate }: SettingsProps ) {
 	} = useCore();
 	const [ retentionPreflight, setRetentionPreflight ] =
 		useState< RetentionPreflight | null >( null );
+	const [ movePreflight, setMovePreflight ] =
+		useState< MovePreflight | null >( null );
 
 	// Re-check once the draft is saved: the preflight describes the saved
-	// policy, which is what the Tools page applies.
+	// policy and folder, which is what the Tools page works from.
 	useEffect( () => {
 		if ( isDirty || ! stats?.configured ) {
 			return;
@@ -52,6 +59,13 @@ export function SettingsPage( { onNavigate }: SettingsProps ) {
 
 		fetchRetentionPreflight()
 			.then( setRetentionPreflight )
+			.catch( () => {
+				// Informational only.
+			} );
+
+		// Media left in an earlier folder, which Tools can move.
+		fetchMovePreflight()
+			.then( setMovePreflight )
 			.catch( () => {
 				// Informational only.
 			} );
@@ -496,20 +510,104 @@ export function SettingsPage( { onNavigate }: SettingsProps ) {
 						isDismissible={ false }
 						className="smowp-prefix-notice"
 					>
-						{ sprintf(
-							/* translators: 1: number of offloaded attachments, 2: current bucket folder, 3: new bucket folder. */
-							_n(
-								'%1$s offloaded attachment stays in %2$s and keeps working from there. Only media offloaded from now on goes to %3$s. To move existing media into the new folder later, use Tools → Move Media to the Current Folder (or wp omnioffloader move --all).',
-								'%1$s offloaded attachments stay in %2$s and keep working from there. Only media offloaded from now on goes to %3$s. To move existing media into the new folder later, use Tools → Move Media to the Current Folder (or wp omnioffloader move --all).',
-								offloadedCount,
+						<p>
+							{ sprintf(
+								/* translators: 1: number of offloaded attachments, 2: current bucket folder, 3: new bucket folder. */
+								_n(
+									'%1$s offloaded attachment stays in %2$s and keeps working from there. Only media offloaded from now on goes to %3$s.',
+									'%1$s offloaded attachments stay in %2$s and keep working from there. Only media offloaded from now on goes to %3$s.',
+									offloadedCount,
+									'omnioffloader'
+								),
+								offloadedCount.toLocaleString(),
+								folderLabel( savedFolder ),
+								folderLabel( uploadFolder( settings ) )
+							) }
+						</p>
+						<p>
+							{ __(
+								'After you save, this screen shows how to move existing media into the new folder.',
 								'omnioffloader'
-							),
-							offloadedCount.toLocaleString(),
-							folderLabel( savedFolder ),
-							folderLabel( uploadFolder( settings ) )
-						) }
+							) }
+						</p>
 					</Notice>
 				) }
+
+				{ ! folderChanges &&
+					! isDirty &&
+					! stats?.safe_mode?.active &&
+					movePreflight &&
+					movePreflight.elsewhere > 0 && (
+						<Notice
+							status="info"
+							isDismissible={ false }
+							className="smowp-prefix-notice"
+						>
+							<p>
+								<strong>
+									{ sprintf(
+										/* translators: 1: number of offloaded attachments, 2: current bucket folder. */
+										_n(
+											'%1$s offloaded attachment is outside the current folder, %2$s.',
+											'%1$s offloaded attachments are outside the current folder, %2$s.',
+											movePreflight.elsewhere,
+											'omnioffloader'
+										),
+										movePreflight.elsewhere.toLocaleString(),
+										folderLabel( movePreflight.folder )
+									) }
+								</strong>{ ' ' }
+								{ __(
+									'It keeps working from there. Move it to keep all media in one folder:',
+									'omnioffloader'
+								) }
+							</p>
+							<ul className="smowp-prefix-notice__options">
+								<li className="smowp-prefix-notice__option is-recommended">
+									<span className="smowp-badge smowp-badge--accent">
+										{ __( 'Recommended', 'omnioffloader' ) }
+									</span>{ ' ' }
+									{ __(
+										'WP-CLI — fastest, moves many files at once and needs no open browser tab:',
+										'omnioffloader'
+									) }
+									<CopyCommand command="wp omnioffloader move --all" />
+									<span className="smowp-prefix-notice__cmd-label">
+										{ __(
+											'Large library? Run it in the background, so closing the terminal does not stop it, with progress saved to ~/move.log:',
+											'omnioffloader'
+										) }
+									</span>
+									<CopyCommand command="nohup wp omnioffloader move --all --yes --concurrency=32 > ~/move.log 2>&1 &" />
+									<DocsLink path="wp-cli/long-runs/">
+										{ __(
+											'How to follow or stop a background run',
+											'omnioffloader'
+										) }
+									</DocsLink>
+								</li>
+								<li className="smowp-prefix-notice__option">
+									{ __(
+										'Or in the admin:',
+										'omnioffloader'
+									) }{ ' ' }
+									<Button
+										variant="secondary"
+										size="compact"
+										onClick={ () => {
+											requestScroll( MOVE_CARD_ID );
+											onNavigate( 'tools' );
+										} }
+									>
+										{ __(
+											'Move media in Tools',
+											'omnioffloader'
+										) }
+									</Button>
+								</li>
+							</ul>
+						</Notice>
+					) }
 			</Card>
 
 			<Card

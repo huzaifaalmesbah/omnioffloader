@@ -37,7 +37,7 @@ You can change the prefix at any time. Each attachment remembers the folder it w
 - media already offloaded **stays in its folder and keeps loading** from there, with Bring Back, Mirror Delete and retention updates working as before, and
 - only media offloaded **from now on** goes to the new folder.
 
-Nothing breaks, but your media is then split across two folders. When media is offloaded, Settings says so under the field, and **Save changes** asks you to confirm the change.
+Nothing breaks, but your media is then split across two folders. When media is offloaded, Settings says so under the field, and **Save changes** asks you to confirm the change. Once saved, Settings shows how many attachments are outside the current folder, with the WP-CLI commands to move them (recommended) and a **Move media in Tools** button.
 
 [`wp omnioffloader status`](/wp-cli/status/) shows the current folder and how many offloaded attachments are in other folders.
 
@@ -54,11 +54,7 @@ wp omnioffloader move --all --dry-run   # see what would move
 wp omnioffloader move --all             # move it
 ```
 
-For a large library, run it in the background:
-
-```bash
-nohup wp omnioffloader move --all --yes --concurrency=32 > ~/move.log 2>&1 &
-```
+For a large library, run it in the background so it keeps going after you close the terminal: see [`wp omnioffloader move`](/wp-cli/move/) and [Long runs and log files](/wp-cli/long-runs/).
 
 Within the same bucket it is quick and needs no disk space on your server, whatever your [retention policy](/features/retention-policies/).
 

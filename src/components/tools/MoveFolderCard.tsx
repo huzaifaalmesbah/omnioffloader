@@ -11,6 +11,10 @@ import { Card } from '../ui/Card';
 import { useConfirm } from '../ui/ConfirmDialog';
 import { ProgressBar } from '../ui/ProgressBar';
 import { RunAnnouncer } from '../ui/RunAnnouncer';
+import { takeScroll } from '../../utils/scrollTarget';
+
+/** Element id of the card, for links that bring it into view. */
+export const MOVE_CARD_ID = 'omnioffloader-move-media';
 
 /**
  * Move media offloaded under an earlier Path Prefix into the current folder.
@@ -30,13 +34,22 @@ export function MoveFolderCard() {
 	const running = state?.status === 'running';
 	const elsewhere = preflight?.elsewhere ?? 0;
 
+	const visible = !! stats?.configured && ( elsewhere > 0 || showProgress );
+
+	// Settings links here once the card has something to move.
+	useEffect( () => {
+		if ( visible ) {
+			takeScroll( MOVE_CARD_ID );
+		}
+	}, [ visible ] );
+
 	useEffect( () => {
 		if ( elsewhere > 0 && customCount > elsewhere ) {
 			setCustomCount( elsewhere );
 		}
 	}, [ elsewhere, customCount ] );
 
-	if ( ! stats?.configured || ( elsewhere === 0 && ! showProgress ) ) {
+	if ( ! visible ) {
 		return null;
 	}
 
@@ -80,6 +93,7 @@ export function MoveFolderCard() {
 
 	return (
 		<Card
+			id={ MOVE_CARD_ID }
 			title={ __( 'Move Media to the Current Folder', 'omnioffloader' ) }
 			docs="features/path-prefix-and-versioning/#move-existing-media-to-the-new-folder"
 			description={ __(

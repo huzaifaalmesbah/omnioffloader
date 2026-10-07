@@ -22,7 +22,7 @@ wp omnioffloader stop [--wait=<seconds>]
 
 | Option | Description |
 | --- | --- |
-| `--wait=<seconds>` | How long to wait for a WP-CLI run to finish its current file. Default `120`. `0` asks it to stop and returns right away. |
+| `--wait=<seconds>` | How long to wait for a WP-CLI run to finish its current file, as a whole number. Default `120`. `0` asks it to stop and returns right away. |
 
 ## Example
 

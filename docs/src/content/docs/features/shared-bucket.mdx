@@ -23,7 +23,7 @@ You can use one bucket and one CDN address for several separate WordPress sites,
 
 </Steps>
 
-![OmniOffloader Custom Path Prefix Configuration](/images/screenshots/shared-bucket-marked.png)
+![Settings: Custom Path Prefix turned on, with this site's own folder name](/images/screenshots/shared-bucket-marked.png)
 
 ## Why each site needs its own folder
 
@@ -60,6 +60,8 @@ If a site finds another site's marker in its folder, it switches to [Safe mode](
 - Media already there still loads, and new uploads stay on the server.
 - Bulk Offload and retention runs stop with a clear message.
 - A banner explains the problem: *"Another site uses this bucket folder."*
+
+![The Safe mode banner when another site already uses this site's bucket folder, with the Choose a Path Prefix and This folder belongs to this site buttons](/images/screenshots/folder-claimed-marked.png)
 
 The banner offers two buttons:
 

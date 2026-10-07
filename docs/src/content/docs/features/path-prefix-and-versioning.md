@@ -37,7 +37,11 @@ You can change the prefix at any time. Each attachment remembers the folder it w
 - media already offloaded **stays in its folder and keeps loading** from there, with Bring Back, Mirror Delete and retention updates working as before, and
 - only media offloaded **from now on** goes to the new folder.
 
-Nothing breaks, but your media is then split across two folders. When media is offloaded, Settings says so under the field, and **Save changes** asks you to confirm the change. Once saved, Settings shows how many attachments are outside the current folder, with the WP-CLI commands to move them (recommended) and a **Move media in Tools** button.
+Nothing breaks, but your media is then split across two folders. When media is offloaded, Settings says so under the field, and **Save changes** asks you to confirm the change.
+
+![Settings after typing a new Path Prefix: existing media stays in its folder and keeps working; Save changes asks to confirm](/images/screenshots/path-prefix-change-marked.png)
+
+Once saved, Settings shows how many attachments are outside the current folder, with the WP-CLI commands to move them (recommended) and a **Move media in Tools** button.
 
 ![Settings after a Path Prefix change: media outside the current folder, the recommended WP-CLI move commands with copy buttons, and a Move media in Tools button](/images/screenshots/path-prefix-move-marked.png)
 

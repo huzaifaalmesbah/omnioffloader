@@ -550,7 +550,18 @@ class OffloadController extends BaseController {
 			}
 		}
 
-		self::clear_stale_statuses( $id_list );
+		// Only media this user may edit is cleaned up; a running bulk job is
+		// working on its items, so nothing is stale then.
+		if ( ! $bulk_active ) {
+			self::clear_stale_statuses(
+				array_filter(
+					$id_list,
+					static function ( $id ) {
+						return 'attachment' === get_post_type( $id ) && current_user_can( 'edit_post', $id );
+					}
+				)
+			);
+		}
 
 		$statuses     = array();
 		$provider     = Plugin::get_instance()->get_provider();
@@ -629,11 +640,11 @@ class OffloadController extends BaseController {
 	 *
 	 * @since 0.1.4
 	 *
-	 * @param int[] $ids Attachment IDs being polled (meta already primed).
+	 * @param int[] $ids Attachment IDs being polled that the user may edit (meta already primed).
 	 * @return void
 	 */
 	private static function clear_stale_statuses( array $ids ) {
-		$pending = array();
+		$candidates = array();
 
 		foreach ( $ids as $id ) {
 			$status = (string) get_post_meta( $id, 'omnioffloader_status', true );
@@ -642,26 +653,36 @@ class OffloadController extends BaseController {
 				continue;
 			}
 
-			// A single action in another request is still on it.
-			if ( Helpers::is_working( $id ) ) {
-				continue;
-			}
-
 			$created = (int) get_post_time( 'U', true, $id );
 
 			if ( $created > 0 && time() - $created > self::STALE_STATUS_SECONDS ) {
-				$pending[] = (int) $id;
+				$candidates[] = (int) $id;
 			}
 		}
 
-		if ( empty( $pending ) ) {
+		if ( empty( $candidates ) ) {
 			return;
 		}
 
+		// Cheap checks first: while any job runs, nothing here is stale.
 		$plugin = Plugin::get_instance();
 		$async  = $plugin->get_async_upload();
 
 		if ( '' !== $plugin->get_active_bulk_job() || ( null !== $async && ! $async->is_idle() ) ) {
+			return;
+		}
+
+		// A single action in another request is still on it.
+		$pending = array_values(
+			array_filter(
+				$candidates,
+				static function ( $id ) {
+					return ! Helpers::is_working( $id );
+				}
+			)
+		);
+
+		if ( empty( $pending ) ) {
 			return;
 		}
 

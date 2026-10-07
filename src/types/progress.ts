@@ -129,3 +129,26 @@ export interface AttachmentErrors {
 	title: string;
 	errors: AttachmentErrorEntry[];
 }
+
+/**
+ * Mirrors BulkMoveProcessor::get_state().
+ */
+export interface MoveBulkState extends BulkState {
+	/** Folder media moves into, fixed when the run started ('' = bucket root). */
+	folder: string;
+}
+
+export interface StartBulkMoveResponse {
+	queued: number;
+	state: MoveBulkState;
+}
+
+/**
+ * Mirrors MoveController::preflight_response().
+ */
+export interface MovePreflight {
+	/** The current folder ('' = bucket root). */
+	folder: string;
+	/** Offloaded attachments stored outside it. */
+	elsewhere: number;
+}

@@ -183,7 +183,7 @@ class AttachmentRestorer {
 	 *
 	 * @since 0.1.4
 	 *
-	 * @param int                                                                                                              $attachment_id Attachment ID.
+	 * @param int                                                                                                            $attachment_id Attachment ID.
 	 * @param array{main: array<int, array{file: string, key: string}>, sizes: array<int, array{file: string, key: string}>} $files         Collected files; main[0] is the attached file.
 	 * @return bool
 	 */

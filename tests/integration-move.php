@@ -162,6 +162,39 @@ omnioffloader_move_check( ! get_post_meta( $c, 'omnioffloader_offloaded', true )
 omnioffloader_move_check( file_exists( get_attached_file( $c ) ), 'its file is on the server' );
 omnioffloader_move_check( count( $old_c ) === count( array_filter( $old_c, array( $provider, 'object_exists' ) ) ), 'old copies not deleted' );
 
+echo "\nTest 4: the admin queue (BulkMoveProcessor)\n";
+
+// The queue shares its state with this site's real Move Media run: never
+// touch it while any job runs, and put the previous state back afterwards.
+$move_state = get_option( OmniOffloader\Services\BulkMoveProcessor::STATE_OPTION );
+$move_busy  = is_array( $move_state ) && 'running' === ( $move_state['status'] ?? '' );
+
+if ( $move_busy || '' !== (string) get_site_transient( OmniOffloader\Core\Plugin::cli_job_lock_key() ) ) {
+	echo "  - skipped: a move or another job is running on this site\n";
+} else {
+	$prefix( 'move-old' );
+	$d = omnioffloader_move_attachment( 'move-test-d.jpg' );
+	$uploader->upload( $d );
+	$prefix( 'move-new' );
+	$queue  = new OmniOffloader\Services\BulkMoveProcessor( $provider );
+	$queued = $queue->start( array( $d, $a ) );
+	omnioffloader_move_check( 1 === $queued, 'queues only the attachment outside the folder' );
+	omnioffloader_move_check( 'move-new/' === OmniOffloader\Services\BulkMoveProcessor::get_state()['folder'], 'target folder fixed in the state' );
+	$item = new ReflectionMethod( $queue, 'process_item' );
+	$item->setAccessible( true );
+	omnioffloader_move_check( true === $item->invoke( $queue, $d ), 'process_item() moved it' );
+	omnioffloader_move_check( 0 === strpos( (string) get_post_meta( $d, 'omnioffloader_path', true ), 'move-new/' ), 'stored path is in the new folder' );
+	omnioffloader_move_check( true === $item->invoke( $queue, $d ), 'an attachment already moved counts as done' );
+	$prefix( 'move-other' );
+	omnioffloader_move_check( false === $item->invoke( $queue, $a ), 'a Path Prefix change mid-run stops the queue' );
+	$queue->cancel_now();
+	OmniOffloader\Services\AbstractBulkProcessor::purge_stored_data( 'bulk_move', OmniOffloader\Services\BulkMoveProcessor::STATE_OPTION );
+	if ( false !== $move_state ) {
+		update_option( OmniOffloader\Services\BulkMoveProcessor::STATE_OPTION, $move_state, false );
+	}
+	wp_delete_attachment( $d, true );
+}
+
 echo "\nCleanup…\n";
 foreach ( array( $a, $b, $c ) as $id ) {
 	wp_delete_attachment( $id, true );

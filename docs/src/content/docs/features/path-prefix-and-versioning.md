@@ -43,7 +43,11 @@ Nothing breaks, but your media is then split across two folders. When media is o
 
 #### Move existing media to the new folder
 
-Run [`wp omnioffloader move`](/wp-cli/move/). It moves each attachment that is outside the current folder: it brings it back, offloads it again into the new folder, and then deletes the old copies. One attachment at a time, so even with Full Cloud Migration only one attachment's files need room on the server.
+Go to **OmniOffloader → Tools → Move Media to the Current Folder**, or run [`wp omnioffloader move`](/wp-cli/move/). The card only appears when some media is outside the current folder. It shows how many attachments are in other folders, and **Move Media** starts the move with a progress bar and a Cancel button, like Bulk Offload.
+
+Each attachment outside the current folder is brought back, offloaded again into the new folder, and its old copies are deleted once the new ones are confirmed. One attachment at a time, so even with Full Cloud Migration only one attachment's files need room on the server.
+
+From WP-CLI:
 
 ```bash
 wp omnioffloader move --all --dry-run   # see what would move

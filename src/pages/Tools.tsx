@@ -1,4 +1,5 @@
 import { CliReference } from '../components/tools/CliReference';
+import { MoveFolderCard } from '../components/tools/MoveFolderCard';
 import { RetentionSyncCard } from '../components/tools/RetentionSyncCard';
 
 interface ToolsProps {
@@ -9,6 +10,7 @@ export function ToolsPage( { onNavigate }: ToolsProps ) {
 	return (
 		<div className="smowp-page">
 			<RetentionSyncCard />
+			<MoveFolderCard />
 			<CliReference onNavigate={ onNavigate } />
 		</div>
 	);

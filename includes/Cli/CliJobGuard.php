@@ -199,7 +199,7 @@ trait CliJobGuard {
 	 *
 	 * @param Plugin                     $plugin Plugin instance.
 	 * @param AbstractBulkProcessor|null $queue  Queue to hold, if the engine is on.
-	 * @param string                     $job    'offload', 'restore' or 'retention'.
+	 * @param string                     $job    'offload', 'restore', 'retention' or 'move'.
 	 * @param int                        $total  Items this run will process.
 	 * @return void
 	 */

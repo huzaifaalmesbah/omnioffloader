@@ -164,7 +164,7 @@ class ProviderController extends BaseController {
 
 		return new \WP_Error(
 			'omnioffloader_endpoint_not_allowed',
-			__( 'On a multisite network, only a network administrator can use a private or local endpoint address. Use the provider\'s public endpoint, or ask a network administrator.', 'omnioffloader' ),
+			__( 'On a multisite network, only a network administrator can use a private or local endpoint address, or a port other than 80, 443 or 8080. Use the provider\'s public endpoint, or ask a network administrator.', 'omnioffloader' ),
 			array( 'status' => 403 )
 		);
 	}
@@ -182,8 +182,9 @@ class ProviderController extends BaseController {
 	 * @return string[]
 	 */
 	public static function request_urls( $provider_key, array $values ) {
-		// Only a request that sets where requests go is checked.
-		if ( '' === trim( (string) ( $values['endpoint'] ?? '' ) ) && '' === trim( (string) ( $values['bucket'] ?? '' ) ) ) {
+		// Only a request that sets where requests go is checked (a change of
+		// path_style alone moves requests to {bucket}.{host} too).
+		if ( '' === trim( (string) ( $values['endpoint'] ?? '' ) ) && '' === trim( (string) ( $values['bucket'] ?? '' ) ) && ! array_key_exists( 'path_style', $values ) ) {
 			return array();
 		}
 
@@ -200,9 +201,11 @@ class ProviderController extends BaseController {
 			return array();
 		}
 
-		$urls       = array( $endpoint );
-		$bucket     = $value( 'bucket' );
-		$path_style = in_array( $value( 'path_style' ), array( '1', 'true' ), true );
+		$urls   = array( $endpoint );
+		$bucket = $value( 'bucket' );
+		// Only S3-compatible honours path_style; R2, B2 and Spaces always
+		// address the bucket as a subdomain whatever the field says.
+		$path_style = 's3_compatible' === $provider_key && in_array( $value( 'path_style' ), array( '1', 'true' ), true );
 		$parts      = wp_parse_url( $endpoint );
 
 		if ( '' !== $bucket && ! $path_style && is_array( $parts ) && ! empty( $parts['host'] ) ) {
@@ -382,9 +385,16 @@ class ProviderController extends BaseController {
 
 		$credentials = $request->get_param( 'credentials' );
 		if ( is_array( $credentials ) && ! empty( $credentials ) ) {
+			// Only this provider's own fields, as when saving credentials.
+			$known = array_column( $provider->credential_fields(), 'name' );
+
 			$sanitized = array();
 			foreach ( $credentials as $field_name => $field_val ) {
-				$sanitized[ sanitize_key( (string) $field_name ) ] = sanitize_text_field( (string) $field_val );
+				$field_name = sanitize_key( (string) $field_name );
+
+				if ( in_array( $field_name, $known, true ) ) {
+					$sanitized[ $field_name ] = sanitize_text_field( (string) $field_val );
+				}
 			}
 
 			$refused = self::endpoint_refusal( $provider_key, $sanitized ) ?? self::region_refusal( $sanitized['region'] ?? '' );

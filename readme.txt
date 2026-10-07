@@ -271,12 +271,14 @@ Yes. The plugin's own REST requests tell page caches not to store them (includin
 
 1. Dashboard — Real-time cloud provider status, media offload stats, and quick actions.
 2. Cloud Provider & Credentials — Multi-cloud provider selection (Cloudflare R2, AWS S3, Wasabi, DigitalOcean, Backblaze B2, S3-Compatible) with instant "Test Connection" verification.
-3. Retention & Delivery Policies — Flexible local retention policies (Retain Local, Smart Cleanup, Full Migration), Transfer Speed, Mirror Delete, Object Versioning, and custom path prefixes.
+3. Retention & Delivery Policies — Flexible local retention policies (Retain Local, Smart Cleanup, Full Migration) and Serve Media from Cloud, followed by Transfer Speed, Mirror Delete, Object Versioning, and custom path prefixes.
 4. Bulk Offload Center — Active background media offloader with custom batch amount stepper, preset chips, and real-time status counters.
 5. Zero-Lock-In Bring Back (Restore) — Safely download offloaded media back to your local server with automatic disk space pre-flight checks and atomic restore.
 6. WordPress Media Library Integration — Dedicated cloud offload status column, offload state filter, contextual row actions, and native bulk offload/restore actions.
 7. Apply Retention Policy to Existing Media — Tools screen to synchronize existing media with updated retention policies, including pre-flight storage estimates and batch scopes.
 8. Safe Mode Copy & Staging Protection — Automatic detection of staging/dev clones, address changes, and shared bucket conflicts, pausing cloud writes to protect production data.
+9. Move Media to the Current Folder — After a Path Prefix change, move media from earlier folders into the current one; within the same bucket the files are copied by your storage provider, with nothing downloaded.
+10. WP-CLI Reference — Every command on the Tools screen with examples and copy buttons, plus how to run a long job in the background, watch it and stop it.
 
 == External services ==
 

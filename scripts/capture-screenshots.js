@@ -19,6 +19,27 @@ const DOCS_IMG_DIR = path.join(PLUGIN_ROOT, 'docs/public/images/screenshots');
 fs.mkdirSync(WPORG_DIR, { recursive: true });
 fs.mkdirSync(DOCS_IMG_DIR, { recursive: true });
 
+// The site's real bucket folder, so faked move data matches the Path Prefix
+// field on screen.
+function currentFolder() {
+  try {
+    const raw = execSync(`wp option get omnioffloader_settings --format=json 2>/dev/null`, { cwd: WP_ROOT }).toString();
+    const settings = JSON.parse(raw.slice(raw.indexOf('{')));
+    const prefix = settings.path_prefix_active ? String(settings.path_prefix || '').replace(/^\/+|\/+$/g, '') : '';
+    return prefix ? `${prefix}/` : '';
+  } catch (e) {
+    return '';
+  }
+}
+
+const FOLDER = currentFolder();
+
+// Faked on every screen unless the screen fakes it itself: the Move card and
+// the Settings move box only belong in the screenshots about moving.
+const DEFAULT_MOCKS = [
+  { path: '/omnioffloader/v1/move/preflight', data: { folder: FOLDER, elsewhere: 0 } }
+];
+
 async function getAuthCookies() {
   const cmd = `wp eval '$u=1;$e=time()+86400;echo SECURE_AUTH_COOKIE."=".wp_generate_auth_cookie($u,$e,"secure_auth").";".LOGGED_IN_COOKIE."=".wp_generate_auth_cookie($u,$e,"logged_in");'`;
   const raw = execSync(cmd, { cwd: WP_ROOT }).toString().trim();
@@ -156,6 +177,19 @@ function clearOverlay() {
   if (el) el.remove();
 }
 
+// Scroll so an element sits just below the sticky page header, optionally
+// starting `above` px higher to show some context.
+async function scrollBelowHeader(page, selector, above = 0) {
+  await page.evaluate((sel, extra) => {
+    const el = document.querySelector(sel);
+    const header = document.querySelector('.smowp-header');
+    if (!el) return;
+    const covered = header ? header.getBoundingClientRect().bottom : 32;
+    const y = el.getBoundingClientRect().top + window.scrollY - covered - 16 - extra;
+    window.scrollTo({ top: Math.max(0, y), behavior: 'instant' });
+  }, selector, above);
+}
+
 async function captureScreen(browser, cookies, config, totalScreens) {
   console.log(`\n▶ [${config.id}/${totalScreens}] Capturing ${config.title}...`);
   const page = await browser.newPage();
@@ -163,11 +197,12 @@ async function captureScreen(browser, cookies, config, totalScreens) {
   await page.setCookie(...cookies);
 
   // Set up route mocking if specified
-  if (config.mocks && config.mocks.length > 0) {
+  const mocks = [...(config.mocks || []), ...DEFAULT_MOCKS];
+  {
     await page.setRequestInterception(true);
     page.on('request', interceptedReq => {
       const reqUrl = interceptedReq.url();
-      for (const mock of config.mocks) {
+      for (const mock of mocks) {
         if (reqUrl.includes(mock.path)) {
           return interceptedReq.respond({
             status: 200,
@@ -256,7 +291,7 @@ async function main() {
       slug: 'provider-settings',
       wpOrgNum: 2,
       width: 1440,
-      height: 1040,
+      height: 1320,
       title: 'Cloud Storage Provider & Credentials',
       url: 'https://wp71.test/wp-admin/admin.php?page=omnioffloader&view=settings',
       waitFor: '#omnioffloader-admin-app',
@@ -293,7 +328,7 @@ async function main() {
         await page.evaluate(() => {
           const cards = document.querySelectorAll('.smowp-card');
           if (cards.length >= 2) {
-            const y = cards[1].getBoundingClientRect().top + window.scrollY - 90;
+            const y = cards[1].getBoundingClientRect().top + window.scrollY - (document.querySelector('.smowp-header').getBoundingClientRect().bottom + 16);
             window.scrollTo({ top: Math.max(0, y), behavior: 'instant' });
           }
         });
@@ -526,14 +561,15 @@ async function main() {
         await page.evaluate(() => {
           const cards = document.querySelectorAll('.smowp-card');
           if (cards.length >= 3) {
-            const y = cards[2].getBoundingClientRect().top + window.scrollY - 90;
+            const y = cards[2].getBoundingClientRect().top + window.scrollY - (document.querySelector('.smowp-header').getBoundingClientRect().bottom + 16);
             window.scrollTo({ top: Math.max(0, y), behavior: 'instant' });
           }
         });
       },
       annotations: [
         { selector: '.smowp-card:nth-of-type(3) .components-toggle-control', index: 3, num: 1, label: 'Custom Path Prefix (Enable Isolated Bucket Subfolder per Site)', position: 'top-right', offsetY: -16 },
-        { selector: '.smowp-card:nth-of-type(3) .components-base-control:has(input[type="text"])', num: 2, label: 'Dedicated Folder Name (e.g., "shop", "blog", "store")', position: 'below-left', offsetY: 8, offsetX: 14 },
+        { selector: '.smowp-card:nth-of-type(3) .components-base-control:has(input[type="text"])', num: 2, label: 'Dedicated Folder Name (e.g., "shop", "blog", "store")', position: 'top-right', offsetY: -16 },
+        { selector: '.smowp-prefix-notice', num: 4, label: 'Folder Change Warning: Existing Media Stays & Keeps Working', position: 'top-right', offsetY: -16 },
         { selector: '.smowp-card:nth-of-type(3) .components-toggle-control', index: 2, num: 3, label: 'Object Versioning (Prevents CDN Cache Overwrite Collisions)', position: 'top-left', offsetY: -16 }
       ]
     },
@@ -564,7 +600,7 @@ async function main() {
         await page.evaluate(() => {
           const cards = document.querySelectorAll('.smowp-card');
           if (cards.length >= 4) {
-            const y = cards[3].getBoundingClientRect().top + window.scrollY - 90;
+            const y = cards[3].getBoundingClientRect().top + window.scrollY - (document.querySelector('.smowp-header').getBoundingClientRect().bottom + 16);
             window.scrollTo({ top: Math.max(0, y), behavior: 'instant' });
           }
         });
@@ -590,7 +626,7 @@ async function main() {
         await page.evaluate(() => {
           const cards = document.querySelectorAll('.smowp-card');
           if (cards.length >= 3) {
-            const y = cards[2].getBoundingClientRect().top + window.scrollY - 90;
+            const y = cards[2].getBoundingClientRect().top + window.scrollY - (document.querySelector('.smowp-header').getBoundingClientRect().bottom + 16);
             window.scrollTo({ top: Math.max(0, y), behavior: 'instant' });
           }
         });
@@ -627,13 +663,78 @@ async function main() {
         await page.evaluate(() => {
           const cards = document.querySelectorAll('.smowp-card');
           if (cards.length >= 3) {
-            const y = cards[2].getBoundingClientRect().top + window.scrollY - 90;
+            const y = cards[2].getBoundingClientRect().top + window.scrollY - (document.querySelector('.smowp-header').getBoundingClientRect().bottom + 16);
             window.scrollTo({ top: Math.max(0, y), behavior: 'instant' });
           }
         });
       },
       annotations: [
         { selector: '.smowp-card:nth-of-type(3) .components-toggle-control', index: 1, num: 1, label: 'Mirror Delete: Enabled (Automatically Deletes Cloud Files When Removed from Media Library)', position: 'top-right', offsetY: -16 }
+      ]
+    },
+
+    // 13. Move Media to the Current Folder (Tools Screen)
+    {
+      id: 13,
+      slug: 'move-media',
+      wpOrgNum: 9,
+      width: 1440,
+      height: 940,
+      title: 'Move Media to the Current Folder (Tools)',
+      url: 'https://wp71.test/wp-admin/admin.php?page=omnioffloader&view=tools',
+      mocks: [
+        { path: '/omnioffloader/v1/move/preflight', data: { folder: FOLDER, elsewhere: 18 } }
+      ],
+      waitFor: '#omnioffloader-move-media',
+      beforeCapture: async (page) => {
+        await scrollBelowHeader(page, '#omnioffloader-move-media');
+      },
+      annotations: [
+        { selector: '#omnioffloader-move-media .smowp-media-summary', num: 1, label: 'Current Folder vs Media Still in Earlier Folders', position: 'top-right', offsetY: -16 },
+        { selector: '#omnioffloader-move-media .smowp-retention-facts', num: 2, label: 'Copied Inside Your Bucket: Nothing Downloaded, Old Copies Deleted Once Verified', position: 'top-right', offsetY: -16 },
+        { selector: '#omnioffloader-move-media .smowp-batch-scope', num: 3, label: 'Move Everything or a Custom Batch', position: 'top-right', offsetY: -16 },
+        { selector: '#omnioffloader-move-media .smowp-bulk-action__btn-wrap button', num: 4, label: 'Start the Move with Progress & Cancel', position: 'right', offsetX: 18 }
+      ]
+    },
+
+    // 14. Path Prefix change: how to move existing media (Settings)
+    {
+      id: 14,
+      slug: 'path-prefix-move',
+      wpOrgNum: null,
+      width: 1440,
+      height: 940,
+      title: 'Path Prefix Change: Move Existing Media',
+      url: 'https://wp71.test/wp-admin/admin.php?page=omnioffloader&view=settings',
+      mocks: [
+        { path: '/omnioffloader/v1/move/preflight', data: { folder: FOLDER, elsewhere: 18 } }
+      ],
+      waitFor: '.smowp-prefix-notice',
+      beforeCapture: async (page) => {
+        await scrollBelowHeader(page, '.smowp-prefix-notice', 220);
+      },
+      annotations: [
+        { selector: '.smowp-prefix-notice', num: 1, label: 'After a Path Prefix Change: Recommended WP-CLI Move, One-Click Copy', position: 'top-right', offsetY: -16 },
+        { selector: '.smowp-prefix-notice__option:not(.is-recommended) button', num: 2, label: 'Or Jump Straight to Move Media in Tools', position: 'right', offsetX: 18 }
+      ]
+    },
+
+    // 15. WP-CLI Reference (Tools Screen)
+    {
+      id: 15,
+      slug: 'wp-cli',
+      wpOrgNum: 10,
+      width: 1440,
+      height: 980,
+      title: 'WP-CLI Reference (Tools)',
+      url: 'https://wp71.test/wp-admin/admin.php?page=omnioffloader&view=tools',
+      waitFor: '.smowp-cli',
+      beforeCapture: async (page) => {
+        await scrollBelowHeader(page, '.smowp-cli', 150);
+      },
+      annotations: [
+        { selector: '.smowp-cli__background', num: 1, label: 'Long Jobs in the Background: Start, Watch & Stop (One-Click Copy)', position: 'top-right', offsetY: -16 },
+        { selector: '.smowp-cli__command', num: 2, label: 'Every Command with Examples, Options & Its Admin Screen', position: 'top-right', offsetY: -16 }
       ]
     }
   ];

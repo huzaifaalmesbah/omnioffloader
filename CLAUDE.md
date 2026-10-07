@@ -193,7 +193,7 @@ Credentials: `GET` returns secrets masked (`is_set: true`); `POST` ignores maske
 - `omnioffloader_bulk_offload_state` / `omnioffloader_bulk_restore_state` / `omnioffloader_bulk_retention_state` / `omnioffloader_bulk_move_state` (autoload off) — progress heartbeats
 - `omnioffloader_bulk_{offload,restore,retention}_batch_*` / `_status` — queue internals, written by `WP_Background_Process` via `update_site_option` (autoload off on single site). Never leave these behind; `purge_stored_data()` owns their cleanup.
 
-**Attachment meta:** `omnioffloader_offloaded`, `omnioffloader_offloaded_at`, `omnioffloader_provider` (provider at offload time — Bring Back resolves this, not the active provider), `omnioffloader_bucket`, `omnioffloader_path`, `omnioffloader_object_version`, `omnioffloader_retention` (policy the attachment's local files currently follow — missing means 0; only advances once every file was handled), `omnioffloader_error_log`.
+**Attachment meta:** `omnioffloader_offloaded`, `omnioffloader_offloaded_at`, `omnioffloader_provider` (provider at offload time — Bring Back resolves this, not the active provider), `omnioffloader_bucket`, `omnioffloader_path`, `omnioffloader_object_version`, `omnioffloader_async_attempts` (background-upload tries; the async queue gives up after 3 and marks the attachment failed), `omnioffloader_retention` (policy the attachment's local files currently follow — missing means 0; only advances once every file was handled), `omnioffloader_error_log`.
 
 **Retention policy values:** `0` retain local (default) · `1` smart cleanup (delete thumbs, keep original) · `2` full migration (delete all local).
 

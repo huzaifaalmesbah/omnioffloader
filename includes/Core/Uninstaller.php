@@ -67,6 +67,7 @@ class Uninstaller {
 		delete_transient( 'omnioffloader_retention_preflight' );
 
 		delete_post_meta_by_key( 'omnioffloader_status' );
+		delete_post_meta_by_key( 'omnioffloader_async_attempts' );
 		delete_post_meta_by_key( 'omnioffloader_error_log' );
 
 		// Media whose local files were removed (retention 1/2) now exists

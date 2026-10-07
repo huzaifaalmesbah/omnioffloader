@@ -378,6 +378,14 @@ abstract class AbstractBulkProcessor extends WP_Background_Process {
 		$total = count( $ids );
 
 		if ( 0 === $total ) {
+			// Nothing new to add to a running job (e.g. Bring Back of local
+			// items picked in the Media Library while a Bring Back runs).
+			// Resetting its state would stop its workers and let another
+			// job type start next to its in-flight group.
+			if ( 'running' === ( static::get_state()['status'] ?? 'idle' ) ) {
+				return 0;
+			}
+
 			static::update_state(
 				array_merge(
 					static::default_state(),

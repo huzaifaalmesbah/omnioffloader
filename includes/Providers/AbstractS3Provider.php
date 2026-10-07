@@ -954,6 +954,93 @@ abstract class AbstractS3Provider implements ProviderInterface {
 	}
 
 	/**
+	 * Copy objects inside the bucket, up to $concurrency at a time.
+	 *
+	 * The provider copies the bytes itself; nothing passes through this
+	 * server. Used to move media into another folder of the same bucket.
+	 * A single CopyObject is limited to 5 GB, so larger objects fail here
+	 * and the caller falls back to downloading and uploading them.
+	 *
+	 * Not part of ProviderInterface — callers check method_exists().
+	 *
+	 * @since 0.1.4
+	 *
+	 * @param array<int, array{from: string, to: string}> $pairs       Source and destination keys.
+	 * @param int                                         $concurrency Copies in flight at once.
+	 * @return array<string, bool> Destination key => copied.
+	 */
+	public function copy_objects( array $pairs, $concurrency = 1 ) {
+		$targets = wp_list_pluck( $pairs, 'to' );
+		$copied  = array_fill_keys( $targets, false );
+
+		// Same guards as an upload: a copy of the site, or a folder another
+		// site owns, never gets written to.
+		if ( SafeMode::is_active() ) {
+			$this->log_error( 'Safe mode: not copying.' );
+
+			return $copied;
+		}
+
+		if ( FolderClaim::blocks( $this, $targets ) ) {
+			$this->log_error( 'Folder used by another site: not copying.' );
+
+			return $copied;
+		}
+
+		$pairs  = array_values( $pairs );
+		$client = $this->get_client();
+		$bucket = (string) $this->get_bucket();
+
+		$commands = static function () use ( $client, $bucket, $pairs ) {
+			foreach ( $pairs as $index => $pair ) {
+				$params = array(
+					'Bucket'            => $bucket,
+					'Key'               => $pair['to'],
+					// Bucket/key, with the key URL-encoded but its slashes kept.
+					'CopySource'        => $bucket . '/' . str_replace( '%2F', '/', rawurlencode( $pair['from'] ) ),
+					'MetadataDirective' => 'COPY',
+					'@http'             => array(
+						'connect_timeout' => static::CONNECT_TIMEOUT,
+						'timeout'         => 300,
+					),
+				);
+
+				/** This filter is documented in includes/Providers/AbstractS3Provider.php (upload_file). */
+				$acl = apply_filters( 'omnioffloader_object_acl', '', '', $pair['to'] );
+
+				if ( '' !== $acl ) {
+					$params['ACL'] = $acl;
+				}
+
+				yield $index => $client->getCommand( 'CopyObject', $params );
+			}
+		};
+
+		try {
+			$pool = new \Aws\CommandPool(
+				$client,
+				$commands(),
+				array(
+					'concurrency'            => max( 1, (int) $concurrency ),
+					'preserve_iterator_keys' => true,
+					'fulfilled'              => static function ( $result, $index ) use ( &$copied, $pairs ) {
+						$copied[ $pairs[ $index ]['to'] ] = true;
+					},
+					'rejected'               => function ( $reason, $index ) use ( $pairs ) {
+						$this->log_error( sprintf( 'Copy failed for "%s": %s', $pairs[ $index ]['from'], $reason instanceof \Exception ? $reason->getMessage() : 'unknown error' ) );
+					},
+				)
+			);
+
+			$pool->promise()->wait();
+		} catch ( \Exception $e ) {
+			$this->log_error( sprintf( 'Copy failed: %s', $e->getMessage() ) );
+		}
+
+		return $copied;
+	}
+
+	/**
 	 * Sizes of every object under a key prefix, in as few requests as possible.
 	 *
 	 * Lets a caller verify all of an attachment's files (main + every size)

@@ -4,7 +4,6 @@ import { __, sprintf, _n } from '@wordpress/i18n';
 
 import { useCore } from '../../context/CoreContext';
 import { useMoveSync } from '../../hooks/useMoveSync';
-import { RetentionPolicy } from '../../types';
 import { folderLabel } from '../../utils/folder';
 import { ActivityLog } from '../ui/ActivityLog';
 import { BatchScopeSelector, type ScopeMode } from '../ui/BatchScopeSelector';
@@ -20,7 +19,7 @@ import { RunAnnouncer } from '../ui/RunAnnouncer';
  * sites never change the prefix.
  */
 export function MoveFolderCard() {
-	const { stats, isDirty, savedSettings } = useCore();
+	const { stats, isDirty } = useCore();
 	const { preflight, state, busy, start, cancel, showProgress, dismiss } =
 		useMoveSync();
 	const askConfirm = useConfirm();
@@ -54,8 +53,6 @@ export function MoveFolderCard() {
 		! safeMode &&
 		elsewhere > 0 &&
 		! isCustomInvalid;
-	const keepsLocal =
-		savedSettings?.retention_policy === RetentionPolicy.RetainLocal;
 
 	const handleStart = async () => {
 		const ok = await askConfirm( {
@@ -86,7 +83,7 @@ export function MoveFolderCard() {
 			title={ __( 'Move Media to the Current Folder', 'omnioffloader' ) }
 			docs="features/path-prefix-and-versioning/#move-existing-media-to-the-new-folder"
 			description={ __(
-				'Media keeps the bucket folder it was offloaded to, so after a Path Prefix change it is split across folders. This moves it into the current folder, one attachment at a time: each is brought back, offloaded again, and its old copy deleted once the new one is confirmed.',
+				'Media keeps the bucket folder it was offloaded to, so after a Path Prefix change it is split across folders. This moves it into the current folder. Within the same bucket, your cloud storage copies each file itself: nothing is downloaded and your server is not involved. Each old copy is deleted once its new copy is confirmed.',
 				'omnioffloader'
 			) }
 		>
@@ -131,25 +128,20 @@ export function MoveFolderCard() {
 				<div className="smowp-bulk-action">
 					<ul className="smowp-retention-facts">
 						<li>
-							{ keepsLocal
-								? __(
-										'Retain Local Files: the files are already on this server, so nothing is downloaded — only the upload to the new folder takes time.',
-										'omnioffloader'
-									)
-								: __(
-										'Your retention policy removed local files, so each attachment is downloaded first. Only one attachment needs room on the server at a time.',
-										'omnioffloader'
-									) }
-						</li>
-						<li>
 							{ __(
-								'Every attachment keeps a working copy throughout. If its new upload fails, it stays on the server and its old copy is kept.',
+								'Files are copied inside your cloud storage, then the attachment switches to the new folder. Files on this server are not touched.',
 								'omnioffloader'
 							) }
 						</li>
 						<li>
 							{ __(
-								'For a large library, WP-CLI is faster: wp omnioffloader move --all --concurrency=32',
+								'A file that cannot be copied that way (over 5 GB, or in another bucket) is moved through this server instead: brought back, then offloaded again.',
+								'omnioffloader'
+							) }
+						</li>
+						<li>
+							{ __(
+								'Every attachment keeps a working copy throughout; old copies are only deleted once the new ones are confirmed.',
 								'omnioffloader'
 							) }
 						</li>

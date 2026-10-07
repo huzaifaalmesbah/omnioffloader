@@ -101,7 +101,7 @@ The ACL sent with each uploaded object. The default is an empty string, which se
 | Parameter | Type | Description |
 | --- | --- | --- |
 | `$acl` | `string` | Default `''` (no ACL). For example `'public-read'`. |
-| `$file` | `string` | Absolute path of the local file. |
+| `$file` | `string` | Absolute path of the local file. Empty when the object is copied inside the bucket ([`wp omnioffloader move`](/wp-cli/move/)). |
 | `$key` | `string` | Object key. |
 
 ```php

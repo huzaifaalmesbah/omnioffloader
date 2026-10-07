@@ -93,6 +93,28 @@ class MockProvider implements ProviderInterface {
 	}
 
 	/**
+	 * Copy objects inside the bucket dir (server-side copy stand-in).
+	 *
+	 * @param array<int, array{from: string, to: string}> $pairs       Source and destination keys.
+	 * @param int                                          $concurrency Unused.
+	 * @return array<string, bool>
+	 */
+	public function copy_objects( array $pairs, $concurrency = 1 ) {
+		unset( $concurrency );
+		$copied = array();
+
+		foreach ( $pairs as $pair ) {
+			$from = $this->bucket_dir . $pair['from'];
+			$to   = $this->bucket_dir . $pair['to'];
+
+			wp_mkdir_p( dirname( $to ) );
+			$copied[ $pair['to'] ] = is_file( $from ) && copy( $from, $to );
+		}
+
+		return $copied;
+	}
+
+	/**
 	 * {@inheritDoc}
 	 */
 	public function delete_objects( array $keys ) {

@@ -205,9 +205,9 @@
 			$cell.attr('class', 'omnioffloader-status-cell omnioffloader-status-cell--processing')
 				.attr('data-status', 'processing')
 				.html(
-					'<span class="omnioffloader-status-icon omnioffloader-status-icon--processing" title="' + loadingText + '">' +
+					'<span class="omnioffloader-status-icon omnioffloader-status-icon--processing" title="' + escAttr(loadingText) + '">' +
 					spinnerIcon +
-					'<span class="screen-reader-text">' + loadingText + '</span></span>'
+					'<span class="screen-reader-text">' + escAttr(loadingText) + '</span></span>'
 				);
 		}
 
@@ -310,7 +310,7 @@
 			$metaBoxWrap.attr('class', 'omnioffloader-meta-box-wrap omnioffloader-details-badge omnioffloader-details-badge--processing')
 				.attr('data-status', 'processing');
 			$metaBoxWrap.find('.omnioffloader-meta-box-status')
-				.html('<span class="omnioffloader-badge omnioffloader-badge--processing">' + spinnerIcon + ' <span class="omnioffloader-badge__text">' + loadingText + '</span></span>');
+				.html('<span class="omnioffloader-badge omnioffloader-badge--processing">' + spinnerIcon + ' <span class="omnioffloader-badge__text">' + escAttr(loadingText) + '</span></span>');
 			$metaBoxWrap.find('.omnioffloader-meta-box-actions').empty();
 		} else {
 			// Inside modal: replace container with single spinner badge (never duplicate text)
@@ -318,7 +318,7 @@
 			if ($badgeContainer.length) {
 				$badgeContainer.attr('class', 'omnioffloader-details-badge omnioffloader-details-badge--processing')
 					.attr('data-status', 'processing')
-					.html('<span class="omnioffloader-badge omnioffloader-badge--processing">' + spinnerIcon + ' <span class="omnioffloader-badge__text">' + loadingText + '</span></span>');
+					.html('<span class="omnioffloader-badge omnioffloader-badge--processing">' + spinnerIcon + ' <span class="omnioffloader-badge__text">' + escAttr(loadingText) + '</span></span>');
 			}
 		}
 
@@ -328,9 +328,9 @@
 			$cell.attr('class', 'omnioffloader-status-cell omnioffloader-status-cell--processing')
 				.attr('data-status', 'processing')
 				.html(
-					'<span class="omnioffloader-status-icon omnioffloader-status-icon--processing" title="' + loadingText + '">' +
+					'<span class="omnioffloader-status-icon omnioffloader-status-icon--processing" title="' + escAttr(loadingText) + '">' +
 					spinnerIcon +
-					'<span class="screen-reader-text">' + loadingText + '</span></span>'
+					'<span class="screen-reader-text">' + escAttr(loadingText) + '</span></span>'
 				);
 		}
 
@@ -749,9 +749,9 @@
 				$cell.attr('class', 'omnioffloader-status-cell omnioffloader-status-cell--processing')
 					.attr('data-status', 'processing')
 					.html(
-						'<span class="omnioffloader-status-icon omnioffloader-status-icon--processing" title="' + loadingText + '">' +
+						'<span class="omnioffloader-status-icon omnioffloader-status-icon--processing" title="' + escAttr(loadingText) + '">' +
 						spinnerIcon +
-						'<span class="screen-reader-text">' + loadingText + '</span></span>'
+						'<span class="screen-reader-text">' + escAttr(loadingText) + '</span></span>'
 					);
 			}
 

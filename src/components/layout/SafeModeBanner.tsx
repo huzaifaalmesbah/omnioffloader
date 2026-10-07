@@ -166,6 +166,23 @@ export function SafeModeBanner( { onNavigate }: SafeModeBannerProps ) {
 	}
 
 	const confirm = () => {
+		if (
+			// eslint-disable-next-line no-alert
+			! window.confirm(
+				sprintf(
+					/* translators: 1: this site's address, 2: live site address. */
+					__(
+						'Only continue if the live site really moved to %1$s. If this is a staging or development copy of %2$s, it will upload to and delete from the live site’s cloud storage, and the live site may stop uploading.',
+						'omnioffloader'
+					),
+					safeMode.current_address,
+					safeMode.live_address
+				)
+			)
+		) {
+			return;
+		}
+
 		setBusy( true );
 		confirmLiveSite()
 			.then( () => {
@@ -178,11 +195,8 @@ export function SafeModeBanner( { onNavigate }: SafeModeBannerProps ) {
 					)
 				);
 			} )
-			.catch( () => {
-				addNotice(
-					'error',
-					__( 'Could not update Safe mode.', 'omnioffloader' )
-				);
+			.catch( ( error: unknown ) => {
+				addNotice( 'error', errorMessage( error ) );
 			} )
 			.finally( () => setBusy( false ) );
 	};

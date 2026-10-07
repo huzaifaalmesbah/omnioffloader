@@ -121,7 +121,8 @@ class AttachmentUploader {
 	 * @param int[]                                 $ids      Attachment IDs.
 	 * @param array<int, array<string, mixed>|null> $metadata In-flight metadata by ID (see AttachmentHelper).
 	 * @return array<int, bool|null> Attachment ID => fully offloaded; null when
-	 *                               the should-offload filter skipped it.
+	 *                               skipped: the should-offload filter, or its
+	 *                               file is missing (status Helpers::STATUS_MISSING).
 	 */
 	public function upload_many( array $ids, array $metadata = array() ) {
 		$results = array();
@@ -194,7 +195,7 @@ class AttachmentUploader {
 	 * @param int                       $attachment_id Attachment ID.
 	 * @param array<string, mixed>|null $metadata      In-flight metadata.
 	 * @return array{main: array{file: string, key: string}, upload: array<int, array{file: string, key: string}>}|false|null
-	 *         False when a filter skipped the attachment, null when it cannot be offloaded.
+	 *         False when it was skipped (a filter, or its file is missing), null when it cannot be offloaded.
 	 */
 	private function prepare( $attachment_id, $metadata ) {
 		/**
@@ -213,6 +214,24 @@ class AttachmentUploader {
 			return false;
 		}
 
+		$files = self::collect_attachment_files( $attachment_id, $metadata );
+
+		if ( empty( $files['main'] ) ) {
+			self::log_attachment_error( $attachment_id, __( 'No attached file found.', 'omnioffloader' ) );
+			update_post_meta( $attachment_id, 'omnioffloader_status', 'failed' );
+
+			return null;
+		}
+
+		// The file isn't on this server (a copy without its uploads, or one
+		// removed outside WordPress): nothing to upload, so skip it before
+		// any transfer, and let bulk runs leave it alone until it is back.
+		if ( ! file_exists( $files['main'][0]['file'] ) ) {
+			update_post_meta( $attachment_id, 'omnioffloader_status', Helpers::STATUS_MISSING );
+
+			return false;
+		}
+
 		/**
 		 * Fires before an attachment is offloaded.
 		 *
@@ -222,15 +241,6 @@ class AttachmentUploader {
 
 		update_post_meta( $attachment_id, 'omnioffloader_status', 'processing' );
 		Helpers::mark_working( $attachment_id );
-
-		$files = self::collect_attachment_files( $attachment_id, $metadata );
-
-		if ( empty( $files['main'] ) ) {
-			self::log_attachment_error( $attachment_id, __( 'No attached file found.', 'omnioffloader' ) );
-			update_post_meta( $attachment_id, 'omnioffloader_status', 'failed' );
-
-			return null;
-		}
 
 		// Metadata can reference files that never existed on disk (e.g.
 		// cleaned up by another plugin); skip those quietly.

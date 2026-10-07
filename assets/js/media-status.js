@@ -143,6 +143,9 @@
 		if (status === 'failed') {
 			return '<span class="omnioffloader-grid-badge omnioffloader-grid-badge--failed" title="' + escAttr((label || (config.i18n && config.i18n.failed ? config.i18n.failed : 'Offload failed'))) + '">' + warningIcon + '</span>';
 		}
+		if (status === 'missing') {
+			return '<span class="omnioffloader-grid-badge omnioffloader-grid-badge--missing" title="' + escAttr((label || (config.i18n && config.i18n.missing ? config.i18n.missing : 'File missing on this server'))) + '">' + warningIcon + '</span>';
+		}
 
 		return '';
 	}
@@ -483,6 +486,8 @@
 					status = 'queued';
 				} else if ($badge.hasClass('omnioffloader-grid-badge--failed')) {
 					status = 'failed';
+				} else if ($badge.hasClass('omnioffloader-grid-badge--missing')) {
+					status = 'missing';
 				} else {
 					status = 'local';
 				}
@@ -762,7 +767,7 @@
 			if (actionType === 'offload' && currentStatus === 'offloaded') {
 				return;
 			}
-			if (actionType === 'restore' && (currentStatus === 'local' || currentStatus === 'failed')) {
+			if (actionType === 'restore' && (currentStatus === 'local' || currentStatus === 'failed' || currentStatus === 'missing')) {
 				return;
 			}
 

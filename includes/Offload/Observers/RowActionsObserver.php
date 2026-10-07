@@ -133,7 +133,7 @@ class RowActionsObserver implements ObserverInterface {
 			'<a href="%s" class="omnioffloader-row-action" data-action="offload" data-attachment-id="%d">%s</a>',
 			esc_url( $this->action_url( self::ACTION, $attachment_id ) ),
 			$attachment_id,
-			'failed' === $state ? esc_html__( 'Retry Offload', 'omnioffloader' ) : esc_html__( 'Offload now', 'omnioffloader' )
+			in_array( $state, array( 'failed', 'missing' ), true ) ? esc_html__( 'Retry Offload', 'omnioffloader' ) : esc_html__( 'Offload now', 'omnioffloader' )
 		);
 
 		return $actions;
@@ -198,7 +198,7 @@ class RowActionsObserver implements ObserverInterface {
 			'<span class="omnioffloader_offload omnioffloader_action"><a href="%s" class="omnioffloader-row-action" data-action="offload" data-attachment-id="%d">%s</a></span>',
 			esc_url( $this->action_url( self::ACTION, $attachment_id ) ),
 			$attachment_id,
-			'failed' === $state ? esc_html__( 'Retry Offload', 'omnioffloader' ) : esc_html__( 'Offload now', 'omnioffloader' )
+			in_array( $state, array( 'failed', 'missing' ), true ) ? esc_html__( 'Retry Offload', 'omnioffloader' ) : esc_html__( 'Offload now', 'omnioffloader' )
 		);
 	}
 

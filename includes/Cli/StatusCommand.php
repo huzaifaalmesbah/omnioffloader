@@ -125,6 +125,10 @@ class StatusCommand {
 			)
 		);
 
+		if ( $stats['missing'] > 0 ) {
+			WP_CLI::log( sprintf( '  File missing: %s attachment(s) have no file on this server and are skipped. Restore the files; the next offload picks them up.', number_format_i18n( $stats['missing'] ) ) );
+		}
+
 		// Running admin jobs are reported at the top; these are past runs.
 		foreach ( self::admin_jobs() as $label => $state ) {
 			if ( ! in_array( $state['status'], array( 'idle', 'running' ), true ) ) {

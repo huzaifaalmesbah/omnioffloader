@@ -67,6 +67,11 @@ td.column-omnioffloader_status {
 	color: #dc2626;
 }
 
+/* File missing on this server: attention, not an error. */
+.omnioffloader-status-icon--missing {
+	color: #b45309;
+}
+
 .omnioffloader-status-icon--local {
 	color: #9ca3af;
 	font-size: 16px;
@@ -133,6 +138,16 @@ td.column-omnioffloader_status {
 
 .omnioffloader-badge--failed .omnioffloader-icon--warning {
 	color: #dc2626;
+}
+
+.omnioffloader-badge--missing {
+	background-color: #fffbeb;
+	color: #92400e;
+	border: 1px solid #fde68a;
+}
+
+.omnioffloader-badge--missing .omnioffloader-icon--warning {
+	color: #b45309;
 }
 
 .omnioffloader-badge--local {
@@ -229,6 +244,10 @@ span.omnioffloader-row-action {
 
 .omnioffloader-grid-badge--failed {
 	color: #dc2626;
+}
+
+.omnioffloader-grid-badge--missing {
+	color: #b45309;
 }
 
 /* Details Badges & Action Buttons (Attachment Edit Form / Modal) */

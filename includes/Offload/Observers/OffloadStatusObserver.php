@@ -231,6 +231,17 @@ class OffloadStatusObserver implements ObserverInterface {
 				);
 				break;
 
+			case 'missing':
+				$tooltip = __( 'File missing on this server — restore the file to offload it.', 'omnioffloader' );
+				$html   .= sprintf(
+					'<span class="omnioffloader-status-icon omnioffloader-status-icon--missing" title="%s" aria-label="%s">%s<span class="screen-reader-text">%s</span></span>',
+					esc_attr( $tooltip ),
+					esc_attr( $tooltip ),
+					self::ICON_WARNING,
+					esc_html( $tooltip )
+				);
+				break;
+
 			case 'failed':
 				$error_text = ! empty( $status['error'] ) ? (string) $status['error'] : __( 'Upload failed', 'omnioffloader' );
 				$tooltip    = sprintf(
@@ -360,6 +371,14 @@ class OffloadStatusObserver implements ObserverInterface {
 				);
 				break;
 
+			case 'missing':
+				$html .= sprintf(
+					'<span class="omnioffloader-badge omnioffloader-badge--missing">%s <span class="omnioffloader-badge__text">%s</span></span>',
+					self::ICON_WARNING,
+					esc_html__( 'File missing on this server', 'omnioffloader' )
+				);
+				break;
+
 			case 'failed':
 				$error_text = ! empty( $status['error'] ) ? (string) $status['error'] : __( 'Upload failed', 'omnioffloader' );
 				$html      .= sprintf(
@@ -460,6 +479,14 @@ class OffloadStatusObserver implements ObserverInterface {
 					'<span class="omnioffloader-badge omnioffloader-badge--queued">%s <span class="omnioffloader-badge__text">%s</span></span>',
 					self::ICON_SPINNER,
 					esc_html__( 'Queued for background offload', 'omnioffloader' )
+				);
+				break;
+
+			case 'missing':
+				$html .= sprintf(
+					'<span class="omnioffloader-badge omnioffloader-badge--missing">%s <span class="omnioffloader-badge__text">%s</span></span>',
+					self::ICON_WARNING,
+					esc_html__( 'File missing on this server', 'omnioffloader' )
 				);
 				break;
 
@@ -565,7 +592,7 @@ class OffloadStatusObserver implements ObserverInterface {
 					$post_id,
 					esc_html__( 'Offload now', 'omnioffloader' )
 				);
-			} elseif ( 'failed' === $state && $can_offload ) {
+			} elseif ( ( 'failed' === $state || 'missing' === $state ) && $can_offload ) {
 				$offload_url = wp_nonce_url(
 					admin_url( 'admin-post.php?action=omnioffloader_offload_single&id=' . $post_id ),
 					'omnioffloader_offload_single_' . $post_id
@@ -690,6 +717,7 @@ class OffloadStatusObserver implements ObserverInterface {
 					'offloaded'  => __( 'Offloaded', 'omnioffloader' ),
 					'local'      => __( 'Not offloaded', 'omnioffloader' ),
 					'failed'     => __( 'Offload failed', 'omnioffloader' ),
+					'missing'    => __( 'File missing on this server', 'omnioffloader' ),
 					'retry'      => __( 'Retry Offload', 'omnioffloader' ),
 					'offloadNow' => __( 'Offload now', 'omnioffloader' ),
 					'bringBack'  => __( 'Bring Back', 'omnioffloader' ),

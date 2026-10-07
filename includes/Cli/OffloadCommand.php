@@ -160,6 +160,7 @@ class OffloadCommand {
 		$done      = 0;
 		$failed    = 0;
 		$skipped   = 0;
+		$missing   = 0;
 		$streak    = 0;
 		$fail_run  = 0;
 		$processed = 0;
@@ -181,9 +182,14 @@ class OffloadCommand {
 
 			foreach ( $chunk as $id ) {
 				if ( array_key_exists( $id, $results ) && null === $results[ $id ] ) {
-					// Excluded by omnioffloader_should_offload_attachment:
-					// neither a success nor a failure.
-					++$skipped;
+					// Its file is not on this server, or it was excluded by
+					// omnioffloader_should_offload_attachment: neither a
+					// success nor a failure.
+					if ( Helpers::STATUS_MISSING === get_post_meta( $id, 'omnioffloader_status', true ) ) {
+						++$missing;
+					} else {
+						++$skipped;
+					}
 				} elseif ( ! empty( $results[ $id ] ) ) {
 					++$done;
 					$streak   = 0;
@@ -249,6 +255,10 @@ class OffloadCommand {
 
 		$skipped_note = $skipped > 0 ? sprintf( ', %d skipped by the omnioffloader_should_offload_attachment filter', $skipped ) : '';
 
+		if ( $missing > 0 ) {
+			$skipped_note .= sprintf( ', %d skipped because the file is missing on this server', $missing );
+		}
+
 		if ( $stopped ) {
 			$this->report_stopped( sprintf( '%d offloaded, %d failed%s', $done, $failed, $skipped_note ) );
 		}
@@ -312,11 +322,15 @@ class OffloadCommand {
 
 		global $wpdb;
 
+		// Files that came back are offloaded again; still missing: left out.
+		Helpers::recover_missing_files();
+
 		$sql = "SELECT p.ID FROM {$wpdb->posts} p
 			 INNER JOIN {$wpdb->postmeta} f ON f.post_id = p.ID AND f.meta_key = '_wp_attached_file'
 			 LEFT JOIN {$wpdb->postmeta} m ON m.post_id = p.ID AND m.meta_key = 'omnioffloader_offloaded'
 			 LEFT JOIN {$wpdb->postmeta} s ON s.post_id = p.ID AND s.meta_key = 'omnioffloader_status' AND s.meta_value = 'failed'
-			 WHERE p.post_type = 'attachment' AND p.post_status != 'trash' AND m.post_id IS NULL
+			 LEFT JOIN {$wpdb->postmeta} x ON x.post_id = p.ID AND x.meta_key = 'omnioffloader_status' AND x.meta_value = 'missing'
+			 WHERE p.post_type = 'attachment' AND p.post_status != 'trash' AND m.post_id IS NULL AND x.post_id IS NULL
 			 ORDER BY s.post_id IS NOT NULL, p.ID ASC";
 
 		if ( $limit > 0 ) {

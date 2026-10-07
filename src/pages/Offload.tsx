@@ -28,6 +28,7 @@ export function OffloadPage( { onNavigate }: OffloadProps ) {
 	const totalCount = stats?.total ?? 0;
 	const offloadedCount = stats?.offloaded ?? 0;
 	const localCount = stats?.local ?? 0;
+	const missingCount = stats?.missing ?? 0;
 	const isAllOffloaded =
 		stats?.configured && localCount === 0 && totalCount > 0;
 
@@ -206,6 +207,21 @@ export function OffloadPage( { onNavigate }: OffloadProps ) {
 						) }
 
 						<div className="smowp-bulk-action">
+							{ missingCount > 0 && (
+								<p className="smowp-warning smowp-missing-files">
+									{ sprintf(
+										/* translators: %s: number of attachments. */
+										_n(
+											'%s attachment has no file on this server, so it is skipped. Restore the file to offload it; the next Bulk Offload picks it up.',
+											'%s attachments have no file on this server, so they are skipped. Restore the files to offload them; the next Bulk Offload picks them up.',
+											missingCount,
+											'omnioffloader'
+										),
+										missingCount.toLocaleString()
+									) }
+								</p>
+							) }
+
 							{ localCount > 0 && (
 								<p className="smowp-bulk-action__info">
 									{ sprintf(

@@ -202,6 +202,49 @@ foreach ( $keys3 as $key ) {
 omnioffloader_check( $all_deleted, count( $keys3 ) . ' cloud objects deleted with attachment' );
 
 // ---------------------------------------------------------------------------
+// Test 5 — File missing on this server: skipped, not failed, and back in the
+// queue once the file returns.
+// ---------------------------------------------------------------------------
+echo "\nTest 5: file missing on this server\n";
+
+$keep_local = static function () {
+	return false;
+};
+add_filter( 'omnioffloader_should_offload_attachment', $keep_local );
+$id5 = omnioffloader_make_attachment( 'omnioffloader-test-missing.jpg' );
+remove_filter( 'omnioffloader_should_offload_attachment', $keep_local );
+
+$file5   = get_attached_file( $id5 );
+$backup5 = $file5 . '.bak';
+rename( $file5, $backup5 );
+
+$uploader = new OmniOffloader\Services\AttachmentUploader( $provider );
+$results5 = $uploader->upload_many( array( $id5 ) );
+$sub5     = OmniOffloader\Services\AttachmentUploader::build_subdir( $id5 );
+$meta5    = wp_get_attachment_metadata( $id5 );
+$size5    = is_array( $meta5 ) && ! empty( $meta5['sizes'] ) ? reset( $meta5['sizes'] )['file'] : '';
+
+omnioffloader_check( array_key_exists( $id5, $results5 ) && null === $results5[ $id5 ], 'missing file is skipped, not failed' );
+omnioffloader_check( OmniOffloader\Core\Helpers::STATUS_MISSING === get_post_meta( $id5, 'omnioffloader_status', true ), 'status is File missing' );
+omnioffloader_check( '' === $size5 || ! $provider->object_exists( $sub5 . $size5 ), 'nothing uploaded (its thumbnails stay off the bucket)' );
+omnioffloader_check( 'missing' === OmniOffloader\Traits\AttachmentHelper::get_attachment_status( $id5 )['status'], 'Media Library shows File missing' );
+
+$stats5 = OmniOffloader\Core\Helpers::get_media_stats( true );
+omnioffloader_check( $stats5['missing'] >= 1, "counted as missing ({$stats5['missing']}), not ready to offload" );
+
+$queue5 = new ReflectionMethod( OmniOffloader\Services\BulkOffloadProcessor::class, 'queue_ids' );
+$queue5->setAccessible( true );
+$bulk5 = new OmniOffloader\Services\BulkOffloadProcessor( $provider );
+omnioffloader_check( ! in_array( $id5, $queue5->invoke( $bulk5 ), true ), 'left out of the bulk offload queue' );
+
+rename( $backup5, $file5 );
+omnioffloader_check( in_array( $id5, $queue5->invoke( $bulk5 ), true ), 'back in the queue once the file returns' );
+omnioffloader_check( '' === get_post_meta( $id5, 'omnioffloader_status', true ), 'File missing cleared' );
+omnioffloader_check( true === $uploader->upload( $id5 ), 'offloads normally then' );
+
+wp_delete_attachment( $id5, true );
+
+// ---------------------------------------------------------------------------
 // Cleanup.
 // ---------------------------------------------------------------------------
 echo "\nCleanup…\n";

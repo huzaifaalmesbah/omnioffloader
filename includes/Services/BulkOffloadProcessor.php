@@ -7,6 +7,7 @@
 
 namespace OmniOffloader\Services;
 
+use OmniOffloader\Core\Helpers;
 use OmniOffloader\Core\FolderClaim;
 use OmniOffloader\Core\SafeMode;
 use OmniOffloader\Providers\ProviderInterface;
@@ -110,13 +111,18 @@ class BulkOffloadProcessor extends AbstractBulkProcessor {
 	protected function queue_ids() {
 		global $wpdb;
 
+		// Files that came back since an earlier run are offloaded again;
+		// those still missing are left out (see Helpers::STATUS_MISSING).
+		Helpers::recover_missing_files();
+
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- bulk queue population query.
 		$ids = $wpdb->get_col(
 			"SELECT p.ID FROM {$wpdb->posts} p
 			 INNER JOIN {$wpdb->postmeta} f ON f.post_id = p.ID AND f.meta_key = '_wp_attached_file'
 			 LEFT JOIN {$wpdb->postmeta} m ON m.post_id = p.ID AND m.meta_key = 'omnioffloader_offloaded'
 			 LEFT JOIN {$wpdb->postmeta} s ON s.post_id = p.ID AND s.meta_key = 'omnioffloader_status' AND s.meta_value = 'failed'
-			 WHERE p.post_type = 'attachment' AND p.post_status != 'trash' AND m.post_id IS NULL
+			 LEFT JOIN {$wpdb->postmeta} x ON x.post_id = p.ID AND x.meta_key = 'omnioffloader_status' AND x.meta_value = 'missing'
+			 WHERE p.post_type = 'attachment' AND p.post_status != 'trash' AND m.post_id IS NULL AND x.post_id IS NULL
 			 ORDER BY s.post_id IS NOT NULL, p.ID ASC"
 		);
 
@@ -200,8 +206,15 @@ class BulkOffloadProcessor extends AbstractBulkProcessor {
 		}
 
 		$uploader = new AttachmentUploader( $this->provider );
+		$results  = $uploader->upload_many( $ids );
 
-		return $uploader->upload_many( $ids );
+		foreach ( $results as $id => $ok ) {
+			if ( null === $ok && Helpers::STATUS_MISSING === get_post_meta( $id, 'omnioffloader_status', true ) ) {
+				$this->item_messages[ $id ] = __( 'File missing on this server — skipped.', 'omnioffloader' );
+			}
+		}
+
+		return $results;
 	}
 
 	/**

@@ -56,3 +56,7 @@ A run started without `nohup` stops when you close the terminal, like any comman
 ## A run that was killed
 
 If a run was killed without cleaning up (for example `kill -9`, or the server restarted), its lock is left behind. On the same server, the next command sees that the process is gone, clears the lock and starts. `status` shows such a run as `NOT RUNNING`, and `stop` clears it too.
+
+## Media Library after a stop
+
+While a run works, the attachments it is transferring show **Offloading...** or **Restoring...** in **Media → Library**. When the run ends without finishing them (Ctrl+C, a closed window, `kill`), they go back to their real status, such as **Local**, and the next run picks them up. After a run killed without cleaning up, this happens when the next command clears its lock.

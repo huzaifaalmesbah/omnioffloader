@@ -1197,12 +1197,15 @@ abstract class AbstractBulkProcessor extends WP_Background_Process {
 	 * Drop the "queued" / "processing" status of items a stopped run will
 	 * never reach, so the Media Library stops showing them as in progress.
 	 *
+	 * Also used for a WP-CLI run that ended mid-batch (Plugin::clear_cli_run()).
+	 *
 	 * @since 0.1.3
+	 * @since 0.1.4 Public.
 	 *
 	 * @param int[] $ids Attachment IDs.
 	 * @return void
 	 */
-	protected static function clear_pending_status( array $ids ) {
+	public static function clear_pending_status( array $ids ) {
 		global $wpdb;
 
 		$ids = array_values( array_unique( array_filter( $ids ) ) );

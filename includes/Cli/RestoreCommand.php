@@ -176,7 +176,9 @@ class RestoreCommand {
 			}
 
 			// Brought back some other way since the run started: done.
+			$this->begin_items( array( $id ) );
 			$restored = ! self::is_offloaded( $id ) || $restorer->restore( $id, $delete_cloud );
+			$this->end_items();
 
 			// A hosting quota PHP cannot see: the refused write is the signal.
 			if ( ! $restored && $restorer->ran_out_of_disk() ) {

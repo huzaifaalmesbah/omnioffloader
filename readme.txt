@@ -337,7 +337,7 @@ Depending on the provider you select:
 * Path Prefix: changing it while media is offloaded now shows, under the field, that existing media stays in its folder and keeps working, and **Save changes** asks you to confirm. `wp omnioffloader status` shows the current folder and how many offloaded attachments are in other folders.
 * New `wp omnioffloader move`: moves media offloaded under an earlier Path Prefix into the current folder, one attachment at a time (Bring Back, offload again, then delete the old copies once the new ones are verified). Supports `--dry-run`, `--ids`, `--limit`, `--keep-old` and `--concurrency` (up to 64 files at once).
 * New **Tools → Move Media to the Current Folder**: the same move from the admin screen, with a progress bar and Cancel. Shown only when some media is outside the current folder.
-* The OmniOffloader box on an attachment's edit screen shows its bucket **Folder**, with a note when it is not in the current folder.
+* The OmniOffloader box on an attachment's edit screen shows its bucket **Folder**.
 * Sharing a bucket: a folder this site moved away from keeps its claim, and every upload or delete is now checked against the folder it really goes to. If another site takes over an old folder, this site stops writing to and deleting from it, and `wp omnioffloader status` warns about it.
 
 = 0.1.3 =

@@ -205,7 +205,7 @@ abstract class AbstractS3Provider implements ProviderInterface {
 		}
 
 		// Another site sharing the bucket owns this folder (see Core\FolderClaim).
-		if ( FolderClaim::blocks( $this ) ) {
+		if ( FolderClaim::blocks( $this, array( $key ) ) ) {
 			$this->log_error( sprintf( 'Folder used by another site: not uploading "%s".', $key ) );
 
 			return false;
@@ -277,7 +277,7 @@ abstract class AbstractS3Provider implements ProviderInterface {
 			return array_fill_keys( wp_list_pluck( $files, 'key' ), false );
 		}
 
-		if ( FolderClaim::blocks( $this ) ) {
+		if ( FolderClaim::blocks( $this, wp_list_pluck( $files, 'key' ) ) ) {
 			$this->log_error( 'Folder used by another site: not uploading.' );
 
 			return array_fill_keys( wp_list_pluck( $files, 'key' ), false );
@@ -791,7 +791,7 @@ abstract class AbstractS3Provider implements ProviderInterface {
 		}
 
 		// The keys may now hold the other site's files.
-		if ( FolderClaim::blocks( $this ) ) {
+		if ( FolderClaim::blocks( $this, $keys ) ) {
 			$this->log_error( 'Folder used by another site: not deleting cloud objects.' );
 
 			return false;

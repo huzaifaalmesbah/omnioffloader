@@ -334,7 +334,9 @@ Depending on the provider you select:
 * Bulk Bring Back with **Delete from Cloud After Restore** now asks for confirmation before it starts, as WP-CLI's `--delete-cloud` does.
 * Media Library: an item stuck on "Queued for background offload" or "Offloading..." (for example when thumbnail generation failed, or the background queue was cleared) goes back to its real status by itself once no job is running.
 * `wp omnioffloader status` starts with what is running now: progress with percentage, start time, speed, time left and expected finish, files transferred at once, log file and how to stop it. When nothing runs, it shows how the last WP-CLI job ended (finished, stopped or ended early) and the command to offload media that is still local.
-* Path Prefix: it can no longer be changed while media is offloaded, which used to split your media across two folders. Settings shows the steps instead: Bring Back, change the prefix, offload again. In Safe mode it can still be changed, with a note that existing media stays where it is. `wp omnioffloader status` shows the current folder and how many offloaded attachments are in other folders.
+* Path Prefix: changing it while media is offloaded now shows, under the field, that existing media stays in its folder and keeps working, and **Save changes** asks you to confirm. `wp omnioffloader status` shows the current folder and how many offloaded attachments are in other folders.
+* New `wp omnioffloader move`: moves media offloaded under an earlier Path Prefix into the current folder, one attachment at a time (Bring Back, offload again, then delete the old copies once the new ones are verified). Supports `--dry-run`, `--ids`, `--limit` and `--keep-old`.
+* Sharing a bucket: a folder this site moved away from keeps its claim, and every upload or delete is now checked against the folder it really goes to. If another site takes over an old folder, this site stops writing to and deleting from it, and `wp omnioffloader status` warns about it.
 
 = 0.1.3 =
 

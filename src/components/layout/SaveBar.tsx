@@ -1,11 +1,52 @@
 import { Button } from '@wordpress/components';
 import { Icon, check, error } from '@wordpress/icons';
-import { __ } from '@wordpress/i18n';
+import { __, _n, sprintf } from '@wordpress/i18n';
 
 import { useCore } from '../../context/CoreContext';
+import { folderLabel, uploadFolder } from '../../utils/folder';
 
 export function SaveBar() {
-	const { isDirty, isSaving, saveFeedback, save } = useCore();
+	const {
+		isDirty,
+		isSaving,
+		saveFeedback,
+		save,
+		settings,
+		savedSettings,
+		stats,
+	} = useCore();
+
+	const handleSave = () => {
+		const offloaded = stats?.offloaded ?? 0;
+		const from = savedSettings ? uploadFolder( savedSettings ) : '';
+		const to = settings ? uploadFolder( settings ) : '';
+
+		// Offloaded media keeps its folder; make sure the split is intended.
+		if (
+			savedSettings &&
+			offloaded > 0 &&
+			from !== to &&
+			// eslint-disable-next-line no-alert
+			! window.confirm(
+				sprintf(
+					/* translators: 1: number of offloaded attachments, 2: current bucket folder, 3: new bucket folder. */
+					_n(
+						'Change the bucket folder anyway? %1$s offloaded attachment stays in %2$s; only media offloaded from now on goes to %3$s.',
+						'Change the bucket folder anyway? %1$s offloaded attachments stay in %2$s; only media offloaded from now on goes to %3$s.',
+						offloaded,
+						'omnioffloader'
+					),
+					offloaded.toLocaleString(),
+					folderLabel( from ),
+					folderLabel( to )
+				)
+			)
+		) {
+			return;
+		}
+
+		void save();
+	};
 
 	return (
 		<div className="smowp-savebar">
@@ -49,7 +90,7 @@ export function SaveBar() {
 					className="smowp-savebar__button"
 					disabled={ ! isDirty || isSaving }
 					isBusy={ isSaving }
-					onClick={ () => void save() }
+					onClick={ handleSave }
 				>
 					{ isSaving
 						? __( 'Saving…', 'omnioffloader' )

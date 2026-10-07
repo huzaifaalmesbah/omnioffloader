@@ -51,6 +51,20 @@ class FolderClaim {
 	public const OPTION = 'omnioffloader_folder_claims';
 
 	/**
+	 * Option listing every folder this site claimed, per provider + bucket.
+	 *
+	 * Offloaded media keeps the folder it was offloaded to, so after a Path
+	 * Prefix change the site still writes and deletes in its old folders.
+	 * Knowing them lets blocks() check the folder a key is really in.
+	 */
+	public const FOLDERS_OPTION = 'omnioffloader_folders_used';
+
+	/**
+	 * Most folders remembered per provider + bucket.
+	 */
+	private const MAX_FOLDERS = 20;
+
+	/**
 	 * Seconds a verified claim is trusted before it is read again.
 	 */
 	private const TTL = DAY_IN_SECONDS;
@@ -128,20 +142,140 @@ class FolderClaim {
 	 * Whether cloud writes and deletes through this provider must stop because
 	 * another site owns the folder.
 	 *
-	 * Verifies the folder (and claims it when free) at most once a day, so it
-	 * costs one small request on the first transfer after a change.
+	 * The current folder always counts. With $keys, so does each folder they
+	 * are in: media offloaded before a Path Prefix change stays in the old
+	 * folder, and if another site took that folder over, writing or deleting
+	 * there would touch its files.
+	 *
+	 * Verifies each folder (and claims it when free) at most once a day, so
+	 * it costs one small request on the first transfer after a change.
+	 *
+	 * @since 0.1.4 The $keys parameter.
 	 *
 	 * @param ProviderInterface $provider Provider about to write or delete.
+	 * @param string[]          $keys     Object keys about to be written or deleted.
 	 * @return bool
 	 */
-	public static function blocks( ProviderInterface $provider ) {
+	public static function blocks( ProviderInterface $provider, array $keys = array() ) {
 		// The folder setting describes the active provider's bucket. A former
 		// provider only serves Bring Back from keys this site recorded.
 		if ( ! self::enabled() || $provider->get_key() !== self::active_provider_key() ) {
 			return false;
 		}
 
-		return self::OTHER === self::ensure( $provider )['status'];
+		if ( self::OTHER === self::ensure( $provider )['status'] ) {
+			return true;
+		}
+
+		$current = self::prefix();
+		$folders = self::folders_used( $provider->get_key(), (string) $provider->get_bucket() );
+
+		foreach ( array_unique( array_map( static fn( $key ) => self::folder_of( (string) $key, $folders, $current ), $keys ) ) as $folder ) {
+			if ( $folder !== $current && self::OTHER === self::ensure( $provider, false, $folder )['status'] ) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * The folder an object key is in: the longest folder this site used that
+	 * the key starts with, or the current one when none matches.
+	 *
+	 * @since 0.1.4
+	 *
+	 * @param string   $key     Object key.
+	 * @param string[] $folders Folders this site used (see folders_used()).
+	 * @param string   $current The current folder.
+	 * @return string
+	 */
+	public static function folder_of( $key, array $folders, $current ) {
+		$best = null;
+
+		foreach ( array_merge( $folders, array( $current ) ) as $folder ) {
+			if ( ( '' === $folder || 0 === strpos( $key, $folder ) ) && ( null === $best || strlen( $folder ) > strlen( $best ) ) ) {
+				$best = $folder;
+			}
+		}
+
+		return null === $best ? $current : $best;
+	}
+
+	/**
+	 * Folders this site claimed in a provider's bucket.
+	 *
+	 * @since 0.1.4
+	 *
+	 * @param string $provider_key Provider key.
+	 * @param string $bucket       Bucket.
+	 * @return string[]
+	 */
+	public static function folders_used( $provider_key, $bucket ) {
+		$all  = get_option( self::FOLDERS_OPTION, array() );
+		$list = is_array( $all ) ? ( $all[ md5( $provider_key . '|' . $bucket ) ] ?? array() ) : array();
+
+		return is_array( $list ) ? array_values( array_map( 'strval', $list ) ) : array();
+	}
+
+	/**
+	 * Old folders this site still has media in that another site now owns,
+	 * from the cached checks only (never a remote call).
+	 *
+	 * @since 0.1.4
+	 *
+	 * @return array<int, array{folder: string, owner: string}>
+	 */
+	public static function lost_folders() {
+		$provider = self::active_provider_key();
+		$bucket   = Helpers::get_credential( $provider, 'bucket' );
+
+		if ( ! self::enabled() || '' === $provider || '' === $bucket ) {
+			return array();
+		}
+
+		$current = self::prefix();
+		$stored  = self::stored();
+		$lost    = array();
+
+		foreach ( self::folders_used( $provider, $bucket ) as $folder ) {
+			$entry = $stored[ self::ref( $provider, $bucket, $folder ) ] ?? null;
+
+			if ( $folder !== $current && null !== $entry && self::OTHER === $entry['status'] ) {
+				$lost[] = array(
+					'folder' => $folder,
+					'owner'  => $entry['owner'],
+				);
+			}
+		}
+
+		return $lost;
+	}
+
+	/**
+	 * Add a folder to the list of folders this site claimed.
+	 *
+	 * @param string $provider_key Provider key.
+	 * @param string $bucket       Bucket.
+	 * @param string $prefix       Folder.
+	 * @return void
+	 */
+	private static function remember_folder( $provider_key, $bucket, $prefix ) {
+		$all = get_option( self::FOLDERS_OPTION, array() );
+		$all = is_array( $all ) ? $all : array();
+		$ref = md5( $provider_key . '|' . $bucket );
+
+		$list = isset( $all[ $ref ] ) && is_array( $all[ $ref ] ) ? $all[ $ref ] : array();
+
+		if ( in_array( $prefix, $list, true ) ) {
+			return;
+		}
+
+		$list[]      = $prefix;
+		$all[ $ref ] = array_slice( $list, -self::MAX_FOLDERS );
+
+		// Autoloaded: blocks() reads it before every cloud write.
+		update_option( self::FOLDERS_OPTION, $all, true );
 	}
 
 	/**
@@ -202,18 +336,26 @@ class FolderClaim {
 	 * Make sure the provider's folder is this site's: read the marker when
 	 * the cached result is missing or stale, and claim the folder when free.
 	 *
+	 * @since 0.1.4 The $prefix parameter.
+	 *
 	 * @param ProviderInterface $provider Provider.
 	 * @param bool              $force    Read the marker even if a fresh result is cached.
+	 * @param string|null       $prefix   Folder to check; null for the current one.
 	 * @return array{status: string, owner: string}
 	 */
-	public static function ensure( ProviderInterface $provider, $force = false ) {
+	public static function ensure( ProviderInterface $provider, $force = false, $prefix = null ) {
 		$bucket = (string) $provider->get_bucket();
-		$prefix = self::prefix();
+		$prefix = null === $prefix ? self::prefix() : (string) $prefix;
 		$ref    = self::ref( $provider->get_key(), $bucket, $prefix );
 		$stored = self::stored();
 		$entry  = $stored[ $ref ] ?? null;
 
 		if ( ! $force && null !== $entry && ( isset( self::$checked[ $ref ] ) || time() - $entry['checked_at'] < self::TTL ) ) {
+			// Installs from before the folder list record theirs here.
+			if ( self::OURS === $entry['status'] ) {
+				self::remember_folder( $provider->get_key(), $bucket, $prefix );
+			}
+
 			return array(
 				'status' => $entry['status'],
 				'owner'  => $entry['owner'],
@@ -250,6 +392,10 @@ class FolderClaim {
 		// rather than blocking — or clearing a conflict — over a network blip.
 		if ( self::UNKNOWN !== $result['status'] ) {
 			self::remember( $ref, $result['status'], $result['owner'] );
+		}
+
+		if ( self::OURS === $result['status'] ) {
+			self::remember_folder( $provider->get_key(), $bucket, $prefix );
 		}
 
 		return $result;
@@ -321,6 +467,7 @@ class FolderClaim {
 		}
 
 		self::remember( self::ref( $provider->get_key(), (string) $provider->get_bucket(), $prefix ), self::OURS, SafeMode::current_address() );
+		self::remember_folder( $provider->get_key(), (string) $provider->get_bucket(), $prefix );
 
 		return true;
 	}

@@ -32,35 +32,31 @@ Use a path prefix when:
 
 ### Changing the prefix later
 
-Each attachment remembers the path it was offloaded to, so a new prefix would only apply to media offloaded after the change, and your media would end up split across two folders.
+You can change the prefix at any time. Each attachment remembers the folder it was offloaded to, so:
 
-To prevent that, the prefix can't be changed while media is offloaded. Settings shows the steps instead:
+- media already offloaded **stays in its folder and keeps loading** from there, with Bring Back, Mirror Delete and retention updates working as before, and
+- only media offloaded **from now on** goes to the new folder.
 
-1. Bring all media back to the server with [Bring Back](/features/bring-back/).
-2. Change the Path Prefix and save.
-3. Offload your media again. It goes to the new folder.
-
-How long this takes depends on your [retention policy](/features/retention-policies/):
-
-| Policy | Bring Back downloads | Free disk space needed |
-| --- | --- | --- |
-| Retain Local Files | nothing: the files are still on the server | none |
-| Smart Local Cleanup | the thumbnail sizes | some |
-| Full Cloud Migration | everything | the size of your library |
-
-With **Retain Local Files**, Bring Back only removes the offload records, so even a big library finishes quickly. Choose **Delete from Cloud After Restore** to empty the old folder in your bucket: every file is on your server, so nothing is lost. With **Keep Cloud Copies** the old folder stays and keeps using storage.
-
-For a large library, use WP-CLI:
-
-```bash
-wp omnioffloader restore --all --delete-cloud --yes
-# Change the Path Prefix in Settings, then:
-nohup wp omnioffloader offload --all --concurrency=32 > ~/offload.log 2>&1 &
-```
-
-In [Safe mode](/features/safe-mode/) the prefix can still be changed, because a new folder is often the fix there: another site uses this folder, or a staging copy needs a folder of its own. Settings then shows that existing media stays in its current folder.
+Nothing breaks, but your media is then split across two folders. When media is offloaded, Settings says so under the field, and **Save changes** asks you to confirm the change.
 
 [`wp omnioffloader status`](/wp-cli/status/) shows the current folder and how many offloaded attachments are in other folders.
+
+#### Move existing media to the new folder
+
+Run [`wp omnioffloader move`](/wp-cli/move/). It moves each attachment that is outside the current folder: it brings it back, offloads it again into the new folder, and then deletes the old copies. One attachment at a time, so even with Full Cloud Migration only one attachment's files need room on the server.
+
+```bash
+wp omnioffloader move --all --dry-run   # see what would move
+wp omnioffloader move --all             # move it
+```
+
+For a large library, run it in the background:
+
+```bash
+nohup wp omnioffloader move --all --yes > ~/move.log 2>&1 &
+```
+
+How long it takes depends on your [retention policy](/features/retention-policies/): with **Retain Local Files** the files are already on the server, so only the upload to the new folder takes time. With **Smart Local Cleanup** or **Full Cloud Migration**, each attachment is downloaded first.
 
 ## Object Versioning
 

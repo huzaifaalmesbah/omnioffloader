@@ -49,6 +49,7 @@ wp --exec="define( 'OMNIOFFLOADER_DISABLE_ENGINE', true );" eval-file tests/inte
 wp --exec="define( 'OMNIOFFLOADER_DISABLE_ENGINE', true );" eval-file tests/integration-concurrency.php
 wp --exec="define( 'OMNIOFFLOADER_DISABLE_ENGINE', true );" eval-file tests/integration-unique-filename.php
 wp --exec="define( 'OMNIOFFLOADER_DISABLE_ENGINE', true );" eval-file tests/integration-bulk-queue.php
+wp --exec="define( 'OMNIOFFLOADER_DISABLE_ENGINE', true );" eval-file tests/integration-move.php
 wp --exec="define( 'OMNIOFFLOADER_DISABLE_ENGINE', true );" eval-file tests/seed-attachments.php 20 myprefix
 wp --user=admin eval-file tests/integration-stale-status.php   # needs a configured provider; no bucket calls
 wp eval-file tests/integration-bulk-rest.php   # needs real credentials; hits the live bucket
@@ -79,13 +80,13 @@ includes/
 ├── Providers/          # ProviderInterface, AbstractS3Provider, ProviderRegistry,
 │                       #   AmazonS3, CloudflareR2, BackblazeB2, DigitalOceanSpaces,
 │                       #   Wasabi, S3Compatible
-├── Services/           # AttachmentUploader, AttachmentRestorer (Bring Back), LocalCleaner,
+├── Services/           # AttachmentUploader, AttachmentRestorer (Bring Back), AttachmentMover, LocalCleaner,
 │                       #   RetentionApplier, AbstractBulkProcessor + BulkOffloadProcessor /
 │                       #   BulkRestoreProcessor / BulkRetentionProcessor
 ├── Offload/            # Offloader + Observers/ — one WordPress hook per observer class
 ├── Admin/              # Settings (menu + React app enqueue)
 ├── Cli/                # CommandRegistrar, OffloadCommand, RestoreCommand, RetentionCommand,
-│                       #   StatusCommand, StopCommand; CliJobGuard (shared lock/stop/detached runs)
+│                       #   StatusCommand, StopCommand, MoveCommand; CliJobGuard (shared lock/stop/detached runs)
 ├── Traits/             # OptionsHelper, AttachmentHelper
 └── templates/          # admin-app.php (#omnioffloader-admin-app mount point)
 ```
@@ -179,11 +180,12 @@ Credentials: `GET` returns secrets masked (`is_set: true`); `POST` ignores maske
 ## Data Reference
 
 **Options:**
-- `omnioffloader_settings` (autoload on) — provider, retention_policy (0/1/2), serve_from_cloud (default on; may only be off with retention_policy 0 — `update_settings()` forces it on otherwise; off keeps local URLs except files an attachment's stored `omnioffloader_retention` removed: all at 2, generated sizes at 1 — `AttachmentHelper::cloud_serving()` / `is_served_from_cloud()`), mirror_delete (default **on** since 0.1.3 — only affects new installs, because every save stores all keys), path_prefix(+active) (on the live site `POST /core/settings` refuses a folder change with 409 `omnioffloader_prefix_locked` while anything is offloaded — Bring Back first; allowed in Safe mode, where a new folder is the fix, and when `omnioffloader_lock_path_prefix` returns false), object_versioning, async_upload, transfer_speed (low/balanced/fast/custom), transfer_concurrency (1–10, used by custom), bring_back_delete_cloud, remove_data_on_uninstall, protect_copies (Safe mode, default on), safe_mode_bring_back (download-only Bring Back on a copy, default off)
+- `omnioffloader_settings` (autoload on) — provider, retention_policy (0/1/2), serve_from_cloud (default on; may only be off with retention_policy 0 — `update_settings()` forces it on otherwise; off keeps local URLs except files an attachment's stored `omnioffloader_retention` removed: all at 2, generated sizes at 1 — `AttachmentHelper::cloud_serving()` / `is_served_from_cloud()`), mirror_delete (default **on** since 0.1.3 — only affects new installs, because every save stores all keys), path_prefix(+active) (each attachment keeps the folder it was offloaded to, so a change only affects later offloads — Settings warns and SaveBar confirms; `wp omnioffloader move` / `Services\AttachmentMover` moves old media into the current folder), object_versioning, async_upload, transfer_speed (low/balanced/fast/custom), transfer_concurrency (1–10, used by custom), bring_back_delete_cloud, remove_data_on_uninstall, protect_copies (Safe mode, default on), safe_mode_bring_back (download-only Bring Back on a copy, default off)
 - `omnioffloader_version` (autoload on) — for Migrator
 - `omnioffloader_credentials` (autoload **off** — secrets stay out of the shared alloptions cache; `is_configured()` pays one small query per request for that) — per-provider credential sub-arrays. Never returned raw via REST.
 - `omnioffloader_first_activated_version` (autoload off)
 - `omnioffloader_live_site` (autoload on) — `{hash, label}` of the address recorded as live (`SafeMode::maybe_record_live_site()` on first configured boot; the "This is the live site" button re-records). `label` is base64 so search-replace skips it.
+- `omnioffloader_folders_used` (autoload on) — every folder this site claimed, per md5(provider|bucket); `FolderClaim::blocks( $provider, $keys )` checks the folder each key is really in (`folder_of()`), so a folder the site moved away from but still has media in stays guarded; `lost_folders()` feeds the status warning
 - `omnioffloader_folder_claims` (autoload on) — `Core\FolderClaim` cache, md5(provider|bucket|prefix) → `{status: ours|other, owner, checked_at}`, max 10 entries, re-read after a day. Safe mode reads it (never a remote call).
 - `omnioffloader_bulk_offload_state` / `omnioffloader_bulk_restore_state` / `omnioffloader_bulk_retention_state` (autoload off) — progress heartbeats
 - `omnioffloader_bulk_{offload,restore,retention}_batch_*` / `_status` — queue internals, written by `WP_Background_Process` via `update_site_option` (autoload off on single site). Never leave these behind; `purge_stored_data()` owns their cleanup.
@@ -202,7 +204,7 @@ The policy is applied once at offload time (`LocalCleaner`). Changing the settin
 
 ## Public Hooks
 
-Filters: `omnioffloader_free_disk_space` (bytes free for restores — `Helpers::free_disk_space()`, the one place free space is read: min of `disk_free_space()` and the cPanel quota from `Helpers::hosting_quota()`, which parses `~/.cpanel/datastore/_Cpanel::Quota.pm__{user}` JSON `{"data":[used, limit, remaining, …]}` — no exec; the page trusts it up to a day old, the running disk check up to an hour), `omnioffloader_cpanel_quota_file` (path override), `omnioffloader_cloud_providers`, `omnioffloader_object_acl`, `omnioffloader_attachment_key`, `omnioffloader_attachment_delete_keys`, `omnioffloader_should_offload_attachment`, `omnioffloader_use_async_upload`, `omnioffloader_should_apply_retention`, `omnioffloader_media_block_names`, `omnioffloader_log_provider_errors`, `omnioffloader_multipart_threshold`, `omnioffloader_transfer_concurrency`, `omnioffloader_bulk_failure_limit`, `omnioffloader_check_folder_claim` (default true), `omnioffloader_lock_path_prefix` (default true).
+Filters: `omnioffloader_free_disk_space` (bytes free for restores — `Helpers::free_disk_space()`, the one place free space is read: min of `disk_free_space()` and the cPanel quota from `Helpers::hosting_quota()`, which parses `~/.cpanel/datastore/_Cpanel::Quota.pm__{user}` JSON `{"data":[used, limit, remaining, …]}` — no exec; the page trusts it up to a day old, the running disk check up to an hour), `omnioffloader_cpanel_quota_file` (path override), `omnioffloader_cloud_providers`, `omnioffloader_object_acl`, `omnioffloader_attachment_key`, `omnioffloader_attachment_delete_keys`, `omnioffloader_should_offload_attachment`, `omnioffloader_use_async_upload`, `omnioffloader_should_apply_retention`, `omnioffloader_media_block_names`, `omnioffloader_log_provider_errors`, `omnioffloader_multipart_threshold`, `omnioffloader_transfer_concurrency`, `omnioffloader_bulk_failure_limit`, `omnioffloader_check_folder_claim` (default true).
 Actions: `omnioffloader_before_offload`, `omnioffloader_after_offload`, `omnioffloader_before_restore`, `omnioffloader_after_restore`, `omnioffloader_transfer_heartbeat` (every 30 s while bytes move — `AbstractS3Provider::transfer_http_options()` progress callback; bulk passes and `CliJobGuard` renew their locks on it).
 
 ## Safety Invariants (never violate)

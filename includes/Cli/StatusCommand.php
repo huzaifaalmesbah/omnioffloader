@@ -105,6 +105,10 @@ class StatusCommand {
 			if ( $elsewhere > 0 ) {
 				WP_CLI::log( sprintf( '            %s offloaded attachment(s) are in other folders (offloaded before the Path Prefix changed). They keep working from there.', number_format_i18n( $elsewhere ) ) );
 			}
+
+			foreach ( FolderClaim::lost_folders() as $lost ) {
+				WP_CLI::warning( sprintf( 'Folder %s, where some of this site\'s older media is, is now used by another site (%s). That media still loads, but this site no longer writes to or deletes from that folder. Move it to the current folder with `wp omnioffloader move`.', $lost['folder'], $lost['owner'] ) );
+			}
 		}
 
 		// Counted now: the cached numbers can be minutes old mid-run.

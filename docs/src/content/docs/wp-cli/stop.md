@@ -45,6 +45,13 @@ Start the command with `nohup` and `&`, and send its output to a log file in you
 nohup wp omnioffloader offload --all > ~/offload.log 2>&1 &
 ```
 
+The same works for the other jobs. Give each its own log file, and add `--yes` to a job that would ask a question, because nobody can answer it in the background:
+
+```bash
+nohup wp omnioffloader restore --all > ~/restore.log 2>&1 &
+nohup wp omnioffloader retention --yes > ~/retention.log 2>&1 &
+```
+
 You can then close the terminal; the job keeps going. Follow it with `tail -f ~/offload.log` or `wp omnioffloader status`, and end it with `wp omnioffloader stop`. [Long runs and log files](/wp-cli/long-runs/) explains every step: checking that it started, reading the log, working out the time left, and what to do when it ends.
 
 `screen` and `tmux` work too: start the command inside one, detach, and come back to it later.

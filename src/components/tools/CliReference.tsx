@@ -206,6 +206,14 @@ function getCommands(): CliCommand[] {
 						'omnioffloader'
 					),
 				},
+				{
+					command:
+						'nohup wp omnioffloader restore --all > ~/restore.log 2>&1 &',
+					description: __(
+						'Keep it running after you close the terminal; progress goes to restore.log in your home folder.',
+						'omnioffloader'
+					),
+				},
 			],
 			options: [
 				{
@@ -301,6 +309,14 @@ function getCommands(): CliCommand[] {
 					command: 'wp omnioffloader retention --policy=0',
 					description: __(
 						'Download local copies of everything again.',
+						'omnioffloader'
+					),
+				},
+				{
+					command:
+						'nohup wp omnioffloader retention --yes > ~/retention.log 2>&1 &',
+					description: __(
+						'Run in the background; --yes is needed because nobody can answer the prompt.',
 						'omnioffloader'
 					),
 				},

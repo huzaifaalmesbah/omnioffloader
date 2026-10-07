@@ -98,6 +98,16 @@ Why WP-CLI is the better choice for a big library:
 
 </Steps>
 
+:::note[Fastest: a VPS or dedicated server, 64 files at once]
+With good bandwidth and many small files (thumbnails), run the same job in the background with 64 uploads at once:
+
+```bash
+nohup wp omnioffloader offload --all --concurrency=64 > ~/offload.log 2>&1 &
+```
+
+Start at 32 and move up to 64 if the server and your storage provider keep up. On shared hosting, leave `--concurrency` out. A large file still uploads at most 10 parts at once. To compare speeds before the big run, see [Test the speed before a big run](/wp-cli/long-runs/#5-test-the-speed-before-a-big-run).
+:::
+
 Run these from your WordPress folder, or add `--path=<wordpress-folder>`. For every option, see [`wp omnioffloader offload`](/wp-cli/offload/); for watching and timing a long run, see [Long runs and log files](/wp-cli/long-runs/).
 
 No SSH access? This screen does the same job. It runs in the background on the server, so you can close the tab and come back.

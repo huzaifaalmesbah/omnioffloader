@@ -126,19 +126,9 @@ class AttachmentRestorer {
 
 		$all_ok = $this->restore_files( $attachment_id, $provider, array_merge( $files['main'], $files['sizes'] ), $base_real );
 
-		// Verify: the main file(s) must exist locally before any meta changes.
-		foreach ( $files['main'] as $entry ) {
-			if ( ! file_exists( $entry['file'] ) ) {
-				$all_ok = false;
-				self::log_attachment_error(
-					$attachment_id,
-					sprintf(
-						/* translators: %s: file name. */
-						__( 'Main file "%s" is missing locally and in cloud storage.', 'omnioffloader' ),
-						wp_basename( $entry['file'] )
-					)
-				);
-			}
+		// Verify: the attached file must exist locally before any meta changes.
+		if ( ! self::attached_file_present( $attachment_id, $files ) ) {
+			$all_ok = false;
 		}
 
 		if ( ! $all_ok ) {
@@ -181,6 +171,39 @@ class AttachmentRestorer {
 		}
 
 		return true;
+	}
+
+	/**
+	 * Whether the attachment's own file is on the server, logging it if not.
+	 *
+	 * Only the attached file: offload skips any other file that was not on
+	 * disk (a pre-scaled original an optimizer deleted, say), so its object
+	 * may never have existed. One that exists but failed to download is
+	 * already reported by restore_files().
+	 *
+	 * @since 0.1.4
+	 *
+	 * @param int                                                                                                              $attachment_id Attachment ID.
+	 * @param array{main: array<int, array{file: string, key: string}>, sizes: array<int, array{file: string, key: string}>} $files         Collected files; main[0] is the attached file.
+	 * @return bool
+	 */
+	private static function attached_file_present( $attachment_id, array $files ) {
+		$file = $files['main'][0]['file'] ?? '';
+
+		if ( '' !== $file && file_exists( $file ) ) {
+			return true;
+		}
+
+		self::log_attachment_error(
+			$attachment_id,
+			sprintf(
+				/* translators: %s: file name. */
+				__( 'Main file "%s" is missing locally and in cloud storage.', 'omnioffloader' ),
+				wp_basename( $file )
+			)
+		);
+
+		return false;
 	}
 
 	/**
@@ -264,18 +287,8 @@ class AttachmentRestorer {
 		$wanted = 0 === $policy ? array_merge( $files['main'], $files['sizes'] ) : $files['main'];
 		$all_ok = $this->restore_files( $attachment_id, $provider, $wanted, $base_real );
 
-		foreach ( $files['main'] as $entry ) {
-			if ( ! file_exists( $entry['file'] ) ) {
-				$all_ok = false;
-				self::log_attachment_error(
-					$attachment_id,
-					sprintf(
-						/* translators: %s: file name. */
-						__( 'Main file "%s" is missing locally and in cloud storage.', 'omnioffloader' ),
-						wp_basename( $entry['file'] )
-					)
-				);
-			}
+		if ( ! self::attached_file_present( $attachment_id, $files ) ) {
+			$all_ok = false;
 		}
 
 		if ( ! $all_ok ) {

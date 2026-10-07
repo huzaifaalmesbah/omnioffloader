@@ -34,7 +34,8 @@ Use the filter dropdown above the list to show **Offloaded** or **Local only** a
 When you edit an attachment, an **OmniOffloader** box shows:
 
 - **Provider:** where the attachment is stored,
-- **Bucket:**
+- **Bucket:** the bucket it is in (administrators only),
+- **Folder:** the folder in the bucket, for example `shop/2026/09/` (administrators only). When it is not the folder new offloads go to, because the [Path Prefix](/features/path-prefix-and-versioning/#changing-the-prefix-later) changed after it was offloaded, a note says so and points to **Tools → Move Media to the Current Folder**,
 - **Offloaded on:** the date and time,
 - **Local Storage:** what is still on the server, for example *Preserved on server (All files)*, *Original kept (Thumbnails cleaned)* or *Removed from server (Cloud only)*,
 

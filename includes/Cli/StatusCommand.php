@@ -13,6 +13,7 @@ use OmniOffloader\Core\Plugin;
 use OmniOffloader\Core\SafeMode;
 use OmniOffloader\Services\BulkOffloadProcessor;
 use OmniOffloader\Services\BulkRestoreProcessor;
+use OmniOffloader\Services\BulkMoveProcessor;
 use OmniOffloader\Services\BulkRetentionProcessor;
 use WP_CLI;
 
@@ -316,6 +317,7 @@ class StatusCommand {
 			'Bulk Offload'     => BulkOffloadProcessor::get_state(),
 			'Bring Back'       => BulkRestoreProcessor::get_state(),
 			'retention update' => BulkRetentionProcessor::get_state(),
+			'folder move'      => BulkMoveProcessor::get_state(),
 		);
 	}
 

@@ -68,6 +68,7 @@ class StopCommand {
 			'offload'   => array( $plugin->get_bulk_offload(), 'Bulk Offload' ),
 			'restore'   => array( $plugin->get_bulk_restore(), 'Bring Back' ),
 			'retention' => array( $plugin->get_bulk_retention(), 'retention update' ),
+			'move'      => array( $plugin->get_bulk_move(), 'move to the current folder' ),
 		);
 
 		foreach ( $queues as $queue ) {

@@ -162,9 +162,9 @@ class MoveCommand {
 			);
 		}
 
-		// Holds the offload queue's lock and the CLI claim, so no admin job
-		// of any type touches the same files meanwhile.
-		$this->begin_job( $plugin, $plugin->get_bulk_offload(), 'move', count( $ids ) );
+		// Holds the move queue's lock and the CLI claim, so no admin job of
+		// any type touches the same files meanwhile.
+		$this->begin_job( $plugin, $plugin->get_bulk_move(), 'move', count( $ids ) );
 
 		Helpers::defer_media_stats_flush( true );
 

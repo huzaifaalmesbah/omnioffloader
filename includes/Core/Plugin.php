@@ -12,6 +12,7 @@ use OmniOffloader\Api\BringBackController;
 use OmniOffloader\Api\CoreController;
 use OmniOffloader\Api\OffloadController;
 use OmniOffloader\Api\ProviderController;
+use OmniOffloader\Api\MoveController;
 use OmniOffloader\Api\RetentionController;
 use OmniOffloader\Offload\Offloader;
 use OmniOffloader\Providers\ProviderInterface;
@@ -20,6 +21,7 @@ use OmniOffloader\Services\AbstractBulkProcessor;
 use OmniOffloader\Services\AsyncUploadProcessor;
 use OmniOffloader\Services\BulkOffloadProcessor;
 use OmniOffloader\Services\BulkRestoreProcessor;
+use OmniOffloader\Services\BulkMoveProcessor;
 use OmniOffloader\Services\BulkRetentionProcessor;
 use OmniOffloader\Traits\OptionsHelper;
 
@@ -79,6 +81,13 @@ class Plugin {
 	private $bulk_retention = null;
 
 	/**
+	 * Bulk move processor when the engine is on, null otherwise.
+	 *
+	 * @var BulkMoveProcessor|null
+	 */
+	private $bulk_move = null;
+
+	/**
 	 * Get the active provider (null when the engine is off).
 	 *
 	 * @return ProviderInterface|null
@@ -128,6 +137,17 @@ class Plugin {
 	}
 
 	/**
+	 * Get the bulk move processor (null when the engine is off).
+	 *
+	 * @since 0.1.4
+	 *
+	 * @return BulkMoveProcessor|null
+	 */
+	public function get_bulk_move() {
+		return $this->bulk_move;
+	}
+
+	/**
 	 * Site transient naming the WP-CLI job currently running.
 	 *
 	 * Per site on multisite, like the queues (see Helpers::queue_prefix()).
@@ -154,7 +174,7 @@ class Plugin {
 	 *
 	 * @since 0.1.3
 	 *
-	 * @param string $job 'offload', 'restore' or 'retention'.
+	 * @param string $job 'offload', 'restore', 'retention' or 'move'.
 	 * @return void
 	 */
 	public function claim_cli_job( $job ) {
@@ -182,7 +202,7 @@ class Plugin {
 	 *
 	 * @since 0.1.4
 	 *
-	 * @param string $job 'offload', 'restore' or 'retention'.
+	 * @param string $job 'offload', 'restore', 'retention' or 'move'.
 	 * @return void
 	 */
 	public function clear_dead_cli_run( $job ) {
@@ -190,6 +210,7 @@ class Plugin {
 			'offload'   => $this->bulk_offload,
 			'restore'   => $this->bulk_restore,
 			'retention' => $this->bulk_retention,
+			'move'      => $this->bulk_move,
 		);
 		$queue  = $queues[ $job ] ?? null;
 
@@ -369,7 +390,7 @@ class Plugin {
 	 *
 	 * @since 0.1.3
 	 *
-	 * @return string 'offload', 'restore', 'retention', or '' when idle.
+	 * @return string 'offload', 'restore', 'retention', 'move', or '' when idle.
 	 */
 	public function get_active_bulk_job() {
 		$cli_job = get_site_transient( self::cli_job_lock_key() );
@@ -382,6 +403,7 @@ class Plugin {
 			'offload'   => $this->bulk_offload,
 			'restore'   => $this->bulk_restore,
 			'retention' => $this->bulk_retention,
+			'move'      => $this->bulk_move,
 		);
 
 		foreach ( $jobs as $name => $processor ) {
@@ -398,7 +420,7 @@ class Plugin {
 	 *
 	 * @since 0.1.3
 	 *
-	 * @param string $job The job about to start ('offload', 'restore' or 'retention').
+	 * @param string $job The job about to start ('offload', 'restore', 'retention' or 'move').
 	 * @return \WP_Error|null
 	 */
 	public function bulk_job_conflict( $job ) {
@@ -412,6 +434,7 @@ class Plugin {
 			'offload'   => __( 'A bulk offload is running — wait for it to finish first.', 'omnioffloader' ),
 			'restore'   => __( 'A bulk restore is running — wait for it to finish first.', 'omnioffloader' ),
 			'retention' => __( 'A retention policy update is running — wait for it to finish first.', 'omnioffloader' ),
+			'move'      => __( 'A move to the current folder is running — wait for it to finish first.', 'omnioffloader' ),
 		);
 
 		if ( $active === $job ) {
@@ -419,6 +442,7 @@ class Plugin {
 				'offload'   => __( 'A bulk offload is already running.', 'omnioffloader' ),
 				'restore'   => __( 'A bulk restore is already running.', 'omnioffloader' ),
 				'retention' => __( 'A retention policy update is already running.', 'omnioffloader' ),
+				'move'      => __( 'A move to the current folder is already running.', 'omnioffloader' ),
 			);
 		}
 
@@ -582,6 +606,9 @@ class Plugin {
 
 		$retention_api = new RetentionController();
 		$retention_api->init();
+
+		$move_api = new MoveController();
+		$move_api->init();
 	}
 
 	/**
@@ -618,6 +645,7 @@ class Plugin {
 		$this->bulk_offload   = new BulkOffloadProcessor( $provider );
 		$this->bulk_restore   = new BulkRestoreProcessor();
 		$this->bulk_retention = new BulkRetentionProcessor();
+		$this->bulk_move      = new BulkMoveProcessor( $provider );
 
 		$offloader = new Offloader( $provider, $this->async_upload );
 		$offloader->register_observers();

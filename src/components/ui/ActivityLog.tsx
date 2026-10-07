@@ -6,7 +6,7 @@ import type { ProcessedMediaItem } from '../../types';
 interface ActivityLogProps {
 	items?: ProcessedMediaItem[];
 	currentItem?: ProcessedMediaItem | null;
-	actionType: 'offload' | 'restore' | 'retention';
+	actionType: 'offload' | 'restore' | 'retention' | 'move';
 	running?: boolean;
 	total?: number;
 	processed?: number;
@@ -45,6 +45,11 @@ export function ActivityLog( {
 			title: __( 'Retention Update Log', 'omnioffloader' ),
 			working: __( 'Applying…', 'omnioffloader' ),
 		},
+		move: {
+			success: __( 'Moved', 'omnioffloader' ),
+			title: __( 'Moved Media Log', 'omnioffloader' ),
+			working: __( 'Moving…', 'omnioffloader' ),
+		},
 	}[ actionType ];
 
 	const successLabel = labels.success;
@@ -67,6 +72,18 @@ export function ActivityLog( {
 				_n(
 					'%1$d of %2$d brought back',
 					'%1$d of %2$d brought back',
+					total,
+					'omnioffloader'
+				),
+				processed,
+				total
+			);
+		} else if ( actionType === 'move' ) {
+			countMessage = sprintf(
+				/* translators: 1: moved count, 2: total count. */
+				_n(
+					'%1$d of %2$d moved',
+					'%1$d of %2$d moved',
 					total,
 					'omnioffloader'
 				),

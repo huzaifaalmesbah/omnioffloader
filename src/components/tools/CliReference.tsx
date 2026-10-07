@@ -291,8 +291,8 @@ function getCommands(): CliCommand[] {
 				'Move media offloaded under an earlier Path Prefix into the current folder: each attachment is brought back, offloaded again, and its old copies deleted, one at a time.',
 				'omnioffloader'
 			),
-			view: 'settings',
-			viewLabel: __( 'Open Settings', 'omnioffloader' ),
+			view: 'tools',
+			viewLabel: __( 'Use the card above', 'omnioffloader' ),
 			docs: 'wp-cli/move/',
 			examples: [
 				{

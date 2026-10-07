@@ -11,6 +11,7 @@ use OmniOffloader\Services\AbstractBulkProcessor;
 use OmniOffloader\Services\AsyncUploadProcessor;
 use OmniOffloader\Services\BulkOffloadProcessor;
 use OmniOffloader\Services\BulkRestoreProcessor;
+use OmniOffloader\Services\BulkMoveProcessor;
 use OmniOffloader\Services\BulkRetentionProcessor;
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -39,6 +40,7 @@ class Deactivator {
 		AbstractBulkProcessor::purge_stored_data( 'bulk_offload', BulkOffloadProcessor::STATE_OPTION );
 		AbstractBulkProcessor::purge_stored_data( 'bulk_restore', BulkRestoreProcessor::STATE_OPTION );
 		AbstractBulkProcessor::purge_stored_data( 'bulk_retention', BulkRetentionProcessor::STATE_OPTION );
+		AbstractBulkProcessor::purge_stored_data( 'bulk_move', BulkMoveProcessor::STATE_OPTION );
 
 		// Transient state.
 		delete_transient( 'omnioffloader_activation_redirect' );

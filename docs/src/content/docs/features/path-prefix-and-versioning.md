@@ -53,7 +53,7 @@ wp omnioffloader move --all             # move it
 For a large library, run it in the background:
 
 ```bash
-nohup wp omnioffloader move --all --yes > ~/move.log 2>&1 &
+nohup wp omnioffloader move --all --yes --concurrency=32 > ~/move.log 2>&1 &
 ```
 
 How long it takes depends on your [retention policy](/features/retention-policies/): with **Retain Local Files** the files are already on the server, so only the upload to the new folder takes time. With **Smart Local Cleanup** or **Full Cloud Migration**, each attachment is downloaded first.

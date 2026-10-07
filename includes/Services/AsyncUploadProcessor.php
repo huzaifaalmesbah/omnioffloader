@@ -123,6 +123,24 @@ class AsyncUploadProcessor extends WP_Background_Process {
 	}
 
 	/**
+	 * Release the worker mutex together with the process lock.
+	 *
+	 * The parent unlocks, then dispatches the next pass and ends in
+	 * wp_die(); the mutex would otherwise be held until the connection
+	 * closes, and a fast next pass would find it taken and leave.
+	 *
+	 * @since 0.1.4
+	 *
+	 * @return $this
+	 */
+	protected function unlock_process() {
+		parent::unlock_process();
+		$this->release_worker_mutex();
+
+		return $this;
+	}
+
+	/**
 	 * Take the worker mutex without waiting; true where GET_LOCK() is missing.
 	 *
 	 * @return bool

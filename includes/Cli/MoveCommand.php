@@ -183,6 +183,7 @@ class MoveCommand {
 		$processed = 0;
 		$aborted   = false;
 		$reason    = '';
+		$capped    = false;
 		$no_room   = 0;
 		$quota_hit = false;
 		$stopped   = false;
@@ -235,7 +236,10 @@ class MoveCommand {
 					continue;
 				}
 
-				$reason  = is_wp_error( $check ) ? $check->get_error_message() . '. ' : '';
+				$reason = is_wp_error( $check ) ? $check->get_error_message() . '. ' : '';
+				// The connection was not checked: too many failures with the
+				// provider answering. The attachments themselves are failing.
+				$capped  = null === $check && $fail_run >= self::FAILURE_LIMIT * self::UNEXPLAINED_FAILURE_FACTOR;
 				$aborted = true;
 				break;
 			}
@@ -255,7 +259,11 @@ class MoveCommand {
 		}
 
 		if ( $aborted ) {
-			WP_CLI::error( sprintf( 'Stopped after %d failures in a row (%d moved first). %sCheck the connection to your storage provider (see omnioffloader_error_log meta).', $fail_run, $done, $reason ) );
+			WP_CLI::error(
+				$capped
+					? sprintf( 'Stopped after %d failures in a row (%d moved first). The storage provider answers, so the attachments themselves are failing; see omnioffloader_error_log meta.', $fail_run, $done )
+					: sprintf( 'Stopped after %d failures in a row (%d moved first). %sCheck the connection to your storage provider (see omnioffloader_error_log meta).', $fail_run, $done, $reason )
+			);
 		}
 
 		if ( $stopped ) {

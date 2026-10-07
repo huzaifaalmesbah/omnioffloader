@@ -342,9 +342,20 @@ trait CliJobGuard {
 	 * @return void
 	 */
 	private function begin_items( array $ids ) {
-		if ( null !== $this->guard_run ) {
-			$this->guard_run['in_flight'] = array_values( array_map( 'intval', $ids ) );
+		if ( null === $this->guard_run ) {
+			return;
+		}
+
+		$this->guard_run['in_flight'] = array_values( array_map( 'intval', $ids ) );
+
+		// Every few seconds, like the progress: a run killed in between
+		// leaves a "processing" badge the Media Library clears by itself
+		// once the run is gone. Ctrl-C and errors still clear them here.
+		$now = time();
+
+		if ( $now - $this->guard_reported >= 5 ) {
 			Plugin::set_cli_run( $this->guard_run );
+			$this->guard_reported = $now;
 		}
 	}
 
@@ -450,22 +461,27 @@ trait CliJobGuard {
 			$this->guard_heartbeat = null;
 		}
 
+		// A second run started with --force took over the record, the claim
+		// and the lock; they are that run's to release, not this one's.
+		$record = null !== $this->guard_run ? Plugin::get_cli_run( true ) : null;
+		$ours   = null === $this->guard_run || null === $record || (int) ( $record['pid'] ?? 0 ) === (int) $this->guard_run['pid'];
+
 		if ( null !== $this->guard_queue ) {
-			$this->guard_queue->release_lock();
+			if ( $ours ) {
+				$this->guard_queue->release_lock();
+			}
 			$this->guard_queue = null;
 		}
 
 		if ( null !== $this->guard_plugin ) {
-			$this->guard_plugin->release_cli_job();
+			if ( $ours ) {
+				$this->guard_plugin->release_cli_job();
+			}
 			$this->guard_plugin = null;
 		}
 
 		if ( null !== $this->guard_run ) {
-			// A second run started with --force rewrote the record; it is
-			// that run's to clear, not this one's.
-			$record = Plugin::get_cli_run( true );
-
-			if ( null === $record || (int) ( $record['pid'] ?? 0 ) === (int) $this->guard_run['pid'] ) {
+			if ( $ours ) {
 				// The record is written every few seconds; store the final
 				// counts before it becomes the "last run" for `status`.
 				Plugin::set_cli_run( $this->guard_run );

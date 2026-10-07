@@ -54,8 +54,16 @@ $running = array(
 );
 update_option( BulkRestoreProcessor::STATE_OPTION, $running, false );
 
-$queue  = new BulkRestoreProcessor();
+$queue = new BulkRestoreProcessor();
+
+// A worker is busy with the run (its process lock is held).
+$identifier_prop = new ReflectionProperty( $queue, 'identifier' );
+$identifier_prop->setAccessible( true );
+$identifier = $identifier_prop->getValue( $queue );
+set_site_transient( $identifier . '_process_lock', microtime(), MINUTE_IN_SECONDS );
+
 $queued = $queue->start( false, array( $local_id ) );
+delete_site_transient( $identifier . '_process_lock' );
 $state  = BulkRestoreProcessor::get_state();
 
 omnioffloader_queue_check( 0 === $queued, 'nothing queued' );

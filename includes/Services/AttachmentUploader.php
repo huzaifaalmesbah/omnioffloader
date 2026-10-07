@@ -221,6 +221,7 @@ class AttachmentUploader {
 		do_action( 'omnioffloader_before_offload', $attachment_id );
 
 		update_post_meta( $attachment_id, 'omnioffloader_status', 'processing' );
+		Helpers::mark_working( $attachment_id );
 
 		$files = self::collect_attachment_files( $attachment_id, $metadata );
 

@@ -205,6 +205,7 @@ class RetentionCommand {
 		$fail_run  = 0;
 		$aborted   = false;
 		$reason    = '';
+		$capped    = false;
 		$quota_hit = false;
 
 		foreach ( $ids as $id ) {
@@ -250,7 +251,10 @@ class RetentionCommand {
 					continue;
 				}
 
-				$reason  = is_wp_error( $check ) ? $check->get_error_message() . '. ' : '';
+				$reason = is_wp_error( $check ) ? $check->get_error_message() . '. ' : '';
+				// The connection was not checked: too many failures with the
+				// provider answering. The attachments themselves are failing.
+				$capped  = null === $check && $fail_run >= self::FAILURE_LIMIT * self::UNEXPLAINED_FAILURE_FACTOR;
 				$aborted = true;
 				break;
 			}
@@ -274,7 +278,11 @@ class RetentionCommand {
 		}
 
 		if ( $aborted ) {
-			WP_CLI::error( sprintf( 'Stopped after %d failures in a row (%d updated first). %sCheck the connection to your storage provider (see omnioffloader_error_log meta).', $fail_run, $done, $reason ) );
+			WP_CLI::error(
+				$capped
+					? sprintf( 'Stopped after %d failures in a row (%d updated first). The storage provider answers, so the attachments themselves are failing; see omnioffloader_error_log meta.', $fail_run, $done )
+					: sprintf( 'Stopped after %d failures in a row (%d updated first). %sCheck the connection to your storage provider (see omnioffloader_error_log meta).', $fail_run, $done, $reason )
+			);
 		}
 
 		if ( $stopped ) {

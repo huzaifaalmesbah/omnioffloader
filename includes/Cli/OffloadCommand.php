@@ -166,6 +166,7 @@ class OffloadCommand {
 		$aborted   = false;
 		$last_fail = 0;
 		$reason    = '';
+		$capped    = false;
 		$stopped   = false;
 
 		if ( Helpers::transfer_concurrency_override() > 0 ) {
@@ -220,7 +221,10 @@ class OffloadCommand {
 					continue;
 				}
 
-				$reason  = is_wp_error( $check ) ? $check->get_error_message() : '';
+				$reason = is_wp_error( $check ) ? $check->get_error_message() : '';
+				// The connection was not checked: too many failures with the
+				// provider answering. The attachments themselves are failing.
+				$capped  = null === $check && $fail_run >= self::FAILURE_LIMIT * self::UNEXPLAINED_FAILURE_FACTOR;
 				$aborted = true;
 				break;
 			}
@@ -237,7 +241,7 @@ class OffloadCommand {
 					'Stopped after %d failures in a row (%d offloaded first). %sLast error: %s',
 					$fail_run,
 					$done,
-					'' !== $reason ? $reason . '. ' : '',
+					$capped ? 'The storage provider answers, so the attachments themselves are failing. ' : ( '' !== $reason ? $reason . '. ' : '' ),
 					$this->last_error( $last_fail )
 				)
 			);

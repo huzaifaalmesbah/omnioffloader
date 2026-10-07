@@ -399,7 +399,7 @@ abstract class AbstractBulkProcessor extends WP_Background_Process {
 			// items picked in the Media Library while a Bring Back runs).
 			// Resetting its state would stop its workers and let another
 			// job type start next to its in-flight group.
-			if ( 'running' === ( static::get_state()['status'] ?? 'idle' ) ) {
+			if ( $this->is_active() ) {
 				return 0;
 			}
 
@@ -483,6 +483,30 @@ abstract class AbstractBulkProcessor extends WP_Background_Process {
 	}
 
 	/**
+	 * Finish a run whose last worker died: the state still says running, but
+	 * the queue is empty and no worker holds the lock, so no pass will ever
+	 * run its end. Its in-flight items are recorded as lost and the run is
+	 * closed, instead of showing "running" until someone cancels it.
+	 *
+	 * Only once the state has been quiet for a minute, so a worker that is
+	 * between its last item and complete() is left to finish itself.
+	 *
+	 * @since 0.1.4
+	 *
+	 * @return void
+	 */
+	private function finish_abandoned_run() {
+		$state = static::get_state();
+
+		if ( 'running' !== $state['status'] || time() - (int) $state['updated_at'] < MINUTE_IN_SECONDS ) {
+			return;
+		}
+
+		$this->recover_lost_item();
+		$this->complete();
+	}
+
+	/**
 	 * Process part of the queue inside the current request.
 	 *
 	 * Self-healing for hosts where the async loopback request never arrives
@@ -493,7 +517,13 @@ abstract class AbstractBulkProcessor extends WP_Background_Process {
 	 * @return void
 	 */
 	public function process_queue_now() {
-		if ( $this->is_processing() || $this->is_queue_empty() ) {
+		if ( $this->is_processing() ) {
+			return;
+		}
+
+		if ( $this->is_queue_empty() ) {
+			$this->finish_abandoned_run();
+
 			return;
 		}
 
@@ -833,6 +863,13 @@ abstract class AbstractBulkProcessor extends WP_Background_Process {
 		// Record the in-flight items so a worker killed mid-transfer is
 		// detectable on the next pass (see recover_lost_item()). The
 		// activity log shows the first of them as "processing".
+		// Not into a run that replaced this pass's run in the meantime.
+		if ( (string) ( static::get_state()['run'] ?? '' ) !== $this->pass_run ) {
+			$this->superseded = true;
+
+			return array();
+		}
+
 		$label = $this->item_label( $ids[0] );
 
 		static::update_state(

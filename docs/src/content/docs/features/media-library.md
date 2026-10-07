@@ -17,6 +17,7 @@ The list view gets an **Offload status** column with a small icon:
 - **Offloading…** / **Restoring…**: a transfer is running.
 - **Queued…**: waiting for the background upload.
 - **Offload failed**: hover to see the reason.
+- **File missing**: the attachment's file isn't on this server, so it can't be offloaded. Restore the file; the next Bulk Offload picks it up. See [Files missing on this server](/features/bulk-offload/#files-missing-on-this-server).
 - **Not offloaded**: the attachment is only on your server.
 
 The status updates live while a job runs. You do not need to reload the page.

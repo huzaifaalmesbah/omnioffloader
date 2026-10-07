@@ -397,13 +397,13 @@ class Helpers {
 	 * One indexed query on postmeta, cached in a short transient.
 	 *
 	 * @param bool $force_refresh Optional. True to bypass transient cache and recompute. Default false.
-	 * @return array{total: int, offloaded: int, local: int}
+	 * @return array{total: int, offloaded: int, local: int, missing: int}
 	 */
 	public static function get_media_stats( $force_refresh = false ) {
 		if ( ! $force_refresh ) {
 			$cached = get_transient( 'omnioffloader_media_stats' );
 
-			if ( is_array( $cached ) && isset( $cached['total'], $cached['offloaded'], $cached['local'] ) ) {
+			if ( is_array( $cached ) && isset( $cached['total'], $cached['offloaded'], $cached['local'], $cached['missing'] ) ) {
 				return $cached;
 			}
 		}
@@ -429,10 +429,24 @@ class Helpers {
 			 WHERE p.post_type = 'attachment' AND p.post_status != 'trash' AND m.post_id IS NULL"
 		);
 
+		// Local attachments whose file is not on this server: they can't be
+		// offloaded, so they are not "ready to offload".
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- indexed meta count cached via transient below.
+		$missing = (int) $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT COUNT(s.post_id) FROM {$wpdb->postmeta} s
+				 INNER JOIN {$wpdb->posts} p ON p.ID = s.post_id AND p.post_type = 'attachment' AND p.post_status != 'trash'
+				 WHERE s.meta_key = 'omnioffloader_status' AND s.meta_value = %s",
+				self::STATUS_MISSING
+			)
+		);
+		$missing = min( $missing, $local );
+
 		$stats = array(
 			'total'     => $offloaded + $local,
 			'offloaded' => $offloaded,
-			'local'     => $local,
+			'local'     => $local - $missing,
+			'missing'   => $missing,
 		);
 
 		set_transient( 'omnioffloader_media_stats', $stats, MINUTE_IN_SECONDS );
@@ -477,6 +491,66 @@ class Helpers {
 	 * screens stay at 10: they run inside web requests, often on shared hosts.
 	 */
 	public const MAX_CLI_CONCURRENCY = 64;
+
+	/**
+	 * Attachment status (omnioffloader_status) of a local attachment whose
+	 * main file is not on this server, so it cannot be offloaded. Bulk
+	 * offloads skip it until the file is back (recover_missing_files()).
+	 *
+	 * @since 0.1.4
+	 */
+	public const STATUS_MISSING = 'missing';
+
+	/**
+	 * Clear "file missing" from attachments whose file is back on disk, so
+	 * the next bulk offload picks them up. Checks only those attachments,
+	 * never the whole library.
+	 *
+	 * @since 0.1.4
+	 *
+	 * @return int How many came back.
+	 */
+	public static function recover_missing_files() {
+		global $wpdb;
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- indexed lookup of the few attachments marked missing.
+		$rows = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT s.post_id, f.meta_value AS file
+				 FROM {$wpdb->postmeta} s
+				 INNER JOIN {$wpdb->postmeta} f ON f.post_id = s.post_id AND f.meta_key = '_wp_attached_file'
+				 WHERE s.meta_key = 'omnioffloader_status' AND s.meta_value = %s",
+				self::STATUS_MISSING
+			)
+		);
+
+		if ( empty( $rows ) ) {
+			return 0;
+		}
+
+		$base = trailingslashit( wp_get_upload_dir()['basedir'] );
+		$back = 0;
+
+		foreach ( $rows as $row ) {
+			$file = (string) $row->file;
+
+			// Relative to the uploads folder unless absolute, as get_attached_file() reads it.
+			if ( 0 !== strpos( $file, '/' ) && ! preg_match( '|^.:\\\\|', $file ) ) {
+				$file = $base . $file;
+			}
+
+			if ( '' !== (string) $row->file && file_exists( $file ) ) {
+				delete_post_meta( (int) $row->post_id, 'omnioffloader_status', self::STATUS_MISSING );
+				++$back;
+			}
+		}
+
+		if ( $back > 0 ) {
+			self::flush_media_stats();
+		}
+
+		return $back;
+	}
 
 	/**
 	 * Move this many files at once for the rest of this process, ignoring

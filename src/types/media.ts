@@ -5,7 +5,10 @@
 export interface MediaStats {
 	total: number;
 	offloaded: number;
+	/** Not offloaded and ready to offload (excludes `missing`). */
 	local: number;
+	/** Not offloaded, but the file is not on this server: skipped. */
+	missing: number;
 	configured: boolean;
 	provider: string;
 	safe_mode: SafeModeStatus;

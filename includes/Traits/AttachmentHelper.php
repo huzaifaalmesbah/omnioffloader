@@ -744,6 +744,14 @@ trait AttachmentHelper {
 			);
 		}
 
+		if ( Helpers::STATUS_MISSING === $status ) {
+			return array(
+				'status'       => 'missing',
+				'is_offloaded' => false,
+				'label'        => __( 'File missing on this server — restore the file to offload it', 'omnioffloader' ),
+			);
+		}
+
 		$has_errors = ( 'failed' === $status ) || ( is_array( $errors ) && ! empty( $errors ) );
 
 		if ( $has_errors ) {

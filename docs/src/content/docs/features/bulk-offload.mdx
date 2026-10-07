@@ -43,7 +43,17 @@ Click **Cancel** at any time. The background worker stops right away. Attachment
 
 ## When things fail
 
-A single broken attachment (for example, a file that is missing from the server) does not stop the run. It is logged, and the next attachment starts.
+A single broken attachment does not stop the run. It is logged, and the next attachment starts.
+
+### Files missing on this server
+
+Sometimes WordPress lists an attachment whose file isn't on the server, for example on a copy of the site that came without its `uploads` folder, or after files were deleted outside WordPress. There is nothing to upload, so OmniOffloader:
+
+- skips it before uploading anything, and logs it as *File missing on this server — skipped* (not as a failure),
+- marks it **File missing** in the Media Library,
+- leaves it out of **Local (Ready to Offload)** and out of later runs, and says on the Offload page how many there are.
+
+To offload them, put the files back in `wp-content/uploads` (same folders). The next Bulk Offload, or `wp omnioffloader offload --all`, finds them again by itself: it only checks the attachments marked missing, never the whole library.
 
 After **10 failures in a row**, OmniOffloader checks the connection to your storage provider:
 

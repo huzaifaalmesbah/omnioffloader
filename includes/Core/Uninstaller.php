@@ -47,6 +47,7 @@ class Uninstaller {
 		delete_option( 'omnioffloader_first_activated_version' );
 		delete_option( 'omnioffloader_cli_run' );
 		delete_option( 'omnioffloader_cli_stop' );
+		delete_option( 'omnioffloader_cli_last_run' );
 		// Left behind by pre-release builds with secondary storage.
 		delete_option( 'omnioffloader_secondary_credentials' );
 

@@ -7,6 +7,8 @@ interface CardProps {
 	docs?: string;
 	children?: React.ReactNode;
 	className?: string;
+	/** Element id, so a link can bring the card into view. */
+	id?: string;
 }
 
 export function Card( {
@@ -15,9 +17,12 @@ export function Card( {
 	docs,
 	children,
 	className,
+	id,
 }: CardProps ) {
 	return (
 		<section
+			id={ id }
+			tabIndex={ id ? -1 : undefined }
 			className={ 'smowp-card' + ( className ? ` ${ className }` : '' ) }
 		>
 			{ ( title || description ) && (

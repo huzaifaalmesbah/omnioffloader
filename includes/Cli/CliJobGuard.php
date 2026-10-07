@@ -433,7 +433,13 @@ trait CliJobGuard {
 		}
 
 		if ( null !== $this->guard_run ) {
-			Plugin::clear_cli_run();
+			// A second run started with --force rewrote the record; it is
+			// that run's to clear, not this one's.
+			$record = Plugin::get_cli_run( true );
+
+			if ( null === $record || (int) ( $record['pid'] ?? 0 ) === (int) $this->guard_run['pid'] ) {
+				Plugin::clear_cli_run();
+			}
 
 			if ( $this->guard_run['background'] ) {
 				WP_CLI::log( sprintf( '[%s] Ended.', wp_date( 'Y-m-d H:i:s' ) ) );

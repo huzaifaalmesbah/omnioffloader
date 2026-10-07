@@ -120,6 +120,7 @@ class AttachmentRestorer {
 
 		if ( false === $base_real ) {
 			self::log_attachment_error( $attachment_id, __( 'Uploads directory not found.', 'omnioffloader' ) );
+			update_post_meta( $attachment_id, 'omnioffloader_status', 'failed' );
 
 			return false;
 		}

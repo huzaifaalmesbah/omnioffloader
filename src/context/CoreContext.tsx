@@ -7,7 +7,7 @@ import {
 	useRef,
 	useState,
 } from '@wordpress/element';
-import { __ } from '@wordpress/i18n';
+import { __, sprintf } from '@wordpress/i18n';
 
 import {
 	fetchProviders,
@@ -221,6 +221,10 @@ export function CoreProvider( { children }: { children: React.ReactNode } ) {
 		setIsSaving( true );
 		clearSaveFeedback();
 
+		// Credentials and settings are two requests; say which part was
+		// saved when only the first one went through.
+		let credentialsSaved = false;
+
 		try {
 			if (
 				Object.keys( credentialDraft ).length > 0 &&
@@ -246,6 +250,7 @@ export function CoreProvider( { children }: { children: React.ReactNode } ) {
 				);
 				setProviderFields( settings.provider, response.fields );
 				setCredentialDraft( {} );
+				credentialsSaved = true;
 			}
 
 			if ( settingsDirty ) {
@@ -266,14 +271,22 @@ export function CoreProvider( { children }: { children: React.ReactNode } ) {
 
 			refreshStats();
 		} catch ( error: unknown ) {
+			// Kept until the next edit or save: a message that disappears on
+			// its own is easy to miss.
 			setSaveFeedback( {
 				status: 'error',
-				message: errorMessage( error ),
+				message:
+					credentialsSaved && settingsDirty
+						? sprintf(
+								/* translators: %s: why the settings were not saved. */
+								__(
+									'Your storage provider details were saved, but your other settings were not: %s',
+									'omnioffloader'
+								),
+								errorMessage( error )
+							)
+						: errorMessage( error ),
 			} );
-
-			feedbackTimeoutRef.current = window.setTimeout( () => {
-				setSaveFeedback( null );
-			}, 6000 );
 		} finally {
 			setIsSaving( false );
 		}

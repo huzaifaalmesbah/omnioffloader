@@ -177,6 +177,18 @@ function clearOverlay() {
   if (el) el.remove();
 }
 
+// Scroll so the nth .smowp-card (0-based) starts just below the sticky header.
+async function scrollToCard(page, index) {
+  await page.evaluate((i) => {
+    const card = document.querySelectorAll('.smowp-card')[i];
+    const header = document.querySelector('.smowp-header');
+    if (!card) return;
+    const covered = header ? header.getBoundingClientRect().bottom : 32;
+    const y = card.getBoundingClientRect().top + window.scrollY - covered - 16;
+    window.scrollTo({ top: Math.max(0, y), behavior: 'instant' });
+  }, index);
+}
+
 // Scroll so an element sits just below the sticky page header, optionally
 // starting `above` px higher to show some context.
 async function scrollBelowHeader(page, selector, above = 0) {
@@ -537,7 +549,7 @@ async function main() {
       ]
     },
 
-    // 9. Shared Bucket & Path Prefix (Dedicated to Custom Path Prefix)
+    // 9. Shared Bucket & Path Prefix: the saved folder, no notices
     {
       id: 9,
       slug: 'shared-bucket',
@@ -548,7 +560,27 @@ async function main() {
       url: 'https://wp71.test/wp-admin/admin.php?page=omnioffloader&view=settings',
       waitFor: '#omnioffloader-admin-app',
       beforeCapture: async (page) => {
-        // Find path prefix text input and set 'shop' cleanly via React native setter
+        await scrollToCard(page, 2);
+      },
+      annotations: [
+        { selector: '.smowp-card:nth-of-type(3) .components-toggle-control', index: 3, num: 1, label: 'Custom Path Prefix (Enable Isolated Bucket Subfolder per Site)', position: 'top-right', offsetY: -16 },
+        { selector: '.smowp-card:nth-of-type(3) .components-base-control:has(input[type="text"])', num: 2, label: 'This Site\'s Own Folder (e.g., "shop", "blog", "store")', position: 'top-right', offsetY: -16 },
+        { selector: '.smowp-card:nth-of-type(3) .components-toggle-control', index: 2, num: 3, label: 'Object Versioning (Prevents CDN Cache Overwrite Collisions)', position: 'top-left', offsetY: -16 }
+      ]
+    },
+
+    // 9b. Path Prefix changed (unsaved): existing media stays in its folder
+    {
+      id: 9,
+      slug: 'path-prefix-change',
+      wpOrgNum: null,
+      width: 1440,
+      height: 960,
+      title: 'Path Prefix Change Warning',
+      url: 'https://wp71.test/wp-admin/admin.php?page=omnioffloader&view=settings',
+      waitFor: '#omnioffloader-admin-app',
+      beforeCapture: async (page) => {
+        // Type a new folder through React's own value setter.
         const prefixInput = await page.$('input[placeholder="wp-content/uploads"]');
         if (prefixInput) {
           await page.evaluate((el) => {
@@ -558,19 +590,53 @@ async function main() {
             el.dispatchEvent(new Event('change', { bubbles: true }));
           }, prefixInput);
         }
-        await page.evaluate(() => {
-          const cards = document.querySelectorAll('.smowp-card');
-          if (cards.length >= 3) {
-            const y = cards[2].getBoundingClientRect().top + window.scrollY - (document.querySelector('.smowp-header').getBoundingClientRect().bottom + 16);
-            window.scrollTo({ top: Math.max(0, y), behavior: 'instant' });
-          }
-        });
+        await page.waitForSelector('.smowp-prefix-notice', { timeout: 4000 });
+        await scrollBelowHeader(page, '.smowp-prefix-notice', 380);
       },
       annotations: [
-        { selector: '.smowp-card:nth-of-type(3) .components-toggle-control', index: 3, num: 1, label: 'Custom Path Prefix (Enable Isolated Bucket Subfolder per Site)', position: 'top-right', offsetY: -16 },
-        { selector: '.smowp-card:nth-of-type(3) .components-base-control:has(input[type="text"])', num: 2, label: 'Dedicated Folder Name (e.g., "shop", "blog", "store")', position: 'top-right', offsetY: -16 },
-        { selector: '.smowp-prefix-notice', num: 4, label: 'Folder Change Warning: Existing Media Stays & Keeps Working', position: 'top-right', offsetY: -16 },
-        { selector: '.smowp-card:nth-of-type(3) .components-toggle-control', index: 2, num: 3, label: 'Object Versioning (Prevents CDN Cache Overwrite Collisions)', position: 'top-left', offsetY: -16 }
+        { selector: '.smowp-card:nth-of-type(3) .components-base-control:has(input[type="text"])', num: 1, label: 'New Folder for Media Offloaded from Now On', position: 'top-right', offsetY: -16 },
+        { selector: '.smowp-prefix-notice', num: 2, label: 'Existing Media Stays in Its Folder & Keeps Working', position: 'top-right', offsetY: -16 },
+        { selector: '.smowp-savebar__button', num: 3, label: 'Save Asks You to Confirm the Folder Change', position: 'left', offsetX: -18 }
+      ]
+    },
+
+    // 9c. Another site already uses this site's bucket folder
+    {
+      id: 9,
+      slug: 'folder-claimed',
+      wpOrgNum: null,
+      width: 1440,
+      height: 900,
+      title: 'Bucket Folder Used by Another Site',
+      url: 'https://wp71.test/wp-admin/admin.php?page=omnioffloader&view=settings',
+      mocks: [
+        {
+          path: '/omnioffloader/v1/core/stats',
+          data: {
+            total: 14,
+            offloaded: 14,
+            local: 0,
+            configured: true,
+            provider: 'cloudflare_r2',
+            safe_mode: {
+              active: true,
+              reason: 'folder',
+              locked: false,
+              live_address: 'https://wp71.test',
+              current_address: 'https://wp71.test',
+              environment: 'production',
+              bring_back: true,
+              folder_owner: 'https://shop.example.com',
+              folder: 'shop/'
+            }
+          }
+        }
+      ],
+      waitFor: '.smowp-safe-mode-banner',
+      annotations: [
+        { selector: '.smowp-safe-mode-banner', num: 1, label: 'Another Site Already Uses This Bucket Folder: Uploads & Deletes Paused', position: 'top-right', offsetY: -16 },
+        { selector: '.smowp-safe-mode-banner__actions .components-button.is-primary', num: 2, label: 'Fix: Choose a Path Prefix of This Site\'s Own', position: 'below-left', offsetY: 8 },
+        { selector: '.smowp-safe-mode-banner__actions .components-button.is-tertiary', num: 3, label: 'Or Take Over a Folder the Other Site No Longer Uses', position: 'right', offsetX: 18 }
       ]
     },
 

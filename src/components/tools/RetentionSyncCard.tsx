@@ -298,6 +298,15 @@ export function RetentionSyncCard() {
 				</div>
 			) }
 
+			{ /* Always mounted, so the start of a run is announced too. */ }
+			<RunAnnouncer
+				status={ showProgress && state ? state.status : 'idle' }
+				processed={ state?.processed ?? 0 }
+				total={ state?.total ?? 0 }
+				errors={ state?.errors ?? 0 }
+				message={ state?.message }
+			/>
+
 			{ showProgress && state && (
 				<div
 					className={
@@ -364,13 +373,6 @@ export function RetentionSyncCard() {
 						value={ state.processed }
 						max={ state.total }
 						showPercentage={ false }
-					/>
-					<RunAnnouncer
-						status={ state.status }
-						processed={ state.processed }
-						total={ state.total }
-						errors={ state.errors }
-						message={ state.message }
 					/>
 
 					{ state.status === 'failed' && state.message && (

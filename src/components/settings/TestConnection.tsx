@@ -68,16 +68,19 @@ export function TestConnection( { provider }: TestConnectionProps ) {
 					: __( 'Test Connection', 'omnioffloader' ) }
 			</Button>
 
-			{ result === 'ok' && (
-				<span className="smowp-badge smowp-badge--ok">
-					{ __( 'Connected', 'omnioffloader' ) }
-				</span>
-			) }
-			{ result === 'fail' && (
-				<span className="smowp-badge smowp-badge--fail">
-					{ __( 'Not connected', 'omnioffloader' ) }
-				</span>
-			) }
+			{ /* A live region, so the result is read out after the test. */ }
+			<span role="status" aria-live="polite">
+				{ result === 'ok' && (
+					<span className="smowp-badge smowp-badge--ok">
+						{ __( 'Connected', 'omnioffloader' ) }
+					</span>
+				) }
+				{ result === 'fail' && (
+					<span className="smowp-badge smowp-badge--fail">
+						{ __( 'Not connected', 'omnioffloader' ) }
+					</span>
+				) }
+			</span>
 
 			{ result === 'ok' && folderWarning && (
 				<div className="smowp-test-connection__error" role="alert">

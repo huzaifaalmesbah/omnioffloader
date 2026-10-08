@@ -48,8 +48,8 @@ If any check reports an error or warning, **you must diagnose and fix it immedia
 The public documentation website lives in `docs/` as a standalone Astro Starlight project:
 * **Workspace**: Independent `pnpm` workspace excluded from the plugin bundle (`.distignore`).
 * **Commands**:
-  * `pnpm --filter docs dev` — Start the local documentation preview server at `http://localhost:4321`.
-  * `pnpm --filter docs build` — Build static production HTML and verify Pagefind search indexing.
+  * `pnpm --dir docs run dev` — Start the local documentation preview server at `http://localhost:4321`.
+  * `pnpm --dir docs run build` — Build static production HTML and verify Pagefind search indexing.
 * **Changelog**: Generated automatically from `../readme.txt` by `docs/scripts/changelog.mjs` on every dev/build run. **Always edit `readme.txt`**, never `changelog.md` directly.
 * **Synchronization Mandate**: When user-facing features, settings, CLI commands/flags, provider fields, or hooks change, update the matching markdown documentation in `docs/src/content/docs/` in the same commit.
 * **Privacy**: Never link to the private GitHub repository from public documentation.
@@ -112,8 +112,8 @@ pnpm build            # Production build
 pnpm check-types      # tsc --noEmit — strict TypeScript check
 pnpm lint:js          # ESLint (WordPress TS config)
 pnpm screenshots      # Capture automated retina screenshots and docs callouts
-pnpm --filter docs dev    # Start Astro Starlight docs preview server
-pnpm --filter docs build  # Build production static documentation
+pnpm --dir docs run dev    # Start Astro Starlight docs preview server
+pnpm --dir docs run build  # Build production static documentation
 pnpm bundle           # Build + distribution zip
 pnpm bundle:org       # Format dist/ for WordPress.org SVN deploy
 composer phpstan      # PHPStan level 8

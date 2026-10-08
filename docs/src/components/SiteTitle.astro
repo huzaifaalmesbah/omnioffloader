@@ -1,9 +1,10 @@
 ---
 import Default from '@astrojs/starlight/components/SiteTitle.astro';
 import type { Props } from '@astrojs/starlight/props';
-import pkg from '../../../package.json';
+import readme from '../../../readme.txt?raw';
 
-const version = pkg.version;
+// readme.txt's Stable tag, as in astro.config.mjs.
+const version = readme.match( /^Stable tag:\s*(.+)$/m )?.[ 1 ]?.trim() ?? '';
 ---
 
 <div class="site-title-wrapper">

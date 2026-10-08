@@ -3,11 +3,10 @@ import { readFileSync } from 'node:fs';
 import { defineConfig } from 'astro/config';
 import starlight from '@astrojs/starlight';
 
-// Read version dynamically from plugin's package.json
-const pkg = JSON.parse(
-	readFileSync( new URL( '../package.json', import.meta.url ), 'utf8' )
-);
-const version = pkg.version;
+// The released version: readme.txt's Stable tag, which every release bumps
+// (the same source as the generated changelog page).
+const readme = readFileSync( new URL( '../readme.txt', import.meta.url ), 'utf8' );
+const version = readme.match( /^Stable tag:\s*(.+)$/m )?.[ 1 ]?.trim() ?? '';
 
 // Public address of the docs site — used for the sitemap and canonical URLs.
 // Set DOCS_SITE_URL in Vercel once the custom domain is connected.

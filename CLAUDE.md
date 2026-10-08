@@ -10,7 +10,7 @@ Released so far: `0.1.0` (initial release, Cloudflare R2 only), `0.1.1` (five mo
 
 > ⚠️ **VERSION CEILING: `0.9.0`.** Never bump, tag, or release version `1.0.0` (or anything ≥ 1.0.0) without the owner's explicit permission in that conversation. All planned work ends at 0.9.0.
 
-When bumping the version, three places must move together: the `Version:` header and `OMNIOFFLOADER_VERSION` in `omnioffloader.php`, and `Stable tag` in `readme.txt`. A migration for the new version goes in `Core\Migrator`.
+When bumping the version, four places must move together: the `Version:` header and `OMNIOFFLOADER_VERSION` in `omnioffloader.php`, `Stable tag` in `readme.txt` (the docs site's version badge reads it), and `version` in `package.json`. A migration for the new version goes in `Core\Migrator`.
 
 ## What This Plugin Does
 
@@ -28,8 +28,8 @@ pnpm build            # Production build
 pnpm check-types      # tsc --noEmit — strict TypeScript check
 pnpm lint:js          # ESLint (WordPress TS config)
 pnpm screenshots      # Automated Puppeteer headless browser screenshot & annotation engine
-pnpm --filter docs dev    # Start Astro Starlight docs development server (localhost:4321)
-pnpm --filter docs build  # Build production Astro Starlight static site to docs/dist/
+pnpm --dir docs run dev    # Start Astro Starlight docs development server (localhost:4321)
+pnpm --dir docs run build  # Build production Astro Starlight static site to docs/dist/
 pnpm bundle           # Build + distribution zip (excludes dev files per .distignore)
 pnpm bundle:org       # Same, shaped for the WordPress.org SVN layout
 composer phpstan     # PHPStan level 8 (szepeviktor/phpstan-wordpress)
@@ -244,8 +244,8 @@ This plugin's own skeleton, admin UX and conventions are settled — follow what
 
 ### Public User Docs (`docs/` — Astro Starlight)
 The public documentation is built with Astro Starlight in `docs/` and deployed to Vercel (see `docs/README.md`).
-- Run `pnpm --filter docs dev` to test documentation locally at `http://localhost:4321`.
-- Run `pnpm --filter docs build` to verify the static site builds without broken links or syntax errors.
+- Run `pnpm --dir docs run dev` to test documentation locally at `http://localhost:4321`.
+- Run `pnpm --dir docs run build` to verify the static site builds without broken links or syntax errors.
 - The changelog page is generated automatically from `readme.txt` by `docs/scripts/changelog.mjs`. Always update `readme.txt`, never `changelog.md`.
 - Keep docs in sync with user-facing features, settings, CLI flags, provider fields, and hooks in the same commit.
 

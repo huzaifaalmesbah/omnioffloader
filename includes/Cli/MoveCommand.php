@@ -104,17 +104,8 @@ class MoveCommand {
 			WP_CLI::error( 'No cloud provider is configured, so there is nowhere to move media to.' );
 		}
 
-		if ( isset( $assoc_args['concurrency'] ) ) {
-			$concurrency = (string) $assoc_args['concurrency'];
-
-			// A typo must not silently mean "the setting" or "64".
-			if ( ! ctype_digit( $concurrency ) || (int) $concurrency < 1 || (int) $concurrency > Helpers::MAX_CLI_CONCURRENCY ) {
-				WP_CLI::error( sprintf( '--concurrency must be a whole number from 1 to %d.', Helpers::MAX_CLI_CONCURRENCY ) );
-			}
-
-			// Covers both halves of a move: the download and the new upload.
-			Helpers::set_transfer_concurrency_override( (int) $concurrency );
-		}
+		// Covers both halves of a move: the download and the new upload.
+		$this->apply_concurrency( $assoc_args );
 
 		if ( ! $is_dry ) {
 			FolderClaim::refresh();

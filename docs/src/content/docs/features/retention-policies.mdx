@@ -90,9 +90,14 @@ wp omnioffloader retention --dry-run
 
 # Apply the saved policy (asks before deleting)
 wp omnioffloader retention
+
+# Keep it running after you close the terminal (--yes: nobody can answer the prompt)
+nohup wp omnioffloader retention --yes > ~/retention.log 2>&1 &
 ```
 
-See [`wp omnioffloader retention`](/wp-cli/retention/) for every option.
+Moving to a looser policy downloads files; add `--concurrency=32` to download more of them at once on a VPS or dedicated server.
+
+On the Tools screen, the **Run this job from WP-CLI** panel in **Apply Retention Policy to Existing Media** jumps to the command in the WP-CLI reference below it, with copy buttons. See [`wp omnioffloader retention`](/wp-cli/retention/) for every option.
 
 ## One job at a time
 

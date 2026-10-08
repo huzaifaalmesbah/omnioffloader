@@ -33,8 +33,8 @@ class Helpers {
 	private static $stats_flush_pending = false;
 
 	/**
-	 * Files in flight at once for this process, set by `wp omnioffloader
-	 * offload --concurrency`; 0 follows the Transfer Speed setting.
+	 * Files in flight at once for this process, set by WP-CLI
+	 * `--concurrency`; 0 follows the Transfer Speed setting.
 	 *
 	 * @var int<0, 64>
 	 */
@@ -554,7 +554,8 @@ class Helpers {
 
 	/**
 	 * Move this many files at once for the rest of this process, ignoring
-	 * the Transfer Speed setting. WP-CLI only (`offload --concurrency`).
+	 * the Transfer Speed setting. WP-CLI only: `--concurrency` on offload,
+	 * move, restore and retention.
 	 *
 	 * @since 0.1.4
 	 *

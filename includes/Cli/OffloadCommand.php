@@ -93,16 +93,7 @@ class OffloadCommand {
 		$queue  = $plugin->get_bulk_offload();
 		$is_dry = isset( $assoc_args['dry-run'] );
 
-		if ( isset( $assoc_args['concurrency'] ) ) {
-			$concurrency = (string) $assoc_args['concurrency'];
-
-			// A typo must not silently mean "the setting" or "64".
-			if ( ! ctype_digit( $concurrency ) || (int) $concurrency < 1 || (int) $concurrency > Helpers::MAX_CLI_CONCURRENCY ) {
-				WP_CLI::error( sprintf( '--concurrency must be a whole number from 1 to %d.', Helpers::MAX_CLI_CONCURRENCY ) );
-			}
-
-			Helpers::set_transfer_concurrency_override( (int) $concurrency );
-		}
+		$this->apply_concurrency( $assoc_args );
 
 		// The admin bulk queue and this command would otherwise offload the
 		// same attachments at once: with a cleanup retention policy one side

@@ -448,8 +448,29 @@ trait AttachmentHelper {
 	 * @return array<string, int>
 	 */
 	public static function remote_sizes( ProviderInterface $provider, array $keys ) {
-		if ( count( $keys ) < 2 || ! method_exists( $provider, 'list_object_sizes' ) ) {
+		$prefix = self::size_listing_prefix( $keys );
+
+		if ( '' === $prefix || ! method_exists( $provider, 'list_object_sizes' ) ) {
 			return array();
+		}
+
+		$sizes = $provider->list_object_sizes( $prefix );
+
+		return is_array( $sizes ) ? $sizes : array();
+	}
+
+	/**
+	 * The key prefix whose listing covers a set of keys (see remote_sizes()).
+	 *
+	 * @since 0.1.4
+	 *
+	 * @param string[] $keys Object keys.
+	 * @return string Empty when fewer than two keys, or when the shared part
+	 *                ends at a directory (it would list a whole month).
+	 */
+	public static function size_listing_prefix( array $keys ) {
+		if ( count( $keys ) < 2 ) {
+			return '';
 		}
 
 		$prefix = (string) array_shift( $keys );
@@ -468,12 +489,10 @@ trait AttachmentHelper {
 
 		// A prefix ending at a directory would list a whole month of uploads.
 		if ( '' === $prefix || '/' === substr( $prefix, -1 ) ) {
-			return array();
+			return '';
 		}
 
-		$sizes = $provider->list_object_sizes( $prefix );
-
-		return is_array( $sizes ) ? $sizes : array();
+		return $prefix;
 	}
 
 	/**

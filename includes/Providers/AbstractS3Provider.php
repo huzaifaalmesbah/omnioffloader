@@ -58,6 +58,15 @@ abstract class AbstractS3Provider implements ProviderInterface {
 	protected const MAX_PART_CONCURRENCY = 10;
 
 	/**
+	 * Most keys one pooled listing reads (list_object_sizes_many()). An
+	 * attachment has its original plus each size (and any WebP/AVIF copies);
+	 * a prefix matching more is listed on its own instead.
+	 *
+	 * @since 0.1.4
+	 */
+	protected const POOLED_LIST_MAX_KEYS = 200;
+
+	/**
 	 * Seconds to wait for a connection before giving up.
 	 *
 	 * The SDK sets no timeout by default, so an unreachable endpoint can hold
@@ -1114,6 +1123,87 @@ abstract class AbstractS3Provider implements ProviderInterface {
 		}
 
 		return $sizes;
+	}
+
+	/**
+	 * Sizes under several key prefixes, up to $concurrency listings at once.
+	 *
+	 * The pooled form of list_object_sizes(): one ListObjectsV2 page per
+	 * prefix, so a run that verifies many attachments waits on one round
+	 * trip per group instead of one per attachment. A prefix whose listing
+	 * fails or holds more than POOLED_LIST_MAX_KEYS objects maps to false;
+	 * the caller falls back to list_object_sizes() or object_size() for it.
+	 * The cap keeps a full pool of 64 listings to a few MB of memory.
+	 *
+	 * Not part of ProviderInterface — callers check method_exists().
+	 *
+	 * @since 0.1.4
+	 *
+	 * @param string[] $prefixes    Key prefixes, e.g. "2024/05/photo".
+	 * @param int      $concurrency Listings in flight at once.
+	 * @return array<string, array<string, int>|false> Prefix => key => size map.
+	 */
+	public function list_object_sizes_many( array $prefixes, $concurrency = 1 ) {
+		$prefixes = array_values( array_unique( array_map( 'strval', $prefixes ) ) );
+		$listed   = array_fill_keys( $prefixes, false );
+
+		if ( empty( $prefixes ) ) {
+			return $listed;
+		}
+
+		$client = $this->get_client();
+		$bucket = $this->get_bucket();
+
+		$commands = static function () use ( $client, $bucket, $prefixes ) {
+			foreach ( $prefixes as $index => $prefix ) {
+				yield $index => $client->getCommand(
+					'ListObjectsV2',
+					array(
+						'Bucket'  => $bucket,
+						'Prefix'  => $prefix,
+						'MaxKeys' => static::POOLED_LIST_MAX_KEYS,
+						'@http'   => array(
+							'connect_timeout' => static::CONNECT_TIMEOUT,
+							'timeout'         => 30,
+						),
+					)
+				);
+			}
+		};
+
+		try {
+			$pool = new \Aws\CommandPool(
+				$client,
+				$commands(),
+				array(
+					'concurrency'            => max( 1, (int) $concurrency ),
+					'preserve_iterator_keys' => true,
+					'fulfilled'              => static function ( $result, $index ) use ( &$listed, $prefixes ) {
+						// More keys than the cap: too broad for a pooled listing.
+						if ( ! empty( $result['IsTruncated'] ) ) {
+							return;
+						}
+
+						$sizes = array();
+
+						foreach ( (array) ( $result['Contents'] ?? array() ) as $object ) {
+							if ( is_array( $object ) && isset( $object['Key'], $object['Size'] ) ) {
+								$sizes[ (string) $object['Key'] ] = (int) $object['Size'];
+							}
+						}
+
+						$listed[ $prefixes[ $index ] ] = $sizes;
+					},
+				)
+			);
+
+			$pool->promise()->wait();
+		} catch ( \Exception $e ) {
+			// Whatever was not listed stays false and is checked one by one.
+			$this->log_error( sprintf( 'Listing failed: %s', $e->getMessage() ) );
+		}
+
+		return $listed;
 	}
 
 	/**

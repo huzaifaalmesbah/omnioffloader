@@ -445,17 +445,17 @@ function getCommands(): CliCommand[] {
 				},
 				{
 					command:
-						'wp omnioffloader retention --policy=0 --concurrency=32',
+						'wp omnioffloader retention --concurrency=32 --yes',
 					description: __(
-						'The same, downloading up to 32 files at once on a VPS or dedicated server.',
+						'Apply the saved policy faster on a VPS or dedicated server: checks 32 attachments in cloud storage at once instead of 3.',
 						'omnioffloader'
 					),
 				},
 				{
 					command:
-						'nohup wp omnioffloader retention --yes > ~/retention.log 2>&1 &',
+						'nohup wp omnioffloader retention --concurrency=32 --yes > ~/retention.log 2>&1 &',
 					description: __(
-						'Run in the background; --yes is needed because nobody can answer the prompt.',
+						'Run in the background, 32 attachments at once; --yes is needed because nobody can answer the prompt.',
 						'omnioffloader'
 					),
 				},
@@ -506,7 +506,7 @@ function getCommands(): CliCommand[] {
 				{
 					flag: '--concurrency=<number>',
 					description: __(
-						'Files of an attachment downloaded at once when moving to a looser policy, from 1 to 64. A stricter policy only deletes local files, so it gains nothing from it.',
+						'From 1 to 64. A stricter policy checks that many attachments in cloud storage at once before deleting their local files; a looser one downloads that many files of an attachment at once. Without it, the Transfer Speed setting applies (up to 10).',
 						'omnioffloader'
 					),
 				},

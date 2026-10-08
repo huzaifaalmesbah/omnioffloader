@@ -33,12 +33,12 @@ And because offloading should never be a one-way door, **Bring Back** downloads 
 
 * **Automatic offloading** — new uploads go to the cloud in the background, so the upload screen never waits on a cloud transfer.
 * **Bulk offload for existing media** — process the whole library or a set number of attachments (5, 10, 25, 50, 100 or any number), with a live progress bar, activity log and a Cancel button.
-* **Large libraries, much faster** — `wp omnioffloader offload --all --concurrency=32` (up to 64) uploads many files at the same time from WP-CLI on a VPS or dedicated server.
+* **Large libraries, much faster** — `wp omnioffloader offload --all --concurrency=32` (up to 64) uploads many files at the same time from WP-CLI on a VPS or dedicated server. Bring Back, retention and move take `--concurrency` too.
 * **Adjustable transfer speed** — offload your existing, not-yet-offloaded media library and bring it back faster by moving 1, 3 or 6 files at the same time, or your own number from 1 to 10. Every setting runs inside a single PHP process, so faster never means more server processes.
 * **Content URL rewriting** — images, galleries, video, audio, file, cover and media-text blocks, Classic Editor media tags and audio/video shortcodes are all served from the cloud, without editing post content.
 * **Serve from your CDN** — media is delivered from your custom domain or CDN edge, not your origin server. Not ready yet? Turn off **Serve Media from Cloud** to offload now and keep loading media from your server, then switch over with one click.
 * **Three retention policies** — keep every local copy, delete only generated thumbnails (Smart Local Cleanup), or move everything to the cloud (Full Cloud Migration).
-* **Apply a new policy to old media** — change the retention policy later and apply it to media you already offloaded from the Tools screen. Every file is checked in the cloud before its local copy is deleted.
+* **Apply a new policy to old media** — change the retention policy later and apply it to media you already offloaded, from the Tools screen or `wp omnioffloader retention`. Every file is checked in the cloud before its local copy is deleted, many attachments at once.
 * **Bring Back** — restore media from the cloud to your server, per file or in bulk, with a disk-space preflight so you know what it needs before it starts. Deleting the cloud copy afterwards is optional and off by default.
 * **Media Library integration** — a status column, grid view badges, a meta box on the edit screen, row actions and bulk actions for Offload and Bring Back.
 * **Mirror Delete** — deleting an attachment in WordPress removes its cloud copies too (on by default for new installs; never on a staging or dev copy).
@@ -167,7 +167,7 @@ It matters most when you offload media that is already in your library but not i
 * **Fast** — 6 files at a time, for a VPS or dedicated server.
 * **Custom** — any number from 1 to 10.
 
-All four run in the same single PHP process; a faster setting overlaps the time spent waiting on the network instead of starting more processes. Each extra file only adds a little memory and bandwidth. Bulk Offload, Bring Back, new uploads and WP-CLI all follow this setting. For a one-off WP-CLI offload on a VPS, `wp omnioffloader offload --concurrency=32` (up to 64) goes beyond it for that run only.
+All four run in the same single PHP process; a faster setting overlaps the time spent waiting on the network instead of starting more processes. Each extra file only adds a little memory and bandwidth. Bulk Offload, Bring Back, new uploads and WP-CLI all follow this setting. For a one-off WP-CLI run on a VPS, `--concurrency=32` (up to 64) on `offload`, `restore`, `retention` or `move` goes beyond it for that run only.
 
 = How long does a bulk offload take, and can I close the browser tab? =
 
@@ -211,7 +211,7 @@ No. The default policy, **Retain Local Files**, deletes nothing — the cloud si
 
 = I changed the retention policy. Why are old files still on my server? =
 
-A retention policy is applied when a file is offloaded, so a new policy only affects new uploads at first. Go to **OmniOffloader → Tools → Apply Retention Policy to Existing Media** (or run `wp omnioffloader retention`) to update media you offloaded earlier. Before a local file is deleted, its cloud copy is checked by size. Files missing from the cloud are uploaded first. A file whose cloud copy differs is uploaded again and checked; if that fails, the local file is kept and reported. Moving to a looser policy (for example from Full Cloud Migration back to Retain Local Files) downloads the local copies again.
+A retention policy is applied when a file is offloaded, so a new policy only affects new uploads at first. Go to **OmniOffloader → Tools → Apply Retention Policy to Existing Media** (or run `wp omnioffloader retention`) to update media you offloaded earlier. Before a local file is deleted, its cloud copy is checked by size. Files missing from the cloud are uploaded first. A file whose cloud copy differs is uploaded again and checked; if that fails, the local file is kept and reported. Moving to a looser policy (for example from Full Cloud Migration back to Retain Local Files) downloads the local copies again. For a large library on a VPS, `wp omnioffloader retention --concurrency=32 --yes` checks 32 attachments at once.
 
 = Why do I need a custom domain or CDN URL? =
 
@@ -237,14 +237,14 @@ Yes. **OmniOffloader → Tools** lists every command and option with copy button
 `wp omnioffloader offload --all [--limit=<number>] [--dry-run]`
 `wp omnioffloader offload --ids=12,34`
 `wp omnioffloader offload --all --concurrency=32`
-`wp omnioffloader restore --all [--limit=<number>] [--delete-cloud] [--dry-run]`
-`wp omnioffloader retention [--policy=<0|1|2>] [--dry-run] [--format=json]`
+`wp omnioffloader restore --all [--limit=<number>] [--delete-cloud] [--dry-run] [--concurrency=<number>]`
+`wp omnioffloader retention [--policy=<0|1|2>] [--dry-run] [--format=json] [--concurrency=<number>]`
 `wp omnioffloader move --all [--keep-old] [--dry-run]`
 `nohup wp omnioffloader offload --all > ~/offload.log 2>&1 &`
 `wp omnioffloader status`
 `wp omnioffloader stop`
 
-Start a long job with `nohup … &` (as above) to keep it running after you close the terminal; `status` shows its progress and `stop` ends it from any terminal. Every write command supports `--dry-run`, and destructive options ask for confirmation unless you pass `--yes`. Commands refuse to start while another bulk job is running (`--force` overrides this), so two jobs never touch the same files. WP-CLI offloads use your Transfer Speed setting unless you pass `--concurrency`.
+Start a long job with `nohup … &` (as above) to keep it running after you close the terminal; `status` shows its progress and `stop` ends it from any terminal. Every write command supports `--dry-run`, and destructive options ask for confirmation unless you pass `--yes`. Commands refuse to start while another bulk job is running (`--force` overrides this), so two jobs never touch the same files. WP-CLI commands use your Transfer Speed setting unless you pass `--concurrency`.
 
 = How can I offload a very large library faster? =
 
@@ -323,8 +323,8 @@ Depending on the provider you select:
 **WP-CLI: faster offloads**
 
 * New `wp omnioffloader offload --concurrency=<1–64>`: upload up to 64 files at the same time for that run, instead of the Transfer Speed setting (at most 10, which the admin screens keep). For a VPS or dedicated server offloading a large library.
-* `wp omnioffloader restore` and `wp omnioffloader retention` take `--concurrency` too: each attachment's files (the original and its thumbnail sizes) download that many at once. It helps most with images that have many sizes; a stricter retention policy only deletes local files, so it gains nothing.
-* **Tools → Apply Retention Policy** has a **Run this job from WP-CLI** panel, like Offload and Bring Back, that jumps to the `retention` command in the WP-CLI reference.
+* `restore` and `retention` take `--concurrency` too. A stricter retention policy now checks a group of attachments in cloud storage at once (Transfer Speed on the Tools screen, `--concurrency` in WP-CLI), so it is much faster on large libraries; every file is still verified by size before deletion.
+* **Tools → Apply Retention Policy** links to its WP-CLI command, like Offload and Bring Back.
 
 **WP-CLI: stop, status and long runs**
 

@@ -47,6 +47,13 @@ class BulkRetentionProcessor extends AbstractBulkProcessor {
 	private $applier = null;
 
 	/**
+	 * The run's target policy, for runs_alone().
+	 *
+	 * @var int|null
+	 */
+	private $group_policy = null;
+
+	/**
 	 * Constructor.
 	 */
 	public function __construct() {
@@ -125,33 +132,101 @@ class BulkRetentionProcessor extends AbstractBulkProcessor {
 	 * @return bool
 	 */
 	protected function process_item( $attachment_id ) {
+		return (bool) ( $this->process_items( array( (int) $attachment_id ) )[ (int) $attachment_id ] ?? false );
+	}
+
+	/**
+	 * Several attachments per step, so their bucket listings go out together.
+	 *
+	 * @since 0.1.4
+	 *
+	 * @return int
+	 */
+	protected function group_size() {
+		return RetentionApplier::group_size();
+	}
+
+	/**
+	 * Attachments that download files (a looser policy) run alone: a worker
+	 * killed mid-group reports the whole group as lost.
+	 *
+	 * @since 0.1.4
+	 *
+	 * @param int $attachment_id Attachment ID.
+	 * @return bool
+	 */
+	protected function runs_alone( $attachment_id ) {
+		// Read once per request: it only shapes groups, never what is deleted.
+		if ( null === $this->group_policy ) {
+			$this->group_policy = (int) static::get_state()['policy'];
+		}
+
+		return RetentionApplier::downloads( $attachment_id, $this->group_policy );
+	}
+
+	/**
+	 * A lost item counts as done when it already follows the run's policy:
+	 * a worker killed mid-group may have finished it before the kill.
+	 *
+	 * @since 0.1.4
+	 *
+	 * @param int $attachment_id Attachment ID.
+	 * @return bool
+	 */
+	protected function was_completed( $attachment_id ) {
+		return RetentionApplier::stored_policy( $attachment_id ) === (int) static::get_state()['policy'];
+	}
+
+	/**
+	 * Apply the run's policy to a group: list the bucket for all of it first
+	 * (one round trip), then apply each attachment, with one state write.
+	 *
+	 * @since 0.1.4
+	 *
+	 * @param int[] $ids Attachment IDs.
+	 * @return array<int, bool|null>
+	 */
+	protected function process_items( array $ids ) {
 		// Another site sharing the bucket owns this site's folder: its
 		// objects can no longer be trusted as this site's copies.
 		$active = FolderClaim::provider();
 
 		if ( null !== $active && FolderClaim::blocks( $active ) ) {
-			$this->item_messages[ $attachment_id ] = __( 'This bucket folder is used by another site.', 'omnioffloader' );
+			foreach ( $ids as $id ) {
+				$this->item_messages[ $id ] = __( 'This bucket folder is used by another site.', 'omnioffloader' );
+			}
 			$this->halt_run( SafeMode::message() );
 
-			return false;
+			return array_fill_keys( $ids, false );
 		}
 
 		if ( null === $this->applier ) {
 			$this->applier = new RetentionApplier();
 		}
 
-		$state = static::get_state();
-		$ok    = $this->applier->apply( $attachment_id, (int) $state['policy'] );
+		$policy   = (int) static::get_state()['policy'];
+		$results  = array();
+		$freed    = 0;
+		$repaired = 0;
 
-		if ( ! $ok && $this->applier->ran_out_of_disk() ) {
-			$this->item_messages[ $attachment_id ] = __( 'Out of disk space or storage quota.', 'omnioffloader' );
-			$this->halt_run( BulkRestoreProcessor::out_of_disk_message() );
+		$this->applier->prefetch( $ids, $policy );
+
+		foreach ( $ids as $id ) {
+			$ok             = $this->applier->apply( $id, $policy );
+			$results[ $id ] = $ok;
+			$freed         += $this->applier->get_freed_bytes();
+			$repaired      += $this->applier->get_repaired();
+
+			// Downloads run alone (runs_alone()), so this ends a group of one.
+			if ( ! $ok && $this->applier->ran_out_of_disk() ) {
+				$this->item_messages[ $id ] = __( 'Out of disk space or storage quota.', 'omnioffloader' );
+				$this->halt_run( BulkRestoreProcessor::out_of_disk_message() );
+			}
 		}
 
-		$freed    = $this->applier->get_freed_bytes();
-		$repaired = $this->applier->get_repaired();
-
 		if ( $freed > 0 || $repaired > 0 ) {
+			$state = static::get_state();
+
 			static::update_state(
 				array(
 					'freed_bytes' => (int) $state['freed_bytes'] + $freed,
@@ -160,7 +235,7 @@ class BulkRetentionProcessor extends AbstractBulkProcessor {
 			);
 		}
 
-		return $ok;
+		return $results;
 	}
 
 	/**

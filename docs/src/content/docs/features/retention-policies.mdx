@@ -78,6 +78,8 @@ For example, from Retain Local Files to Smart Local Cleanup or Full Cloud Migrat
 
 An attachment only counts as updated once every one of its files was handled. Failures are retried on the next run.
 
+The checks for several attachments go to your storage provider together, as many as the [Transfer Speed](/features/transfer-speed/) setting allows (3 on Balanced, up to 10), so a large library doesn't wait on one attachment at a time. From WP-CLI, `--concurrency` raises that to 64; see [Speed](/wp-cli/retention/#speed).
+
 ### Moving to a looser policy
 
 For example, from Full Cloud Migration back to Retain Local Files. The missing local copies are **downloaded again**, while the attachment stays offloaded and keeps serving from the cloud. The preflight shows your free disk space and warns if it may not be enough.
@@ -95,7 +97,7 @@ wp omnioffloader retention
 nohup wp omnioffloader retention --yes > ~/retention.log 2>&1 &
 ```
 
-Moving to a looser policy downloads files; add `--concurrency=32` to download more of them at once on a VPS or dedicated server.
+On a VPS or dedicated server, add `--concurrency=32` to check 32 attachments in cloud storage at once (a stricter policy) or download more files at once (a looser one). See [Speed](/wp-cli/retention/#speed).
 
 On the Tools screen, the **Run this job from WP-CLI** panel in **Apply Retention Policy to Existing Media** jumps to the command in the WP-CLI reference below it, with copy buttons. See [`wp omnioffloader retention`](/wp-cli/retention/) for every option.
 

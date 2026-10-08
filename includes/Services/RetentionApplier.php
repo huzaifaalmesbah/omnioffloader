@@ -69,6 +69,13 @@ class RetentionApplier {
 	private $repaired = 0;
 
 	/**
+	 * Bucket listings fetched ahead by prefetch(), by attachment ID.
+	 *
+	 * @var array<int, array<string, int>>
+	 */
+	private $prefetched = array();
+
+	/**
 	 * The policy an offloaded attachment currently follows.
 	 *
 	 * @param int $attachment_id Attachment ID.
@@ -141,6 +148,102 @@ class RetentionApplier {
 		}
 
 		return $ids;
+	}
+
+	/**
+	 * How many attachments a run should prefetch and apply together.
+	 *
+	 * Follows the Transfer Speed setting (or WP-CLI --concurrency): that
+	 * many bucket listings are in flight at once.
+	 *
+	 * @since 0.1.4
+	 *
+	 * @return int
+	 */
+	public static function group_size() {
+		return AttachmentUploader::files_at_once();
+	}
+
+	/**
+	 * Whether apply() would download files for an attachment (a looser
+	 * policy) rather than check and delete them.
+	 *
+	 * @since 0.1.4
+	 *
+	 * @param int $attachment_id Attachment ID.
+	 * @param int $policy        Target retention policy.
+	 * @return bool
+	 */
+	public static function downloads( $attachment_id, $policy ) {
+		return (int) $policy < self::stored_policy( $attachment_id );
+	}
+
+	/**
+	 * List the bucket for several attachments at once, ahead of apply().
+	 *
+	 * Moving to a stricter policy verifies each attachment's files with one
+	 * listing; run one after another, a large library spends nearly all its
+	 * time waiting on those round trips. This sends a group's listings
+	 * together (see AbstractS3Provider::list_object_sizes_many()), and
+	 * apply() uses the result. Purely an optimisation: an attachment not
+	 * prefetched, or whose listing failed, is checked as before, and every
+	 * file is still verified by size before its local copy is deleted.
+	 *
+	 * @since 0.1.4
+	 *
+	 * @param int[] $ids    Attachment IDs about to be applied.
+	 * @param int   $policy Target retention policy.
+	 * @return void
+	 */
+	public function prefetch( array $ids, $policy ) {
+		$this->prefetched = array();
+		$policy           = max( 0, min( 2, (int) $policy ) );
+		$wanted           = array();
+
+		if ( count( $ids ) < 2 ) {
+			return;
+		}
+
+		// One query each for the group's posts and meta; apply() then reads
+		// them from the cache. Callers drop each post's cache once applied.
+		$ids = array_map( 'intval', $ids );
+		_prime_post_caches( $ids, false, false );
+		update_meta_cache( 'post', $ids );
+
+		foreach ( $ids as $id ) {
+
+			if ( ! self::is_offloaded( $id ) || self::stored_policy( $id ) >= $policy ) {
+				continue;
+			}
+
+			$prefix = self::size_listing_prefix( wp_list_pluck( self::files_to_delete( $id, $policy ), 'key' ) );
+
+			if ( '' === $prefix ) {
+				continue;
+			}
+
+			$provider_key = (string) get_post_meta( $id, 'omnioffloader_provider', true );
+
+			if ( '' !== $provider_key ) {
+				$wanted[ $provider_key ][ $id ] = $prefix;
+			}
+		}
+
+		foreach ( $wanted as $provider_key => $prefixes ) {
+			$provider = $this->resolve_provider( (int) array_key_first( $prefixes ) );
+
+			if ( null === $provider || ! method_exists( $provider, 'list_object_sizes_many' ) ) {
+				continue;
+			}
+
+			$listed = $provider->list_object_sizes_many( array_values( $prefixes ), self::group_size() );
+
+			foreach ( $prefixes as $id => $prefix ) {
+				if ( is_array( $listed[ $prefix ] ?? null ) ) {
+					$this->prefetched[ $id ] = $listed[ $prefix ];
+				}
+			}
+		}
 	}
 
 	/**
@@ -274,7 +377,9 @@ class RetentionApplier {
 			@set_time_limit( 0 );
 		}
 
-		$remote = self::remote_sizes( $provider, wp_list_pluck( $targets, 'key' ) );
+		// Listed ahead with the rest of its group (prefetch()), else now.
+		$remote = $this->prefetched[ $attachment_id ] ?? self::remote_sizes( $provider, wp_list_pluck( $targets, 'key' ) );
+		unset( $this->prefetched[ $attachment_id ] );
 		$all_ok = true;
 
 		foreach ( $targets as $entry ) {

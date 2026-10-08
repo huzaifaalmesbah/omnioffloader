@@ -96,10 +96,10 @@ class RetentionCommand {
 	 * : Run even when a bulk job started from the admin screen is active.
 	 *
 	 * [--concurrency=<number>]
-	 * : Files of an attachment downloaded at the same time when moving to a
-	 * looser policy, 1 to 64, instead of the Transfer Speed setting (at most
-	 * 10). A stricter policy only checks and deletes files, so it gains
-	 * nothing from it.
+	 * : 1 to 64, instead of the Transfer Speed setting (at most 10). A
+	 * stricter policy checks that many attachments in cloud storage at once
+	 * before deleting their local files; a looser one downloads that many
+	 * files of an attachment at once. For a VPS or dedicated server.
 	 *
 	 * [--format=<format>]
 	 * : Output format for the --dry-run table.
@@ -118,6 +118,7 @@ class RetentionCommand {
 	 *     wp omnioffloader retention --policy=1 --limit=500
 	 *     wp omnioffloader retention --policy=2 --yes
 	 *     wp omnioffloader retention --policy=0
+	 *     wp omnioffloader retention --concurrency=32 --yes
 	 *     wp omnioffloader retention --policy=0 --concurrency=32
 	 *     nohup wp omnioffloader retention --yes > ~/retention.log 2>&1 &
 	 *
@@ -217,12 +218,26 @@ class RetentionCommand {
 		$capped    = false;
 		$quota_hit = false;
 
-		// Only attachments moving to a looser policy download anything.
-		if ( Helpers::transfer_concurrency_override() > 0 && count( $ids ) > $to_clean ) {
-			WP_CLI::log( sprintf( 'Downloading up to %d files at once.', Helpers::transfer_concurrency_override() ) );
+		if ( Helpers::transfer_concurrency_override() > 0 ) {
+			if ( $to_clean > 0 ) {
+				WP_CLI::log( sprintf( 'Checking up to %d attachments in cloud storage at once.', RetentionApplier::group_size() ) );
+			}
+
+			// Only attachments moving to a looser policy download anything.
+			if ( count( $ids ) > $to_clean ) {
+				WP_CLI::log( sprintf( 'Downloading up to %d files at once.', Helpers::transfer_concurrency_override() ) );
+			}
 		}
 
-		foreach ( $ids as $id ) {
+		$group = RetentionApplier::group_size();
+
+		foreach ( $ids as $index => $id ) {
+			// One round trip lists the bucket for the whole group, instead
+			// of one listing per attachment.
+			if ( 0 === $index % $group ) {
+				$applier->prefetch( array_slice( $ids, $index, $group ), $policy );
+			}
+
 			if ( $applier->apply( $id, $policy ) ) {
 				++$done;
 				$streak   = 0;

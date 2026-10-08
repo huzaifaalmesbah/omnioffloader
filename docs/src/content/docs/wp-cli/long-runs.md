@@ -44,6 +44,7 @@ Copy the one you need. Each one runs in the background and writes to its own log
 | Offload everything | `nohup wp omnioffloader offload --all > ~/offload.log 2>&1 &` |
 | Offload faster on a VPS | `nohup wp omnioffloader offload --all --concurrency=64 > ~/offload.log 2>&1 &` |
 | Bring Back everything, keep the cloud copies | `nohup wp omnioffloader restore --all > ~/restore.log 2>&1 &` |
+| Bring Back faster on a VPS | `nohup wp omnioffloader restore --all --concurrency=32 > ~/restore.log 2>&1 &` |
 | Bring Back, then delete the cloud copies | `nohup wp omnioffloader restore --all --delete-cloud --yes > ~/restore.log 2>&1 &` |
 | Apply the saved retention policy | `nohup wp omnioffloader retention --yes > ~/retention.log 2>&1 &` |
 | Move media into the current folder | `nohup wp omnioffloader move --all --yes --concurrency=32 > ~/move.log 2>&1 &` |
@@ -121,7 +122,7 @@ The screens check when you open them or come back to the tab, and while a WP-CLI
 | Line | Meaning |
 | --- | --- |
 | `[time] Started offload of 63966 attachment(s), process 2480717.` | The job started. The number is how many attachments it will work through. |
-| `Uploading up to 64 files at once.` | Only with `--concurrency`: how many files upload at the same time. |
+| `Uploading up to 64 files at once.` | Only with `--concurrency`: how many files upload at the same time. `restore` and `retention` say `Downloading`, `move` says `Moving`. |
 | `[time] 1200 of 63966 done, 0 failed.` | Progress, written every 25 attachments. |
 | `[time] Ended.` | The job finished or was stopped. |
 | `Success: 63966 attachment(s) offloaded.` | Everything worked. |

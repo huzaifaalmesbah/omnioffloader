@@ -16,7 +16,7 @@ The admin screen that does the same job is **OmniOffloader → Bring Back**. See
 ## Synopsis
 
 ```bash
-wp omnioffloader restore [--all] [--ids=<ids>] [--limit=<number>] [--delete-cloud] [--yes] [--dry-run] [--force]
+wp omnioffloader restore [--all] [--ids=<ids>] [--limit=<number>] [--delete-cloud] [--yes] [--dry-run] [--force] [--concurrency=<number>]
 ```
 
 ## Options
@@ -30,6 +30,7 @@ wp omnioffloader restore [--all] [--ids=<ids>] [--limit=<number>] [--delete-clou
 | `--yes` | Answer yes to the `--delete-cloud` confirmation prompt. |
 | `--dry-run` | List what would be restored without downloading anything. |
 | `--force` | Run even when a bulk job started from the admin screen is active. |
+| `--concurrency=<number>` | Files of an attachment downloaded at the same time, 1 to 64, instead of the [Transfer Speed](/features/transfer-speed/) setting (at most 10). For a VPS or dedicated server. See [Speed](#speed). |
 
 You must pass either `--all` or `--ids`, but not both.
 
@@ -71,11 +72,24 @@ Restore everything in the background, keep it running after you close the termin
 nohup wp omnioffloader restore --all > ~/restore.log 2>&1 &
 ```
 
+The same with up to 32 files downloaded at once, on a VPS or dedicated server:
+
+```bash
+nohup wp omnioffloader restore --all --concurrency=32 > ~/restore.log 2>&1 &
+```
+
 With `--delete-cloud` in the background, add `--yes`: nobody can answer the question, so without it the command stops and asks for it.
 
 ```bash
 nohup wp omnioffloader restore --all --delete-cloud --yes > ~/restore.log 2>&1 &
 ```
+
+## Speed
+
+Bring Back works through one attachment at a time and downloads that attachment's files (the original and every thumbnail size) side by side. How many at once follows the [Transfer Speed](/features/transfer-speed/) setting, or `--concurrency` for this run.
+
+- **When `--concurrency` helps:** images with many thumbnail sizes, on a server with good bandwidth. With **Balanced** (3 at once), an image with 15 files downloads in five rounds; with `--concurrency=16` or more, in one.
+- **Its limit:** an attachment never downloads more files at once than it has, so going above the number of sizes your theme creates gains nothing. It can't make one large file or a saturated connection faster. `--concurrency=16` is usually enough; `32` does no harm.
 
 ## Deleting cloud copies
 

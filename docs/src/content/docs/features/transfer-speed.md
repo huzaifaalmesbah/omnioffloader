@@ -42,7 +42,7 @@ New uploads also follow it, but they are offloaded in the background as they arr
 - On a small shared plan, or if your host reports high resource use, choose **Low**.
 - On a VPS or dedicated server, try **Fast**.
 - Use **Custom** if you want a number between these.
-- For a one-off WP-CLI offload of a large library on a VPS, `wp omnioffloader offload --concurrency=<1–64>` goes beyond 10 for that run only, and so does `wp omnioffloader move --concurrency`. See [`wp omnioffloader offload`](/wp-cli/offload/).
+- For a one-off WP-CLI run on a VPS, `--concurrency=<1–64>` goes beyond 10 for that run only. `wp omnioffloader offload` and `move` take it, and so do `restore` and `retention`, where it is capped by the number of files an attachment has. See [`wp omnioffloader offload`](/wp-cli/offload/).
 
 :::note
 Speed also depends on how quickly your server reaches your storage provider, how large your files are, and how many thumbnail sizes your theme creates.

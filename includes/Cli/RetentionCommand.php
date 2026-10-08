@@ -95,6 +95,12 @@ class RetentionCommand {
 	 * [--force]
 	 * : Run even when a bulk job started from the admin screen is active.
 	 *
+	 * [--concurrency=<number>]
+	 * : Files of an attachment downloaded at the same time when moving to a
+	 * looser policy, 1 to 64, instead of the Transfer Speed setting (at most
+	 * 10). A stricter policy only checks and deletes files, so it gains
+	 * nothing from it.
+	 *
 	 * [--format=<format>]
 	 * : Output format for the --dry-run table.
 	 * ---
@@ -112,6 +118,7 @@ class RetentionCommand {
 	 *     wp omnioffloader retention --policy=1 --limit=500
 	 *     wp omnioffloader retention --policy=2 --yes
 	 *     wp omnioffloader retention --policy=0
+	 *     wp omnioffloader retention --policy=0 --concurrency=32
 	 *     nohup wp omnioffloader retention --yes > ~/retention.log 2>&1 &
 	 *
 	 * @param string[]              $args       Positional args (unused).
@@ -132,6 +139,8 @@ class RetentionCommand {
 		$policy   = isset( $assoc_args['policy'] ) ? Plugin::sanitize_retention_policy( $assoc_args['policy'] ) : $saved;
 		$is_dry   = isset( $assoc_args['dry-run'] );
 		$queue    = $plugin->get_bulk_retention();
+
+		$this->apply_concurrency( $assoc_args );
 
 		// Serving from the server needs the files there: deleting them would
 		// break every page that loads them until the attachment is marked.
@@ -207,6 +216,11 @@ class RetentionCommand {
 		$reason    = '';
 		$capped    = false;
 		$quota_hit = false;
+
+		// Only attachments moving to a looser policy download anything.
+		if ( Helpers::transfer_concurrency_override() > 0 && count( $ids ) > $to_clean ) {
+			WP_CLI::log( sprintf( 'Downloading up to %d files at once.', Helpers::transfer_concurrency_override() ) );
+		}
 
 		foreach ( $ids as $id ) {
 			if ( $applier->apply( $id, $policy ) ) {

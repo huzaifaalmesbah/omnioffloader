@@ -240,6 +240,14 @@ function getCommands(): CliCommand[] {
 						'omnioffloader'
 					),
 				},
+				{
+					command:
+						'nohup wp omnioffloader restore --all --concurrency=32 > ~/restore.log 2>&1 &',
+					description: __(
+						'The same, downloading up to 32 files at once on a VPS or dedicated server. Helps most with images that have many thumbnail sizes.',
+						'omnioffloader'
+					),
+				},
 			],
 			options: [
 				{
@@ -288,6 +296,13 @@ function getCommands(): CliCommand[] {
 					flag: '--force',
 					description: __(
 						'Run even while an admin bulk job is active.',
+						'omnioffloader'
+					),
+				},
+				{
+					flag: '--concurrency=<number>',
+					description: __(
+						'Files of an attachment downloaded at once, from 1 to 64. An attachment never downloads more files at once than it has, so 16 to 32 covers most themes. Without it, the Transfer Speed setting applies (up to 10).',
 						'omnioffloader'
 					),
 				},
@@ -430,6 +445,14 @@ function getCommands(): CliCommand[] {
 				},
 				{
 					command:
+						'wp omnioffloader retention --policy=0 --concurrency=32',
+					description: __(
+						'The same, downloading up to 32 files at once on a VPS or dedicated server.',
+						'omnioffloader'
+					),
+				},
+				{
+					command:
 						'nohup wp omnioffloader retention --yes > ~/retention.log 2>&1 &',
 					description: __(
 						'Run in the background; --yes is needed because nobody can answer the prompt.',
@@ -477,6 +500,13 @@ function getCommands(): CliCommand[] {
 					flag: '--force',
 					description: __(
 						'Run even while an admin bulk job is active.',
+						'omnioffloader'
+					),
+				},
+				{
+					flag: '--concurrency=<number>',
+					description: __(
+						'Files of an attachment downloaded at once when moving to a looser policy, from 1 to 64. A stricter policy only deletes local files, so it gains nothing from it.',
 						'omnioffloader'
 					),
 				},
@@ -609,7 +639,7 @@ export function CliReference( { onNavigate }: CliReferenceProps ) {
 					</div>
 					<p className="smowp-cli__summary">
 						{ __(
-							'For a large library, start the job in the background and close the terminal. --concurrency uploads several files at once: any number from 1 to 64. Start with 32 on a VPS or dedicated server, try 64 on a fast connection.',
+							'For a large library, start the job in the background and close the terminal. --concurrency moves several files at once (offload, restore, retention and move): any number from 1 to 64. Start with 32 on a VPS or dedicated server, try 64 for an offload on a fast connection.',
 							'omnioffloader'
 						) }
 					</p>

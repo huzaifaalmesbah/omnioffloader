@@ -70,6 +70,11 @@ class RestoreCommand {
 	 * [--force]
 	 * : Run even when a bulk restore started from the admin screen is active.
 	 *
+	 * [--concurrency=<number>]
+	 * : Files of an attachment downloaded at the same time, 1 to 64, instead
+	 * of the Transfer Speed setting (at most 10). For a VPS or dedicated
+	 * server; it helps most with images that have many thumbnail sizes.
+	 *
 	 * ## EXAMPLES
 	 *
 	 *     wp omnioffloader restore --all
@@ -77,6 +82,7 @@ class RestoreCommand {
 	 *     wp omnioffloader restore --all --delete-cloud --yes
 	 *     wp omnioffloader restore --all --dry-run
 	 *     nohup wp omnioffloader restore --all > ~/restore.log 2>&1 &
+	 *     nohup wp omnioffloader restore --all --concurrency=32 > ~/restore.log 2>&1 &
 	 *
 	 * @param string[]              $args       Positional args (unused).
 	 * @param array<string, string> $assoc_args Named args.
@@ -88,6 +94,8 @@ class RestoreCommand {
 		$plugin = Plugin::get_instance();
 		$queue  = $plugin->get_bulk_restore();
 		$is_dry = isset( $assoc_args['dry-run'] );
+
+		$this->apply_concurrency( $assoc_args );
 
 		// Restoring the same attachment from two processes races over the same
 		// destination files; the admin queue owns them until it is done.
@@ -166,6 +174,10 @@ class RestoreCommand {
 		$no_room   = 0;
 		$quota_hit = false;
 		$stopped   = false;
+
+		if ( Helpers::transfer_concurrency_override() > 0 ) {
+			WP_CLI::log( sprintf( 'Downloading up to %d files at once.', Helpers::transfer_concurrency_override() ) );
+		}
 
 		foreach ( $ids as $id ) {
 			// Every later download would fail the same way; stop with the

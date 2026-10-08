@@ -7,9 +7,11 @@ import { useRetentionSync } from '../../hooks/useRetentionSync';
 import { RetentionPolicy } from '../../types';
 import { RETENTION_LABELS } from '../../utils/constants';
 import { formatBytes } from '../../utils/formatBytes';
+import { revealSection } from '../../utils/revealSection';
 import { ActivityLog } from '../ui/ActivityLog';
 import { BatchScopeSelector, type ScopeMode } from '../ui/BatchScopeSelector';
 import { Card } from '../ui/Card';
+import { CliHint } from '../ui/CliHint';
 import { CliJobNotice, cliJobTitle } from '../ui/CliJobNotice';
 import { ProgressBar } from '../ui/ProgressBar';
 import { RunAnnouncer } from '../ui/RunAnnouncer';
@@ -217,6 +219,17 @@ export function RetentionSyncCard() {
 							) }
 						</li>
 					</ul>
+
+					<CliHint
+						command="retention"
+						count={ eligible }
+						// The command's section is further down this page.
+						onNavigate={ ( _view, section ) => {
+							if ( section ) {
+								revealSection( section );
+							}
+						} }
+					/>
 
 					{ ! preflight.disk_ok && (
 						<p className="smowp-warning">

@@ -323,6 +323,8 @@ Depending on the provider you select:
 **WP-CLI: faster offloads**
 
 * New `wp omnioffloader offload --concurrency=<1–64>`: upload up to 64 files at the same time for that run, instead of the Transfer Speed setting (at most 10, which the admin screens keep). For a VPS or dedicated server offloading a large library.
+* `wp omnioffloader restore` and `wp omnioffloader retention` take `--concurrency` too: each attachment's files (the original and its thumbnail sizes) download that many at once. It helps most with images that have many sizes; a stricter retention policy only deletes local files, so it gains nothing.
+* **Tools → Apply Retention Policy** has a **Run this job from WP-CLI** panel, like Offload and Bring Back, that jumps to the `retention` command in the WP-CLI reference.
 
 **WP-CLI: stop, status and long runs**
 

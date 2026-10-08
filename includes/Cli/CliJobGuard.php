@@ -7,6 +7,7 @@
 
 namespace OmniOffloader\Cli;
 
+use OmniOffloader\Core\Helpers;
 use OmniOffloader\Core\Plugin;
 use OmniOffloader\Services\AbstractBulkProcessor;
 use OmniOffloader\Services\AttachmentUploader;
@@ -121,6 +122,34 @@ trait CliJobGuard {
 		if ( '' === $raw || ! ctype_digit( $raw ) || (int) $raw < 1 ) {
 			WP_CLI::error( sprintf( '--limit must be a positive whole number, got "%s".', $raw ) );
 		}
+
+		return (int) $raw;
+	}
+
+	/**
+	 * Apply --concurrency for this run: files moved at once, instead of the
+	 * Transfer Speed setting.
+	 *
+	 * A typo must not silently mean "the setting" or "64", so anything but a
+	 * whole number from 1 to MAX_CLI_CONCURRENCY is an error.
+	 *
+	 * @since 0.1.4 Shared by offload, move, restore and retention.
+	 *
+	 * @param array<string, string> $assoc_args Named args.
+	 * @return int The value, 0 when --concurrency was not given.
+	 */
+	private function apply_concurrency( array $assoc_args ) {
+		if ( ! isset( $assoc_args['concurrency'] ) ) {
+			return 0;
+		}
+
+		$raw = trim( (string) $assoc_args['concurrency'] );
+
+		if ( ! ctype_digit( $raw ) || (int) $raw < 1 || (int) $raw > Helpers::MAX_CLI_CONCURRENCY ) {
+			WP_CLI::error( sprintf( '--concurrency must be a whole number from 1 to %d.', Helpers::MAX_CLI_CONCURRENCY ) );
+		}
+
+		Helpers::set_transfer_concurrency_override( (int) $raw );
 
 		return (int) $raw;
 	}

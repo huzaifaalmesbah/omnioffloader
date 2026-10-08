@@ -108,7 +108,7 @@ On a staging, development or local copy of your site, [Safe mode](/features/safe
 
 ### Transfer Speed
 
-The commands follow the **Transfer Speed** setting, just like the admin screens. A faster setting moves more files at the same time inside the same PHP process. `offload --concurrency` and `move --concurrency` override it for that run, up to 64 files at once. See [Transfer Speed](/features/transfer-speed/).
+The commands follow the **Transfer Speed** setting, just like the admin screens. A faster setting moves more files at the same time inside the same PHP process. `--concurrency` on `offload`, `restore`, `retention` and `move` overrides it for that run, up to 64 files at once. See [Transfer Speed](/features/transfer-speed/).
 
 ### Stopping on repeated failures
 

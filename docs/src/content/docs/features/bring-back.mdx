@@ -151,10 +151,10 @@ Before a big Bring Back, check that the server has room: the Bring Back page sho
 </Steps>
 
 :::note[Fastest: a VPS or dedicated server]
-Bring Back downloads as many files at once as the [Transfer Speed](/features/transfer-speed/) setting allows, from WP-CLI too (`restore` has no `--concurrency` option). For the fastest restore, set **Transfer Speed** to **Fast** (6 files at once) or **Custom** (up to 10) in Settings, then run it in the background:
+Bring Back downloads each attachment's files side by side, as many at once as the [Transfer Speed](/features/transfer-speed/) setting allows. From WP-CLI, `--concurrency` raises that for one run, up to 64. An attachment never downloads more files at once than it has, so 16 to 32 covers most themes:
 
 ```bash
-nohup wp omnioffloader restore --all > ~/restore.log 2>&1 &
+nohup wp omnioffloader restore --all --concurrency=32 > ~/restore.log 2>&1 &
 ```
 
 Check the free disk space first: the Bring Back page shows the estimated download. On shared hosting, keep **Low** or **Balanced**. To compare speeds before the big run, see [Test the speed before a big run](/wp-cli/long-runs/#5-test-the-speed-before-a-big-run).

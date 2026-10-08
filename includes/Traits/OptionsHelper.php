@@ -164,8 +164,8 @@ trait OptionsHelper {
 	 * @return int<1, 64> Between 1 and 10, or up to 64 with WP-CLI --concurrency.
 	 */
 	public static function files_at_once() {
-		// `wp omnioffloader offload --concurrency`: an explicit choice for
-		// this run, so it wins over the setting and the filter.
+		// WP-CLI `--concurrency`: an explicit choice for this run, so it
+		// wins over the setting and the filter.
 		$override = Helpers::transfer_concurrency_override();
 
 		if ( $override > 0 ) {

@@ -1,0 +1,12 @@
+1
+00:00:00,050 --> 00:00:01,682
+Already have a big library?
+
+2
+00:00:01,682 --> 00:00:09,158
+Bulk Offload moves it all, or just a batch, with a live progress bar, an activity log, and a cancel button.
+
+3
+00:00:09,158 --> 00:00:16,298
+Choose your transfer speed, from one file at a time on shared hosting, to fast parallel uploads on a VPS.
+

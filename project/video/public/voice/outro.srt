@@ -1,0 +1,8 @@
+1
+00:00:00,050 --> 00:00:01,213
+OmniOffloader.
+
+2
+00:00:01,213 --> 00:00:05,685
+Offload to the cloud, serve from your CDN, and bring it back anytime.
+

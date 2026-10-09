@@ -1,0 +1,12 @@
+[
+ {"id":"hook","text":"Your media library is probably the biggest thing on your server. Gigabytes of images, thumbnails and video, all sitting on expensive hosting disk."},
+ {"id":"intro","text":"Meet OmniOffloader. It moves your WordPress media to cloud object storage, serves it from your own domain or CDN, and frees up your server, without changing a single URL in your content."},
+ {"id":"providers","text":"Connect Amazon S3, Cloudflare R2, DigitalOcean Spaces, Backblaze B2, Wasabi, or any S3-compatible storage. Enter your keys, click Test Connection, and you're ready."},
+ {"id":"auto","text":"Every new upload goes to the cloud automatically, in the background. The original, every thumbnail, the scaled version, and WebP and AVIF sources. Image URLs and srcset are rewritten as pages render, so your posts and page builders keep working. Nothing in your database is search-replaced."},
+ {"id":"bulk","text":"Already have a big library? Bulk Offload moves it all, or just a batch, with a live progress bar, an activity log, and a cancel button. Choose your transfer speed, from one file at a time on shared hosting, to fast parallel uploads on a VPS."},
+ {"id":"retention","text":"Then decide what stays on your server. Keep every local copy. Delete only the thumbnails with Smart Cleanup. Or go all in with Full Cloud Migration. Change your mind later, and apply the new policy to existing media in one click."},
+ {"id":"bringback","text":"And because offloading should never be a one-way door, there's Bring Back. Restore one file or your whole library to your server, with a disk space check before it starts. Your cloud copies stay safe unless you choose to delete them."},
+ {"id":"safety","text":"Safety is built in. A local file is never deleted until its upload is verified. Restores are atomic. And Safe Mode makes sure a staging or local copy of your site never touches your live bucket."},
+ {"id":"cli","text":"Power users get a full WP-CLI toolkit. Offload thousands of files with up to sixty-four parallel transfers, run long jobs in the background, and stop them from anywhere."},
+ {"id":"outro","text":"OmniOffloader. Offload to the cloud, serve from your CDN, and bring it back anytime."}
+]

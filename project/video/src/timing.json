@@ -1,0 +1,207 @@
+[
+ {
+  "id": "hook",
+  "duration": 8.976,
+  "cues": [
+   {
+    "start": 0.05,
+    "end": 3.461,
+    "text": "Your media library is probably the biggest thing on your server."
+   },
+   {
+    "start": 3.461,
+    "end": 8.918,
+    "text": "Gigabytes of images, thumbnails and video, all sitting on expensive hosting disk."
+   }
+  ]
+ },
+ {
+  "id": "intro",
+  "duration": 11.832,
+  "cues": [
+   {
+    "start": 0.05,
+    "end": 1.586,
+    "text": "Meet OmniOffloader."
+   },
+   {
+    "start": 1.586,
+    "end": 11.778,
+    "text": "It moves your WordPress media to cloud object storage, serves it from your own domain or CDN, and frees up your server, without changing a single URL in your content."
+   }
+  ]
+ },
+ {
+  "id": "providers",
+  "duration": 13.656,
+  "cues": [
+   {
+    "start": 0.05,
+    "end": 10.144,
+    "text": "Connect Amazon S3, Cloudflare R2, DigitalOcean Spaces, Backblaze B2, Wasabi, or any S3-compatible storage."
+   },
+   {
+    "start": 10.144,
+    "end": 13.605,
+    "text": "Enter your keys, click Test Connection, and you're ready."
+   }
+  ]
+ },
+ {
+  "id": "auto",
+  "duration": 20.208,
+  "cues": [
+   {
+    "start": 0.05,
+    "end": 4.747,
+    "text": "Every new upload goes to the cloud automatically, in the background."
+   },
+   {
+    "start": 4.747,
+    "end": 11.105,
+    "text": "The original, every thumbnail, the scaled version, and WebP and AVIF sources."
+   },
+   {
+    "start": 11.105,
+    "end": 17.632,
+    "text": "Image URLs and srcset are rewritten as pages render, so your posts and page builders keep working."
+   },
+   {
+    "start": 17.632,
+    "end": 20.144,
+    "text": "Nothing in your database is search-replaced."
+   }
+  ]
+ },
+ {
+  "id": "bulk",
+  "duration": 16.344,
+  "cues": [
+   {
+    "start": 0.05,
+    "end": 1.682,
+    "text": "Already have a big library?"
+   },
+   {
+    "start": 1.682,
+    "end": 9.158,
+    "text": "Bulk Offload moves it all, or just a batch, with a live progress bar, an activity log, and a cancel button."
+   },
+   {
+    "start": 9.158,
+    "end": 16.298,
+    "text": "Choose your transfer speed, from one file at a time on shared hosting, to fast parallel uploads on a VPS."
+   }
+  ]
+ },
+ {
+  "id": "retention",
+  "duration": 14.424,
+  "cues": [
+   {
+    "start": 0.05,
+    "end": 2.055,
+    "text": "Then decide what stays on your server."
+   },
+   {
+    "start": 2.055,
+    "end": 3.75,
+    "text": "Keep every local copy."
+   },
+   {
+    "start": 3.75,
+    "end": 6.61,
+    "text": "Delete only the thumbnails with Smart Cleanup."
+   },
+   {
+    "start": 6.61,
+    "end": 9.098,
+    "text": "Or go all in with Full Cloud Migration."
+   },
+   {
+    "start": 9.098,
+    "end": 14.362,
+    "text": "Change your mind later, and apply the new policy to existing media in one click."
+   }
+  ]
+ },
+ {
+  "id": "bringback",
+  "duration": 13.32,
+  "cues": [
+   {
+    "start": 0.05,
+    "end": 4.218,
+    "text": "And because offloading should never be a one-way door, there's Bring Back."
+   },
+   {
+    "start": 4.218,
+    "end": 10.0,
+    "text": "Restore one file or your whole library to your server, with a disk space check before it starts."
+   },
+   {
+    "start": 10.0,
+    "end": 13.269,
+    "text": "Your cloud copies stay safe unless you choose to delete them."
+   }
+  ]
+ },
+ {
+  "id": "safety",
+  "duration": 12.984,
+  "cues": [
+   {
+    "start": 0.05,
+    "end": 1.574,
+    "text": "Safety is built in."
+   },
+   {
+    "start": 1.574,
+    "end": 5.829,
+    "text": "A local file is never deleted until its upload is verified."
+   },
+   {
+    "start": 5.829,
+    "end": 7.295,
+    "text": "Restores are atomic."
+   },
+   {
+    "start": 7.295,
+    "end": 12.944,
+    "text": "And Safe Mode makes sure a staging or local copy of your site never touches your live bucket."
+   }
+  ]
+ },
+ {
+  "id": "cli",
+  "duration": 11.808,
+  "cues": [
+   {
+    "start": 0.05,
+    "end": 3.713,
+    "text": "Power users get a full WP-CLI toolkit."
+   },
+   {
+    "start": 3.713,
+    "end": 11.754,
+    "text": "Offload thousands of files with up to sixty-four parallel transfers, run long jobs in the background, and stop them from anywhere."
+   }
+  ]
+ },
+ {
+  "id": "outro",
+  "duration": 5.736,
+  "cues": [
+   {
+    "start": 0.05,
+    "end": 1.213,
+    "text": "OmniOffloader."
+   },
+   {
+    "start": 1.213,
+    "end": 5.685,
+    "text": "Offload to the cloud, serve from your CDN, and bring it back anytime."
+   }
+  ]
+ }
+]

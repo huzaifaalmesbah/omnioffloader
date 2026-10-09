@@ -1,0 +1,16 @@
+1
+00:00:00,050 --> 00:00:01,574
+Safety is built in.
+
+2
+00:00:01,574 --> 00:00:05,829
+A local file is never deleted until its upload is verified.
+
+3
+00:00:05,829 --> 00:00:07,295
+Restores are atomic.
+
+4
+00:00:07,295 --> 00:00:12,944
+And Safe Mode makes sure a staging or local copy of your site never touches your live bucket.
+

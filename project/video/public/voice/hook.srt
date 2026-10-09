@@ -1,0 +1,8 @@
+1
+00:00:00,050 --> 00:00:03,461
+Your media library is probably the biggest thing on your server.
+
+2
+00:00:03,461 --> 00:00:08,918
+Gigabytes of images, thumbnails and video, all sitting on expensive hosting disk.
+

@@ -159,6 +159,43 @@ omnioffloader_rewrite_check( 'https://old-cdn.example.test/site-a/' . $subdir . 
 update_post_meta( $a, 'omnioffloader_provider', 'mock' );
 omnioffloader_rewrite_check( $cloud_a === $url_rewrite->rewrite( $url_a, $a ), 'media on the active provider uses its domain' );
 
+echo "\nTest 4: the editor gets cloud URLs, a save stores local ones\n";
+$stored = '<!-- wp:image {"id":' . $a . ',"sizeSlug":"thumbnail"} -->' . "\n"
+	. '<figure class="wp-block-image size-thumbnail"><img src="' . $thumb_a . '" alt="" class="wp-image-' . $a . '"/></figure>' . "\n"
+	. '<!-- /wp:image -->' . "\n"
+	. '<p><a href="' . $url_b . '">B</a> <img src="' . $url_a . '" class="wp-image-' . $a . '"/></p>';
+$edit   = $observer->rewrite_for_editor( $stored );
+omnioffloader_rewrite_check( false !== strpos( $edit, 'src="' . $cloud_thumb . '"' ), "the editor loads A's size from the cloud" );
+omnioffloader_rewrite_check( false !== strpos( $edit, 'src="' . $cloud_a . '"' ), "a classic image tag of A too" );
+omnioffloader_rewrite_check( false !== strpos( $edit, 'href="' . $url_b . '"' ), "B's link stays local" );
+omnioffloader_rewrite_check( wp_slash( $stored ) === $observer->restore_local_urls( wp_slash( $edit ) ), 'a save stores the local URLs again' );
+omnioffloader_rewrite_check( wp_slash( $stored ) === $observer->restore_local_urls( wp_slash( $stored ) ), 'local content is saved untouched' );
+
+update_option( 'omnioffloader_settings', array_merge( $original, array( 'serve_from_cloud' => false ) ), true );
+update_post_meta( $a, 'omnioffloader_retention', 1 );
+$edit = $observer->rewrite_for_editor( $stored );
+omnioffloader_rewrite_check( false !== strpos( $edit, 'src="' . $cloud_thumb . '"' ) && false !== strpos( $edit, 'src="' . $url_a . '"' ), 'sizes only: the size from the cloud, the main file local' );
+update_post_meta( $a, 'omnioffloader_retention', 0 );
+omnioffloader_rewrite_check( $stored === $observer->rewrite_for_editor( $stored ), 'nothing served from the cloud: content unchanged' );
+
+echo "\nTest 5: video shortcodes and media tags, which carry no attachment ID\n";
+update_option( 'omnioffloader_settings', array_merge( $original, array( 'serve_from_cloud' => true ) ), true );
+$url_rewrite->register();
+$cloud_a = wp_get_attachment_url( $a );
+$stored  = '[video width="640" mp4="' . $url_a . '" poster="' . $url_b . '"][/video]' . "\n"
+	. '<audio controls src="' . $url_a . '?_=1"></audio> [audio src="https://example.org/2026/10/else.mp3"]' . "\n"
+	. '<a href="' . $url_a . '">plain link</a>';
+$edit    = $observer->rewrite_for_editor( $stored );
+omnioffloader_rewrite_check( false !== strpos( $edit, 'mp4="' . $cloud_a . '"' ), "the shortcode loads A from the cloud" );
+omnioffloader_rewrite_check( false !== strpos( $edit, 'src="' . $cloud_a . '?_=1"' ), 'a media tag too, keeping its query' );
+omnioffloader_rewrite_check( false !== strpos( $edit, 'poster="' . $url_b . '"' ) && false !== strpos( $edit, 'href="' . $url_a . '"' ), "B's poster and a plain link stay as stored" );
+omnioffloader_rewrite_check( wp_slash( $stored ) === $observer->restore_local_urls( wp_slash( $edit ) ), 'a save stores the local URLs again' );
+
+update_post_meta( $a, 'omnioffloader_path', 'site-a/' . $subdir . '20261010120000/' );
+$versioned = wp_get_attachment_url( $a );
+omnioffloader_rewrite_check( wp_slash( '[video mp4="' . $url_a . '"]' ) === $observer->restore_local_urls( wp_slash( '[video mp4="' . $versioned . '"]' ) ), 'a versioned cloud URL is stored local too' );
+omnioffloader_rewrite_check( wp_slash( '[video mp4="https://other.example/' . $subdir . wp_basename( $url_a ) . '"]' ) === $observer->restore_local_urls( wp_slash( '[video mp4="https://other.example/' . $subdir . wp_basename( $url_a ) . '"]' ) ), "another site's URL with the same path is left alone" );
+
 echo "\nCleanup…\n";
 wp_delete_attachment( $a, true );
 wp_delete_attachment( $b, true );

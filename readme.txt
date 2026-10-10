@@ -383,6 +383,7 @@ Depending on the provider you select:
 * Media Library: status checks slow down while nothing changes (from every 1.8 up to every 6 seconds) and keep going after a failed check instead of freezing until the tab is focused again. The status shows the provider's name (for example "Cloudflare R2") instead of its internal key.
 * Uninstalling with `wp plugin uninstall --deactivate` no longer shows a PHP warning ("Constant OMNIOFFLOADER_DIR already defined").
 * Settings: a save error stays visible until you change something or save again, and a save that stored the provider details but not the other settings says so. The Path Prefix field shows the folder name as it will be saved ("My Media" becomes "My-Media").
+* Editors: media that is no longer on the server (Smart Local Cleanup, Full Cloud Migration) now shows in the block editor and the classic editor, including video and audio shortcodes. Editors load it from the cloud like the front end does, and saving stores your site's own URLs, so content keeps working after a Bring Back or a change of CDN domain.
 
 = 0.1.3 =
 

@@ -44,6 +44,17 @@ class ContentImageTagObserver implements ObserverInterface {
 	);
 
 	/**
+	 * A whole video/audio shortcode tag or media element in stored content.
+	 * Neither carries an attachment ID, so their URLs are looked up.
+	 */
+	private const MEDIA_TAG_PATTERN = '/\[(?:video|audio)\b[^\]]*\]|<(?:video|audio|source)\b[^>]*>/i';
+
+	/**
+	 * An absolute URL inside one of those tags.
+	 */
+	private const TAG_URL_PATTERN = '/https?:\/\/[^"\'\s\]>]+/i';
+
+	/**
 	 * Cloud provider.
 	 *
 	 * @var ProviderInterface
@@ -91,6 +102,274 @@ class ContentImageTagObserver implements ObserverInterface {
 		// Shortcodes.
 		add_filter( 'wp_video_shortcode', array( $this, 'rewrite_shortcode' ), 99 );
 		add_filter( 'wp_audio_shortcode', array( $this, 'rewrite_shortcode' ), 99 );
+
+		// Editors show the stored content unrendered, so none of the filters
+		// above run: point it at the cloud while editing, and store local
+		// URLs again on save.
+		add_filter( 'content_edit_pre', array( $this, 'rewrite_for_editor' ), 99 );
+		add_action( 'rest_api_init', array( $this, 'register_rest_filters' ), 99 );
+		add_filter( 'content_save_pre', array( $this, 'restore_local_urls' ), 5 );
+	}
+
+	/**
+	 * Filter the REST response of every post type the block editor can open.
+	 *
+	 * @since 0.1.4
+	 *
+	 * @return void
+	 */
+	public function register_rest_filters() {
+		foreach ( get_post_types( array( 'show_in_rest' => true ) ) as $post_type ) {
+			add_filter( "rest_prepare_{$post_type}", array( $this, 'rewrite_rest_content' ), 99, 3 );
+		}
+	}
+
+	/**
+	 * Rewrite the raw content the block editor loads.
+	 *
+	 * @since 0.1.4
+	 *
+	 * @param mixed            $response Response.
+	 * @param mixed            $post     Post (or template) the response is for.
+	 * @param \WP_REST_Request $request  Request.
+	 * @return mixed
+	 *
+	 * @phpstan-param \WP_REST_Request<array<string, mixed>> $request
+	 */
+	public function rewrite_rest_content( $response, $post, $request ) {
+		if ( ! $response instanceof \WP_REST_Response || 'edit' !== $request['context'] ) {
+			return $response;
+		}
+
+		$data = $response->get_data();
+
+		if ( ! is_array( $data ) || ! isset( $data['content']['raw'] ) || ! is_string( $data['content']['raw'] ) ) {
+			return $response;
+		}
+
+		$data['content']['raw'] = $this->rewrite_for_editor( $data['content']['raw'] );
+		$response->set_data( $data );
+
+		return $response;
+	}
+
+	/**
+	 * Point stored content at the cloud for an editor, like the front end
+	 * does at render time — the local files may be gone.
+	 *
+	 * @since 0.1.4
+	 *
+	 * @param string $content Stored post content.
+	 * @return string
+	 */
+	public function rewrite_for_editor( $content ) {
+		if ( ! is_string( $content ) || '' === $content ) {
+			return $content;
+		}
+
+		foreach ( $this->content_attachment_ids( $content ) as $attachment_id ) {
+			if ( 'none' !== self::cloud_serving( $attachment_id ) ) {
+				$content = $this->replace_attachment_url_in_content( $content, $attachment_id );
+			}
+		}
+
+		return $this->swap_media_tag_urls( $content, false );
+	}
+
+	/**
+	 * Store local URLs again when content is saved.
+	 *
+	 * An editor was handed cloud URLs, and inserting offloaded media adds
+	 * more. Stored content keeps local URLs, so it survives a Bring Back, a
+	 * provider switch or a new CDN domain; rendering rewrites them.
+	 *
+	 * @since 0.1.4
+	 *
+	 * @param string $content Post content, slashed.
+	 * @return string
+	 */
+	public function restore_local_urls( $content ) {
+		if ( ! is_string( $content ) || '' === $content ) {
+			return $content;
+		}
+
+		$plain    = wp_unslash( $content );
+		$restored = $plain;
+
+		foreach ( $this->content_attachment_ids( $plain ) as $attachment_id ) {
+			if ( self::is_offloaded( $attachment_id ) ) {
+				$restored = $this->replace_attachment_url_in_content( $restored, $attachment_id, true );
+			}
+		}
+
+		$restored = $this->swap_media_tag_urls( $restored, true );
+
+		return $restored === $plain ? $content : wp_slash( $restored );
+	}
+
+	/**
+	 * Swap the URLs of video/audio shortcodes and media elements in stored
+	 * content: local to cloud for an editor, cloud to local for a save.
+	 *
+	 * @since 0.1.4
+	 *
+	 * @param string $content  Stored post content (unslashed).
+	 * @param bool   $to_local Cloud URLs back to local ones.
+	 * @return string
+	 */
+	private function swap_media_tag_urls( $content, $to_local ) {
+		if ( ! preg_match_all( self::MEDIA_TAG_PATTERN, $content, $tags ) || ! preg_match_all( self::TAG_URL_PATTERN, implode( ' ', $tags[0] ), $urls ) ) {
+			return $content;
+		}
+
+		$map = array();
+
+		if ( $to_local ) {
+			$map = $this->resolve_cloud_urls( $urls[0] );
+
+			if ( empty( $map ) ) {
+				return $content;
+			}
+		} else {
+			$this->resolve_media_urls( $urls[0] );
+		}
+
+		$swap_url = function ( $matches ) use ( $map, $to_local ) {
+			$cut   = strcspn( $matches[0], '?#' );
+			$plain = substr( $matches[0], 0, $cut );
+			$new   = $to_local ? ( $map[ $plain ] ?? '' ) : ( $this->media_url_cache[ set_url_scheme( $plain, 'http' ) ] ?? '' );
+
+			return '' === $new ? $matches[0] : $new . substr( $matches[0], $cut );
+		};
+
+		$swapped = preg_replace_callback(
+			self::MEDIA_TAG_PATTERN,
+			static function ( $tag ) use ( $swap_url ) {
+				return (string) preg_replace_callback( self::TAG_URL_PATTERN, $swap_url, $tag[0] );
+			},
+			$content
+		);
+
+		return is_string( $swapped ) ? $swapped : $content;
+	}
+
+	/**
+	 * Map cloud URLs of offloaded attachments' main files to their local
+	 * URLs in one batched lookup.
+	 *
+	 * A cloud URL ends in [yyyy/mm/][object_version/]file, so the attached
+	 * file is one of its path's endings, with or without the folder right
+	 * before the filename. Each match is confirmed against the attachment's
+	 * real cloud URL.
+	 *
+	 * @since 0.1.4
+	 *
+	 * @param string[] $urls URLs found in content.
+	 * @return array<string, string> Cloud URL (no query/fragment) => local URL.
+	 */
+	private function resolve_cloud_urls( array $urls ) {
+		$base_url   = trailingslashit( wp_get_upload_dir()['baseurl'] );
+		$local_base = set_url_scheme( $base_url, 'http' );
+		$wanted     = array();
+		$files      = array();
+
+		foreach ( array_unique( $urls ) as $url ) {
+			$plain = substr( $url, 0, strcspn( $url, '?#' ) );
+
+			if ( 0 === strpos( set_url_scheme( $plain, 'http' ), $local_base ) ) {
+				continue;
+			}
+
+			$segments = explode( '/', ltrim( (string) wp_parse_url( $plain, PHP_URL_PATH ), '/' ) );
+			$file     = (string) array_pop( $segments );
+
+			if ( '' === $file ) {
+				continue;
+			}
+
+			$wanted[ $plain ] = true;
+
+			// Uploads folders are rarely deeper than yyyy/mm.
+			$segments = array_slice( $segments, -4 );
+
+			for ( $i = count( $segments ); $i >= 0; $i-- ) {
+				$dir = array_slice( $segments, $i );
+
+				$files[ implode( '/', array_merge( $dir, array( $file ) ) ) ] = true;
+
+				if ( ! empty( $dir ) ) {
+					array_pop( $dir );
+					$files[ implode( '/', array_merge( $dir, array( $file ) ) ) ] = true;
+				}
+			}
+		}
+
+		if ( empty( $files ) ) {
+			return array();
+		}
+
+		global $wpdb;
+
+		$files        = array_map( 'strval', array_keys( $files ) );
+		$placeholders = implode( ', ', array_fill( 0, count( $files ), '%s' ) );
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- one batched lookup per save; placeholders are generated above.
+		$rows = $wpdb->get_results( $wpdb->prepare( "SELECT post_id, meta_value FROM {$wpdb->postmeta} WHERE meta_key = '_wp_attached_file' AND meta_value IN ( {$placeholders} )", $files ) );
+
+		if ( empty( $rows ) ) {
+			return array();
+		}
+
+		_prime_post_caches( array_map( 'intval', wp_list_pluck( $rows, 'post_id' ) ), false, true );
+
+		$map = array();
+
+		foreach ( $rows as $row ) {
+			$attachment_id = (int) $row->post_id;
+
+			if ( ! self::is_offloaded( $attachment_id ) ) {
+				continue;
+			}
+
+			$domain = self::cloud_domain( $attachment_id, $this->provider );
+
+			if ( '' === $domain ) {
+				continue;
+			}
+
+			$cloud_url = trailingslashit( $domain ) . self::get_offload_path( $attachment_id ) . wp_basename( $row->meta_value );
+
+			if ( isset( $wanted[ $cloud_url ] ) ) {
+				$map[ $cloud_url ] = $base_url . $row->meta_value;
+			}
+		}
+
+		return $map;
+	}
+
+	/**
+	 * Attachments stored content refers to: media block IDs and the
+	 * `wp-image-{id}` class of image tags. Primed in one batch.
+	 *
+	 * @since 0.1.4
+	 *
+	 * @param string $content Stored post content (unslashed).
+	 * @return int[]
+	 */
+	private function content_attachment_ids( $content ) {
+		$ids = self::block_attachment_ids( $content );
+
+		if ( preg_match_all( '/\bwp-image-(\d+)/', $content, $found ) ) {
+			$ids = array_merge( $ids, array_map( 'intval', $found[1] ) );
+		}
+
+		$ids = array_values( array_unique( array_filter( $ids ) ) );
+
+		if ( ! empty( $ids ) ) {
+			_prime_post_caches( $ids, false, true );
+		}
+
+		return $ids;
 	}
 
 	/**
@@ -291,8 +570,30 @@ class ContentImageTagObserver implements ObserverInterface {
 	 * @return string Unchanged content.
 	 */
 	public function prime_block_attachments( $content ) {
-		if ( ! is_string( $content ) || false === strpos( $content, '<!-- wp:' ) ) {
+		if ( ! is_string( $content ) ) {
 			return $content;
+		}
+
+		$ids = self::block_attachment_ids( $content );
+
+		if ( ! empty( $ids ) ) {
+			_prime_post_caches( $ids, false, true );
+		}
+
+		return $content;
+	}
+
+	/**
+	 * Attachment IDs of the media blocks in unrendered content.
+	 *
+	 * @since 0.1.4
+	 *
+	 * @param string $content Post content (unrendered blocks).
+	 * @return int[]
+	 */
+	private static function block_attachment_ids( $content ) {
+		if ( false === strpos( $content, '<!-- wp:' ) ) {
+			return array();
 		}
 
 		/** This filter is documented in includes/Offload/Observers/ContentImageTagObserver.php */
@@ -305,7 +606,7 @@ class ContentImageTagObserver implements ObserverInterface {
 		}
 
 		if ( empty( $names ) || ! preg_match_all( '/<!-- wp:(?:' . implode( '|', $names ) . ')\s+(\{[^\n]*?\})\s+\/?-->/', $content, $blocks ) ) {
-			return $content;
+			return array();
 		}
 
 		$ids = array();
@@ -318,13 +619,7 @@ class ContentImageTagObserver implements ObserverInterface {
 			}
 		}
 
-		$ids = array_values( array_unique( array_filter( $ids ) ) );
-
-		if ( ! empty( $ids ) ) {
-			_prime_post_caches( $ids, false, true );
-		}
-
-		return $content;
+		return array_values( array_unique( array_filter( $ids ) ) );
 	}
 
 	/**
@@ -346,9 +641,10 @@ class ContentImageTagObserver implements ObserverInterface {
 	 *
 	 * @param string $content       Content markup.
 	 * @param int    $attachment_id Attachment ID.
+	 * @param bool   $to_local      Reverse: cloud URLs back to local ones.
 	 * @return string
 	 */
-	private function replace_attachment_url_in_content( $content, $attachment_id ) {
+	private function replace_attachment_url_in_content( $content, $attachment_id, $to_local = false ) {
 		$domain = self::cloud_domain( $attachment_id, $this->provider );
 		if ( '' === $domain ) {
 			return $content;
@@ -373,9 +669,10 @@ class ContentImageTagObserver implements ObserverInterface {
 		// Text block holds its inner blocks) can also link other files from
 		// the same upload folder, which may be local or in another bucket
 		// folder. Generated sizes only while the main files stay local.
-		$with_main = 'all' === self::cloud_serving( $attachment_id );
+		// Every file on the way back: stored content is always local.
+		$with_main = $to_local || 'all' === self::cloud_serving( $attachment_id );
 
-		return $this->replace_file_urls_in_content( $content, $attachment_id, $local_base, $cloud_base, $with_main );
+		return $this->replace_file_urls_in_content( $content, $attachment_id, $local_base, $cloud_base, $with_main, $to_local );
 	}
 
 	/**
@@ -392,9 +689,10 @@ class ContentImageTagObserver implements ObserverInterface {
 	 * @param string $local_base    Local directory URL, trailing slash.
 	 * @param string $cloud_base    Cloud directory URL, trailing slash.
 	 * @param bool   $with_main     Also the main file, original and root sources.
+	 * @param bool   $to_local      Reverse: cloud URLs back to local ones.
 	 * @return string
 	 */
-	private function replace_file_urls_in_content( $content, $attachment_id, $local_base, $cloud_base, $with_main ) {
+	private function replace_file_urls_in_content( $content, $attachment_id, $local_base, $cloud_base, $with_main, $to_local = false ) {
 		$metadata = wp_get_attachment_metadata( $attachment_id );
 		$main     = self::main_filenames( $attachment_id );
 		$files    = $with_main ? $main : array();
@@ -444,6 +742,12 @@ class ContentImageTagObserver implements ObserverInterface {
 		$replaces = array();
 
 		foreach ( $files as $file ) {
+			if ( $to_local ) {
+				$searches[] = $cloud_base . $file;
+				$replaces[] = $local_base . $file;
+				continue;
+			}
+
 			foreach ( array( 'http', 'https' ) as $scheme ) {
 				$searches[] = set_url_scheme( $local_base, $scheme ) . $file;
 				$replaces[] = $cloud_base . $file;

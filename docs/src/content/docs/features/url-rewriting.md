@@ -24,6 +24,10 @@ URLs are rewritten **as pages render**. Nothing in your post content is edited, 
 
 Only offloaded attachments are rewritten. Media that is still local keeps its local URL.
 
+## While you edit
+
+The block editor and the Classic Editor show offloaded media from the cloud too, so an image, video or audio file whose local copy was removed still displays while you edit. When you save, the content is stored with your site's own URLs again, including media you just inserted. Stored content therefore never depends on your CDN domain.
+
 ## Offload now, serve from the CDN later
 
 **Serve Media from Cloud** (in **Settings → Retention Policy**) is on by default. With the **Retain Local Files** policy you can turn it off: media is still offloaded to your bucket, but your site keeps loading every file from your own server, and the cloud is a backup copy. This is useful while your CDN or custom domain is not ready yet.

@@ -196,6 +196,23 @@ $versioned = wp_get_attachment_url( $a );
 omnioffloader_rewrite_check( wp_slash( '[video mp4="' . $url_a . '"]' ) === $observer->restore_local_urls( wp_slash( '[video mp4="' . $versioned . '"]' ) ), 'a versioned cloud URL is stored local too' );
 omnioffloader_rewrite_check( wp_slash( '[video mp4="https://other.example/' . $subdir . wp_basename( $url_a ) . '"]' ) === $observer->restore_local_urls( wp_slash( '[video mp4="https://other.example/' . $subdir . wp_basename( $url_a ) . '"]' ) ), "another site's URL with the same path is left alone" );
 
+echo "\nTest 6: a save costs nothing unless the content holds a cloud URL\n";
+global $wpdb;
+wp_cache_flush();
+$before  = $wpdb->num_queries;
+$foreign = wp_slash( '<img src="' . $url_a . '" class="wp-image-' . $a . '"/> [video mp4="https://example.org/' . $subdir . wp_basename( $url_a ) . '"]' );
+omnioffloader_rewrite_check( $foreign === $observer->restore_local_urls( $foreign ) && $before === $wpdb->num_queries, 'no query for content without a cloud URL' );
+
+$many = '';
+for ( $i = 1; $i <= 3000; $i++ ) {
+	$many .= '<img class="wp-image-' . ( 900000 + $i ) . '" src="https://cdn.example.test/x.jpg"/>';
+}
+wp_cache_flush();
+$before = $wpdb->num_queries;
+$observer->restore_local_urls( wp_slash( $many ) );
+omnioffloader_rewrite_check( $wpdb->num_queries - $before <= 3, 'thousands of IDs in content stay a bounded lookup (' . ( $wpdb->num_queries - $before ) . ' queries)' );
+omnioffloader_rewrite_check( substr_count( $wpdb->last_query, ',' ) < 600, 'at most 500 attachments are looked up' );
+
 echo "\nCleanup…\n";
 wp_delete_attachment( $a, true );
 wp_delete_attachment( $b, true );

@@ -24,7 +24,7 @@ The first lines show the running job. The **Offload**, **Bring Back** and **Tool
 For a WP-CLI job, for example one started with [`nohup … &`](/wp-cli/long-runs/):
 
 ```
-OmniOffloader 0.1.4
+OmniOffloader 0.1.5
 
 Running now: WP-CLI offload (in the background, process 11030)
   Progress:   3,420 of 59,177 (5.8%), 2 failed

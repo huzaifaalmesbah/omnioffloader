@@ -129,7 +129,7 @@ class ContentImageTagObserver implements ObserverInterface {
 	/**
 	 * Filter the REST response of every post type the block editor can open.
 	 *
-	 * @since 0.1.4
+	 * @since 0.1.5
 	 *
 	 * @return void
 	 */
@@ -146,7 +146,7 @@ class ContentImageTagObserver implements ObserverInterface {
 	/**
 	 * Rewrite the raw content the block editor loads.
 	 *
-	 * @since 0.1.4
+	 * @since 0.1.5
 	 *
 	 * @param mixed            $response Response.
 	 * @param mixed            $post     Post (or template) the response is for.
@@ -176,7 +176,7 @@ class ContentImageTagObserver implements ObserverInterface {
 	 * Point stored content at the cloud for an editor, like the front end
 	 * does at render time — the local files may be gone.
 	 *
-	 * @since 0.1.4
+	 * @since 0.1.5
 	 *
 	 * @param string $content Stored post content.
 	 * @return string
@@ -209,7 +209,7 @@ class ContentImageTagObserver implements ObserverInterface {
 	 * more. Stored content keeps local URLs, so it survives a Bring Back, a
 	 * provider switch or a new CDN domain; rendering rewrites them.
 	 *
-	 * @since 0.1.4
+	 * @since 0.1.5
 	 *
 	 * @param string $content Post content, slashed.
 	 * @return string
@@ -244,7 +244,7 @@ class ContentImageTagObserver implements ObserverInterface {
 	/**
 	 * Whether content mentions a host media is served from.
 	 *
-	 * @since 0.1.4
+	 * @since 0.1.5
 	 *
 	 * @param string $content Content, or a single URL.
 	 * @return bool
@@ -292,7 +292,7 @@ class ContentImageTagObserver implements ObserverInterface {
 	 * Swap the URLs of video/audio shortcodes and media elements in stored
 	 * content: local to cloud for an editor, cloud to local for a save.
 	 *
-	 * @since 0.1.4
+	 * @since 0.1.5
 	 *
 	 * @param string $content  Stored post content (unslashed).
 	 * @param bool   $to_local Cloud URLs back to local ones.
@@ -347,7 +347,7 @@ class ContentImageTagObserver implements ObserverInterface {
 	 * before the filename. Each match is confirmed against the attachment's
 	 * real cloud URL.
 	 *
-	 * @since 0.1.4
+	 * @since 0.1.5
 	 *
 	 * @param string[] $urls URLs found in content.
 	 * @return array<string, string> Cloud URL (no query/fragment) => local URL.
@@ -446,7 +446,7 @@ class ContentImageTagObserver implements ObserverInterface {
 	 * Attachments stored content refers to: media block IDs and the
 	 * `wp-image-{id}` class of image tags. Primed in one batch.
 	 *
-	 * @since 0.1.4
+	 * @since 0.1.5
 	 *
 	 * @param string $content Stored post content (unslashed).
 	 * @return int[]
@@ -681,7 +681,7 @@ class ContentImageTagObserver implements ObserverInterface {
 	/**
 	 * Attachment IDs of the media blocks in unrendered content.
 	 *
-	 * @since 0.1.4
+	 * @since 0.1.5
 	 *
 	 * @param string $content Post content (unrendered blocks).
 	 * @return int[]
@@ -747,7 +747,7 @@ class ContentImageTagObserver implements ObserverInterface {
 	/**
 	 * The URL replacements for one attachment's own files.
 	 *
-	 * @since 0.1.4
+	 * @since 0.1.5
 	 *
 	 * @param int  $attachment_id Attachment ID.
 	 * @param bool $to_local      Reverse: cloud URLs back to local ones.

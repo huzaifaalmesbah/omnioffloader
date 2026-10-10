@@ -55,11 +55,26 @@ class ContentImageTagObserver implements ObserverInterface {
 	private const TAG_URL_PATTERN = '/https?:\/\/[^"\'\s\]>]+/i';
 
 	/**
+	 * Attachments looked up for one piece of stored content, and URLs looked
+	 * up in its shortcodes and media tags. Content is user input: without a
+	 * bound, a post naming a hundred thousand IDs would load them all.
+	 */
+	private const MAX_CONTENT_ATTACHMENTS = 500;
+	private const MAX_CONTENT_MEDIA_URLS  = 200;
+
+	/**
 	 * Cloud provider.
 	 *
 	 * @var ProviderInterface
 	 */
 	private $provider;
+
+	/**
+	 * Hosts media can be served from: every provider's domain. Per request.
+	 *
+	 * @var string[]|null
+	 */
+	private $cloud_hosts = null;
 
 	/**
 	 * Local media URL (scheme-less, no query/fragment) => cloud URL, or ''
@@ -122,6 +137,10 @@ class ContentImageTagObserver implements ObserverInterface {
 		foreach ( get_post_types( array( 'show_in_rest' => true ) ) as $post_type ) {
 			add_filter( "rest_prepare_{$post_type}", array( $this, 'rewrite_rest_content' ), 99, 3 );
 		}
+
+		// A restored autosave or revision replaces the editor's content.
+		add_filter( 'rest_prepare_autosave', array( $this, 'rewrite_rest_content' ), 99, 3 );
+		add_filter( 'rest_prepare_revision', array( $this, 'rewrite_rest_content' ), 99, 3 );
 	}
 
 	/**
@@ -167,10 +186,17 @@ class ContentImageTagObserver implements ObserverInterface {
 			return $content;
 		}
 
+		$pairs = array();
+
 		foreach ( $this->content_attachment_ids( $content ) as $attachment_id ) {
 			if ( 'none' !== self::cloud_serving( $attachment_id ) ) {
-				$content = $this->replace_attachment_url_in_content( $content, $attachment_id );
+				$pairs += $this->attachment_url_pairs( $attachment_id, false );
 			}
+		}
+
+		// One pass over the content, however many attachments it holds.
+		if ( ! empty( $pairs ) ) {
+			$content = strtr( $content, $pairs );
 		}
 
 		return $this->swap_media_tag_urls( $content, false );
@@ -193,18 +219,73 @@ class ContentImageTagObserver implements ObserverInterface {
 			return $content;
 		}
 
-		$plain    = wp_unslash( $content );
-		$restored = $plain;
+		// Every save of every post type passes here (imports, cron, other
+		// plugins). Without a cloud URL in it there is nothing to restore,
+		// and nothing is queried.
+		if ( ! $this->has_cloud_host( $content ) ) {
+			return $content;
+		}
+
+		$plain = wp_unslash( $content );
+		$pairs = array();
 
 		foreach ( $this->content_attachment_ids( $plain ) as $attachment_id ) {
 			if ( self::is_offloaded( $attachment_id ) ) {
-				$restored = $this->replace_attachment_url_in_content( $restored, $attachment_id, true );
+				$pairs += $this->attachment_url_pairs( $attachment_id, true );
 			}
 		}
 
+		$restored = empty( $pairs ) ? $plain : strtr( $plain, $pairs );
 		$restored = $this->swap_media_tag_urls( $restored, true );
 
 		return $restored === $plain ? $content : wp_slash( $restored );
+	}
+
+	/**
+	 * Whether content mentions a host media is served from.
+	 *
+	 * @since 0.1.4
+	 *
+	 * @param string $content Content, or a single URL.
+	 * @return bool
+	 */
+	private function has_cloud_host( $content ) {
+		if ( null === $this->cloud_hosts ) {
+			$domains = array( $this->provider->get_domain() );
+
+			// Media offloaded before a provider switch keeps that provider's domain.
+			foreach ( array_keys( \OmniOffloader\Providers\ProviderRegistry::get_providers() ) as $key ) {
+				if ( $key === $this->provider->get_key() ) {
+					continue;
+				}
+
+				try {
+					$domains[] = \OmniOffloader\Providers\ProviderRegistry::create( (string) $key )->get_domain();
+				} catch ( \InvalidArgumentException $e ) {
+					continue;
+				}
+			}
+
+			$hosts = array();
+
+			foreach ( $domains as $domain ) {
+				$host = (string) wp_parse_url( (string) $domain, PHP_URL_HOST );
+
+				if ( '' !== $host ) {
+					$hosts[] = $host;
+				}
+			}
+
+			$this->cloud_hosts = array_values( array_unique( $hosts ) );
+		}
+
+		foreach ( $this->cloud_hosts as $host ) {
+			if ( false !== stripos( $content, $host ) ) {
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	/**
@@ -222,16 +303,17 @@ class ContentImageTagObserver implements ObserverInterface {
 			return $content;
 		}
 
-		$map = array();
+		$map   = array();
+		$found = array_slice( array_unique( $urls[0] ), 0, self::MAX_CONTENT_MEDIA_URLS );
 
 		if ( $to_local ) {
-			$map = $this->resolve_cloud_urls( $urls[0] );
+			$map = $this->resolve_cloud_urls( $found );
 
 			if ( empty( $map ) ) {
 				return $content;
 			}
 		} else {
-			$this->resolve_media_urls( $urls[0] );
+			$this->resolve_media_urls( $found );
 		}
 
 		$swap_url = function ( $matches ) use ( $map, $to_local ) {
@@ -245,7 +327,10 @@ class ContentImageTagObserver implements ObserverInterface {
 		$swapped = preg_replace_callback(
 			self::MEDIA_TAG_PATTERN,
 			static function ( $tag ) use ( $swap_url ) {
-				return (string) preg_replace_callback( self::TAG_URL_PATTERN, $swap_url, $tag[0] );
+				$swapped_tag = preg_replace_callback( self::TAG_URL_PATTERN, $swap_url, $tag[0] );
+
+				// Never drop a tag over a regex failure.
+				return is_string( $swapped_tag ) ? $swapped_tag : $tag[0];
 			},
 			$content
 		);
@@ -276,7 +361,8 @@ class ContentImageTagObserver implements ObserverInterface {
 		foreach ( array_unique( $urls ) as $url ) {
 			$plain = substr( $url, 0, strcspn( $url, '?#' ) );
 
-			if ( 0 === strpos( set_url_scheme( $plain, 'http' ), $local_base ) ) {
+			// Embeds from anywhere else are never ours, and cost no lookup.
+			if ( 0 === strpos( set_url_scheme( $plain, 'http' ), $local_base ) || ! $this->has_cloud_host( $plain ) ) {
 				continue;
 			}
 
@@ -310,11 +396,20 @@ class ContentImageTagObserver implements ObserverInterface {
 
 		global $wpdb;
 
-		$files        = array_map( 'strval', array_keys( $files ) );
-		$placeholders = implode( ', ', array_fill( 0, count( $files ), '%s' ) );
+		$names        = array_map( 'strval', array_keys( $files ) );
+		$placeholders = implode( ', ', array_fill( 0, count( $names ), '%s' ) );
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- one batched lookup per save; placeholders are generated above.
-		$rows = $wpdb->get_results( $wpdb->prepare( "SELECT post_id, meta_value FROM {$wpdb->postmeta} WHERE meta_key = '_wp_attached_file' AND meta_value IN ( {$placeholders} )", $files ) );
+		$rows = $wpdb->get_results( $wpdb->prepare( "SELECT post_id, meta_value FROM {$wpdb->postmeta} WHERE meta_key = '_wp_attached_file' AND meta_value IN ( {$placeholders} )", $names ) );
+
+		// The database compares loosely (case, trailing spaces); the path that
+		// goes into the content must be exactly one taken from its own URL.
+		$rows = array_filter(
+			(array) $rows,
+			static function ( $row ) use ( $files ) {
+				return isset( $files[ $row->meta_value ] );
+			}
+		);
 
 		if ( empty( $rows ) ) {
 			return array();
@@ -363,7 +458,7 @@ class ContentImageTagObserver implements ObserverInterface {
 			$ids = array_merge( $ids, array_map( 'intval', $found[1] ) );
 		}
 
-		$ids = array_values( array_unique( array_filter( $ids ) ) );
+		$ids = array_slice( array_values( array_unique( array_filter( $ids ) ) ), 0, self::MAX_CONTENT_ATTACHMENTS );
 
 		if ( ! empty( $ids ) ) {
 			_prime_post_caches( $ids, false, true );
@@ -641,18 +736,32 @@ class ContentImageTagObserver implements ObserverInterface {
 	 *
 	 * @param string $content       Content markup.
 	 * @param int    $attachment_id Attachment ID.
-	 * @param bool   $to_local      Reverse: cloud URLs back to local ones.
 	 * @return string
 	 */
-	private function replace_attachment_url_in_content( $content, $attachment_id, $to_local = false ) {
+	private function replace_attachment_url_in_content( $content, $attachment_id ) {
+		$pairs = $this->attachment_url_pairs( $attachment_id, false );
+
+		return empty( $pairs ) ? $content : str_replace( array_keys( $pairs ), array_values( $pairs ), $content );
+	}
+
+	/**
+	 * The URL replacements for one attachment's own files.
+	 *
+	 * @since 0.1.4
+	 *
+	 * @param int  $attachment_id Attachment ID.
+	 * @param bool $to_local      Reverse: cloud URLs back to local ones.
+	 * @return array<string, string> Search => replacement, longest search first.
+	 */
+	private function attachment_url_pairs( $attachment_id, $to_local ) {
 		$domain = self::cloud_domain( $attachment_id, $this->provider );
 		if ( '' === $domain ) {
-			return $content;
+			return array();
 		}
 
 		$attached_file = (string) get_post_meta( $attachment_id, '_wp_attached_file', true );
 		if ( '' === $attached_file ) {
-			return $content;
+			return array();
 		}
 
 		$upload_dir = wp_get_upload_dir();
@@ -672,11 +781,12 @@ class ContentImageTagObserver implements ObserverInterface {
 		// Every file on the way back: stored content is always local.
 		$with_main = $to_local || 'all' === self::cloud_serving( $attachment_id );
 
-		return $this->replace_file_urls_in_content( $content, $attachment_id, $local_base, $cloud_base, $with_main, $to_local );
+		return $this->file_url_pairs( $attachment_id, $local_base, $cloud_base, $with_main, $to_local );
 	}
 
 	/**
-	 * Point an attachment's own file URLs at the cloud, file by file.
+	 * The replacements that point an attachment's own file URLs at the
+	 * cloud, file by file.
 	 *
 	 * Without the main files, only the generated sizes move: Smart Cleanup
 	 * media while "Serve media from cloud" is off keeps its main files on the
@@ -684,15 +794,14 @@ class ContentImageTagObserver implements ObserverInterface {
 	 *
 	 * @since 0.1.4
 	 *
-	 * @param string $content       Content markup.
 	 * @param int    $attachment_id Attachment ID.
 	 * @param string $local_base    Local directory URL, trailing slash.
 	 * @param string $cloud_base    Cloud directory URL, trailing slash.
 	 * @param bool   $with_main     Also the main file, original and root sources.
 	 * @param bool   $to_local      Reverse: cloud URLs back to local ones.
-	 * @return string
+	 * @return array<string, string> Search => replacement, longest search first.
 	 */
-	private function replace_file_urls_in_content( $content, $attachment_id, $local_base, $cloud_base, $with_main, $to_local = false ) {
+	private function file_url_pairs( $attachment_id, $local_base, $cloud_base, $with_main, $to_local ) {
 		$metadata = wp_get_attachment_metadata( $attachment_id );
 		$main     = self::main_filenames( $attachment_id );
 		$files    = $with_main ? $main : array();
@@ -726,7 +835,7 @@ class ContentImageTagObserver implements ObserverInterface {
 		$files = array_filter( $files, static fn( $file ) => '' !== $file );
 
 		if ( empty( $files ) ) {
-			return $content;
+			return array();
 		}
 
 		// Longest first, so no filename is replaced as the prefix of another.
@@ -738,22 +847,19 @@ class ContentImageTagObserver implements ObserverInterface {
 			}
 		);
 
-		$searches = array();
-		$replaces = array();
+		$pairs = array();
 
 		foreach ( $files as $file ) {
 			if ( $to_local ) {
-				$searches[] = $cloud_base . $file;
-				$replaces[] = $local_base . $file;
+				$pairs[ $cloud_base . $file ] = $local_base . $file;
 				continue;
 			}
 
 			foreach ( array( 'http', 'https' ) as $scheme ) {
-				$searches[] = set_url_scheme( $local_base, $scheme ) . $file;
-				$replaces[] = $cloud_base . $file;
+				$pairs[ set_url_scheme( $local_base, $scheme ) . $file ] = $cloud_base . $file;
 			}
 		}
 
-		return str_replace( $searches, $replaces, $content );
+		return $pairs;
 	}
 }

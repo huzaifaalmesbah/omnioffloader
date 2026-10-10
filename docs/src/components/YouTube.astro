@@ -1,0 +1,44 @@
+---
+/**
+ * Responsive YouTube embed in privacy-enhanced mode (youtube-nocookie.com),
+ * loaded lazily so a page with a video costs nothing until it scrolls into view.
+ */
+interface Props {
+	/** The video id, the `v=` part of a youtube.com/watch URL. */
+	id: string;
+	/** Accessible title for the iframe. */
+	title: string;
+}
+
+const { id, title } = Astro.props;
+---
+
+<div class="oo-video">
+	<iframe
+		src={`https://www.youtube-nocookie.com/embed/${id}?rel=0`}
+		title={title}
+		loading="lazy"
+		allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+		referrerpolicy="strict-origin-when-cross-origin"
+		allowfullscreen
+	></iframe>
+</div>
+
+<style>
+	.oo-video {
+		position: relative;
+		aspect-ratio: 16 / 9;
+		width: 100%;
+		border-radius: 0.75rem;
+		overflow: hidden;
+		background: var(--sl-color-gray-6);
+		border: 1px solid var(--sl-color-hairline);
+	}
+	.oo-video iframe {
+		position: absolute;
+		inset: 0;
+		width: 100%;
+		height: 100%;
+		border: 0;
+	}
+</style>

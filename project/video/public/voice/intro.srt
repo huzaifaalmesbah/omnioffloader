@@ -1,0 +1,8 @@
+1
+00:00:00,050 --> 00:00:01,586
+Meet OmniOffloader.
+
+2
+00:00:01,586 --> 00:00:11,778
+It moves your WordPress media to cloud object storage, serves it from your own domain or CDN, and frees up your server, without changing a single URL in your content.
+

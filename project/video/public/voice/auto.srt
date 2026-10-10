@@ -1,0 +1,16 @@
+1
+00:00:00,050 --> 00:00:04,747
+Every new upload goes to the cloud automatically, in the background.
+
+2
+00:00:04,747 --> 00:00:11,105
+The original, every thumbnail, the scaled version, and WebP and AVIF sources.
+
+3
+00:00:11,105 --> 00:00:17,632
+Image URLs and srcset are rewritten as pages render, so your posts and page builders keep working.
+
+4
+00:00:17,632 --> 00:00:20,144
+Nothing in your database is search-replaced.
+

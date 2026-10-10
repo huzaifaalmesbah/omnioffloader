@@ -20,6 +20,16 @@ And because offloading should never be a one-way door, **Bring Back** downloads 
 
 **Documentation:** step-by-step provider guides, every feature, WP-CLI and developer hooks at [omnioffloader.vercel.app](https://omnioffloader.vercel.app/).
 
+= See it in action =
+
+OmniOffloader in 2 minutes:
+
+https://www.youtube.com/watch?v=xzcemowK79Q
+
+The full walkthrough — install, connect a bucket, serve from your CDN, Bulk Offload, WP-CLI, Media Library, Bring Back and every other feature, step by step:
+
+https://www.youtube.com/watch?v=H68OvxS8DBM
+
 = Supported cloud storage providers =
 
 * **Amazon S3**

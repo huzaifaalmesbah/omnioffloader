@@ -1,0 +1,8 @@
+1
+00:00:00,050 --> 00:00:03,713
+Power users get a full WP-CLI toolkit.
+
+2
+00:00:03,713 --> 00:00:11,754
+Offload thousands of files with up to sixty-four parallel transfers, run long jobs in the background, and stop them from anywhere.
+

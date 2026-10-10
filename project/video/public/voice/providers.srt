@@ -1,0 +1,8 @@
+1
+00:00:00,050 --> 00:00:10,144
+Connect Amazon S3, Cloudflare R2, DigitalOcean Spaces, Backblaze B2, Wasabi, or any S3-compatible storage.
+
+2
+00:00:10,144 --> 00:00:13,605
+Enter your keys, click Test Connection, and you're ready.
+

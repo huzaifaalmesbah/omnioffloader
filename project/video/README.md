@@ -2,10 +2,12 @@
 
 Two videos (1920×1080, voiceover, music, burned-in captions), built with [Remotion](https://www.remotion.dev/):
 
-| Video | Length | What it is |
+| Video | Length | Published |
 | --- | --- | --- |
-| **`omnioffloader-walkthrough.mp4`** | 6:05 | Full walkthrough: WordPress.org page, install, every feature one by one on the real admin screens, with the matching WP-CLI commands |
-| **`omnioffloader-overview.mp4`** | 2:19 | Short animated overview |
+| Full walkthrough: WordPress.org page, install, every feature on the real admin screens, with the matching WP-CLI commands | 6:05 | https://www.youtube.com/watch?v=H68OvxS8DBM |
+| Short animated overview | 2:19 | https://www.youtube.com/watch?v=xzcemowK79Q |
+
+The rendered MP4s are **not committed** (`*.mp4` is git-ignored — they are large and live on YouTube). Render them locally with `pnpm render` (→ `omnioffloader-overview.mp4`) and `pnpm render:wt` (→ `omnioffloader-walkthrough.mp4`).
 
 Like everything in `project/`, this folder never reaches users: `.distignore` (WordPress.org deploy), `.gitattributes` `export-ignore` (`git archive`) and the allowlist in `scripts/bundle.js` all leave it out. Do **not** attach the video to a GitHub Release — publishing a release runs the WordPress.org deploy workflow.
 

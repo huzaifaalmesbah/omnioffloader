@@ -246,7 +246,8 @@ This plugin's own skeleton, admin UX and conventions are settled — follow what
 The public documentation is built with Astro Starlight in `docs/` and deployed to Vercel (see `docs/README.md`).
 - Run `pnpm --dir docs run dev` to test documentation locally at `http://localhost:4321`.
 - Run `pnpm --dir docs run build` to verify the static site builds without broken links or syntax errors.
-- The changelog page is generated automatically from `readme.txt` by `docs/scripts/changelog.mjs`. Always update `readme.txt`, never `changelog.md`.
+- The changelog page is generated automatically from `readme.txt` and `changelog.txt` by `docs/scripts/changelog.mjs`. Always update `readme.txt`, never `changelog.md`.
+- WordPress.org truncates a readme Changelog over **5,000 words**. `readme.txt` keeps only the two latest releases; at each release, move the older one into the top of `changelog.txt` (same `= x.y.z =` format, ships in the bundle). Upgrade notices all stay in `readme.txt`.
 - Keep docs in sync with user-facing features, settings, CLI flags, provider fields, and hooks in the same commit.
 
 ### Screenshot Automation (`pnpm screenshots`)

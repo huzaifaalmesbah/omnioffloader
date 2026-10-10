@@ -34,6 +34,7 @@ fs.mkdirSync(targetDir, { recursive: true });
 const copyList = [
 	'omnioffloader.php',
 	'readme.txt',
+	'changelog.txt',
 	'uninstall.php',
 	// Ships with vendor/ so reviewers can see where the bundled libraries come from.
 	'composer.json',

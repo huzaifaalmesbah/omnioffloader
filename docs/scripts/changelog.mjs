@@ -1,9 +1,11 @@
 /**
- * Builds src/content/docs/changelog.md from the plugin's readme.txt.
+ * Builds src/content/docs/changelog.md from the plugin's readme.txt and
+ * changelog.txt.
  *
- * readme.txt is the single source of truth for the changelog (it ships to
- * WordPress.org), so the docs page is generated on every dev/build run and
- * never edited by hand.
+ * readme.txt holds the latest releases (WordPress.org truncates a Changelog
+ * section over 5,000 words) and changelog.txt the older ones, in the same
+ * format. Together they are the single source of truth, so the docs page is
+ * generated on every dev/build run and never edited by hand.
  */
 import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
@@ -14,15 +16,17 @@ const readmePath = resolve( root, '../readme.txt' );
 const outPath = resolve( root, 'src/content/docs/changelog.md' );
 
 const readme = readFileSync( readmePath, 'utf8' ).replace( /\r\n/g, '\n' );
+const older = readFileSync( resolve( root, '../changelog.txt' ), 'utf8' ).replace( /\r\n/g, '\n' );
 
 /**
  * Returns the body of a `== Name ==` section of the readme.
  *
- * @param {string} name Section name.
+ * @param {string} name   Section name.
+ * @param {string} source File contents; the readme by default.
  * @return {string} Section body, or an empty string.
  */
-function section( name ) {
-	const match = readme.match(
+function section( name, source = readme ) {
+	const match = source.match(
 		new RegExp( `^== ${ name } ==\\n([\\s\\S]*?)(?=^== |(?![\\s\\S]))`, 'm' )
 	);
 	return match ? match[ 1 ].trim() : '';
@@ -53,7 +57,12 @@ const notices = new Map(
 	] )
 );
 
-const releases = versions( section( 'Changelog' ) );
+// The readme's closing "Older releases" pointer is not part of a release.
+const latest = versions( section( 'Changelog' ) ).map( ( release ) => ( {
+	...release,
+	body: release.body.replace( /\n+Older releases:.*$/s, '' ),
+} ) );
+const releases = [ ...latest, ...versions( section( 'Changelog', older ) ) ];
 if ( ! releases.length ) {
 	throw new Error( `No changelog entries found in ${ readmePath }` );
 }
@@ -80,7 +89,7 @@ tableOfContents:
   maxHeadingLevel: 2
 ---
 
-<!-- Generated from readme.txt by scripts/changelog.mjs — do not edit. -->
+<!-- Generated from readme.txt and changelog.txt by scripts/changelog.mjs — do not edit. -->
 
 The latest version is **${ stableTag ?? releases[ 0 ].version }**. Update from **Dashboard → Updates** in WordPress, or download it from [WordPress.org](https://wordpress.org/plugins/omnioffloader/).
 

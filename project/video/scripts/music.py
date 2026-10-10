@@ -58,4 +58,4 @@ fade = int(4 * SR)
 for i in range(N):
     g = 0.85 / peak * min(1.0, i / (2 * SR)) * min(1.0, (N - i) / fade)
     out.append(int(L[i] * g * 32767)); out.append(int(R[i] * g * 32767))
-w = wave.open('public/music.wav', 'wb'); w.setnchannels(2); w.setsampwidth(2); w.setframerate(SR); w.writeframes(out.tobytes()); w.close()
+w = wave.open(sys.argv[2] if len(sys.argv) > 2 else 'public/music.wav', 'wb'); w.setnchannels(2); w.setsampwidth(2); w.setframerate(SR); w.writeframes(out.tobytes()); w.close()

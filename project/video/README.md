@@ -1,8 +1,11 @@
-# OmniOffloader overview video
+# OmniOffloader videos
 
-A 2:19 animated overview of the plugin (1920×1080, voiceover, music, burned-in captions), built with [Remotion](https://www.remotion.dev/).
+Two videos (1920×1080, voiceover, music, burned-in captions), built with [Remotion](https://www.remotion.dev/):
 
-The finished video is **`omnioffloader-overview.mp4`** in this folder.
+| Video | Length | What it is |
+| --- | --- | --- |
+| **`omnioffloader-walkthrough.mp4`** | 6:05 | Full walkthrough: WordPress.org page, install, every feature one by one on the real admin screens, with the matching WP-CLI commands |
+| **`omnioffloader-overview.mp4`** | 2:19 | Short animated overview |
 
 Like everything in `project/`, this folder never reaches users: `.distignore` (WordPress.org deploy), `.gitattributes` `export-ignore` (`git archive`) and the allowlist in `scripts/bundle.js` all leave it out. Do **not** attach the video to a GitHub Release — publishing a release runs the WordPress.org deploy workflow.
 
@@ -18,7 +21,26 @@ Like everything in `project/`, this folder never reaches users: `.distignore` (W
 | `src/scenes1.tsx`, `src/scenes2.tsx` | The ten scenes; cue times are in seconds of narration |
 | `src/components.tsx`, `src/theme.ts` | Shared visuals, brand colours, fonts and timing helpers |
 
-## Workflow
+## Walkthrough (`Walkthrough` composition)
+
+| Path | What it is |
+| --- | --- |
+| `walkthrough.json` | The narration, one entry per scene |
+| `scripts/voice-wt.py` | Voices it and writes `src/wt-timing.json` with **word-level timings** |
+| `scripts/capture.js` | Captures the real screens from the local install into `public/wt/` and element positions into `src/wt-meta.json` |
+| `src/wt/` | Scenes (`scenes.tsx`), the browser frame with camera/highlights/cursor (`Screen.tsx`), side panel (`Panel.tsx`) |
+
+Every animation cue is a spoken word (`wordTime( scene, word )`), so editing the narration and re-running `pnpm voice:wt` keeps the visuals in sync; if a cue word is removed the build fails and names it.
+
+`capture.js` needs the local site (`wp71.test`, logged in as user 1 through WP-CLI). It never starts a real job: progress, preflights and Test Connection are faked REST responses, Media Library states are edited in the page, and the real keys, endpoint, bucket and site address are replaced with example values before each screenshot. Check the PNGs in `public/wt/` for anything private before committing new captures.
+
+```bash
+pnpm capture:wt   # re-take the screens (optional)
+pnpm voice:wt     # after editing walkthrough.json
+pnpm render:wt    # → omnioffloader-walkthrough.mp4
+```
+
+## Workflow (overview)
 
 Requires Python 3 with `edge-tts` (`pip install edge-tts`) for the voice. Rendering downloads Remotion's headless Chrome on first run; ffmpeg ships with Remotion.
 

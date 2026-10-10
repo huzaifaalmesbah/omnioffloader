@@ -53,7 +53,7 @@ export const Captions: React.FC<{ cues: Cue[] }> = ( { cues } ) => {
 					textAlign: 'center',
 				} }
 			>
-				{ cur.text }
+				{ cur.text.replace( 'omnioffloader dot vercel dot app', 'omnioffloader.vercel.app' ) }
 			</div>
 		</div>
 	);

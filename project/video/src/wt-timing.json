@@ -1,0 +1,4455 @@
+[
+{
+"id": "intro",
+"duration": 15.432,
+"words": [
+[
+"This",
+0.096
+],
+[
+"is",
+0.361
+],
+[
+"OmniOffloader",
+0.505
+],
+[
+"a",
+1.959
+],
+[
+"free",
+2.019
+],
+[
+"WordPress",
+2.344
+],
+[
+"plugin",
+2.873
+],
+[
+"that",
+3.425
+],
+[
+"moves",
+3.57
+],
+[
+"your",
+3.846
+],
+[
+"media",
+3.93
+],
+[
+"library",
+4.339
+],
+[
+"to",
+4.844
+],
+[
+"cloud",
+4.94
+],
+[
+"storage",
+5.301
+],
+[
+"serves",
+6.19
+],
+[
+"it",
+6.526
+],
+[
+"from",
+6.611
+],
+[
+"your",
+6.743
+],
+[
+"own",
+6.839
+],
+[
+"CDN",
+7.019
+],
+[
+"and",
+8.161
+],
+[
+"lets",
+8.221
+],
+[
+"you",
+8.377
+],
+[
+"bring",
+8.45
+],
+[
+"it",
+8.618
+],
+[
+"all",
+8.678
+],
+[
+"back",
+8.846
+],
+[
+"anytime",
+9.087
+],
+[
+"In",
+9.94
+],
+[
+"this",
+10.024
+],
+[
+"walkthrough",
+10.168
+],
+[
+"we'll",
+10.938
+],
+[
+"install",
+11.082
+],
+[
+"it",
+11.623
+],
+[
+"connect",
+11.803
+],
+[
+"a",
+12.091
+],
+[
+"bucket",
+12.139
+],
+[
+"and",
+12.788
+],
+[
+"go",
+12.861
+],
+[
+"through",
+13.029
+],
+[
+"every",
+13.257
+],
+[
+"feature",
+13.546
+],
+[
+"one",
+14.483
+],
+[
+"by",
+14.615
+],
+[
+"one",
+14.772
+]
+],
+"cues": [
+{
+"start": 0.096,
+"end": 3.57,
+"text": "This is OmniOffloader, a free WordPress plugin that"
+},
+{
+"start": 3.57,
+"end": 6.526,
+"text": "moves your media library to cloud storage, serves"
+},
+{
+"start": 6.526,
+"end": 8.45,
+"text": "it from your own CDN, and lets you"
+},
+{
+"start": 8.45,
+"end": 9.94,
+"text": "bring it all back anytime."
+},
+{
+"start": 9.94,
+"end": 12.788,
+"text": "In this walkthrough, we'll install it, connect a bucket,"
+},
+{
+"start": 12.788,
+"end": 15.432,
+"text": "and go through every feature, one by one."
+}
+]
+},
+{
+"id": "wporg",
+"duration": 12.552,
+"words": [
+[
+"OmniOffloader",
+0.084
+],
+[
+"is",
+0.998
+],
+[
+"free",
+1.166
+],
+[
+"in",
+1.827
+],
+[
+"the",
+1.923
+],
+[
+"WordPress.org",
+2.031
+],
+[
+"plugin",
+3.329
+],
+[
+"directory",
+3.594
+],
+[
+"The",
+4.507
+],
+[
+"plugin",
+4.579
+],
+[
+"page",
+4.916
+],
+[
+"lists",
+5.216
+],
+[
+"every",
+5.745
+],
+[
+"supported",
+6.022
+],
+[
+"provider",
+6.49
+],
+[
+"and",
+6.983
+],
+[
+"feature",
+7.079
+],
+[
+"and",
+8.017
+],
+[
+"links",
+8.137
+],
+[
+"to",
+8.365
+],
+[
+"the",
+8.45
+],
+[
+"full",
+8.558
+],
+[
+"documentation",
+8.87
+],
+[
+"with",
+10.036
+],
+[
+"step-by-step",
+10.156
+],
+[
+"guides",
+10.877
+],
+[
+"for",
+11.298
+],
+[
+"each",
+11.526
+],
+[
+"provider",
+11.695
+]
+],
+"cues": [
+{
+"start": 0.084,
+"end": 4.507,
+"text": "OmniOffloader is free in the WordPress.org plugin directory."
+},
+{
+"start": 4.507,
+"end": 6.983,
+"text": "The plugin page lists every supported provider"
+},
+{
+"start": 6.983,
+"end": 8.87,
+"text": "and feature, and links to the full"
+},
+{
+"start": 8.87,
+"end": 12.552,
+"text": "documentation, with step-by-step guides for each provider."
+}
+]
+},
+{
+"id": "install",
+"duration": 12.624,
+"words": [
+[
+"To",
+0.096
+],
+[
+"install",
+0.192
+],
+[
+"it",
+0.637
+],
+[
+"open",
+1.226
+],
+[
+"Plugins",
+1.49
+],
+[
+"Add",
+2.368
+],
+[
+"New",
+2.548
+],
+[
+"Plugin",
+2.692
+],
+[
+"and",
+3.522
+],
+[
+"search",
+3.606
+],
+[
+"for",
+3.966
+],
+[
+"OmniOffloader",
+4.207
+],
+[
+"Click",
+5.529
+],
+[
+"Install",
+5.673
+],
+[
+"Now",
+6.046
+],
+[
+"then",
+6.683
+],
+[
+"Activate",
+6.863
+],
+[
+"Prefer",
+7.837
+],
+[
+"the",
+8.101
+],
+[
+"terminal",
+8.173
+],
+[
+"One",
+8.966
+],
+[
+"WP-CLI",
+9.219
+],
+[
+"command",
+10.204
+],
+[
+"installs",
+10.565
+],
+[
+"and",
+11.406
+],
+[
+"activates",
+11.587
+],
+[
+"it",
+12.103
+]
+],
+"cues": [
+{
+"start": 0.096,
+"end": 2.548,
+"text": "To install it, open Plugins, Add"
+},
+{
+"start": 2.548,
+"end": 5.529,
+"text": "New Plugin, and search for OmniOffloader."
+},
+{
+"start": 5.529,
+"end": 7.837,
+"text": "Click Install Now, then Activate."
+},
+{
+"start": 7.837,
+"end": 8.966,
+"text": "Prefer the terminal?"
+},
+{
+"start": 8.966,
+"end": 12.624,
+"text": "One WP-CLI command installs and activates it."
+}
+]
+},
+{
+"id": "dashboard",
+"duration": 13.512,
+"words": [
+[
+"After",
+0.096
+],
+[
+"activation",
+0.373
+],
+[
+"OmniOffloader",
+1.478
+],
+[
+"appears",
+2.236
+],
+[
+"in",
+2.656
+],
+[
+"your",
+2.716
+],
+[
+"admin",
+2.885
+],
+[
+"menu",
+3.173
+],
+[
+"with",
+3.822
+],
+[
+"five",
+3.942
+],
+[
+"screens",
+4.315
+],
+[
+"Dashboard",
+5.084
+],
+[
+"Settings",
+5.938
+],
+[
+"Offload",
+6.755
+],
+[
+"Bring",
+7.608
+],
+[
+"Back",
+7.885
+],
+[
+"and",
+8.75
+],
+[
+"Tools",
+8.81
+],
+[
+"Nothing",
+9.784
+],
+[
+"is",
+10.072
+],
+[
+"uploaded",
+10.228
+],
+[
+"anywhere",
+10.781
+],
+[
+"until",
+11.454
+],
+[
+"you",
+11.707
+],
+[
+"connect",
+11.827
+],
+[
+"a",
+12.163
+],
+[
+"storage",
+12.212
+],
+[
+"provider",
+12.644
+]
+],
+"cues": [
+{
+"start": 0.096,
+"end": 2.885,
+"text": "After activation, OmniOffloader appears in your"
+},
+{
+"start": 2.885,
+"end": 5.084,
+"text": "admin menu, with five screens:"
+},
+{
+"start": 5.084,
+"end": 9.784,
+"text": "Dashboard, Settings, Offload, Bring Back, and Tools."
+},
+{
+"start": 9.784,
+"end": 11.707,
+"text": "Nothing is uploaded anywhere until"
+},
+{
+"start": 11.707,
+"end": 13.512,
+"text": "you connect a storage provider."
+}
+]
+},
+{
+"id": "connect",
+"duration": 25.464,
+"words": [
+[
+"Open",
+0.096
+],
+[
+"Settings",
+0.349
+],
+[
+"and",
+1.058
+],
+[
+"choose",
+1.31
+],
+[
+"your",
+1.599
+],
+[
+"provider",
+1.719
+],
+[
+"Amazon",
+2.837
+],
+[
+"S3",
+3.221
+],
+[
+"Cloudflare",
+4.051
+],
+[
+"R2",
+4.651
+],
+[
+"DigitalOcean",
+5.445
+],
+[
+"Spaces",
+6.13
+],
+[
+"Backblaze",
+6.923
+],
+[
+"B2",
+7.488
+],
+[
+"Wasabi",
+8.317
+],
+[
+"or",
+9.255
+],
+[
+"any",
+9.591
+],
+[
+"S3-compatible",
+9.796
+],
+[
+"storage",
+11.49
+],
+[
+"Enter",
+12.464
+],
+[
+"your",
+12.692
+],
+[
+"access",
+12.861
+],
+[
+"key",
+13.365
+],
+[
+"secret",
+14.075
+],
+[
+"and",
+14.7
+],
+[
+"bucket",
+14.796
+],
+[
+"name",
+15.192
+],
+[
+"then",
+15.95
+],
+[
+"click",
+16.154
+],
+[
+"Test",
+16.394
+],
+[
+"Connection",
+16.671
+],
+[
+"When",
+17.488
+],
+[
+"you",
+17.584
+],
+[
+"see",
+17.704
+],
+[
+"Connected",
+17.969
+],
+[
+"you're",
+18.918
+],
+[
+"ready",
+19.05
+],
+[
+"You",
+19.772
+],
+[
+"can",
+19.82
+],
+[
+"also",
+19.892
+],
+[
+"keep",
+20.168
+],
+[
+"your",
+20.385
+],
+[
+"keys",
+20.481
+],
+[
+"out",
+20.829
+],
+[
+"of",
+20.925
+],
+[
+"the",
+20.962
+],
+[
+"database",
+21.022
+],
+[
+"by",
+21.851
+],
+[
+"defining",
+21.971
+],
+[
+"them",
+22.524
+],
+[
+"in",
+22.825
+],
+[
+"wp-config",
+23.053
+],
+[
+".",
+24.183
+],
+[
+"php",
+24.423
+]
+],
+"cues": [
+{
+"start": 0.096,
+"end": 2.837,
+"text": "Open Settings and choose your provider:"
+},
+{
+"start": 2.837,
+"end": 7.488,
+"text": "Amazon S3, Cloudflare R2, DigitalOcean Spaces, Backblaze"
+},
+{
+"start": 7.488,
+"end": 12.464,
+"text": "B2, Wasabi, or any S3-compatible storage."
+},
+{
+"start": 12.464,
+"end": 14.796,
+"text": "Enter your access key, secret and"
+},
+{
+"start": 14.796,
+"end": 17.488,
+"text": "bucket name, then click Test Connection."
+},
+{
+"start": 17.488,
+"end": 19.772,
+"text": "When you see Connected, you're ready."
+},
+{
+"start": 19.772,
+"end": 20.962,
+"text": "You can also keep your keys out of"
+},
+{
+"start": 20.962,
+"end": 25.464,
+"text": "the database, by defining them in wp-config.php."
+}
+]
+},
+{
+"id": "cdn",
+"duration": 28.488,
+"words": [
+[
+"Next",
+0.084
+],
+[
+"serving",
+0.781
+],
+[
+"media",
+1.154
+],
+[
+"from",
+1.514
+],
+[
+"your",
+1.647
+],
+[
+"CDN",
+1.731
+],
+[
+"Enter",
+2.668
+],
+[
+"your",
+2.921
+],
+[
+"custom",
+3.065
+],
+[
+"domain",
+3.498
+],
+[
+"the",
+4.399
+],
+[
+"public",
+4.483
+],
+[
+"address",
+4.82
+],
+[
+"that",
+5.312
+],
+[
+"serves",
+5.445
+],
+[
+"your",
+5.769
+],
+[
+"bucket",
+5.889
+],
+[
+"like",
+6.514
+],
+[
+"media.yourdomain.com",
+6.695
+],
+[
+"Most",
+8.918
+],
+[
+"buckets",
+9.123
+],
+[
+"aren't",
+9.411
+],
+[
+"public",
+9.579
+],
+[
+"by",
+9.868
+],
+[
+"default",
+9.988
+],
+[
+"and",
+10.865
+],
+[
+"Cloudflare",
+10.95
+],
+[
+"R2",
+11.478
+],
+[
+"has",
+11.779
+],
+[
+"no",
+11.983
+],
+[
+"public",
+12.224
+],
+[
+"address",
+12.596
+],
+[
+"until",
+13.149
+],
+[
+"you",
+13.389
+],
+[
+"connect",
+13.474
+],
+[
+"a",
+13.75
+],
+[
+"custom",
+13.786
+],
+[
+"domain",
+14.123
+],
+[
+"or",
+15.036
+],
+[
+"turn",
+15.132
+],
+[
+"on",
+15.337
+],
+[
+"its",
+15.469
+],
+[
+"r2",
+15.553
+],
+[
+".",
+15.829
+],
+[
+"dev",
+16.082
+],
+[
+"URL",
+16.262
+],
+[
+"Once",
+17.248
+],
+[
+"media",
+17.5
+],
+[
+"is",
+17.969
+],
+[
+"offloaded",
+18.101
+],
+[
+"URLs",
+19.207
+],
+[
+"are",
+19.808
+],
+[
+"rewritten",
+20.048
+],
+[
+"as",
+20.709
+],
+[
+"your",
+20.841
+],
+[
+"pages",
+20.938
+],
+[
+"render",
+21.358
+],
+[
+"images",
+22.284
+],
+[
+"srcset",
+22.921
+],
+[
+"galleries",
+23.798
+],
+[
+"video",
+24.712
+],
+[
+"and",
+25.24
+],
+[
+"audio",
+25.337
+],
+[
+"Nothing",
+26.238
+],
+[
+"in",
+26.466
+],
+[
+"your",
+26.514
+],
+[
+"database",
+26.599
+],
+[
+"is",
+27.368
+],
+[
+"changed",
+27.476
+]
+],
+"cues": [
+{
+"start": 0.084,
+"end": 2.668,
+"text": "Next, serving media from your CDN."
+},
+{
+"start": 2.668,
+"end": 4.399,
+"text": "Enter your custom domain:"
+},
+{
+"start": 4.399,
+"end": 8.918,
+"text": "the public address that serves your bucket, like media.yourdomain.com."
+},
+{
+"start": 8.918,
+"end": 11.779,
+"text": "Most buckets aren't public by default, and Cloudflare R2"
+},
+{
+"start": 11.779,
+"end": 14.123,
+"text": "has no public address until you connect a custom"
+},
+{
+"start": 14.123,
+"end": 17.248,
+"text": "domain, or turn on its r2.dev URL."
+},
+{
+"start": 17.248,
+"end": 20.048,
+"text": "Once media is offloaded, URLs are"
+},
+{
+"start": 20.048,
+"end": 22.284,
+"text": "rewritten as your pages render:"
+},
+{
+"start": 22.284,
+"end": 26.238,
+"text": "images, srcset, galleries, video and audio."
+},
+{
+"start": 26.238,
+"end": 28.488,
+"text": "Nothing in your database is changed."
+}
+]
+},
+{
+"id": "serve",
+"duration": 17.784,
+"words": [
+[
+"Not",
+0.084
+],
+[
+"ready",
+0.216
+],
+[
+"to",
+0.349
+],
+[
+"switch",
+0.409
+],
+[
+"yet",
+0.733
+],
+[
+"With",
+1.394
+],
+[
+"Retain",
+1.502
+],
+[
+"Local",
+1.899
+],
+[
+"Files",
+2.163
+],
+[
+"turn",
+2.957
+],
+[
+"off",
+3.173
+],
+[
+"Serve",
+3.401
+],
+[
+"Media",
+3.69
+],
+[
+"from",
+4.051
+],
+[
+"Cloud",
+4.195
+],
+[
+"Your",
+5.024
+],
+[
+"media",
+5.108
+],
+[
+"is",
+5.565
+],
+[
+"still",
+5.673
+],
+[
+"offloaded",
+5.974
+],
+[
+"as",
+6.635
+],
+[
+"a",
+6.767
+],
+[
+"backup",
+6.803
+],
+[
+"but",
+7.536
+],
+[
+"your",
+7.656
+],
+[
+"site",
+7.801
+],
+[
+"keeps",
+8.209
+],
+[
+"loading",
+8.498
+],
+[
+"it",
+8.858
+],
+[
+"from",
+8.93
+],
+[
+"your",
+9.05
+],
+[
+"own",
+9.147
+],
+[
+"server",
+9.291
+],
+[
+"When",
+10.156
+],
+[
+"your",
+10.24
+],
+[
+"CDN",
+10.349
+],
+[
+"is",
+10.853
+],
+[
+"ready",
+10.986
+],
+[
+"turn",
+11.526
+],
+[
+"it",
+11.695
+],
+[
+"back",
+11.767
+],
+[
+"on",
+12.043
+],
+[
+"and",
+12.26
+],
+[
+"save",
+12.344
+],
+[
+"and",
+13.281
+],
+[
+"every",
+13.606
+],
+[
+"page",
+13.846
+],
+[
+"switches",
+14.171
+],
+[
+"right",
+14.639
+],
+[
+"away",
+14.832
+],
+[
+"Just",
+15.577
+],
+[
+"clear",
+15.721
+],
+[
+"your",
+15.925
+],
+[
+"page",
+16.07
+],
+[
+"cache",
+16.43
+],
+[
+"afterwards",
+16.827
+]
+],
+"cues": [
+{
+"start": 0.084,
+"end": 1.394,
+"text": "Not ready to switch yet?"
+},
+{
+"start": 1.394,
+"end": 3.173,
+"text": "With Retain Local Files, turn"
+},
+{
+"start": 3.173,
+"end": 5.024,
+"text": "off Serve Media from Cloud."
+},
+{
+"start": 5.024,
+"end": 7.656,
+"text": "Your media is still offloaded as a backup, but"
+},
+{
+"start": 7.656,
+"end": 10.156,
+"text": "your site keeps loading it from your own server."
+},
+{
+"start": 10.156,
+"end": 12.26,
+"text": "When your CDN is ready, turn it back on"
+},
+{
+"start": 12.26,
+"end": 15.577,
+"text": "and save, and every page switches right away."
+},
+{
+"start": 15.577,
+"end": 17.784,
+"text": "Just clear your page cache afterwards."
+}
+]
+},
+{
+"id": "retention",
+"duration": 22.656,
+"words": [
+[
+"Now",
+0.096
+],
+[
+"choose",
+0.577
+],
+[
+"a",
+0.805
+],
+[
+"retention",
+0.841
+],
+[
+"policy",
+1.25
+],
+[
+"Retain",
+2.175
+],
+[
+"Local",
+2.524
+],
+[
+"Files",
+2.8
+],
+[
+"keeps",
+3.221
+],
+[
+"everything",
+3.786
+],
+[
+"on",
+4.279
+],
+[
+"your",
+4.375
+],
+[
+"server",
+4.471
+],
+[
+"and",
+5.312
+],
+[
+"it's",
+5.397
+],
+[
+"the",
+5.505
+],
+[
+"safest",
+5.589
+],
+[
+"place",
+6.082
+],
+[
+"to",
+6.334
+],
+[
+"start",
+6.394
+],
+[
+"Smart",
+7.188
+],
+[
+"Local",
+7.512
+],
+[
+"Cleanup",
+7.837
+],
+[
+"deletes",
+8.341
+],
+[
+"the",
+8.894
+],
+[
+"generated",
+9.002
+],
+[
+"thumbnails",
+9.519
+],
+[
+"and",
+10.697
+],
+[
+"keeps",
+10.877
+],
+[
+"your",
+11.178
+],
+[
+"originals",
+11.31
+],
+[
+"Full",
+12.392
+],
+[
+"Cloud",
+12.644
+],
+[
+"Migration",
+12.933
+],
+[
+"removes",
+13.57
+],
+[
+"every",
+14.339
+],
+[
+"local",
+14.663
+],
+[
+"copy",
+15.012
+],
+[
+"to",
+15.685
+],
+[
+"free",
+15.781
+],
+[
+"the",
+16.202
+],
+[
+"most",
+16.286
+],
+[
+"disk",
+16.683
+],
+[
+"space",
+16.971
+],
+[
+"A",
+18.077
+],
+[
+"local",
+18.125
+],
+[
+"file",
+18.425
+],
+[
+"is",
+18.846
+],
+[
+"never",
+19.026
+],
+[
+"deleted",
+19.459
+],
+[
+"until",
+20.096
+],
+[
+"its",
+20.373
+],
+[
+"upload",
+20.493
+],
+[
+"is",
+21.214
+],
+[
+"confirmed",
+21.31
+],
+[
+"in",
+21.839
+],
+[
+"your",
+21.887
+],
+[
+"bucket",
+21.971
+]
+],
+"cues": [
+{
+"start": 0.096,
+"end": 2.175,
+"text": "Now choose a retention policy."
+},
+{
+"start": 2.175,
+"end": 5.312,
+"text": "Retain Local Files keeps everything on your server,"
+},
+{
+"start": 5.312,
+"end": 7.188,
+"text": "and it's the safest place to start."
+},
+{
+"start": 7.188,
+"end": 9.519,
+"text": "Smart Local Cleanup deletes the generated"
+},
+{
+"start": 9.519,
+"end": 12.392,
+"text": "thumbnails, and keeps your originals."
+},
+{
+"start": 12.392,
+"end": 15.685,
+"text": "Full Cloud Migration removes every local copy,"
+},
+{
+"start": 15.685,
+"end": 18.077,
+"text": "to free the most disk space."
+},
+{
+"start": 18.077,
+"end": 20.373,
+"text": "A local file is never deleted until"
+},
+{
+"start": 20.373,
+"end": 22.656,
+"text": "its upload is confirmed in your bucket."
+}
+]
+},
+{
+"id": "behavior",
+"duration": 28.68,
+"words": [
+[
+"Under",
+0.096
+],
+[
+"Behavior",
+0.264
+],
+[
+"Background",
+1.082
+],
+[
+"Cloud",
+1.526
+],
+[
+"Offload",
+2.019
+],
+[
+"keeps",
+2.788
+],
+[
+"your",
+3.053
+],
+[
+"uploads",
+3.149
+],
+[
+"fast",
+3.558
+],
+[
+"Transfer",
+4.543
+],
+[
+"Speed",
+4.928
+],
+[
+"sets",
+5.264
+],
+[
+"how",
+5.565
+],
+[
+"many",
+5.757
+],
+[
+"files",
+6.094
+],
+[
+"move",
+6.502
+],
+[
+"at",
+6.779
+],
+[
+"once",
+6.851
+],
+[
+"Low",
+7.801
+],
+[
+"for",
+7.993
+],
+[
+"small",
+8.125
+],
+[
+"shared",
+8.413
+],
+[
+"hosting",
+8.69
+],
+[
+"Balanced",
+9.435
+],
+[
+"for",
+9.808
+],
+[
+"most",
+9.904
+],
+[
+"sites",
+10.168
+],
+[
+"and",
+10.817
+],
+[
+"Fast",
+10.925
+],
+[
+"or",
+11.37
+],
+[
+"Custom",
+11.466
+],
+[
+"for",
+12.151
+],
+[
+"a",
+12.308
+],
+[
+"VPS",
+12.332
+],
+[
+"Mirror",
+13.498
+],
+[
+"Delete",
+13.81
+],
+[
+"removes",
+14.315
+],
+[
+"the",
+14.7
+],
+[
+"cloud",
+14.796
+],
+[
+"copy",
+15.204
+],
+[
+"when",
+15.889
+],
+[
+"you",
+16.022
+],
+[
+"delete",
+16.094
+],
+[
+"media",
+16.49
+],
+[
+"in",
+17.236
+],
+[
+"WordPress",
+17.332
+],
+[
+"A",
+18.522
+],
+[
+"custom",
+18.582
+],
+[
+"path",
+18.918
+],
+[
+"prefix",
+19.243
+],
+[
+"stores",
+20.06
+],
+[
+"your",
+20.469
+],
+[
+"files",
+20.577
+],
+[
+"in",
+21.01
+],
+[
+"a",
+21.094
+],
+[
+"folder",
+21.13
+],
+[
+"of",
+21.502
+],
+[
+"your",
+21.538
+],
+[
+"choice",
+21.647
+],
+[
+"and",
+22.536
+],
+[
+"Object",
+22.825
+],
+[
+"Versioning",
+23.293
+],
+[
+"stops",
+23.702
+],
+[
+"CDN",
+24.111
+],
+[
+"caches",
+24.772
+],
+[
+"from",
+25.276
+],
+[
+"serving",
+25.409
+],
+[
+"stale",
+25.709
+],
+[
+"files",
+25.962
+],
+[
+"Then",
+26.899
+],
+[
+"click",
+27.007
+],
+[
+"Save",
+27.2
+],
+[
+"changes",
+27.644
+]
+],
+"cues": [
+{
+"start": 0.096,
+"end": 4.543,
+"text": "Under Behavior, Background Cloud Offload keeps your uploads fast."
+},
+{
+"start": 4.543,
+"end": 7.801,
+"text": "Transfer Speed sets how many files move at once:"
+},
+{
+"start": 7.801,
+"end": 10.168,
+"text": "Low for small shared hosting, Balanced for most"
+},
+{
+"start": 10.168,
+"end": 13.498,
+"text": "sites, and Fast or Custom for a VPS."
+},
+{
+"start": 13.498,
+"end": 15.889,
+"text": "Mirror Delete removes the cloud copy"
+},
+{
+"start": 15.889,
+"end": 18.522,
+"text": "when you delete media in WordPress."
+},
+{
+"start": 18.522,
+"end": 21.094,
+"text": "A custom path prefix stores your files in"
+},
+{
+"start": 21.094,
+"end": 23.702,
+"text": "a folder of your choice, and Object Versioning"
+},
+{
+"start": 23.702,
+"end": 26.899,
+"text": "stops CDN caches from serving stale files."
+},
+{
+"start": 26.899,
+"end": 28.68,
+"text": "Then click Save changes."
+}
+]
+},
+{
+"id": "auto",
+"duration": 15.096,
+"words": [
+[
+"From",
+0.12
+],
+[
+"now",
+0.228
+],
+[
+"on",
+0.529
+],
+[
+"every",
+1.286
+],
+[
+"new",
+1.49
+],
+[
+"upload",
+1.683
+],
+[
+"is",
+2.308
+],
+[
+"offloaded",
+2.44
+],
+[
+"automatically",
+3.041
+],
+[
+"in",
+4.183
+],
+[
+"the",
+4.255
+],
+[
+"background",
+4.303
+],
+[
+"the",
+5.349
+],
+[
+"original",
+5.421
+],
+[
+"every",
+6.286
+],
+[
+"thumbnail",
+6.551
+],
+[
+"the",
+7.26
+],
+[
+"scaled",
+7.356
+],
+[
+"version",
+7.752
+],
+[
+"and",
+8.365
+],
+[
+"WebP",
+8.51
+],
+[
+"or",
+9.267
+],
+[
+"AVIF",
+9.591
+],
+[
+"sources",
+10.06
+],
+[
+"In",
+11.058
+],
+[
+"the",
+11.13
+],
+[
+"Media",
+11.178
+],
+[
+"Library",
+11.514
+],
+[
+"the",
+12.368
+],
+[
+"status",
+12.464
+],
+[
+"changes",
+12.849
+],
+[
+"from",
+13.257
+],
+[
+"Queued",
+13.438
+],
+[
+"to",
+13.966
+],
+[
+"Offloaded",
+14.099
+]
+],
+"cues": [
+{
+"start": 0.12,
+"end": 2.308,
+"text": "From now on, every new upload"
+},
+{
+"start": 2.308,
+"end": 5.349,
+"text": "is offloaded automatically, in the background:"
+},
+{
+"start": 5.349,
+"end": 7.752,
+"text": "the original, every thumbnail, the scaled"
+},
+{
+"start": 7.752,
+"end": 11.058,
+"text": "version, and WebP or AVIF sources."
+},
+{
+"start": 11.058,
+"end": 12.849,
+"text": "In the Media Library, the status"
+},
+{
+"start": 12.849,
+"end": 15.096,
+"text": "changes from Queued to Offloaded."
+}
+]
+},
+{
+"id": "bulk",
+"duration": 22.224,
+"words": [
+[
+"For",
+0.108
+],
+[
+"the",
+0.168
+],
+[
+"media",
+0.24
+],
+[
+"you",
+0.577
+],
+[
+"already",
+0.721
+],
+[
+"have",
+0.962
+],
+[
+"open",
+1.803
+],
+[
+"the",
+2.031
+],
+[
+"Offload",
+2.115
+],
+[
+"page",
+2.548
+],
+[
+"It",
+3.438
+],
+[
+"shows",
+3.51
+],
+[
+"your",
+3.738
+],
+[
+"total",
+3.834
+],
+[
+"media",
+4.123
+],
+[
+"what's",
+5.06
+],
+[
+"already",
+5.228
+],
+[
+"offloaded",
+5.577
+],
+[
+"and",
+6.623
+],
+[
+"what's",
+6.695
+],
+[
+"still",
+6.899
+],
+[
+"local",
+7.163
+],
+[
+"Choose",
+7.957
+],
+[
+"All",
+8.197
+],
+[
+"Local",
+8.377
+],
+[
+"Media",
+8.63
+],
+[
+"or",
+9.531
+],
+[
+"a",
+9.651
+],
+[
+"custom",
+9.7
+],
+[
+"amount",
+10.06
+],
+[
+"to",
+10.613
+],
+[
+"try",
+10.685
+],
+[
+"a",
+10.889
+],
+[
+"small",
+10.938
+],
+[
+"batch",
+11.226
+],
+[
+"first",
+11.49
+],
+[
+"Click",
+12.44
+],
+[
+"Start",
+12.584
+],
+[
+"Bulk",
+12.921
+],
+[
+"Offload",
+13.185
+],
+[
+"and",
+14.014
+],
+[
+"watch",
+14.111
+],
+[
+"the",
+14.375
+],
+[
+"progress",
+14.459
+],
+[
+"bar",
+14.868
+],
+[
+"and",
+15.397
+],
+[
+"the",
+15.445
+],
+[
+"live",
+15.529
+],
+[
+"activity",
+15.817
+],
+[
+"log",
+16.262
+],
+[
+"The",
+17.019
+],
+[
+"job",
+17.067
+],
+[
+"runs",
+17.38
+],
+[
+"in",
+17.68
+],
+[
+"the",
+17.728
+],
+[
+"background",
+17.788
+],
+[
+"so",
+18.714
+],
+[
+"you",
+18.822
+],
+[
+"can",
+18.942
+],
+[
+"leave",
+19.075
+],
+[
+"the",
+19.231
+],
+[
+"page",
+19.303
+],
+[
+"and",
+20.048
+],
+[
+"Cancel",
+20.421
+],
+[
+"stops",
+20.805
+],
+[
+"it",
+21.202
+],
+[
+"at",
+21.286
+],
+[
+"any",
+21.382
+],
+[
+"time",
+21.514
+]
+],
+"cues": [
+{
+"start": 0.108,
+"end": 0.962,
+"text": "For the media you already"
+},
+{
+"start": 0.962,
+"end": 3.438,
+"text": "have, open the Offload page."
+},
+{
+"start": 3.438,
+"end": 5.228,
+"text": "It shows your total media, what's"
+},
+{
+"start": 5.228,
+"end": 7.957,
+"text": "already offloaded, and what's still local."
+},
+{
+"start": 7.957,
+"end": 10.06,
+"text": "Choose All Local Media, or a custom"
+},
+{
+"start": 10.06,
+"end": 12.44,
+"text": "amount, to try a small batch first."
+},
+{
+"start": 12.44,
+"end": 14.459,
+"text": "Click Start Bulk Offload, and watch the"
+},
+{
+"start": 14.459,
+"end": 17.019,
+"text": "progress bar and the live activity log."
+},
+{
+"start": 17.019,
+"end": 18.822,
+"text": "The job runs in the background, so"
+},
+{
+"start": 18.822,
+"end": 20.805,
+"text": "you can leave the page, and Cancel"
+},
+{
+"start": 20.805,
+"end": 22.224,
+"text": "stops it at any time."
+}
+]
+},
+{
+"id": "bulkcli",
+"duration": 27.456,
+"words": [
+[
+"Have",
+0.084
+],
+[
+"a",
+0.156
+],
+[
+"large",
+0.216
+],
+[
+"library",
+0.613
+],
+[
+"five",
+1.394
+],
+[
+"thousand",
+1.743
+],
+[
+"items",
+2.103
+],
+[
+"or",
+2.8
+],
+[
+"more",
+2.885
+],
+[
+"We",
+3.69
+],
+[
+"recommend",
+3.834
+],
+[
+"WP-CLI",
+4.651
+],
+[
+"There's",
+6.106
+],
+[
+"no",
+6.238
+],
+[
+"browser",
+6.442
+],
+[
+"and",
+7.031
+],
+[
+"no",
+7.176
+],
+[
+"web",
+7.392
+],
+[
+"time",
+7.596
+],
+[
+"limit",
+7.861
+],
+[
+"and",
+8.498
+],
+[
+"with",
+8.57
+],
+[
+"the",
+8.69
+],
+[
+"concurrency",
+8.774
+],
+[
+"option",
+9.315
+],
+[
+"it",
+9.712
+],
+[
+"uploads",
+9.832
+],
+[
+"up",
+10.613
+],
+[
+"to",
+10.757
+],
+[
+"sixty-four",
+10.841
+],
+[
+"files",
+11.502
+],
+[
+"at",
+11.863
+],
+[
+"once",
+11.923
+],
+[
+"Start",
+12.825
+],
+[
+"it",
+13.089
+],
+[
+"in",
+13.161
+],
+[
+"the",
+13.221
+],
+[
+"background",
+13.269
+],
+[
+"watch",
+14.171
+],
+[
+"its",
+14.399
+],
+[
+"log",
+14.507
+],
+[
+"and",
+15.204
+],
+[
+"check",
+15.3
+],
+[
+"the",
+15.505
+],
+[
+"speed",
+15.601
+],
+[
+"and",
+15.998
+],
+[
+"time",
+16.082
+],
+[
+"left",
+16.418
+],
+[
+"with",
+16.683
+],
+[
+"the",
+16.779
+],
+[
+"status",
+16.851
+],
+[
+"command",
+17.2
+],
+[
+"While",
+18.077
+],
+[
+"it",
+18.245
+],
+[
+"runs",
+18.341
+],
+[
+"the",
+19.062
+],
+[
+"admin",
+19.219
+],
+[
+"screens",
+19.507
+],
+[
+"show",
+20.168
+],
+[
+"its",
+20.373
+],
+[
+"progress",
+20.469
+],
+[
+"too",
+20.962
+],
+[
+"Stop",
+21.695
+],
+[
+"it",
+21.995
+],
+[
+"anytime",
+22.224
+],
+[
+"with",
+22.861
+],
+[
+"the",
+22.981
+],
+[
+"stop",
+23.041
+],
+[
+"command",
+23.365
+],
+[
+"then",
+24.171
+],
+[
+"run",
+24.339
+],
+[
+"the",
+24.531
+],
+[
+"same",
+24.627
+],
+[
+"command",
+25.0
+],
+[
+"again",
+25.433
+],
+[
+"to",
+25.769
+],
+[
+"continue",
+25.877
+],
+[
+"where",
+26.346
+],
+[
+"it",
+26.454
+],
+[
+"left",
+26.538
+],
+[
+"off",
+26.779
+]
+],
+"cues": [
+{
+"start": 0.084,
+"end": 3.69,
+"text": "Have a large library, five thousand items or more?"
+},
+{
+"start": 3.69,
+"end": 6.106,
+"text": "We recommend WP-CLI."
+},
+{
+"start": 6.106,
+"end": 7.861,
+"text": "There's no browser and no web time"
+},
+{
+"start": 7.861,
+"end": 9.832,
+"text": "limit, and with the concurrency option it"
+},
+{
+"start": 9.832,
+"end": 12.825,
+"text": "uploads up to sixty-four files at once."
+},
+{
+"start": 12.825,
+"end": 14.507,
+"text": "Start it in the background, watch its"
+},
+{
+"start": 14.507,
+"end": 16.418,
+"text": "log, and check the speed and time"
+},
+{
+"start": 16.418,
+"end": 18.077,
+"text": "left with the status command."
+},
+{
+"start": 18.077,
+"end": 19.507,
+"text": "While it runs, the admin"
+},
+{
+"start": 19.507,
+"end": 21.695,
+"text": "screens show its progress too."
+},
+{
+"start": 21.695,
+"end": 24.171,
+"text": "Stop it anytime with the stop command,"
+},
+{
+"start": 24.171,
+"end": 25.877,
+"text": "then run the same command again to"
+},
+{
+"start": 25.877,
+"end": 27.456,
+"text": "continue where it left off."
+}
+]
+},
+{
+"id": "media",
+"duration": 20.184,
+"words": [
+[
+"The",
+0.096
+],
+[
+"Media",
+0.156
+],
+[
+"Library",
+0.517
+],
+[
+"shows",
+1.01
+],
+[
+"the",
+1.334
+],
+[
+"offload",
+1.502
+],
+[
+"status",
+2.055
+],
+[
+"of",
+2.656
+],
+[
+"every",
+3.029
+],
+[
+"file",
+3.293
+],
+[
+"and",
+4.243
+],
+[
+"you",
+4.291
+],
+[
+"can",
+4.351
+],
+[
+"filter",
+4.471
+],
+[
+"by",
+4.892
+],
+[
+"offloaded",
+5.06
+],
+[
+"or",
+5.889
+],
+[
+"local",
+6.01
+],
+[
+"only",
+6.358
+],
+[
+"Each",
+7.079
+],
+[
+"row",
+7.248
+],
+[
+"has",
+7.452
+],
+[
+"Offload",
+7.644
+],
+[
+"now",
+8.185
+],
+[
+"or",
+8.69
+],
+[
+"Bring",
+8.858
+],
+[
+"Back",
+9.243
+],
+[
+"actions",
+9.579
+],
+[
+"and",
+10.493
+],
+[
+"the",
+10.565
+],
+[
+"bulk",
+10.649
+],
+[
+"actions",
+10.95
+],
+[
+"menu",
+11.322
+],
+[
+"handles",
+11.707
+],
+[
+"up",
+12.115
+],
+[
+"to",
+12.476
+],
+[
+"a",
+12.596
+],
+[
+"thousand",
+12.656
+],
+[
+"selected",
+13.125
+],
+[
+"files",
+13.498
+],
+[
+"When",
+14.495
+],
+[
+"you",
+14.579
+],
+[
+"edit",
+14.688
+],
+[
+"an",
+14.904
+],
+[
+"attachment",
+14.976
+],
+[
+"the",
+15.805
+],
+[
+"OmniOffloader",
+15.974
+],
+[
+"box",
+16.671
+],
+[
+"shows",
+17.188
+],
+[
+"where",
+17.632
+],
+[
+"it's",
+17.776
+],
+[
+"stored",
+17.885
+],
+[
+"with",
+18.618
+],
+[
+"one-click",
+18.738
+],
+[
+"buttons",
+19.243
+]
+],
+"cues": [
+{
+"start": 0.096,
+"end": 2.656,
+"text": "The Media Library shows the offload status"
+},
+{
+"start": 2.656,
+"end": 4.892,
+"text": "of every file, and you can filter"
+},
+{
+"start": 4.892,
+"end": 7.079,
+"text": "by offloaded or local only."
+},
+{
+"start": 7.079,
+"end": 9.243,
+"text": "Each row has Offload now or Bring"
+},
+{
+"start": 9.243,
+"end": 11.707,
+"text": "Back actions, and the bulk actions menu"
+},
+{
+"start": 11.707,
+"end": 14.495,
+"text": "handles up to a thousand selected files."
+},
+{
+"start": 14.495,
+"end": 17.188,
+"text": "When you edit an attachment, the OmniOffloader box"
+},
+{
+"start": 17.188,
+"end": 20.184,
+"text": "shows where it's stored, with one-click buttons."
+}
+]
+},
+{
+"id": "bringback",
+"duration": 29.472,
+"words": [
+[
+"Bring",
+0.084
+],
+[
+"Back",
+0.264
+],
+[
+"reverses",
+0.577
+],
+[
+"everything",
+1.118
+],
+[
+"Open",
+2.019
+],
+[
+"the",
+2.236
+],
+[
+"Bring",
+2.308
+],
+[
+"Back",
+2.596
+],
+[
+"page",
+2.885
+],
+[
+"and",
+3.462
+],
+[
+"check",
+3.606
+],
+[
+"the",
+3.87
+],
+[
+"preflight",
+3.942
+],
+[
+"the",
+4.952
+],
+[
+"estimated",
+5.12
+],
+[
+"download",
+5.661
+],
+[
+"and",
+6.562
+],
+[
+"your",
+6.623
+],
+[
+"free",
+6.707
+],
+[
+"disk",
+6.947
+],
+[
+"space",
+7.163
+],
+[
+"Choose",
+8.149
+],
+[
+"all",
+8.486
+],
+[
+"media",
+8.69
+],
+[
+"or",
+9.243
+],
+[
+"a",
+9.399
+],
+[
+"custom",
+9.447
+],
+[
+"amount",
+9.796
+],
+[
+"Keep",
+10.541
+],
+[
+"Cloud",
+10.721
+],
+[
+"Copies",
+11.034
+],
+[
+"is",
+11.502
+],
+[
+"recommended",
+11.647
+],
+[
+"and",
+12.608
+],
+[
+"deleting",
+12.692
+],
+[
+"from",
+13.089
+],
+[
+"the",
+13.209
+],
+[
+"cloud",
+13.269
+],
+[
+"only",
+13.93
+],
+[
+"happens",
+14.231
+],
+[
+"after",
+14.675
+],
+[
+"every",
+15.108
+],
+[
+"file",
+15.361
+],
+[
+"is",
+15.745
+],
+[
+"verified",
+15.841
+],
+[
+"on",
+16.406
+],
+[
+"your",
+16.466
+],
+[
+"server",
+16.575
+],
+[
+"Click",
+17.464
+],
+[
+"Start",
+17.62
+],
+[
+"Bring",
+17.873
+],
+[
+"Back",
+18.041
+],
+[
+"and",
+18.75
+],
+[
+"follow",
+18.822
+],
+[
+"the",
+19.147
+],
+[
+"progress",
+19.231
+],
+[
+"Using",
+20.325
+],
+[
+"a",
+20.529
+],
+[
+"cleanup",
+20.565
+],
+[
+"policy",
+20.901
+],
+[
+"Always",
+21.803
+],
+[
+"run",
+22.127
+],
+[
+"Bring",
+22.356
+],
+[
+"Back",
+22.644
+],
+[
+"before",
+23.209
+],
+[
+"you",
+23.546
+],
+[
+"deactivate",
+23.606
+],
+[
+"the",
+24.243
+],
+[
+"plugin",
+24.315
+],
+[
+"And",
+25.144
+],
+[
+"for",
+25.24
+],
+[
+"a",
+25.361
+],
+[
+"large",
+25.421
+],
+[
+"library",
+25.841
+],
+[
+"use",
+26.839
+],
+[
+"the",
+27.043
+],
+[
+"restore",
+27.115
+],
+[
+"command",
+27.512
+],
+[
+"in",
+27.981
+],
+[
+"WP-CLI",
+28.089
+]
+],
+"cues": [
+{
+"start": 0.084,
+"end": 2.019,
+"text": "Bring Back reverses everything."
+},
+{
+"start": 2.019,
+"end": 4.952,
+"text": "Open the Bring Back page and check the preflight:"
+},
+{
+"start": 4.952,
+"end": 8.149,
+"text": "the estimated download, and your free disk space."
+},
+{
+"start": 8.149,
+"end": 10.541,
+"text": "Choose all media or a custom amount."
+},
+{
+"start": 10.541,
+"end": 13.089,
+"text": "Keep Cloud Copies is recommended, and deleting"
+},
+{
+"start": 13.089,
+"end": 15.361,
+"text": "from the cloud only happens after every"
+},
+{
+"start": 15.361,
+"end": 17.464,
+"text": "file is verified on your server."
+},
+{
+"start": 17.464,
+"end": 20.325,
+"text": "Click Start Bring Back, and follow the progress."
+},
+{
+"start": 20.325,
+"end": 21.803,
+"text": "Using a cleanup policy?"
+},
+{
+"start": 21.803,
+"end": 25.144,
+"text": "Always run Bring Back before you deactivate the plugin."
+},
+{
+"start": 25.144,
+"end": 27.043,
+"text": "And for a large library, use"
+},
+{
+"start": 27.043,
+"end": 29.472,
+"text": "the restore command in WP-CLI."
+}
+]
+},
+{
+"id": "tools",
+"duration": 18.528,
+"words": [
+[
+"On",
+0.072
+],
+[
+"the",
+0.156
+],
+[
+"Tools",
+0.228
+],
+[
+"page",
+0.601
+],
+[
+"apply",
+1.418
+],
+[
+"a",
+1.719
+],
+[
+"new",
+1.779
+],
+[
+"retention",
+2.007
+],
+[
+"policy",
+2.44
+],
+[
+"to",
+3.005
+],
+[
+"media",
+3.101
+],
+[
+"you",
+3.51
+],
+[
+"already",
+3.702
+],
+[
+"offloaded",
+4.051
+],
+[
+"Before",
+5.06
+],
+[
+"any",
+5.385
+],
+[
+"local",
+5.553
+],
+[
+"copy",
+5.853
+],
+[
+"is",
+6.574
+],
+[
+"deleted",
+6.719
+],
+[
+"every",
+7.644
+],
+[
+"file",
+7.873
+],
+[
+"is",
+8.269
+],
+[
+"checked",
+8.353
+],
+[
+"in",
+8.666
+],
+[
+"the",
+8.714
+],
+[
+"cloud",
+8.774
+],
+[
+"by",
+9.231
+],
+[
+"size",
+9.387
+],
+[
+"Changed",
+10.445
+],
+[
+"your",
+10.685
+],
+[
+"path",
+10.769
+],
+[
+"prefix",
+11.034
+],
+[
+"Move",
+12.031
+],
+[
+"Media",
+12.284
+],
+[
+"copies",
+12.668
+],
+[
+"older",
+13.281
+],
+[
+"files",
+13.582
+],
+[
+"into",
+14.075
+],
+[
+"the",
+14.183
+],
+[
+"current",
+14.279
+],
+[
+"folder",
+14.567
+],
+[
+"right",
+15.469
+],
+[
+"inside",
+15.625
+],
+[
+"your",
+15.986
+],
+[
+"bucket",
+16.07
+],
+[
+"so",
+16.755
+],
+[
+"nothing",
+16.899
+],
+[
+"is",
+17.464
+],
+[
+"downloaded",
+17.572
+]
+],
+"cues": [
+{
+"start": 0.072,
+"end": 2.007,
+"text": "On the Tools page, apply a new"
+},
+{
+"start": 2.007,
+"end": 5.06,
+"text": "retention policy to media you already offloaded."
+},
+{
+"start": 5.06,
+"end": 8.269,
+"text": "Before any local copy is deleted, every file"
+},
+{
+"start": 8.269,
+"end": 10.445,
+"text": "is checked in the cloud, by size."
+},
+{
+"start": 10.445,
+"end": 12.031,
+"text": "Changed your path prefix?"
+},
+{
+"start": 12.031,
+"end": 15.469,
+"text": "Move Media copies older files into the current folder,"
+},
+{
+"start": 15.469,
+"end": 18.528,
+"text": "right inside your bucket, so nothing is downloaded."
+}
+]
+},
+{
+"id": "safe",
+"duration": 16.08,
+"words": [
+[
+"Copying",
+0.096
+],
+[
+"your",
+0.481
+],
+[
+"site",
+0.625
+],
+[
+"to",
+1.118
+],
+[
+"staging",
+1.214
+],
+[
+"or",
+2.188
+],
+[
+"to",
+2.26
+],
+[
+"your",
+2.368
+],
+[
+"own",
+2.5
+],
+[
+"computer",
+2.608
+],
+[
+"Safe",
+3.438
+],
+[
+"Mode",
+3.726
+],
+[
+"detects",
+4.038
+],
+[
+"the",
+4.459
+],
+[
+"copy",
+4.555
+],
+[
+"and",
+5.264
+],
+[
+"blocks",
+5.373
+],
+[
+"every",
+6.034
+],
+[
+"upload",
+6.37
+],
+[
+"and",
+6.923
+],
+[
+"delete",
+7.007
+],
+[
+"so",
+7.764
+],
+[
+"it",
+7.921
+],
+[
+"never",
+8.017
+],
+[
+"touches",
+8.305
+],
+[
+"your",
+8.606
+],
+[
+"live",
+8.69
+],
+[
+"bucket",
+8.954
+],
+[
+"while",
+9.675
+],
+[
+"your",
+9.808
+],
+[
+"media",
+9.904
+],
+[
+"keeps",
+10.216
+],
+[
+"loading",
+10.553
+],
+[
+"Several",
+11.322
+],
+[
+"sites",
+11.635
+],
+[
+"can",
+11.971
+],
+[
+"also",
+12.103
+],
+[
+"share",
+12.416
+],
+[
+"one",
+12.752
+],
+[
+"bucket",
+13.017
+],
+[
+"each",
+13.75
+],
+[
+"safely",
+13.978
+],
+[
+"in",
+14.832
+],
+[
+"its",
+14.928
+],
+[
+"own",
+15.048
+],
+[
+"folder",
+15.216
+]
+],
+"cues": [
+{
+"start": 0.096,
+"end": 2.188,
+"text": "Copying your site to staging,"
+},
+{
+"start": 2.188,
+"end": 3.438,
+"text": "or to your own computer?"
+},
+{
+"start": 3.438,
+"end": 6.37,
+"text": "Safe Mode detects the copy, and blocks every"
+},
+{
+"start": 6.37,
+"end": 8.69,
+"text": "upload and delete, so it never touches your"
+},
+{
+"start": 8.69,
+"end": 11.322,
+"text": "live bucket, while your media keeps loading."
+},
+{
+"start": 11.322,
+"end": 13.75,
+"text": "Several sites can also share one bucket,"
+},
+{
+"start": 13.75,
+"end": 16.08,
+"text": "each safely in its own folder."
+}
+]
+},
+{
+"id": "cliref",
+"duration": 15.264,
+"words": [
+[
+"Finally",
+0.132
+],
+[
+"the",
+0.901
+],
+[
+"full",
+1.01
+],
+[
+"WP-CLI",
+1.406
+],
+[
+"reference",
+2.2
+],
+[
+"is",
+2.716
+],
+[
+"on",
+2.8
+],
+[
+"the",
+2.885
+],
+[
+"Tools",
+2.969
+],
+[
+"screen",
+3.269
+],
+[
+"with",
+3.966
+],
+[
+"examples",
+4.087
+],
+[
+"and",
+4.676
+],
+[
+"copy",
+4.76
+],
+[
+"buttons",
+5.192
+],
+[
+"for",
+5.637
+],
+[
+"offload",
+5.877
+],
+[
+"restore",
+6.839
+],
+[
+"retention",
+7.704
+],
+[
+"move",
+8.522
+],
+[
+"status",
+9.267
+],
+[
+"and",
+9.976
+],
+[
+"stop",
+10.132
+],
+[
+"Every",
+10.998
+],
+[
+"command",
+11.214
+],
+[
+"that",
+11.983
+],
+[
+"changes",
+12.188
+],
+[
+"something",
+12.656
+],
+[
+"supports",
+13.029
+],
+[
+"a",
+13.57
+],
+[
+"dry",
+13.618
+],
+[
+"run",
+14.014
+],
+[
+"first",
+14.327
+]
+],
+"cues": [
+{
+"start": 0.132,
+"end": 2.969,
+"text": "Finally, the full WP-CLI reference is on the"
+},
+{
+"start": 2.969,
+"end": 5.877,
+"text": "Tools screen, with examples and copy buttons, for"
+},
+{
+"start": 5.877,
+"end": 10.998,
+"text": "offload, restore, retention, move, status and stop."
+},
+{
+"start": 10.998,
+"end": 13.029,
+"text": "Every command that changes something"
+},
+{
+"start": 13.029,
+"end": 15.264,
+"text": "supports a dry run first."
+}
+]
+},
+{
+"id": "outro",
+"duration": 7.488,
+"words": [
+[
+"That's",
+0.096
+],
+[
+"OmniOffloader",
+0.252
+],
+[
+"Install",
+1.611
+],
+[
+"it",
+2.019
+],
+[
+"free",
+2.103
+],
+[
+"from",
+2.524
+],
+[
+"WordPress.org",
+2.837
+],
+[
+"and",
+4.327
+],
+[
+"find",
+4.399
+],
+[
+"every",
+4.796
+],
+[
+"guide",
+5.024
+],
+[
+"at",
+5.301
+],
+[
+"omnioffloader",
+5.385
+],
+[
+"dot",
+6.238
+],
+[
+"vercel",
+6.394
+],
+[
+"dot",
+6.695
+],
+[
+"app.",
+6.815
+]
+],
+"cues": [
+{
+"start": 0.096,
+"end": 1.611,
+"text": "That's OmniOffloader."
+},
+{
+"start": 1.611,
+"end": 5.024,
+"text": "Install it free from WordPress.org, and find every"
+},
+{
+"start": 5.024,
+"end": 7.488,
+"text": "guide at omnioffloader dot vercel dot app."
+}
+]
+}
+]

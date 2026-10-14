@@ -29,11 +29,12 @@ for ci in range(int(DUR / BAR) + 1):
             ph = TWO_PI * f * (i / SR)
             v = (math.sin(ph) + 0.5 * math.sin(ph * det) + 0.12 * math.sin(2 * ph)) * amp * env
             L[i] += v * (1 - pan); R[i] += v * pan
-# arpeggio plucks, eighth notes at 90 bpm-ish
+# arpeggio plucks, eighth notes at 90 bpm-ish (PAD_ONLY=1 leaves them out for a softer bed)
+import os
 step = 60 / 90 / 2
 pattern = [0, 2, 3, 4, 3, 2, 4, 5]
 n = 0; t0 = 4.0
-while t0 < DUR - 1:
+while t0 < DUR - 1 and not os.environ.get('PAD_ONLY'):
     notes = chords[int(t0 // BAR) % 4]
     m = notes[pattern[n % 8] % len(notes)] + 12
     f = hz(m); s0 = int(t0 * SR); ln = int(1.6 * SR)

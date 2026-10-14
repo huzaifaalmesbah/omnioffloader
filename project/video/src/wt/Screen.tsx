@@ -1,7 +1,7 @@
 import React from 'react';
 import { Img, staticFile, Easing, interpolate } from 'remotion';
 import meta from '../wt-meta.json';
-import { C, SANS } from '../theme';
+import { C, SANS, SANS_BN } from '../theme';
 import { Icon } from '../components';
 
 export type Rect = [ number, number, number, number ];
@@ -200,7 +200,7 @@ export const Screen: React.FC<{
 												whiteSpace: 'nowrap',
 												background: C.blue,
 												color: '#fff',
-												fontFamily: SANS,
+												fontFamily: SANS_BN,
 												fontWeight: 700,
 												fontSize: 21 * inv,
 												padding: `${ 7 * inv }px ${ 14 * inv }px`,

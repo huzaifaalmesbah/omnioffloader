@@ -44,8 +44,42 @@ export const Background: React.FC<{ hue?: number }> = ( { hue = 0 } ) => {
 /* ------------------------------------------------------------------ */
 /* Icons (inline, stroke-based so they inherit colour).                */
 /* ------------------------------------------------------------------ */
-type IconName = 'cloud' | 'cloudUp' | 'cloudDown' | 'server' | 'image' | 'check' | 'shield' | 'lock' | 'globe' | 'terminal' | 'bolt' | 'db' | 'users' | 'refresh' | 'trash' | 'file' | 'wp';
+type IconName = 'thumbsUp' | 'share' | 'arrowDown' | 'arrowRight' | 'clock' | 'warning' | 'sparkles' | 'cloud' | 'cloudUp' | 'cloudDown' | 'server' | 'image' | 'check' | 'shield' | 'lock' | 'globe' | 'terminal' | 'bolt' | 'db' | 'users' | 'refresh' | 'trash' | 'file' | 'wp';
 const paths: Record<IconName, React.ReactNode> = {
+	thumbsUp: (
+		<>
+			<path d="M7 10v11H4a1 1 0 0 1-1-1v-9a1 1 0 0 1 1-1h3Z" />
+			<path d="M7 10l4-7a2.5 2.5 0 0 1 2.5 2.5V9h5.3a2 2 0 0 1 2 2.3l-1.3 8A2 2 0 0 1 17.5 21H7" />
+		</>
+	),
+	share: (
+		<>
+			<circle cx="18" cy="5" r="2.6" />
+			<circle cx="6" cy="12" r="2.6" />
+			<circle cx="18" cy="19" r="2.6" />
+			<path d="m8.3 10.7 7.4-4.4M8.3 13.3l7.4 4.4" />
+		</>
+	),
+	arrowDown: <path d="M12 4v15m-6-6 6 6 6-6" />,
+	arrowRight: <path d="M4 12h15m-6-6 6 6-6 6" />,
+	clock: (
+		<>
+			<circle cx="12" cy="12" r="9" />
+			<path d="M12 7v5l3.2 2" />
+		</>
+	),
+	warning: (
+		<>
+			<path d="M12 3.5 2.5 20h19L12 3.5Z" />
+			<path d="M12 10v4.5M12 17.4h.01" />
+		</>
+	),
+	sparkles: (
+		<>
+			<path d="M10 3.5 11.6 8 16 9.6l-4.4 1.6L10 15.7l-1.6-4.5L4 9.6 8.4 8 10 3.5Z" />
+			<path d="M18 14l.8 2.2L21 17l-2.2.8L18 20l-.8-2.2L15 17l2.2-.8L18 14Z" />
+		</>
+	),
 	cloud: <path d="M7 18a5 5 0 0 1-.6-9.96A6.5 6.5 0 0 1 19 9.5a4.25 4.25 0 0 1-.75 8.5H7Z" />,
 	cloudUp: (
 		<>

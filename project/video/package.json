@@ -7,8 +7,14 @@
     "studio": "remotion studio",
     "render": "python3 scripts/music.py && remotion render Overview omnioffloader-overview.mp4 --codec=h264 --crf=16 --audio-bitrate=320k --image-format=jpeg --jpeg-quality=95",
     "voice:wt": "python3 scripts/voice-wt.py",
+    "music:bn": "PAD_ONLY=1 python3 scripts/music.py 303.2 public/music-bn.wav",
     "capture:wt": "node scripts/capture.js",
-    "render:wt": "python3 scripts/music.py 366 public/music-wt.wav && remotion render Walkthrough omnioffloader-walkthrough.mp4 --codec=h264 --crf=18 --audio-bitrate=320k --image-format=jpeg --jpeg-quality=95"
+    "render:wt": "python3 scripts/music.py 366 public/music-wt.wav && remotion render Walkthrough omnioffloader-walkthrough.mp4 --codec=h264 --crf=18 --audio-bitrate=320k --image-format=jpeg --jpeg-quality=95",
+    "voice:bn": ".venv/bin/python scripts/whisper-bn.py && python3 scripts/sentences-bn.py",
+    "sfx": ".venv/bin/python scripts/sfx.py",
+    "prep:bn": "mkdir -p public/voice-bn && cp voice-bn/*.mp3 public/voice-bn/",
+    "render:bn": "pnpm prep:bn && remotion render BanglaR2 omnioffloader-r2-bangla.mp4 --codec=h264 --crf=18 --audio-bitrate=320k --image-format=jpeg --jpeg-quality=95",
+    "thumbs:bn": "remotion still BanglaThumbA thumbnail-a.png && remotion still BanglaThumbB thumbnail-b.png && remotion still BanglaThumb thumbnail-c.png"
   },
   "dependencies": {
     "@remotion/cli": "4.0.534",

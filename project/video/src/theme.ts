@@ -1,9 +1,13 @@
 import { loadFont as loadInter } from '@remotion/google-fonts/Inter';
 import { loadFont as loadMono } from '@remotion/google-fonts/JetBrainsMono';
+import { loadFont as loadHind } from '@remotion/google-fonts/HindSiliguri';
 import { interpolate, spring, useCurrentFrame, useVideoConfig, Easing } from 'remotion';
 
 export const { fontFamily: SANS } = loadInter( 'normal', { weights: [ '400', '500', '600', '700', '800' ], subsets: [ 'latin' ] } );
 export const { fontFamily: MONO } = loadMono( 'normal', { weights: [ '400', '600' ], subsets: [ 'latin' ] } );
+export const { fontFamily: BN } = loadHind( 'normal', { weights: [ '400', '500', '600', '700' ], subsets: [ 'bengali', 'latin' ] } );
+/** Latin in Inter, Bangla glyphs fall through to Hind Siliguri. */
+export const SANS_BN = `${ SANS }, ${ BN }`;
 
 export const C = {
 	bg0: '#050d1f',

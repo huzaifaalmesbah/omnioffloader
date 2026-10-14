@@ -3,3 +3,6 @@ out/
 public/music.wav
 public/music-wt.wav
 *.mp4
+.venv/
+public/music-bn.wav
+public/voice-bn/

@@ -6,7 +6,7 @@ Three videos (1920×1080), built with [Remotion](https://www.remotion.dev/):
 | --- | --- | --- |
 | Full walkthrough: WordPress.org page, install, every feature on the real admin screens, with the matching WP-CLI commands | 6:05 | https://www.youtube.com/watch?v=H68OvxS8DBM |
 | Short animated overview | 2:19 | https://www.youtube.com/watch?v=xzcemowK79Q |
-| Bangla tutorial: Cloudflare R2 + CDN in five steps (`BanglaR2`) | 5:03 | not yet |
+| Bangla tutorial: Cloudflare R2 + CDN in five steps (`BanglaR2`) | 5:03 | https://www.youtube.com/watch?v=fhWI1AbSjC0 |
 
 The rendered MP4s are **not committed** (`*.mp4` is git-ignored — they are large and live on YouTube). Render them locally with `pnpm render` (→ `omnioffloader-overview.mp4`) and `pnpm render:wt` (→ `omnioffloader-walkthrough.mp4`) and `pnpm render:bn` (→ `omnioffloader-r2-bangla.mp4`).
 

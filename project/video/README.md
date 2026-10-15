@@ -1,12 +1,13 @@
 # OmniOffloader videos
 
-Three videos (1920×1080), built with [Remotion](https://www.remotion.dev/):
+Three videos (1920×1080) and a vertical Facebook reel (1080×1920), built with [Remotion](https://www.remotion.dev/):
 
 | Video | Length | Published |
 | --- | --- | --- |
 | Full walkthrough: WordPress.org page, install, every feature on the real admin screens, with the matching WP-CLI commands | 6:05 | https://www.youtube.com/watch?v=H68OvxS8DBM |
 | Short animated overview | 2:19 | https://www.youtube.com/watch?v=xzcemowK79Q |
 | Bangla tutorial: Cloudflare R2 + CDN in five steps (`BanglaR2`) | 5:03 | https://www.youtube.com/watch?v=fhWI1AbSjC0 |
+| Facebook reel (Bangla, 9:16): "Optimize করেছেন, তাও slow?" (`ReelSlowSite`) | 1:55 | not yet |
 
 The rendered MP4s are **not committed** (`*.mp4` is git-ignored — they are large and live on YouTube). Render them locally with `pnpm render` (→ `omnioffloader-overview.mp4`) and `pnpm render:wt` (→ `omnioffloader-walkthrough.mp4`) and `pnpm render:bn` (→ `omnioffloader-r2-bangla.mp4`).
 
@@ -64,6 +65,25 @@ The Cloudflare screens are a drawn illustration, not screenshots (no real accoun
 pnpm voice:bn     # after replacing voice-bn/*.mp3 or editing bn-script.json
 pnpm render:bn    # → omnioffloader-r2-bangla.mp4
 pnpm thumbs:bn    # → thumbnail-a.png / -b.png / -c.png (YouTube A/B test)
+```
+
+## Facebook reel (`ReelSlowSite` composition)
+
+Animated explainer, 1080×1920: one headline per spoken sentence, white cards, an Avataaars character (`@dicebear/avataaars`, design by Pablo Stanley, free for commercial use), OmniOffloader brand colours. The owner's own voice, recorded in ElevenLabs as one take; no music. The `bangla-fb-reel` skill (`.claude/skills/`) holds the script shape, visual rules and this workflow.
+
+| Path | What it is |
+| --- | --- |
+| `reel-script.json` | Narration per scene, plus one beat per sentence: `headline`, `accent` (the coloured word), `tone`, `visual` |
+| `reel-voice-sheet.md` | The script as pasted into ElevenLabs |
+| `voice-reel/main.mp3` | The recorded take (committed) |
+| `scripts/reel-voice.py` | Shortens every pause to 0.45 s → `public/voice-reel/voice.wav` (git-ignored), Whisper in chunks → `src/reel-whisper.json`, sentence starts → `src/reel-timing.json` |
+| `src/reel/` | `timing.ts` (`S()` / `W()` cue helpers), `kit.tsx` (background, headline, cards, icons, character…), `scenes.tsx` (nine scenes), `Reel.tsx` |
+
+A cue word missing from its sentence throws, so editing `reel-script.json` cannot silently break the timing. Keep the headline + visual block centred and leave only ~350 px at the bottom for Facebook's caption.
+
+```bash
+pnpm voice:reel   # after replacing voice-reel/main.mp3 or editing reel-script.json
+pnpm render:reel  # → reel-slow-site.mp4
 ```
 
 ## Workflow (overview)

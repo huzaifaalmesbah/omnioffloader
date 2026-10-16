@@ -69,9 +69,9 @@ Use your own domain (for example `media.yoursite.com`) with Cloudflare, Amazon C
 * **Keep your keys out of the database.** Put your access keys in `wp-config.php` instead, and the settings screen locks those fields.
 * **Use WP-CLI if you like the terminal.** Offload, restore, check and repair your media from the command line, much faster on a VPS. See the FAQ below.
 
-= Built for large sites, already used on 70,000+ media items =
+= Built for large sites =
 
-OmniOffloader is already used on real sites to offload libraries of more than **70,000 media items**. Big libraries are what it was built for:
+OmniOffloader works on big sites with tens of thousands of media items. The first offload of a large library takes a while, because every existing file has to be copied to the cloud once. After that, there's nothing more to do: new uploads are offloaded automatically as you add them. To make that first run easy:
 
 * **Runs for hours without you.** Start a big offload from WP-CLI in the background, close your terminal, and check its progress, speed and time left anytime with `wp omnioffloader status`.
 * **Up to 64 files at the same time.** On a VPS or dedicated server, `--concurrency` moves many files at once, so big libraries finish much sooner.
@@ -326,7 +326,7 @@ Every command that changes something supports `--dry-run`, so you can see what i
 
 = Does it work for a very large media library? =
 
-Yes. OmniOffloader is already used to offload libraries of more than 70,000 media items. Jobs run in small steps, so memory use stays low however big your library is, and a stopped job continues where it left off. For the fastest results on a big library, use WP-CLI (see the next question).
+Yes. The first offload takes a while on a big library, since every existing file is copied to the cloud once. After that, new uploads are offloaded automatically, so there's nothing more to do. Jobs run in small steps, so memory use stays low however big your library is, and a stopped job continues where it left off. For the fastest results on a big library, use WP-CLI (see the next question).
 
 = How can I offload a very large library faster? =
 

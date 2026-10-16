@@ -1,10 +1,24 @@
 name: Deploy to WordPress.org
 
 on:
+  # A release published by hand on GitHub.
   release:
     types:
       - published
+  # Called by release-please.yml after merging a release PR (a release created
+  # by GitHub Actions does not fire the "published" event).
+  workflow_call:
+    inputs:
+      tag:
+        type: string
+        description: 'Release tag to deploy, e.g. 0.1.7'
+        required: true
   workflow_dispatch:
+    inputs:
+      tag:
+        type: string
+        description: 'Release tag to deploy, e.g. 0.1.7 (empty: the selected ref)'
+        required: false
 
 permissions: {}
 
@@ -15,9 +29,15 @@ jobs:
     permissions:
       contents: write
     
+    env:
+      # The tag from the caller, the published release, or the selected ref.
+      TAG: ${{ inputs.tag || github.event.release.tag_name || github.ref_name }}
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag || github.event.release.tag_name || github.ref }}
 
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
@@ -65,10 +85,12 @@ jobs:
         env:
           SVN_USERNAME: ${{ secrets.SVN_USERNAME }}
           SVN_PASSWORD: ${{ secrets.SVN_PASSWORD }}
+          VERSION: ${{ env.TAG }}
 
       - name: Upload release asset
         uses: softprops/action-gh-release@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
+          tag_name: ${{ env.TAG }}
           files: ${{ steps.deploy.outputs.zip-path }}

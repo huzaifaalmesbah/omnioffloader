@@ -1,0 +1,46 @@
+name: Milestones
+
+# A PR merged into main without a milestone joins the next release: the open
+# milestone with the lowest version number. release-please.yml closes that
+# milestone when the version ships. Release PRs are left alone.
+on:
+  pull_request_target:
+    types: [closed]
+    branches: [main]
+
+permissions: {}
+
+jobs:
+  assign:
+    if: ${{ github.event.pull_request.merged && !github.event.pull_request.milestone && !startsWith(github.event.pull_request.head.ref, 'release-please--') }}
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      pull-requests: write
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const milestones = await github.paginate( github.rest.issues.listMilestones, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+            } );
+            const parse = ( title ) => title.split( '.' ).map( Number );
+            const next = milestones
+              .filter( ( m ) => /^\d+\.\d+\.\d+$/.test( m.title ) )
+              .sort( ( a, b ) => {
+                const [ x, y ] = [ parse( a.title ), parse( b.title ) ];
+                return x[ 0 ] - y[ 0 ] || x[ 1 ] - y[ 1 ] || x[ 2 ] - y[ 2 ];
+              } )[ 0 ];
+            if ( ! next ) {
+              core.info( 'No open version milestone.' );
+              return;
+            }
+            await github.rest.issues.update( {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number,
+              milestone: next.number,
+            } );
+            core.info( `Added #${ context.payload.pull_request.number } to milestone ${ next.title }.` );

@@ -318,6 +318,49 @@ class MediaCounters {
 	}
 
 	/**
+	 * Storage totals for the Dashboard: what is in the cloud, what offloaded
+	 * media still keeps on this server, and the space its retention policy
+	 * freed, overall and per policy.
+	 *
+	 * Every offloaded file is in the cloud; Retain Local keeps all of them on
+	 * the server, Smart Cleanup the originals, Full Migration none.
+	 *
+	 * @since 0.1.7
+	 *
+	 * @return array{cloud_bytes: int, server_bytes: int, freed_bytes: int, unsized: int, policies: array<int, array{policy: int, count: int, cloud_bytes: int, server_bytes: int, freed_bytes: int}>}
+	 */
+	public static function storage() {
+		$c      = self::get();
+		$totals = array(
+			'cloud_bytes'  => 0,
+			'server_bytes' => 0,
+			'freed_bytes'  => 0,
+			'unsized'      => 0,
+			'policies'     => array(),
+		);
+
+		foreach ( array( 0, 1, 2 ) as $policy ) {
+			$roles  = RetentionApplier::local_roles( $policy );
+			$cloud  = $c[ $policy ]['main_bytes'] + $c[ $policy ]['size_bytes'];
+			$server = ( $roles['main'] ? $c[ $policy ]['main_bytes'] : 0 ) + ( $roles['sizes'] ? $c[ $policy ]['size_bytes'] : 0 );
+
+			$totals['cloud_bytes']  += $cloud;
+			$totals['server_bytes'] += $server;
+			$totals['freed_bytes']  += $cloud - $server;
+			$totals['unsized']      += $c[ $policy ]['any_unknown'];
+			$totals['policies'][]    = array(
+				'policy'       => $policy,
+				'count'        => $c[ $policy ]['count'],
+				'cloud_bytes'  => $cloud,
+				'server_bytes' => $server,
+				'freed_bytes'  => $cloud - $server,
+			);
+		}
+
+		return $totals;
+	}
+
+	/**
 	 * Recount everything from the database: a chunked scan of the offloaded
 	 * attachments' metadata and retention rows, 500 attachments per query.
 	 *

@@ -18,7 +18,7 @@ permissions: {}
 
 jobs:
   release-please:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: write
       pull-requests: write
@@ -30,7 +30,7 @@ jobs:
       pr: ${{ steps.release.outputs.pr }}
     steps:
       # Needs the repo setting "Allow GitHub Actions to create and approve pull requests".
-      - uses: googleapis/release-please-action@v4
+      - uses: googleapis/release-please-action@v5
         id: release
         with:
           config-file: release-please-config.json
@@ -43,14 +43,14 @@ jobs:
   sync-versions:
     needs: release-please
     if: ${{ needs.release-please.outputs.pr }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: ${{ fromJSON(needs.release-please.outputs.pr).headBranchName }}
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: '24'
       - name: Sync versions and the readme changelog
@@ -69,11 +69,11 @@ jobs:
   close-milestone:
     needs: release-please
     if: ${{ needs.release-please.outputs.release_created }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       issues: write
     steps:
-      - uses: actions/github-script@v7
+      - uses: actions/github-script@v9
         env:
           VERSION: ${{ needs.release-please.outputs.version }}
         with:

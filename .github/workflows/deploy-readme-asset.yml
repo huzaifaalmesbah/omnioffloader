@@ -15,9 +15,9 @@ permissions:
 jobs:
   assets:
     name: Plugin asset/readme update
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Clean non-asset files and sources
         run: |

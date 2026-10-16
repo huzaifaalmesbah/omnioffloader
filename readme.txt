@@ -69,6 +69,16 @@ Use your own domain (for example `media.yoursite.com`) with Cloudflare, Amazon C
 * **Keep your keys out of the database.** Put your access keys in `wp-config.php` instead, and the settings screen locks those fields.
 * **Use WP-CLI if you like the terminal.** Offload, restore, check and repair your media from the command line, much faster on a VPS. See the FAQ below.
 
+= Built for large sites, already used on 70,000+ media items =
+
+OmniOffloader is already used on real sites to offload libraries of more than **70,000 media items**. Big libraries are what it was built for:
+
+* **Runs for hours without you.** Start a big offload from WP-CLI in the background, close your terminal, and check its progress, speed and time left anytime with `wp omnioffloader status`.
+* **Up to 64 files at the same time.** On a VPS or dedicated server, `--concurrency` moves many files at once, so big libraries finish much sooner.
+* **Picks up where it stopped.** Stop a job, or lose the connection, and run it again: media already done is skipped.
+* **Checks the result.** `wp omnioffloader verify` confirms every file is really in your cloud storage and fixes anything missing.
+* **Failed items never hold up the rest.** A broken file is reported and skipped, and you can retry all failed items later with one click.
+
 = Built for every kind of hosting =
 
 OmniOffloader runs just as well on a small shared hosting plan as on a big server.
@@ -100,6 +110,7 @@ OmniOffloader runs just as well on a small shared hosting plan as on a big serve
 
 = Who is it for? =
 
+* **Large sites** with tens of thousands of images and files.
 * **Bloggers and news sites** with years of images in the Media Library.
 * **WooCommerce stores** with many product photos.
 * **Photographers, portfolios and agencies** with large, high-quality images.
@@ -312,6 +323,10 @@ Yes. **OmniOffloader → Tools** lists every command with examples and copy butt
 `wp omnioffloader stop` stops the running job.
 
 Every command that changes something supports `--dry-run`, so you can see what it would do first. Only one job runs at a time, so two jobs never touch the same files.
+
+= Does it work for a very large media library? =
+
+Yes. OmniOffloader is already used to offload libraries of more than 70,000 media items. Jobs run in small steps, so memory use stays low however big your library is, and a stopped job continues where it left off. For the fastest results on a big library, use WP-CLI (see the next question).
 
 = How can I offload a very large library faster? =
 

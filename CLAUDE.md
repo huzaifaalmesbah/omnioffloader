@@ -8,7 +8,17 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Released so far: `0.1.0` (initial release, Cloudflare R2 only), `0.1.1` (five more providers, bulk-queue reliability work), `0.1.2` (custom batch quantity limit for Bulk Offload & Bring Back, UI consistency, CLI `--limit` restore, plus LiteSpeed Cache, Breeze, and Object Cache real-time reliability fixes), `0.1.3` (apply a changed retention policy to existing media — Tools page + `wp omnioffloader retention` — an in-admin WP-CLI reference, and parallel uploads with a Transfer Speed setting), `0.1.4` (Serve Media from Cloud setting, `offload --concurrency` up to 64, `wp omnioffloader stop`, nohup-friendly long CLI runs), `0.1.5` (editors show offloaded media from the cloud; saves store local URLs — `ContentImageTagObserver`), `0.1.6` (Failed Items + retry, `wp omnioffloader verify`/`errors`, `status --format=json`, single-item actions refuse during any job, admin data preloaded with the page, opt-in Appsero insights). See `readme.txt` for the user-facing changelog — keep it updated in the same commit as any user-visible change.
 
-When bumping the version, four places must move together: the `Version:` header and `OMNIOFFLOADER_VERSION` in `omnioffloader.php`, `Stable tag` in `readme.txt` (the docs site's version badge reads it), and `version` in `package.json`. A migration for the new version goes in `Core\Migrator`.
+### Releasing (Release Please)
+
+Releases are automated with Release Please (`.github/workflows/release-please.yml`, `release-please-config.json`, `.release-please-manifest.json`). Never bump versions or publish releases by hand.
+
+- **PR titles are Conventional Commits** (`feat:`, `fix:`, `perf:`, `docs:`, `chore:`…) — a squash merge uses the title, and `pr-title.yml` checks it. Before 1.0.0, `feat` bumps the patch (0.1.6 → 0.1.7) and a breaking change bumps the minor; Release Please never goes to 1.0.0 by itself. To choose a version, add a `Release-As: x.y.z` footer to a commit.
+- **Every user-visible PR adds its readme lines under `= Unreleased =`** in both the `== Changelog ==` and `== Upgrade Notice ==` sections of `readme.txt` (plain, user-friendly wording; create the entry if it isn't there).
+- On each push to main, Release Please updates one open `chore: release x.y.z` PR (CHANGELOG.md + manifest). The `sync-versions` job then runs `scripts/sync-versions.mjs` on it: the four version places (`Version:` header and `OMNIOFFLOADER_VERSION` in `omnioffloader.php`, `Stable tag` in `readme.txt` — the docs badge reads it — and `version` in `package.json`), `= Unreleased =` → `= x.y.z =`, and moving releases beyond the two latest from `readme.txt` into `changelog.txt`. It warns when the readme has no entry.
+- **Merging the release PR is the release**: tag, GitHub Release, `deploy-on-pushing-plugin.yml` (called directly — a release made by GitHub Actions doesn't fire `release: published`) and the milestone named after the version is closed. A manual GitHub Release still deploys through `release: published`.
+- Merged PRs without a milestone join the lowest open version milestone (`milestones.yml`).
+- A migration for the new version goes in `Core\Migrator`, in the feature PR that needs it.
+- Needs the repo setting "Allow GitHub Actions to create and approve pull requests".
 
 ## What This Plugin Does
 
@@ -249,7 +259,7 @@ The public documentation is built with Astro Starlight in `docs/` and deployed t
 - Run `pnpm --dir docs run dev` to test documentation locally at `http://localhost:4321`.
 - Run `pnpm --dir docs run build` to verify the static site builds without broken links or syntax errors.
 - The changelog page is generated automatically from `readme.txt` and `changelog.txt` by `docs/scripts/changelog.mjs`. Always update `readme.txt`, never `changelog.md`.
-- WordPress.org truncates a readme Changelog over **5,000 words**. `readme.txt` keeps only the two latest releases; at each release, move the older one into the top of `changelog.txt` (same `= x.y.z =` format, ships in the bundle). Upgrade notices all stay in `readme.txt`.
+- WordPress.org truncates a readme Changelog over **5,000 words**. `readme.txt` keeps only the two latest releases; `scripts/sync-versions.mjs` moves older ones into the top of `changelog.txt` on the release PR (same `= x.y.z =` format, ships in the bundle). Upgrade notices all stay in `readme.txt`. The docs page skips `= Unreleased =`. Root `CHANGELOG.md` is Release Please's commit log — never edit it, and it is excluded from the plugin.
 - Keep docs in sync with user-facing features, settings, CLI flags, provider fields, and hooks in the same commit.
 
 ### Screenshot Automation (`pnpm screenshots`)

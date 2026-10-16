@@ -1,4 +1,5 @@
 import { CliReference } from '../components/tools/CliReference';
+import { FailedItemsCard } from '../components/tools/FailedItemsCard';
 import { MoveFolderCard } from '../components/tools/MoveFolderCard';
 import { RetentionSyncCard } from '../components/tools/RetentionSyncCard';
 
@@ -11,6 +12,7 @@ export function ToolsPage( { onNavigate }: ToolsProps ) {
 		<div className="omnioffloader-page">
 			<RetentionSyncCard />
 			<MoveFolderCard />
+			<FailedItemsCard onNavigate={ onNavigate } />
 			<CliReference onNavigate={ onNavigate } />
 		</div>
 	);

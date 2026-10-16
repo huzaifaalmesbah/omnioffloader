@@ -1909,6 +1909,66 @@
 	}
 }
 
+.omnioffloader-failed-list {
+	margin: 16px 0;
+	padding: 0;
+	list-style: none;
+	border: 1px solid var( --omnioffloader-border );
+	border-radius: var( --omnioffloader-radius-sm );
+
+	&__item {
+		margin: 0;
+		padding: 12px 14px;
+
+		& + & {
+			border-top: 1px solid var( --omnioffloader-border );
+		}
+	}
+
+	&__head {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 12px;
+		font-weight: 600;
+
+		a {
+			color: var( --omnioffloader-accent );
+			text-decoration: none;
+			overflow-wrap: anywhere;
+		}
+	}
+
+	&__error {
+		margin: 6px 0 0;
+		color: var( --omnioffloader-text );
+		overflow-wrap: anywhere;
+	}
+
+	&__when,
+	&__note {
+		color: var( --omnioffloader-text-muted );
+	}
+
+	&__paging {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 12px;
+		margin-bottom: 16px;
+	}
+
+	&__actions {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 8px;
+	}
+
+	&__note {
+		margin: 12px 0 0;
+	}
+}
+
 .omnioffloader-ui-badge-pulse {
 	width: 6px;
 	height: 6px;

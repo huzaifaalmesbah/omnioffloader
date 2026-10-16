@@ -2,7 +2,7 @@
 title: wp omnioffloader stop
 description: Stop a running offload, Bring Back, retention or move job from any terminal, and keep long jobs running after you close the terminal.
 sidebar:
-  order: 7
+  order: 8
 ---
 
 Stops the offload, Bring Back, retention or move job that is running. It works from any terminal: a new SSH window, a script or a cron job.

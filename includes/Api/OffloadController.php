@@ -93,8 +93,16 @@ class OffloadController extends BaseController {
 					'sanitize_callback' => 'absint',
 					'validate_callback' => 'rest_validate_request_arg',
 				),
+				'state'    => array(
+					'type'              => 'string',
+					'default'           => 'all',
+					'enum'              => array( 'all', 'local', 'offloaded' ),
+					'sanitize_callback' => 'sanitize_key',
+					'validate_callback' => 'rest_validate_request_arg',
+				),
 			)
 		);
+		$this->register_post_route( '/offload/errors/retry', array( $this, 'retry_errors_response' ) );
 
 		register_rest_route(
 			$this->namespace,
@@ -322,7 +330,11 @@ class OffloadController extends BaseController {
 	}
 
 	/**
-	 * GET /offload/errors — attachments whose last offload attempt failed.
+	 * GET /offload/errors — attachments with an error log.
+	 *
+	 * 'local' items are failed offloads (what a retry offloads); 'offloaded'
+	 * ones are in the cloud, with errors from a Bring Back, retention update
+	 * or move. X-WP-Total / X-WP-TotalPages page the list like core does.
 	 *
 	 * @param WP_REST_Request $request Request.
 	 * @return \WP_REST_Response
@@ -330,48 +342,78 @@ class OffloadController extends BaseController {
 	public function errors_response( WP_REST_Request $request ) {
 		$per_page = (int) $request->get_param( 'per_page' );
 		$page     = max( 1, (int) $request->get_param( 'page' ) );
-
-		$query = new \WP_Query(
-			array(
-				'post_type'      => 'attachment',
-				'post_status'    => 'inherit',
-				'posts_per_page' => $per_page,
-				'paged'          => $page,
-				'orderby'        => 'ID',
-				'order'          => 'DESC',
-				'meta_key'       => 'omnioffloader_error_log', // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key -- bounded admin query.
-				'fields'         => 'ids',
-			)
-		);
-
-		// 'fields' => 'ids' yields IDs, but WP_Query types posts as int|WP_Post.
-		$ids = array_map(
-			static function ( $post ) {
-				return $post instanceof \WP_Post ? $post->ID : (int) $post;
-			},
-			$query->posts
-		);
+		$state    = (string) $request->get_param( 'state' );
+		$total    = Helpers::count_failed( $state );
+		$ids      = Helpers::failed_ids( $state, $per_page, ( $page - 1 ) * $per_page );
 
 		_prime_post_caches( $ids, false, true );
 
 		$items = array();
 
 		foreach ( $ids as $post_id ) {
-			$log = get_post_meta( $post_id, 'omnioffloader_error_log', true );
-
 			$items[] = array(
-				'id'     => $post_id,
-				'title'  => get_the_title( $post_id ),
-				'errors' => is_array( $log ) ? $log : array(),
+				'id'        => $post_id,
+				'title'     => get_the_title( $post_id ),
+				'offloaded' => self::is_offloaded( $post_id ),
+				'edit_url'  => (string) get_edit_post_link( $post_id, 'raw' ),
+				'errors'    => self::error_log_of( $post_id ),
 			);
 		}
 
-		// Standard REST paging headers, like core collections.
 		$response = rest_ensure_response( $items );
-		$response->header( 'X-WP-Total', (string) (int) $query->found_posts );
-		$response->header( 'X-WP-TotalPages', (string) (int) $query->max_num_pages );
+		$response->header( 'X-WP-Total', (string) $total );
+		$response->header( 'X-WP-TotalPages', (string) (int) ceil( $total / max( 1, $per_page ) ) );
 
 		return $response;
+	}
+
+	/**
+	 * POST /offload/errors/retry — queue every failed offload again.
+	 *
+	 * Runs as a Bulk Offload of just those attachments, so it shows on the
+	 * Offload screen and follows the same one-job-at-a-time rule.
+	 *
+	 * @since 0.1.6
+	 *
+	 * @return \WP_REST_Response|\WP_Error
+	 */
+	public function retry_errors_response() {
+		FolderClaim::refresh();
+
+		if ( SafeMode::is_active() ) {
+			return SafeMode::refusal();
+		}
+
+		$engine = $this->require_engine();
+
+		if ( is_wp_error( $engine ) ) {
+			return $engine;
+		}
+
+		$conflict = Plugin::get_instance()->bulk_job_conflict( 'offload' );
+
+		if ( null !== $conflict ) {
+			return $conflict;
+		}
+
+		$ids = self::filter_manageable_ids( Helpers::failed_ids( 'local' ) );
+
+		if ( empty( $ids ) ) {
+			return new \WP_Error(
+				'omnioffloader_no_failed',
+				__( 'There are no failed offloads to retry.', 'omnioffloader' ),
+				array( 'status' => 409 )
+			);
+		}
+
+		$queued = $engine->start( $ids );
+
+		return rest_ensure_response(
+			array(
+				'queued' => $queued,
+				'state'  => BulkOffloadProcessor::get_state(),
+			)
+		);
 	}
 
 	/**

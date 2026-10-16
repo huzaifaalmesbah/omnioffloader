@@ -70,6 +70,77 @@ function getCommands(): CliCommand[] {
 			],
 		},
 		{
+			name: 'wp omnioffloader errors',
+			summary: __(
+				'List media with errors (failed offloads, and offloaded media whose Bring Back, retention update or move failed), retry failed offloads, or clear error logs.',
+				'omnioffloader'
+			),
+			view: 'tools',
+			viewLabel: __( 'Open Failed Items', 'omnioffloader' ),
+			docs: 'wp-cli/errors/',
+			examples: [
+				{
+					command: 'wp omnioffloader errors',
+					description: __(
+						'List them with their last error.',
+						'omnioffloader'
+					),
+				},
+				{
+					command: 'wp omnioffloader errors --retry',
+					description: __(
+						'Offload the failed offloads again.',
+						'omnioffloader'
+					),
+				},
+				{
+					command:
+						'wp omnioffloader errors --state=offloaded --clear',
+					description: __(
+						'Clear the error logs once the cause is fixed.',
+						'omnioffloader'
+					),
+				},
+			],
+			options: [
+				{
+					flag: '--state=<state>',
+					description: __(
+						'all (default), local (failed offloads) or offloaded.',
+						'omnioffloader'
+					),
+				},
+				{
+					flag: '--retry',
+					description: __(
+						'Offload the failed offloads again; takes --dry-run, --force and --concurrency.',
+						'omnioffloader'
+					),
+				},
+				{
+					flag: '--clear',
+					description: __(
+						'Delete the error logs of the listed items (asks first unless --yes).',
+						'omnioffloader'
+					),
+				},
+				{
+					flag: '--limit=<number>',
+					description: __(
+						'At most this many items, newest first.',
+						'omnioffloader'
+					),
+				},
+				{
+					flag: '--format=<format>',
+					description: __(
+						'table, json, csv, ids or count.',
+						'omnioffloader'
+					),
+				},
+			],
+		},
+		{
 			name: 'wp omnioffloader stop',
 			summary: __(
 				'Stop the running offload, Bring Back, retention or move job, from any terminal. A WP-CLI run finishes the file it is transferring first; an admin job is cancelled.',

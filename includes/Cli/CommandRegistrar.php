@@ -30,5 +30,6 @@ class CommandRegistrar {
 		WP_CLI::add_command( 'omnioffloader retention', RetentionCommand::class );
 		WP_CLI::add_command( 'omnioffloader status', StatusCommand::class );
 		WP_CLI::add_command( 'omnioffloader stop', StopCommand::class );
+		WP_CLI::add_command( 'omnioffloader errors', ErrorsCommand::class );
 	}
 }

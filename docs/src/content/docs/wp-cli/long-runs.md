@@ -2,7 +2,7 @@
 title: Long runs and log files
 description: Run a big offload, Bring Back, retention or move job in the background, save its progress to a log file, watch it, check the speed and time left, and stop it.
 sidebar:
-  order: 8
+  order: 9
 ---
 
 A big job, such as offloading tens of thousands of attachments, can take hours. This page shows how to run it so it keeps going after you close the terminal, how to follow its progress in a log file, and how to work out how long it still needs.
@@ -221,7 +221,7 @@ The last lines of the log show the result:
 tail -n 3 ~/offload.log
 ```
 
-Some failures are normal on a big, old library. Find them in **Media → Library** (list view): a failed item shows **Failed — …** or **Offload failed** in the OmniOffloader status column, with its error.
+Some failures are normal on a big, old library. List them with [`wp omnioffloader errors`](/wp-cli/errors/), or find them in **Media → Library** (list view) with the **Offload failed** filter: a failed item shows **Failed — …** or **Offload failed** in the OmniOffloader status column, with its error. Retry them all with `wp omnioffloader errors --retry`.
 
 | Error | Meaning |
 | --- | --- |

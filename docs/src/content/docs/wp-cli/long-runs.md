@@ -202,7 +202,7 @@ The job finishes the files it is uploading, then exits. Nothing is left half don
 You can also end it with `kill` and the process number from `status` or the top of the log (`kill 2480717`). The job then stops at once instead of finishing its current files, and cleans up like `stop` does (when PHP's `pcntl` extension is available). Use `stop` when you can.
 
 :::note[Media Library after a stop]
-While a job runs, the attachments it is working on show **Offloading...** or **Restoring...** in **Media → Library**. However the job ends (`stop`, `kill`, a closed window or a server restart), those attachments go back to their real status. The next run picks up any it didn't finish. After a server restart or `kill -9`, this happens when `wp omnioffloader stop` or a new run finds the job gone.
+While a job runs, the attachments it is working on show **Offloading…** or **Restoring…** in **Media → Library**. However the job ends (`stop`, `kill`, a closed window or a server restart), those attachments go back to their real status. The next run picks up any it didn't finish. After a server restart or `kill -9`, this happens when `wp omnioffloader stop` or a new run finds the job gone.
 :::
 
 **Continue later** by running the same command again. Attachments that are already done are skipped, so it carries on where it stopped:
@@ -243,7 +243,7 @@ rm ~/offload.log
 | `Error: Safe mode is on…` | The site looks like a staging or local copy, so nothing is uploaded. See [Safe mode](/features/safe-mode/). |
 | `Success: Nothing to offload.` | Everything is already offloaded. |
 | `status` says the run *ended without cleaning up* | The job was killed (for example, the server restarted). Start the same command again; it continues where it stopped. |
-| Some media still shows **Offloading...** after the job ended | The job was killed so hard that it couldn't clean up (`kill -9`, a server restart). Run `wp omnioffloader stop` or start the command again: either one finds the job gone and resets those attachments. |
+| Some media still shows **Offloading…** after the job ended | The job was killed so hard that it couldn't clean up (`kill -9`, a server restart). Run `wp omnioffloader stop` or start the command again: either one finds the job gone and resets those attachments. |
 | The job stopped when you closed the terminal | It was started without `nohup` (or without `&`). Start it again as shown in [step 1](#1-start-the-job-with-a-log-file); it continues where it stopped. |
 | `Error: … cannot be answered without a terminal … Add --yes.` | The job would ask a question (Bring Back with `--delete-cloud`, retention, or `move` without `--keep-old`), which a background job can't answer. Add `--yes`. |
 | `nohup: ignoring input` at the top of the log | Normal. `nohup` says it won't read from the keyboard. |

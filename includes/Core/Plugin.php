@@ -277,7 +277,7 @@ class Plugin {
 	 *
 	 * Attachments the run had in flight lose their "processing" status:
 	 * a run interrupted mid-batch (Ctrl-C, a kill, a fatal error) would
-	 * otherwise leave them showing "Offloading..." / "Restoring..." forever.
+	 * otherwise leave them showing "Offloading…" / "Restoring…" forever.
 	 *
 	 * @since 0.1.4
 	 *

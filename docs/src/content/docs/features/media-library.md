@@ -50,7 +50,7 @@ Under each attachment title in list view:
 - **Retry Offload**: try again after a failure.
 - **Bring Back**: restore this attachment to your server.
 
-While a transfer runs, the action shows **Offloading...**, **Restoring...** or **Queued...** instead.
+While a transfer runs, the action shows **Offloading…**, **Restoring…** or **Queued…** instead.
 
 ## Bulk actions
 

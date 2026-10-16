@@ -592,7 +592,7 @@ class OffloadController extends BaseController {
 
 			if ( $bulk_active && $current_id > 0 && $current_id === $attachment_id && 'processing' !== ( $status_data['status'] ?? '' ) ) {
 				$status_data['status'] = 'processing';
-				$status_data['label']  = 'restore' === $bulk_type ? __( 'Restoring...', 'omnioffloader' ) : __( 'Offloading...', 'omnioffloader' );
+				$status_data['label']  = 'restore' === $bulk_type ? __( 'Restoring…', 'omnioffloader' ) : __( 'Offloading…', 'omnioffloader' );
 			}
 
 			$current_status = (string) ( $status_data['status'] ?? '' );

@@ -92,7 +92,7 @@ class RowActionsObserver implements ObserverInterface {
 			$actions['omnioffloader_processing'] = sprintf(
 				'<span class="omnioffloader-row-action is-busy" data-attachment-id="%d">%s</span>',
 				$attachment_id,
-				$is_restoring ? esc_html__( 'Restoring...', 'omnioffloader' ) : esc_html__( 'Offloading...', 'omnioffloader' )
+				$is_restoring ? esc_html__( 'Restoring…', 'omnioffloader' ) : esc_html__( 'Offloading…', 'omnioffloader' )
 			);
 
 			return $actions;
@@ -103,7 +103,7 @@ class RowActionsObserver implements ObserverInterface {
 			$actions['omnioffloader_queued'] = sprintf(
 				'<span class="omnioffloader-row-action is-busy" data-attachment-id="%d">%s</span>',
 				$attachment_id,
-				$is_restoring ? esc_html__( 'Queued...', 'omnioffloader' ) : esc_html__( 'Queued...', 'omnioffloader' )
+				$is_restoring ? esc_html__( 'Queued…', 'omnioffloader' ) : esc_html__( 'Queued…', 'omnioffloader' )
 			);
 
 			return $actions;
@@ -163,7 +163,7 @@ class RowActionsObserver implements ObserverInterface {
 			return sprintf(
 				'<span class="omnioffloader_processing omnioffloader_action"><span class="omnioffloader-row-action is-busy" data-attachment-id="%d">%s</span></span>',
 				$attachment_id,
-				$is_restoring ? esc_html__( 'Restoring...', 'omnioffloader' ) : esc_html__( 'Offloading...', 'omnioffloader' )
+				$is_restoring ? esc_html__( 'Restoring…', 'omnioffloader' ) : esc_html__( 'Offloading…', 'omnioffloader' )
 			);
 		}
 
@@ -173,7 +173,7 @@ class RowActionsObserver implements ObserverInterface {
 			return sprintf(
 				'<span class="omnioffloader_queued omnioffloader_action"><span class="omnioffloader-row-action is-busy" data-attachment-id="%d">%s</span></span>',
 				$attachment_id,
-				$is_restoring ? esc_html__( 'Queued...', 'omnioffloader' ) : esc_html__( 'Queued...', 'omnioffloader' )
+				$is_restoring ? esc_html__( 'Queued…', 'omnioffloader' ) : esc_html__( 'Queued…', 'omnioffloader' )
 			);
 		}
 

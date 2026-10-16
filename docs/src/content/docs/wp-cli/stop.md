@@ -66,4 +66,4 @@ If a run was killed without cleaning up (for example `kill -9`, or the server re
 
 ## Media Library after a stop
 
-While a run works, the attachments it is transferring show **Offloading...** or **Restoring...** in **Media → Library**. When the run ends without finishing them (Ctrl+C, a closed window, `kill`), they go back to their real status, such as **Local**, and the next run picks them up. After a run killed without cleaning up, this happens when the next command clears its lock.
+While a run works, the attachments it is transferring show **Offloading…** or **Restoring…** in **Media → Library**. When the run ends without finishing them (Ctrl+C, a closed window, `kill`), they go back to their real status, such as **Local**, and the next run picks them up. After a run killed without cleaning up, this happens when the next command clears its lock.

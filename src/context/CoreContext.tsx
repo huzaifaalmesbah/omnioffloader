@@ -20,15 +20,52 @@ import {
 	saveCredentials,
 	testConnection,
 } from '../api/provider';
+import { takePreloaded } from '../api/preload';
 import { useCliJob } from '../hooks/useCliJob';
 import { errorMessage } from '../utils/errorHelper';
 import type {
 	CliJob,
 	CredentialField,
+	CredentialsResponse,
 	MediaStats,
 	ProviderInfo,
 	Settings,
 } from '../types';
+
+interface BootData {
+	settings: Settings | null;
+	providers: ProviderInfo[] | null;
+	stats: MediaStats | null;
+	credentials: Record< string, CredentialField[] >;
+}
+
+/**
+ * What the page embedded (api/preload), so the first render needs no request.
+ */
+function readBootData(): BootData {
+	const providers =
+		takePreloaded< ProviderInfo[] >( '/core/providers' ) ?? null;
+	const credentials: Record< string, CredentialField[] > = {};
+
+	for ( const provider of providers ?? [] ) {
+		const response = takePreloaded< CredentialsResponse >(
+			`/provider/credentials?provider=${ encodeURIComponent(
+				provider.key
+			) }`
+		);
+
+		if ( response?.fields ) {
+			credentials[ provider.key ] = response.fields;
+		}
+	}
+
+	return {
+		settings: takePreloaded< Settings >( '/core/settings' ) ?? null,
+		providers,
+		stats: takePreloaded< MediaStats >( '/core/stats' ) ?? null,
+		credentials,
+	};
+}
 
 export interface SaveFeedback {
 	status: 'success' | 'error';
@@ -77,13 +114,20 @@ const CoreContext = createContext< CoreContextValue | null >( null );
 let noticeId = 0;
 
 export function CoreProvider( { children }: { children: React.ReactNode } ) {
-	const [ loading, setLoading ] = useState( true );
-	const [ settings, setSettings ] = useState< Settings | null >( null );
-	const [ savedSettings, setSavedSettings ] = useState< Settings | null >(
-		null
+	const [ boot ] = useState< BootData >( readBootData );
+	const booted = !! ( boot.settings && boot.providers && boot.stats );
+
+	const [ loading, setLoading ] = useState( ! booted );
+	const [ settings, setSettings ] = useState< Settings | null >(
+		boot.settings
 	);
-	const [ providers, setProviders ] = useState< ProviderInfo[] >( [] );
-	const [ stats, setStats ] = useState< MediaStats | null >( null );
+	const [ savedSettings, setSavedSettings ] = useState< Settings | null >(
+		boot.settings
+	);
+	const [ providers, setProviders ] = useState< ProviderInfo[] >(
+		boot.providers ?? []
+	);
+	const [ stats, setStats ] = useState< MediaStats | null >( boot.stats );
 	const [ notices, setNotices ] = useState< Notice[] >( [] );
 	const [ settingsDirty, setSettingsDirty ] = useState( false );
 	const [ credentialDraft, setCredentialDraft ] = useState<
@@ -92,7 +136,7 @@ export function CoreProvider( { children }: { children: React.ReactNode } ) {
 	const [ isSaving, setIsSaving ] = useState( false );
 	const [ credentialsFields, setCredentialsFields ] = useState<
 		Record< string, CredentialField[] >
-	>( {} );
+	>( boot.credentials );
 	const [ saveFeedback, setSaveFeedback ] = useState< SaveFeedback | null >(
 		null
 	);
@@ -152,6 +196,11 @@ export function CoreProvider( { children }: { children: React.ReactNode } ) {
 	}, [] );
 
 	useEffect( () => {
+		// Everything came with the page.
+		if ( booted ) {
+			return;
+		}
+
 		Promise.all( [ fetchSettings(), fetchProviders(), fetchStats() ] )
 			.then( ( [ loadedSettings, loadedProviders, loadedStats ] ) => {
 				setSettings( loadedSettings );
@@ -163,7 +212,7 @@ export function CoreProvider( { children }: { children: React.ReactNode } ) {
 				addNotice( 'error', errorMessage( error ) );
 			} )
 			.finally( () => setLoading( false ) );
-	}, [ addNotice ] );
+	}, [ addNotice, booted ] );
 
 	const updateSettings = useCallback(
 		( partial: Partial< Settings > ) => {

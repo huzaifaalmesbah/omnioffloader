@@ -178,6 +178,8 @@ All mutations via REST; `@wordpress/api-fetch` sends the nonce. Every route: exp
 - `GET /move/preflight` · `POST /move/bulk` · `GET /move/bulk/progress` · `POST /move/bulk/cancel` — move media offloaded under an earlier Path Prefix into the current (saved) folder (`BulkMoveProcessor` → `AttachmentMover`)
 - `GET /retention/preflight` · `POST /retention/bulk` · `GET /retention/bulk/progress` · `POST /retention/bulk/cancel` — apply the **saved** retention policy to already-offloaded media (the client never sends a policy)
 
+On load the admin page embeds the bodies of `core/settings`, `core/providers`, `core/stats`, `core/cli-job` and every provider's `provider/credentials` (`Admin\Settings::preload_data()` via `rest_preload_api_request()` → `window.omnioffloaderPreload`); `src/api/preload.ts` hands each out once, then requests go to the server. A route the first screen needs belongs there — but never one that scans the library or calls the bucket.
+
 The four `bulk/progress` routes are `GET` but deliberately do work (the stalled-queue self-heal). Keep that in mind before adding caching.
 
 Credentials: `GET` returns secrets masked (`is_set: true`); `POST` ignores masked placeholders so saves never wipe secrets. wp-config constants (`OMNIOFFLOADER_CLOUDFLARE_R2_KEY`, etc.) lock fields (`locked: true`).

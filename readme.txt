@@ -333,6 +333,7 @@ Depending on the provider you select:
 
 * A single-item Offload or Bring Back is now refused while any bulk job runs (offload, Bring Back, retention update or move, from the admin or WP-CLI). Before, only a retention update blocked a single Bring Back.
 * Media Library status text is fully translatable, and uses "…" (Offloading…, Restoring…, Queued…).
+* The OmniOffloader screens open at once: settings, stats and every provider's fields now come with the page instead of separate requests, so the Settings fields no longer appear after a delay, and switching provider shows its fields immediately.
 
 **Under the hood**
 

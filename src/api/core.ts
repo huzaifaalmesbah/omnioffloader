@@ -8,9 +8,17 @@ import type {
 	Settings,
 } from '../types';
 
+import { takePreloaded } from './preload';
+
 const BASE = '/omnioffloader/v1';
 
 export function fetchSettings(): Promise< Settings > {
+	const preloaded = takePreloaded< Settings >( '/core/settings' );
+
+	if ( preloaded ) {
+		return Promise.resolve( preloaded );
+	}
+
 	return apiFetch( {
 		path: `${ BASE }/core/settings?_t=${ Date.now() }`,
 		cache: 'no-store',
@@ -26,6 +34,12 @@ export function saveSettings( settings: Settings ): Promise< Settings > {
 }
 
 export function fetchProviders(): Promise< ProviderInfo[] > {
+	const preloaded = takePreloaded< ProviderInfo[] >( '/core/providers' );
+
+	if ( preloaded ) {
+		return Promise.resolve( preloaded );
+	}
+
 	return apiFetch( {
 		path: `${ BASE }/core/providers?_t=${ Date.now() }`,
 		cache: 'no-store',
@@ -49,6 +63,14 @@ export function takeOverFolder(): Promise< SafeModeStatus > {
 }
 
 export function fetchStats( refresh = false ): Promise< MediaStats > {
+	const preloaded = refresh
+		? undefined
+		: takePreloaded< MediaStats >( '/core/stats' );
+
+	if ( preloaded ) {
+		return Promise.resolve( preloaded );
+	}
+
 	const query = refresh
 		? `?refresh=1&_t=${ Date.now() }`
 		: `?_t=${ Date.now() }`;
@@ -60,6 +82,12 @@ export function fetchStats( refresh = false ): Promise< MediaStats > {
 
 /** The WP-CLI job running now, if any (see useCliJob). */
 export function fetchCliJob(): Promise< CliJob > {
+	const preloaded = takePreloaded< CliJob >( '/core/cli-job' );
+
+	if ( preloaded ) {
+		return Promise.resolve( preloaded );
+	}
+
 	return apiFetch( {
 		path: `${ BASE }/core/cli-job?_t=${ Date.now() }`,
 		cache: 'no-store',

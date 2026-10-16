@@ -586,8 +586,8 @@ interface CommandRowProps {
  */
 function CommandRow( { example, onCopy }: CommandRowProps ) {
 	return (
-		<li className="smowp-cli__example">
-			<div className="smowp-cli__example-text">
+		<li className="omnioffloader-cli__example">
+			<div className="omnioffloader-cli__example-text">
 				<code>{ example.command }</code>
 				<span>{ example.description }</span>
 			</div>
@@ -639,9 +639,9 @@ export function CliReference( { onNavigate }: CliReferenceProps ) {
 				'omnioffloader'
 			) }
 		>
-			<div className="smowp-cli">
-				<section className="smowp-cli__background">
-					<div className="smowp-cli__head">
+			<div className="omnioffloader-cli">
+				<section className="omnioffloader-cli__background">
+					<div className="omnioffloader-cli__head">
 						<h3>
 							{ __(
 								'Run a long job in the background',
@@ -652,13 +652,13 @@ export function CliReference( { onNavigate }: CliReferenceProps ) {
 							{ __( 'Step-by-step guide', 'omnioffloader' ) }
 						</DocsLink>
 					</div>
-					<p className="smowp-cli__summary">
+					<p className="omnioffloader-cli__summary">
 						{ __(
 							'For a large library, start the job in the background and close the terminal. --concurrency moves several files at once (offload, restore, retention and move): any number from 1 to 64. Start with 32 on a VPS or dedicated server, try 64 for an offload on a fast connection.',
 							'omnioffloader'
 						) }
 					</p>
-					<ul className="smowp-cli__examples">
+					<ul className="omnioffloader-cli__examples">
 						{ getBackgroundSteps().map( ( step ) => (
 							<CommandRow
 								key={ step.command }
@@ -676,13 +676,13 @@ export function CliReference( { onNavigate }: CliReferenceProps ) {
 							cmd.name.replace( 'wp omnioffloader ', '' )
 						) }
 						tabIndex={ -1 }
-						className="smowp-cli__command"
+						className="omnioffloader-cli__command"
 					>
-						<div className="smowp-cli__head">
-							<code className="smowp-cli__name">
+						<div className="omnioffloader-cli__head">
+							<code className="omnioffloader-cli__name">
 								{ cmd.name }
 							</code>
-							<div className="smowp-cli__actions">
+							<div className="omnioffloader-cli__actions">
 								{ cmd.view !== 'tools' && (
 									<Button
 										variant="link"
@@ -696,9 +696,11 @@ export function CliReference( { onNavigate }: CliReferenceProps ) {
 								</DocsLink>
 							</div>
 						</div>
-						<p className="smowp-cli__summary">{ cmd.summary }</p>
+						<p className="omnioffloader-cli__summary">
+							{ cmd.summary }
+						</p>
 
-						<ul className="smowp-cli__examples">
+						<ul className="omnioffloader-cli__examples">
 							{ cmd.examples.map( ( example ) => (
 								<CommandRow
 									key={ example.command }
@@ -709,11 +711,11 @@ export function CliReference( { onNavigate }: CliReferenceProps ) {
 						</ul>
 
 						{ cmd.options.length > 0 && (
-							<dl className="smowp-cli__options">
+							<dl className="omnioffloader-cli__options">
 								{ cmd.options.map( ( option ) => (
 									<div
 										key={ option.flag }
-										className="smowp-cli__option"
+										className="omnioffloader-cli__option"
 									>
 										<dt>
 											<code>{ option.flag }</code>

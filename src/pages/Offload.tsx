@@ -98,7 +98,7 @@ export function OffloadPage( { onNavigate }: OffloadProps ) {
 	}
 
 	return (
-		<div className="smowp-page">
+		<div className="omnioffloader-page">
 			<Card
 				title={ __( 'Bulk Offload', 'omnioffloader' ) }
 				docs="features/bulk-offload/"
@@ -110,7 +110,7 @@ export function OffloadPage( { onNavigate }: OffloadProps ) {
 				<CliJobNotice />
 
 				{ ! stats?.configured && (
-					<p className="smowp-muted">
+					<p className="omnioffloader-muted">
 						{ __(
 							'Configure a cloud provider in Settings first.',
 							'omnioffloader'
@@ -120,51 +120,51 @@ export function OffloadPage( { onNavigate }: OffloadProps ) {
 
 				{ stats?.configured && (
 					<>
-						<div className="smowp-media-summary">
-							<div className="smowp-media-chip">
-								<span className="smowp-media-chip__label">
+						<div className="omnioffloader-media-summary">
+							<div className="omnioffloader-media-chip">
+								<span className="omnioffloader-media-chip__label">
 									{ __(
 										'Total Library Media',
 										'omnioffloader'
 									) }
 								</span>
-								<strong className="smowp-media-chip__value">
+								<strong className="omnioffloader-media-chip__value">
 									{ totalCount }
 								</strong>
 							</div>
-							<div className="smowp-media-chip smowp-media-chip--offloaded">
-								<span className="smowp-media-chip__label">
+							<div className="omnioffloader-media-chip omnioffloader-media-chip--offloaded">
+								<span className="omnioffloader-media-chip__label">
 									{ __(
 										'Already Offloaded',
 										'omnioffloader'
 									) }
 								</span>
-								<strong className="smowp-media-chip__value">
+								<strong className="omnioffloader-media-chip__value">
 									{ offloadedCount }
 								</strong>
 							</div>
-							<div className="smowp-media-chip smowp-media-chip--local">
-								<span className="smowp-media-chip__label">
+							<div className="omnioffloader-media-chip omnioffloader-media-chip--local">
+								<span className="omnioffloader-media-chip__label">
 									{ __(
 										'Local (Ready to Offload)',
 										'omnioffloader'
 									) }
 								</span>
-								<strong className="smowp-media-chip__value">
+								<strong className="omnioffloader-media-chip__value">
 									{ localCount }
 								</strong>
 							</div>
 						</div>
 
 						{ isAllOffloaded && (
-							<div className="smowp-notice-banner smowp-notice-banner--success">
+							<div className="omnioffloader-notice-banner omnioffloader-notice-banner--success">
 								<span
-									className="smowp-notice-banner__icon"
+									className="omnioffloader-notice-banner__icon"
 									aria-hidden="true"
 								>
 									✓
 								</span>
-								<div className="smowp-notice-banner__text">
+								<div className="omnioffloader-notice-banner__text">
 									<strong>
 										{ __(
 											'All media is already offloaded to the cloud!',
@@ -182,14 +182,14 @@ export function OffloadPage( { onNavigate }: OffloadProps ) {
 						) }
 
 						{ totalCount === 0 && (
-							<div className="smowp-notice-banner smowp-notice-banner--info">
+							<div className="omnioffloader-notice-banner omnioffloader-notice-banner--info">
 								<span
-									className="smowp-notice-banner__icon"
+									className="omnioffloader-notice-banner__icon"
 									aria-hidden="true"
 								>
 									ℹ
 								</span>
-								<div className="smowp-notice-banner__text">
+								<div className="omnioffloader-notice-banner__text">
 									<strong>
 										{ __(
 											'Your WordPress media library is empty.',
@@ -206,9 +206,9 @@ export function OffloadPage( { onNavigate }: OffloadProps ) {
 							</div>
 						) }
 
-						<div className="smowp-bulk-action">
+						<div className="omnioffloader-bulk-action">
 							{ missingCount > 0 && (
-								<p className="smowp-warning smowp-missing-files">
+								<p className="omnioffloader-warning omnioffloader-missing-files">
 									{ sprintf(
 										/* translators: %s: number of attachments. */
 										_n(
@@ -223,7 +223,7 @@ export function OffloadPage( { onNavigate }: OffloadProps ) {
 							) }
 
 							{ localCount > 0 && (
-								<p className="smowp-bulk-action__info">
+								<p className="omnioffloader-bulk-action__info">
 									{ sprintf(
 										/* translators: %d: number of local attachments. */
 										_n(
@@ -273,22 +273,22 @@ export function OffloadPage( { onNavigate }: OffloadProps ) {
 							) }
 
 							{ ! running && (
-								<div className="smowp-bulk-action__btn-wrap">
+								<div className="omnioffloader-bulk-action__btn-wrap">
 									{ isDisabled && disabledReason ? (
 										<>
 											<Button
 												variant="primary"
-												className="smowp-btn-primary"
+												className="omnioffloader-btn-primary"
 												disabled
 												accessibleWhenDisabled
-												aria-describedby="smowp-offload-disabled-reason"
+												aria-describedby="omnioffloader-offload-disabled-reason"
 												isBusy={ busy }
 											>
 												{ buttonLabel }
 											</Button>
 											<p
-												id="smowp-offload-disabled-reason"
-												className="smowp-disabled-reason"
+												id="omnioffloader-offload-disabled-reason"
+												className="omnioffloader-disabled-reason"
 											>
 												{ disabledReason }
 											</p>
@@ -296,7 +296,7 @@ export function OffloadPage( { onNavigate }: OffloadProps ) {
 									) : (
 										<Button
 											variant="primary"
-											className="smowp-btn-primary"
+											className="omnioffloader-btn-primary"
 											disabled={ busy }
 											isBusy={ busy }
 											onClick={ () =>
@@ -328,7 +328,7 @@ export function OffloadPage( { onNavigate }: OffloadProps ) {
 						{ showProgress && state && (
 							<div
 								className={
-									'smowp-progress-card' +
+									'omnioffloader-progress-card' +
 									( running ? ' is-running' : '' ) +
 									( state.status === 'done'
 										? ' is-done'
@@ -341,11 +341,11 @@ export function OffloadPage( { onNavigate }: OffloadProps ) {
 										: '' )
 								}
 							>
-								<div className="smowp-progress-card__header">
-									<div className="smowp-progress-card__status">
+								<div className="omnioffloader-progress-card__header">
+									<div className="omnioffloader-progress-card__status">
 										{ running && (
-											<span className="smowp-badge smowp-badge--running">
-												<span className="smowp-badge-pulse" />
+											<span className="omnioffloader-ui-badge omnioffloader-ui-badge--running">
+												<span className="omnioffloader-ui-badge-pulse" />
 												{ __(
 													'Offloading…',
 													'omnioffloader'
@@ -353,7 +353,7 @@ export function OffloadPage( { onNavigate }: OffloadProps ) {
 											</span>
 										) }
 										{ state.status === 'done' && (
-											<span className="smowp-badge smowp-badge--ok">
+											<span className="omnioffloader-ui-badge omnioffloader-ui-badge--ok">
 												{ __(
 													'Finished',
 													'omnioffloader'
@@ -361,7 +361,7 @@ export function OffloadPage( { onNavigate }: OffloadProps ) {
 											</span>
 										) }
 										{ state.status === 'cancelled' && (
-											<span className="smowp-badge smowp-badge--fail">
+											<span className="omnioffloader-ui-badge omnioffloader-ui-badge--fail">
 												{ __(
 													'Cancelled',
 													'omnioffloader'
@@ -369,14 +369,14 @@ export function OffloadPage( { onNavigate }: OffloadProps ) {
 											</span>
 										) }
 										{ state.status === 'failed' && (
-											<span className="smowp-badge smowp-badge--fail">
+											<span className="omnioffloader-ui-badge omnioffloader-ui-badge--fail">
 												{ __(
 													'Stopped',
 													'omnioffloader'
 												) }
 											</span>
 										) }
-										<span className="smowp-progress-card__count">
+										<span className="omnioffloader-progress-card__count">
 											{ state.total === 0 && running
 												? __(
 														'Preparing offload…',
@@ -394,7 +394,7 @@ export function OffloadPage( { onNavigate }: OffloadProps ) {
 										</span>
 									</div>
 
-									<span className="smowp-progress-card__pct">
+									<span className="omnioffloader-progress-card__pct">
 										{ state.total > 0
 											? Math.min(
 													100,
@@ -420,14 +420,14 @@ export function OffloadPage( { onNavigate }: OffloadProps ) {
 										<Notice
 											status="error"
 											isDismissible={ false }
-											className="smowp-progress-card__notice"
+											className="omnioffloader-progress-card__notice"
 										>
 											{ state.message }
 										</Notice>
 									) }
 
-								<div className="smowp-progress-card__footer">
-									<span className="smowp-progress-card__errors">
+								<div className="omnioffloader-progress-card__footer">
+									<span className="omnioffloader-progress-card__errors">
 										{ state.errors > 0
 											? sprintf(
 													/* translators: %d: error count. */
@@ -445,12 +445,12 @@ export function OffloadPage( { onNavigate }: OffloadProps ) {
 												) }
 									</span>
 
-									<div className="smowp-progress-card__actions">
+									<div className="omnioffloader-progress-card__actions">
 										{ running ? (
 											<Button
 												variant="secondary"
 												isDestructive
-												className="smowp-btn-destructive"
+												className="omnioffloader-btn-destructive"
 												disabled={ busy }
 												onClick={ () => void cancel() }
 											>
@@ -462,7 +462,7 @@ export function OffloadPage( { onNavigate }: OffloadProps ) {
 										) : (
 											<Button
 												variant="secondary"
-												className="smowp-btn-dismiss"
+												className="omnioffloader-btn-dismiss"
 												onClick={ dismiss }
 											>
 												{ __(

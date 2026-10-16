@@ -74,7 +74,7 @@ export function App() {
 
 	if ( loading ) {
 		return (
-			<div className="smowp-loading" role="status">
+			<div className="omnioffloader-loading" role="status">
 				<Spinner />
 				<span className="screen-reader-text">
 					{ __( 'Loading…', 'omnioffloader' ) }

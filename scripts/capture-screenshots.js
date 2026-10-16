@@ -177,11 +177,11 @@ function clearOverlay() {
   if (el) el.remove();
 }
 
-// Scroll so the nth .smowp-card (0-based) starts just below the sticky header.
+// Scroll so the nth .omnioffloader-card (0-based) starts just below the sticky header.
 async function scrollToCard(page, index) {
   await page.evaluate((i) => {
-    const card = document.querySelectorAll('.smowp-card')[i];
-    const header = document.querySelector('.smowp-header');
+    const card = document.querySelectorAll('.omnioffloader-card')[i];
+    const header = document.querySelector('.omnioffloader-header');
     if (!card) return;
     const covered = header ? header.getBoundingClientRect().bottom : 32;
     const y = card.getBoundingClientRect().top + window.scrollY - covered - 16;
@@ -194,7 +194,7 @@ async function scrollToCard(page, index) {
 async function scrollBelowHeader(page, selector, above = 0) {
   await page.evaluate((sel, extra) => {
     const el = document.querySelector(sel);
-    const header = document.querySelector('.smowp-header');
+    const header = document.querySelector('.omnioffloader-header');
     if (!el) return;
     const covered = header ? header.getBoundingClientRect().bottom : 32;
     const y = el.getBoundingClientRect().top + window.scrollY - covered - 16 - extra;
@@ -290,10 +290,10 @@ async function main() {
       url: 'https://wp71.test/wp-admin/admin.php?page=omnioffloader&view=dashboard',
       waitFor: '#omnioffloader-admin-app',
       annotations: [
-        { selector: '.smowp-hero', num: 1, label: 'Live Cloud Provider & Health', position: 'top-right', offsetY: -16 },
-        { selector: '.smowp-stats-grid', num: 2, label: 'Real-Time Storage & Sync Metrics', position: 'top-left', offsetY: -16 },
-        { selector: '.smowp-quick-actions-grid', num: 3, label: 'One-Click Quick Actions (Bulk Offload, Restore, Settings)', position: 'top-right', offsetY: -16 },
-        { selector: '.smowp-sidebar__nav', num: 4, label: 'Feature Navigation Menu', position: 'top-left', offsetY: -16 }
+        { selector: '.omnioffloader-hero', num: 1, label: 'Live Cloud Provider & Health', position: 'top-right', offsetY: -16 },
+        { selector: '.omnioffloader-stats-grid', num: 2, label: 'Real-Time Storage & Sync Metrics', position: 'top-left', offsetY: -16 },
+        { selector: '.omnioffloader-quick-actions-grid', num: 3, label: 'One-Click Quick Actions (Bulk Offload, Restore, Settings)', position: 'top-right', offsetY: -16 },
+        { selector: '.omnioffloader-sidebar__nav', num: 4, label: 'Feature Navigation Menu', position: 'top-left', offsetY: -16 }
       ]
     },
 
@@ -309,10 +309,10 @@ async function main() {
       waitFor: '#omnioffloader-admin-app',
       beforeCapture: async (page) => {
         try {
-          const testBtn = await page.$('.smowp-test-connection button');
+          const testBtn = await page.$('.omnioffloader-test-connection button');
           if (testBtn) {
             await testBtn.click();
-            await page.waitForSelector('.smowp-badge-pulse, .smowp-test-connection__badge', { timeout: 4000 });
+            await page.waitForSelector('.omnioffloader-ui-badge-pulse, .omnioffloader-test-connection__badge', { timeout: 4000 });
           }
         } catch (e) {
           // ignore
@@ -320,9 +320,9 @@ async function main() {
         await page.evaluate(() => window.scrollTo(0, 0));
       },
       annotations: [
-        { selector: '.smowp-provider-selector-grid', num: 1, label: 'Multi-Cloud Provider Selector (R2, S3, Wasabi, Spaces, B2)', position: 'top-right', offsetY: -16 },
-        { selector: '.smowp-credential-fields', num: 2, label: 'API Keys, Endpoint & Bucket Configuration', position: 'top-right', offsetY: -16 },
-        { selector: '.smowp-test-connection', num: 3, label: 'Instant "Test Connection" Live Verification', position: 'top-right', offsetY: -16 }
+        { selector: '.omnioffloader-provider-selector-grid', num: 1, label: 'Multi-Cloud Provider Selector (R2, S3, Wasabi, Spaces, B2)', position: 'top-right', offsetY: -16 },
+        { selector: '.omnioffloader-credential-fields', num: 2, label: 'API Keys, Endpoint & Bucket Configuration', position: 'top-right', offsetY: -16 },
+        { selector: '.omnioffloader-test-connection', num: 3, label: 'Instant "Test Connection" Live Verification', position: 'top-right', offsetY: -16 }
       ]
     },
 
@@ -338,17 +338,17 @@ async function main() {
       waitFor: '#omnioffloader-admin-app',
       beforeCapture: async (page) => {
         await page.evaluate(() => {
-          const cards = document.querySelectorAll('.smowp-card');
+          const cards = document.querySelectorAll('.omnioffloader-card');
           if (cards.length >= 2) {
-            const y = cards[1].getBoundingClientRect().top + window.scrollY - (document.querySelector('.smowp-header').getBoundingClientRect().bottom + 16);
+            const y = cards[1].getBoundingClientRect().top + window.scrollY - (document.querySelector('.omnioffloader-header').getBoundingClientRect().bottom + 16);
             window.scrollTo({ top: Math.max(0, y), behavior: 'instant' });
           }
         });
       },
       annotations: [
-        { selector: '.smowp-page > .smowp-card:nth-of-type(2)', num: 1, label: 'Local Retention Policy (Controls What Local Files Stay on Server After Offload)', position: 'top-right', offsetY: -16 },
-        { selector: '.smowp-card:nth-of-type(2) .components-radio-control', num: 2, label: 'Three Granular Modes: Retain Local Files, Smart Cleanup, Full Cloud Migration', position: 'top-right', offsetY: -16 },
-        { selector: '.smowp-card:nth-of-type(2) .components-toggle-control', num: 3, label: 'Serve Media from Cloud: Offload Now, Switch to Your CDN Later', position: 'below-right', offsetY: 10 }
+        { selector: '.omnioffloader-page > .omnioffloader-card:nth-of-type(2)', num: 1, label: 'Local Retention Policy (Controls What Local Files Stay on Server After Offload)', position: 'top-right', offsetY: -16 },
+        { selector: '.omnioffloader-card:nth-of-type(2) .components-radio-control', num: 2, label: 'Three Granular Modes: Retain Local Files, Smart Cleanup, Full Cloud Migration', position: 'top-right', offsetY: -16 },
+        { selector: '.omnioffloader-card:nth-of-type(2) .components-toggle-control', num: 3, label: 'Serve Media from Cloud: Offload Now, Switch to Your CDN Later', position: 'below-right', offsetY: 10 }
       ]
     },
 
@@ -386,22 +386,22 @@ async function main() {
         }
       ],
       beforeCapture: async (page) => {
-        await page.waitForSelector('.smowp-batch-scope', { timeout: 6000 });
-        const options = await page.$$('.smowp-option-card');
+        await page.waitForSelector('.omnioffloader-batch-scope', { timeout: 6000 });
+        const options = await page.$$('.omnioffloader-option-card');
         if (options.length >= 2) {
           await options[1].click();
-          await page.waitForSelector('.smowp-custom-presets, .smowp-custom-count-inline', { timeout: 4000 });
-          const presetChips = await page.$$('.smowp-preset-chip');
+          await page.waitForSelector('.omnioffloader-custom-presets, .omnioffloader-custom-count-inline', { timeout: 4000 });
+          const presetChips = await page.$$('.omnioffloader-preset-chip');
           if (presetChips.length > 0) {
             await presetChips[0].click();
           }
         }
       },
       annotations: [
-        { selector: '.smowp-media-summary', num: 1, label: 'Library Status: 10 Local Items Ready to Offload', position: 'top-left', offsetY: -16 },
-        { selector: '.smowp-batch-scope', num: 2, label: 'Processing Quantity: All Media vs Custom Batch Size & Presets', position: 'top-right', offsetY: -16 },
-        { selector: '.smowp-bulk-action__btn-wrap button', num: 3, label: 'Active Execution: "Start Bulk Offload" Button', position: 'right', offsetX: 18 },
-        { selector: '.smowp-page > .smowp-card:nth-of-type(2)', num: 4, label: 'Single Attachment Offload Direct from Media Library', position: 'top-right', offsetY: -16 }
+        { selector: '.omnioffloader-media-summary', num: 1, label: 'Library Status: 10 Local Items Ready to Offload', position: 'top-left', offsetY: -16 },
+        { selector: '.omnioffloader-batch-scope', num: 2, label: 'Processing Quantity: All Media vs Custom Batch Size & Presets', position: 'top-right', offsetY: -16 },
+        { selector: '.omnioffloader-bulk-action__btn-wrap button', num: 3, label: 'Active Execution: "Start Bulk Offload" Button', position: 'right', offsetX: 18 },
+        { selector: '.omnioffloader-page > .omnioffloader-card:nth-of-type(2)', num: 4, label: 'Single Attachment Offload Direct from Media Library', position: 'top-right', offsetY: -16 }
       ]
     },
 
@@ -416,10 +416,10 @@ async function main() {
       url: 'https://wp71.test/wp-admin/admin.php?page=omnioffloader&view=bring-back',
       waitFor: '#omnioffloader-admin-app',
       annotations: [
-        { selector: '.smowp-media-summary', num: 1, label: 'Offload Status & Pre-Flight Disk Space Verification', position: 'top-left', offsetY: -16 },
-        { selector: '.smowp-batch-scope', num: 2, label: 'Processing Quantity: Restore All vs Custom Batches', position: 'top-right', offsetY: -16 },
-        { selector: '.smowp-bringback-options', num: 3, label: 'Storage Safety: Keep Cloud Copies vs Reclaim Space', position: 'top-right', offsetY: -16 },
-        { selector: '.smowp-bulk-action button.is-primary, .smowp-page .smowp-card:first-child button.is-primary', num: 4, label: 'One-Click Atomic Restore Engine', position: 'right', offsetX: 18 }
+        { selector: '.omnioffloader-media-summary', num: 1, label: 'Offload Status & Pre-Flight Disk Space Verification', position: 'top-left', offsetY: -16 },
+        { selector: '.omnioffloader-batch-scope', num: 2, label: 'Processing Quantity: Restore All vs Custom Batches', position: 'top-right', offsetY: -16 },
+        { selector: '.omnioffloader-bringback-options', num: 3, label: 'Storage Safety: Keep Cloud Copies vs Reclaim Space', position: 'top-right', offsetY: -16 },
+        { selector: '.omnioffloader-bulk-action button.is-primary, .omnioffloader-page .omnioffloader-card:first-child button.is-primary', num: 4, label: 'One-Click Atomic Restore Engine', position: 'right', offsetX: 18 }
       ]
     },
 
@@ -499,12 +499,12 @@ async function main() {
           }
         }
       ],
-      waitFor: '.smowp-bulk-action',
+      waitFor: '.omnioffloader-bulk-action',
       annotations: [
-        { selector: '.smowp-media-summary', num: 1, label: 'Current Policy vs Media Needing Updates', position: 'top-left', offsetY: -16 },
-        { selector: '.smowp-retention-facts', num: 2, label: 'Pre-Flight Impact: Space Freed & Safety Verification', position: 'top-right', offsetY: -16 },
-        { selector: '.smowp-batch-scope', num: 3, label: 'Batch Processing: All Media vs Custom Batches', position: 'top-right', offsetY: -16 },
-        { selector: '.smowp-bulk-action__btn-wrap button', num: 4, label: 'Active "Apply Policy" Background Sync Execution', position: 'right', offsetX: 18 }
+        { selector: '.omnioffloader-media-summary', num: 1, label: 'Current Policy vs Media Needing Updates', position: 'top-left', offsetY: -16 },
+        { selector: '.omnioffloader-retention-facts', num: 2, label: 'Pre-Flight Impact: Space Freed & Safety Verification', position: 'top-right', offsetY: -16 },
+        { selector: '.omnioffloader-batch-scope', num: 3, label: 'Batch Processing: All Media vs Custom Batches', position: 'top-right', offsetY: -16 },
+        { selector: '.omnioffloader-bulk-action__btn-wrap button', num: 4, label: 'Active "Apply Policy" Background Sync Execution', position: 'right', offsetX: 18 }
       ]
     },
 
@@ -541,11 +541,11 @@ async function main() {
           }
         }
       ],
-      waitFor: '.smowp-safe-mode-banner',
+      waitFor: '.omnioffloader-safe-mode-banner',
       annotations: [
-        { selector: '.smowp-safe-mode-banner', num: 1, label: 'Automated Safe Mode: Protects Production Bucket on Staging/Dev Copies', position: 'top-left', offsetY: -16 },
-        { selector: '.smowp-safe-mode-banner button', num: 2, label: 'Domain Migration Override: "This is the live site"', position: 'right', offsetX: 18 },
-        { selector: '.smowp-hero', num: 3, label: 'Cloud Writes & Deletions Paused While Safe Mode is Active', position: 'top-right', offsetY: -16 }
+        { selector: '.omnioffloader-safe-mode-banner', num: 1, label: 'Automated Safe Mode: Protects Production Bucket on Staging/Dev Copies', position: 'top-left', offsetY: -16 },
+        { selector: '.omnioffloader-safe-mode-banner button', num: 2, label: 'Domain Migration Override: "This is the live site"', position: 'right', offsetX: 18 },
+        { selector: '.omnioffloader-hero', num: 3, label: 'Cloud Writes & Deletions Paused While Safe Mode is Active', position: 'top-right', offsetY: -16 }
       ]
     },
 
@@ -563,9 +563,9 @@ async function main() {
         await scrollToCard(page, 2);
       },
       annotations: [
-        { selector: '.smowp-card:nth-of-type(3) .components-toggle-control', index: 3, num: 1, label: 'Custom Path Prefix (Enable Isolated Bucket Subfolder per Site)', position: 'top-right', offsetY: -16 },
-        { selector: '.smowp-card:nth-of-type(3) .components-base-control:has(input[type="text"])', num: 2, label: 'This Site\'s Own Folder (e.g., "shop", "blog", "store")', position: 'top-right', offsetY: -16 },
-        { selector: '.smowp-card:nth-of-type(3) .components-toggle-control', index: 2, num: 3, label: 'Object Versioning (Prevents CDN Cache Overwrite Collisions)', position: 'top-left', offsetY: -16 }
+        { selector: '.omnioffloader-card:nth-of-type(3) .components-toggle-control', index: 3, num: 1, label: 'Custom Path Prefix (Enable Isolated Bucket Subfolder per Site)', position: 'top-right', offsetY: -16 },
+        { selector: '.omnioffloader-card:nth-of-type(3) .components-base-control:has(input[type="text"])', num: 2, label: 'This Site\'s Own Folder (e.g., "shop", "blog", "store")', position: 'top-right', offsetY: -16 },
+        { selector: '.omnioffloader-card:nth-of-type(3) .components-toggle-control', index: 2, num: 3, label: 'Object Versioning (Prevents CDN Cache Overwrite Collisions)', position: 'top-left', offsetY: -16 }
       ]
     },
 
@@ -590,13 +590,13 @@ async function main() {
             el.dispatchEvent(new Event('change', { bubbles: true }));
           }, prefixInput);
         }
-        await page.waitForSelector('.smowp-prefix-notice', { timeout: 4000 });
-        await scrollBelowHeader(page, '.smowp-prefix-notice', 380);
+        await page.waitForSelector('.omnioffloader-prefix-notice', { timeout: 4000 });
+        await scrollBelowHeader(page, '.omnioffloader-prefix-notice', 380);
       },
       annotations: [
-        { selector: '.smowp-card:nth-of-type(3) .components-base-control:has(input[type="text"])', num: 1, label: 'New Folder for Media Offloaded from Now On', position: 'top-right', offsetY: -16 },
-        { selector: '.smowp-prefix-notice', num: 2, label: 'Existing Media Stays in Its Folder & Keeps Working', position: 'top-right', offsetY: -16 },
-        { selector: '.smowp-savebar__button', num: 3, label: 'Save Asks You to Confirm the Folder Change', position: 'left', offsetX: -18 }
+        { selector: '.omnioffloader-card:nth-of-type(3) .components-base-control:has(input[type="text"])', num: 1, label: 'New Folder for Media Offloaded from Now On', position: 'top-right', offsetY: -16 },
+        { selector: '.omnioffloader-prefix-notice', num: 2, label: 'Existing Media Stays in Its Folder & Keeps Working', position: 'top-right', offsetY: -16 },
+        { selector: '.omnioffloader-savebar__button', num: 3, label: 'Save Asks You to Confirm the Folder Change', position: 'left', offsetX: -18 }
       ]
     },
 
@@ -632,11 +632,11 @@ async function main() {
           }
         }
       ],
-      waitFor: '.smowp-safe-mode-banner',
+      waitFor: '.omnioffloader-safe-mode-banner',
       annotations: [
-        { selector: '.smowp-safe-mode-banner', num: 1, label: 'Another Site Already Uses This Bucket Folder: Uploads & Deletes Paused', position: 'top-right', offsetY: -16 },
-        { selector: '.smowp-safe-mode-banner__actions .components-button.is-primary', num: 2, label: 'Fix: Choose a Path Prefix of This Site\'s Own', position: 'below-left', offsetY: 8 },
-        { selector: '.smowp-safe-mode-banner__actions .components-button.is-tertiary', num: 3, label: 'Or Take Over a Folder the Other Site No Longer Uses', position: 'right', offsetX: 18 }
+        { selector: '.omnioffloader-safe-mode-banner', num: 1, label: 'Another Site Already Uses This Bucket Folder: Uploads & Deletes Paused', position: 'top-right', offsetY: -16 },
+        { selector: '.omnioffloader-safe-mode-banner__actions .components-button.is-primary', num: 2, label: 'Fix: Choose a Path Prefix of This Site\'s Own', position: 'below-left', offsetY: 8 },
+        { selector: '.omnioffloader-safe-mode-banner__actions .components-button.is-tertiary', num: 3, label: 'Or Take Over a Folder the Other Site No Longer Uses', position: 'right', offsetX: 18 }
       ]
     },
 
@@ -653,7 +653,7 @@ async function main() {
       beforeCapture: async (page) => {
         // Ensure "Protect the live site when this is a copy" toggle is checked
         await page.evaluate(() => {
-          const cards = document.querySelectorAll('.smowp-card');
+          const cards = document.querySelectorAll('.omnioffloader-card');
           if (cards.length >= 4) {
             const card = cards[3];
             const toggleInput = card.querySelector('.components-form-toggle__input');
@@ -664,17 +664,17 @@ async function main() {
         });
         await new Promise((r) => setTimeout(r, 200));
         await page.evaluate(() => {
-          const cards = document.querySelectorAll('.smowp-card');
+          const cards = document.querySelectorAll('.omnioffloader-card');
           if (cards.length >= 4) {
-            const y = cards[3].getBoundingClientRect().top + window.scrollY - (document.querySelector('.smowp-header').getBoundingClientRect().bottom + 16);
+            const y = cards[3].getBoundingClientRect().top + window.scrollY - (document.querySelector('.omnioffloader-header').getBoundingClientRect().bottom + 16);
             window.scrollTo({ top: Math.max(0, y), behavior: 'instant' });
           }
         });
       },
       annotations: [
-        { selector: '.smowp-card:nth-of-type(4) .smowp-card__head', num: 1, label: 'Environment Status: "This site is treated as the live site"', position: 'top-right', offsetY: -16 },
-        { selector: '.smowp-card:nth-of-type(4) .components-toggle-control', index: 0, num: 2, label: 'Protect Live Site: Enabled (Uploads & Deletes Disabled on Copies)', position: 'top-right', offsetY: -16 },
-        { selector: '.smowp-card:nth-of-type(4) .components-toggle-control', index: 1, num: 3, label: 'Allow Bring Back on Copies (Download Only, Preserves Cloud Files)', position: 'below-left', offsetY: 8, offsetX: 14 }
+        { selector: '.omnioffloader-card:nth-of-type(4) .omnioffloader-card__head', num: 1, label: 'Environment Status: "This site is treated as the live site"', position: 'top-right', offsetY: -16 },
+        { selector: '.omnioffloader-card:nth-of-type(4) .components-toggle-control', index: 0, num: 2, label: 'Protect Live Site: Enabled (Uploads & Deletes Disabled on Copies)', position: 'top-right', offsetY: -16 },
+        { selector: '.omnioffloader-card:nth-of-type(4) .components-toggle-control', index: 1, num: 3, label: 'Allow Bring Back on Copies (Download Only, Preserves Cloud Files)', position: 'below-left', offsetY: 8, offsetX: 14 }
       ]
     },
 
@@ -690,15 +690,15 @@ async function main() {
       waitFor: '#omnioffloader-admin-app',
       beforeCapture: async (page) => {
         await page.evaluate(() => {
-          const cards = document.querySelectorAll('.smowp-card');
+          const cards = document.querySelectorAll('.omnioffloader-card');
           if (cards.length >= 3) {
-            const y = cards[2].getBoundingClientRect().top + window.scrollY - (document.querySelector('.smowp-header').getBoundingClientRect().bottom + 16);
+            const y = cards[2].getBoundingClientRect().top + window.scrollY - (document.querySelector('.omnioffloader-header').getBoundingClientRect().bottom + 16);
             window.scrollTo({ top: Math.max(0, y), behavior: 'instant' });
           }
         });
       },
       annotations: [
-        { selector: '.smowp-card:nth-of-type(3) .smowp-setting-row select', num: 1, label: 'Transfer Speed Concurrency: Low (1), Balanced (3), Fast (6), or Custom (1-10)', position: 'top-right', offsetY: -16 }
+        { selector: '.omnioffloader-card:nth-of-type(3) .omnioffloader-setting-row select', num: 1, label: 'Transfer Speed Concurrency: Low (1), Balanced (3), Fast (6), or Custom (1-10)', position: 'top-right', offsetY: -16 }
       ]
     },
 
@@ -715,7 +715,7 @@ async function main() {
       beforeCapture: async (page) => {
         // Ensure Mirror Delete toggle is turned ON
         await page.evaluate(() => {
-          const toggles = document.querySelectorAll('.smowp-card:nth-of-type(3) .components-toggle-control');
+          const toggles = document.querySelectorAll('.omnioffloader-card:nth-of-type(3) .components-toggle-control');
           for (const t of toggles) {
             if (t.textContent.includes('Mirror Delete')) {
               const input = t.querySelector('.components-form-toggle__input');
@@ -727,15 +727,15 @@ async function main() {
         });
         await new Promise((r) => setTimeout(r, 200));
         await page.evaluate(() => {
-          const cards = document.querySelectorAll('.smowp-card');
+          const cards = document.querySelectorAll('.omnioffloader-card');
           if (cards.length >= 3) {
-            const y = cards[2].getBoundingClientRect().top + window.scrollY - (document.querySelector('.smowp-header').getBoundingClientRect().bottom + 16);
+            const y = cards[2].getBoundingClientRect().top + window.scrollY - (document.querySelector('.omnioffloader-header').getBoundingClientRect().bottom + 16);
             window.scrollTo({ top: Math.max(0, y), behavior: 'instant' });
           }
         });
       },
       annotations: [
-        { selector: '.smowp-card:nth-of-type(3) .components-toggle-control', index: 1, num: 1, label: 'Mirror Delete: Enabled (Automatically Deletes Cloud Files When Removed from Media Library)', position: 'top-right', offsetY: -16 }
+        { selector: '.omnioffloader-card:nth-of-type(3) .components-toggle-control', index: 1, num: 1, label: 'Mirror Delete: Enabled (Automatically Deletes Cloud Files When Removed from Media Library)', position: 'top-right', offsetY: -16 }
       ]
     },
 
@@ -770,10 +770,10 @@ async function main() {
           }
         }
       ],
-      waitFor: '.smowp-cli-job-notice',
+      waitFor: '.omnioffloader-cli-job-notice',
       annotations: [
-        { selector: '.smowp-cli-job-notice', num: 1, label: 'WP-CLI Job Running: Progress, Speed, Time Left & Log File', position: 'top-right', offsetY: -16 },
-        { selector: '.smowp-bulk-action__btn-wrap button', num: 2, label: 'Start Waits Until the WP-CLI Job Ends', position: 'right', offsetX: 18 }
+        { selector: '.omnioffloader-cli-job-notice', num: 1, label: 'WP-CLI Job Running: Progress, Speed, Time Left & Log File', position: 'top-right', offsetY: -16 },
+        { selector: '.omnioffloader-bulk-action__btn-wrap button', num: 2, label: 'Start Waits Until the WP-CLI Job Ends', position: 'right', offsetX: 18 }
       ]
     },
 
@@ -794,10 +794,10 @@ async function main() {
         await scrollBelowHeader(page, '#omnioffloader-move-media');
       },
       annotations: [
-        { selector: '#omnioffloader-move-media .smowp-media-summary', num: 1, label: 'Current Folder vs Media Still in Earlier Folders', position: 'top-right', offsetY: -16 },
-        { selector: '#omnioffloader-move-media .smowp-retention-facts', num: 2, label: 'Copied Inside Your Bucket: Nothing Downloaded, Old Copies Deleted Once Verified', position: 'top-right', offsetY: -16 },
-        { selector: '#omnioffloader-move-media .smowp-batch-scope', num: 3, label: 'Move Everything or a Custom Batch', position: 'top-right', offsetY: -16 },
-        { selector: '#omnioffloader-move-media .smowp-bulk-action__btn-wrap button', num: 4, label: 'Start the Move with Progress & Cancel', position: 'right', offsetX: 18 }
+        { selector: '#omnioffloader-move-media .omnioffloader-media-summary', num: 1, label: 'Current Folder vs Media Still in Earlier Folders', position: 'top-right', offsetY: -16 },
+        { selector: '#omnioffloader-move-media .omnioffloader-retention-facts', num: 2, label: 'Copied Inside Your Bucket: Nothing Downloaded, Old Copies Deleted Once Verified', position: 'top-right', offsetY: -16 },
+        { selector: '#omnioffloader-move-media .omnioffloader-batch-scope', num: 3, label: 'Move Everything or a Custom Batch', position: 'top-right', offsetY: -16 },
+        { selector: '#omnioffloader-move-media .omnioffloader-bulk-action__btn-wrap button', num: 4, label: 'Start the Move with Progress & Cancel', position: 'right', offsetX: 18 }
       ]
     },
 
@@ -813,13 +813,13 @@ async function main() {
       mocks: [
         { path: '/omnioffloader/v1/move/preflight', data: { folder: FOLDER, elsewhere: 18 } }
       ],
-      waitFor: '.smowp-prefix-notice',
+      waitFor: '.omnioffloader-prefix-notice',
       beforeCapture: async (page) => {
-        await scrollBelowHeader(page, '.smowp-prefix-notice', 220);
+        await scrollBelowHeader(page, '.omnioffloader-prefix-notice', 220);
       },
       annotations: [
-        { selector: '.smowp-prefix-notice', num: 1, label: 'After a Path Prefix Change: Recommended WP-CLI Move, One-Click Copy', position: 'top-right', offsetY: -16 },
-        { selector: '.smowp-prefix-notice__option:not(.is-recommended) button', num: 2, label: 'Or Jump Straight to Move Media in Tools', position: 'right', offsetX: 18 }
+        { selector: '.omnioffloader-prefix-notice', num: 1, label: 'After a Path Prefix Change: Recommended WP-CLI Move, One-Click Copy', position: 'top-right', offsetY: -16 },
+        { selector: '.omnioffloader-prefix-notice__option:not(.is-recommended) button', num: 2, label: 'Or Jump Straight to Move Media in Tools', position: 'right', offsetX: 18 }
       ]
     },
 
@@ -832,13 +832,13 @@ async function main() {
       height: 980,
       title: 'WP-CLI Reference (Tools)',
       url: 'https://wp71.test/wp-admin/admin.php?page=omnioffloader&view=tools',
-      waitFor: '.smowp-cli',
+      waitFor: '.omnioffloader-cli',
       beforeCapture: async (page) => {
-        await scrollBelowHeader(page, '.smowp-cli', 150);
+        await scrollBelowHeader(page, '.omnioffloader-cli', 150);
       },
       annotations: [
-        { selector: '.smowp-cli__background', num: 1, label: 'Long Jobs in the Background: Start, Watch & Stop (One-Click Copy)', position: 'top-right', offsetY: -16 },
-        { selector: '.smowp-cli__command', num: 2, label: 'Every Command with Examples, Options & Its Admin Screen', position: 'top-right', offsetY: -16 }
+        { selector: '.omnioffloader-cli__background', num: 1, label: 'Long Jobs in the Background: Start, Watch & Stop (One-Click Copy)', position: 'top-right', offsetY: -16 },
+        { selector: '.omnioffloader-cli__command', num: 2, label: 'Every Command with Examples, Options & Its Admin Screen', position: 'top-right', offsetY: -16 }
       ]
     }
   ];

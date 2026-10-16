@@ -56,13 +56,13 @@ export function BatchScopeSelector( {
 	};
 
 	return (
-		<div className="smowp-batch-scope">
-			<h4 className="smowp-batch-scope__title">
+		<div className="omnioffloader-batch-scope">
+			<h4 className="omnioffloader-batch-scope__title">
 				{ __( 'Processing Quantity', 'omnioffloader' ) }
 			</h4>
 
 			<div
-				className="smowp-batch-scope__grid"
+				className="omnioffloader-batch-scope__grid"
 				role="radiogroup"
 				aria-label={ __(
 					'Processing Quantity Options',
@@ -80,7 +80,7 @@ export function BatchScopeSelector( {
 						disabled
 					) }
 					className={
-						'smowp-option-card' +
+						'omnioffloader-option-card' +
 						( mode === 'all' ? ' is-selected' : '' ) +
 						( disabled ? ' is-disabled' : '' )
 					}
@@ -95,17 +95,17 @@ export function BatchScopeSelector( {
 						}
 					} }
 				>
-					<div className="smowp-option-card__radio">
-						<span className="smowp-radio-circle">
+					<div className="omnioffloader-option-card__radio">
+						<span className="omnioffloader-radio-circle">
 							{ mode === 'all' && (
-								<span className="smowp-radio-dot" />
+								<span className="omnioffloader-radio-dot" />
 							) }
 						</span>
 					</div>
-					<div className="smowp-option-card__content">
-						<div className="smowp-option-card__head">
+					<div className="omnioffloader-option-card__content">
+						<div className="omnioffloader-option-card__head">
 							<strong>{ allTitle }</strong>
-							<span className="smowp-badge smowp-badge--neutral">
+							<span className="omnioffloader-ui-badge omnioffloader-ui-badge--neutral">
 								{ sprintf(
 									/* translators: %d: total eligible attachments */
 									_n(
@@ -133,7 +133,7 @@ export function BatchScopeSelector( {
 						disabled
 					) }
 					className={
-						'smowp-option-card' +
+						'omnioffloader-option-card' +
 						( mode === 'custom' ? ' is-selected' : '' ) +
 						( disabled ? ' is-disabled' : '' )
 					}
@@ -153,17 +153,17 @@ export function BatchScopeSelector( {
 						}
 					} }
 				>
-					<div className="smowp-option-card__radio">
-						<span className="smowp-radio-circle">
+					<div className="omnioffloader-option-card__radio">
+						<span className="omnioffloader-radio-circle">
 							{ mode === 'custom' && (
-								<span className="smowp-radio-dot" />
+								<span className="omnioffloader-radio-dot" />
 							) }
 						</span>
 					</div>
-					<div className="smowp-option-card__content">
-						<div className="smowp-option-card__head">
+					<div className="omnioffloader-option-card__content">
+						<div className="omnioffloader-option-card__head">
 							<strong>{ customTitle }</strong>
-							<span className="smowp-badge smowp-badge--neutral">
+							<span className="omnioffloader-ui-badge omnioffloader-ui-badge--neutral">
 								{ sprintf(
 									/* translators: %d: custom count */
 									_n(
@@ -187,30 +187,30 @@ export function BatchScopeSelector( {
 
 			{ /* Custom Count Stepper & Presets */ }
 			{ mode === 'custom' && (
-				<div className="smowp-batch-scope__custom-controls">
-					<div className="smowp-custom-count-inline">
+				<div className="omnioffloader-batch-scope__custom-controls">
+					<div className="omnioffloader-custom-count-inline">
 						<label
-							className="smowp-custom-count-label"
-							htmlFor="smowp-custom-count-input"
+							className="omnioffloader-custom-count-label"
+							htmlFor="omnioffloader-custom-count-input"
 						>
 							{ __( 'Batch Size:', 'omnioffloader' ) }
 						</label>
 
-						<div className="smowp-custom-input-group">
+						<div className="omnioffloader-custom-input-group">
 							<input
-								id="smowp-custom-count-input"
+								id="omnioffloader-custom-count-input"
 								type="number"
 								min={ 1 }
 								max={ totalEligible }
 								step={ 1 }
 								value={ customCount === 0 ? '' : customCount }
 								disabled={ disabled }
-								className="smowp-custom-count-input"
+								className="omnioffloader-custom-count-input"
 								onChange={ ( e ) =>
 									handleNumberChange( e.target.value )
 								}
 							/>
-							<span className="smowp-custom-count-unit">
+							<span className="omnioffloader-custom-count-unit">
 								{ sprintf(
 									/* translators: %d: total eligible attachments */
 									__( 'of %d available', 'omnioffloader' ),
@@ -220,18 +220,18 @@ export function BatchScopeSelector( {
 						</div>
 
 						{ presetsToShow.length > 0 && (
-							<div className="smowp-custom-presets">
-								<span className="smowp-custom-presets__label">
+							<div className="omnioffloader-custom-presets">
+								<span className="omnioffloader-custom-presets__label">
 									{ __( 'Presets:', 'omnioffloader' ) }
 								</span>
-								<div className="smowp-custom-presets__chips">
+								<div className="omnioffloader-custom-presets__chips">
 									{ presetsToShow.map( ( preset ) => (
 										<button
 											key={ preset }
 											type="button"
 											disabled={ disabled }
 											className={
-												'smowp-preset-chip' +
+												'omnioffloader-preset-chip' +
 												( customCount === preset
 													? ' is-active'
 													: '' )
@@ -247,7 +247,7 @@ export function BatchScopeSelector( {
 										type="button"
 										disabled={ disabled }
 										className={
-											'smowp-preset-chip smowp-preset-chip--all' +
+											'omnioffloader-preset-chip omnioffloader-preset-chip--all' +
 											( customCount === totalEligible
 												? ' is-active'
 												: '' )

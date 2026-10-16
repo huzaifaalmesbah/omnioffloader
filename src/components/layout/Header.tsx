@@ -27,17 +27,17 @@ export function Header( { activeView }: HeaderProps ) {
 	}, [ activeView ] );
 
 	return (
-		<header className="smowp-header">
-			<span className="smowp-header__badge">
+		<header className="omnioffloader-header">
+			<span className="omnioffloader-header__badge">
 				<Icon icon={ route.icon } size={ 24 } />
 			</span>
-			<div className="smowp-header__titles">
+			<div className="omnioffloader-header__titles">
 				<h1 ref={ heading } tabIndex={ -1 }>
 					{ route.title }
 				</h1>
 				<p>{ route.subtitle }</p>
 			</div>
-			<div className="smowp-header__docs">
+			<div className="omnioffloader-header__docs">
 				<DocsLink path="">
 					{ __( 'Documentation', 'omnioffloader' ) }
 				</DocsLink>

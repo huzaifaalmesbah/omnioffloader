@@ -8,7 +8,7 @@ interface ToolsProps {
 
 export function ToolsPage( { onNavigate }: ToolsProps ) {
 	return (
-		<div className="smowp-page">
+		<div className="omnioffloader-page">
 			<RetentionSyncCard />
 			<MoveFolderCard />
 			<CliReference onNavigate={ onNavigate } />

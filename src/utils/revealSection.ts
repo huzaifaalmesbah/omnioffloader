@@ -12,7 +12,9 @@ const GAP = 16;
  * sits below the admin bar), or on narrow screens just a fixed admin bar.
  */
 function coveredTop(): number {
-	const header = document.querySelector< HTMLElement >( '.smowp-header' );
+	const header = document.querySelector< HTMLElement >(
+		'.omnioffloader-header'
+	);
 
 	if ( header && getComputedStyle( header ).position === 'sticky' ) {
 		return header.getBoundingClientRect().bottom;

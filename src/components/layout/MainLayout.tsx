@@ -20,15 +20,15 @@ export function MainLayout( {
 	const { notices, removeNotice } = useCore();
 
 	return (
-		<div className="smowp-app">
+		<div className="omnioffloader-app">
 			<Sidebar activeView={ activeView } onNavigate={ onNavigate } />
 
-			<div className="smowp-main">
+			<div className="omnioffloader-main">
 				<Header activeView={ activeView } />
 
 				<main
 					className={
-						'smowp-content' +
+						'omnioffloader-content' +
 						( activeView === 'settings' ? ' has-savebar' : '' )
 					}
 				>
@@ -40,7 +40,7 @@ export function MainLayout( {
 			</div>
 
 			<SnackbarList
-				className="smowp-snackbars"
+				className="omnioffloader-snackbars"
 				notices={ notices.map( ( notice ) => ( {
 					id: String( notice.id ),
 					content: notice.message,

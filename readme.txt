@@ -385,6 +385,10 @@ Depending on the provider you choose:
 
 = Unreleased =
 
+**New**
+
+* **Storage** on the Dashboard: see how much of your media is in the cloud, how much is still on your server, and how much space was freed, overall and by retention policy.
+
 **Improvements**
 
 * The Bring Back and Tools screens show their numbers instantly, even with tens of thousands of media items. OmniOffloader now keeps a running total as media changes, instead of going through the whole library each time you open the page.
@@ -423,7 +427,7 @@ Older releases: see the [full changelog](https://omnioffloader.vercel.app/change
 == Upgrade Notice ==
 
 = Unreleased =
-Faster Bring Back and Tools screens on large media libraries. Recommended for all users.
+A new Storage overview on the Dashboard, and faster Bring Back and Tools screens on large media libraries. Recommended for all users.
 
 = 0.1.6 =
 See and retry failed media from the Tools screen, check and repair your files with `wp omnioffloader verify`, faster-opening screens, and optional usage insights. Recommended for all users.

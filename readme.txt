@@ -8,11 +8,13 @@ Stable tag: 0.1.6
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Offload media to Amazon S3, Cloudflare R2, Wasabi or any S3 storage, serve it from a CDN, and restore it anytime with Bring Back.
+Offload media to Amazon S3, Cloudflare R2, Wasabi or any S3 storage and serve it from a fast CDN. Restore it anytime with Bring Back.
 
 == Description ==
 
-Images, videos and files usually take up most of a WordPress site's disk space. OmniOffloader moves your media to cloud storage, serves it from your own domain or CDN, and frees up space on your server.
+**Is your site slow, or your hosting disk almost full? Your media library is usually the reason.**
+
+Images, videos and files take up most of a WordPress site's disk space, and every image a visitor loads comes from your server. OmniOffloader moves your media to cloud storage like Amazon S3 or Cloudflare R2 and serves it from a fast CDN. Your pages load quicker, your server has less work to do, and you get your disk space back.
 
 You don't have to change anything in your posts. Your images keep working everywhere: in posts, pages, page builders and galleries. OmniOffloader simply loads them from the cloud instead of your server.
 
@@ -29,6 +31,18 @@ https://www.youtube.com/watch?v=xzcemowK79Q
 The full walkthrough, step by step: install, connect a bucket, serve from your CDN, offload your library, the Media Library, Bring Back and more:
 
 https://www.youtube.com/watch?v=H68OvxS8DBM
+
+= Make your site faster with a CDN =
+
+When your media lives on your server, every visitor downloads every image from that one server, however far away they are. With OmniOffloader, your images, videos and files load from a CDN instead:
+
+* **Closer to your visitors.** A CDN keeps copies of your media in data centers around the world, so each visitor gets them from a nearby location. Pages load faster, especially for visitors far from your server.
+* **Less work for your server.** Your server no longer sends every image, so it has more power left for your pages, your shop and your admin screens, even during traffic spikes.
+* **Lower bandwidth costs.** Media traffic goes through the CDN instead of your hosting plan's bandwidth.
+* **Better page speed scores.** Faster-loading images help your Core Web Vitals, such as Largest Contentful Paint (LCP), which tools like Google PageSpeed Insights measure.
+* **Fewer stale files.** Turn on object versioning and every changed file gets a new address, so the CDN never shows an old copy.
+
+Use your own domain (for example `media.yoursite.com`) with Cloudflare, Amazon CloudFront, BunnyCDN or your storage provider's built-in CDN. Your visitors only see your brand.
 
 = Works with these cloud storage providers =
 
@@ -80,9 +94,18 @@ OmniOffloader runs just as well on a small shared hosting plan as on a big serve
 = Why move media to the cloud? =
 
 * **Free up disk space.** Cloud storage costs much less than hosting disk space.
-* **Faster pages.** A CDN serves your images from a location close to each visitor.
 * **Smaller backups.** A site without gigabytes of uploads is much quicker to back up and move.
+* **Cheaper hosting.** With media in the cloud, a smaller hosting plan is often enough.
 * **No lock-in.** Bring Back reverses everything whenever you want.
+
+= Who is it for? =
+
+* **Bloggers and news sites** with years of images in the Media Library.
+* **WooCommerce stores** with many product photos.
+* **Photographers, portfolios and agencies** with large, high-quality images.
+* **Course, video and download sites** that store big files.
+* **Agencies and developers** who manage many sites, including several sites sharing one bucket.
+* **Anyone on shared hosting** who is running out of disk space.
 
 = For developers =
 

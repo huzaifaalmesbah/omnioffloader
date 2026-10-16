@@ -303,8 +303,6 @@ This plugin connects to the cloud storage provider **you choose and configure** 
 
 **What is sent and when:** your media files (originals, thumbnails and other generated sizes) and their file paths are uploaded when media is offloaded — automatically on upload, from Bulk Offload, the Media Library, or WP-CLI. Files are downloaded again when you use Bring Back or apply a looser retention policy, and deleted from the bucket when you delete an attachment with Mirror Delete on, or restore with "delete from cloud" on. **Test Connection** sends a request to check that your bucket is reachable. Every request is signed with the access key you entered; the secret key itself is never transmitted. Visitors then load the offloaded files from the storage or CDN address you configured.
 
-No analytics, tracking or other data is sent to the plugin author or any other party.
-
 Depending on the provider you select:
 
 * **Amazon S3** (Amazon Web Services) — [Service Terms](https://aws.amazon.com/service-terms/), [Privacy Notice](https://aws.amazon.com/privacy/)
@@ -314,7 +312,15 @@ Depending on the provider you select:
 * **Wasabi** (Wasabi Technologies) — [Customer Agreement](https://wasabi.com/legal/customer-agreement), [Privacy Policy](https://wasabi.com/legal/privacy-policy)
 * **Any S3-compatible storage** — the service at the endpoint you enter; its own terms and privacy policy apply.
 
+**Usage insights (Appsero, opt-in):** the plugin uses the [Appsero](https://appsero.com) SDK to ask an administrator, in an admin notice, whether to share usage data. **Nothing is collected by default** and no site details are sent unless an administrator clicks Allow. Clicking "No thanks" sends only an anonymous note that usage sharing was declined (the project ID and a one-way hash of the site address). Once allowed, a report is sent to `api.appsero.com` about once a week: the site URL and name, the admin email and the first administrator's first and last name, server and WordPress details (PHP, MySQL and WordPress versions, memory limit, locale, multisite, theme), user counts, the number and list of active plugins, the server IP address and the plugin version. To read the server's public IP address, the SDK first sends a request to [icanhazip.com](https://icanhazip.com/), which sees only that request ([Privacy Policy](https://www.cloudflare.com/privacypolicy/)). Your media, file names and storage credentials are never sent. You can stop sharing anytime with the "Stop sharing usage data" link under the plugin on the Plugins screen. Separately, the optional feedback form shown when you deactivate the plugin sends the same details along with the reason you choose — only if you submit it; "Skip & Deactivate" sends nothing. [Appsero Privacy Policy](https://appsero.com/privacy-policy/)
+
 == Changelog ==
+
+= 0.1.6 =
+
+**New**
+
+* Opt-in usage insights through the Appsero SDK. An admin notice asks first; nothing is collected unless an administrator allows it. See External services for exactly what is sent.
 
 = 0.1.5 =
 

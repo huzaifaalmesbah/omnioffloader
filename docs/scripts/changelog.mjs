@@ -62,7 +62,11 @@ const latest = versions( section( 'Changelog' ) ).map( ( release ) => ( {
 	...release,
 	body: release.body.replace( /\n+Older releases:.*$/s, '' ),
 } ) );
-const releases = [ ...latest, ...versions( section( 'Changelog', older ) ) ];
+// "= Unreleased =" collects the next release's notes on main; the docs only
+// list shipped versions.
+const releases = [ ...latest, ...versions( section( 'Changelog', older ) ) ].filter(
+	( { version } ) => version !== 'Unreleased'
+);
 if ( ! releases.length ) {
 	throw new Error( `No changelog entries found in ${ readmePath }` );
 }

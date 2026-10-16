@@ -1,0 +1,34 @@
+name: PR title
+
+# Release Please builds the version bump and CHANGELOG.md from commit
+# messages, and a squash merge uses the PR title as the commit message. A
+# title it can't read ("0.1.6: …") is left out of the release, so check it.
+on:
+  pull_request_target:
+    types: [opened, edited, synchronize, reopened]
+
+permissions: {}
+
+jobs:
+  conventional-title:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: read
+    steps:
+      - uses: amannn/action-semantic-pull-request@v5
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          types: |
+            feat
+            fix
+            perf
+            revert
+            build
+            docs
+            style
+            chore
+            refactor
+            test
+            ci
+          requireScope: false

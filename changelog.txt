@@ -2,6 +2,13 @@
 
 Older releases of OmniOffloader. The latest are in readme.txt; the full list is at https://omnioffloader.vercel.app/changelog/
 
+= 0.1.5 =
+
+**Fixes**
+
+* Media that is only in the cloud (after Smart Local Cleanup or Full Cloud Migration) now shows while you edit a post, in both the block editor and the classic editor, including video and audio.
+* Saving a post keeps your site's own media addresses in the content, so it keeps working after a Bring Back or a CDN domain change.
+
 = 0.1.4 =
 
 **Serve Media from Cloud**

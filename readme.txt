@@ -4,7 +4,7 @@ Tags: offload, cloud storage, cdn, media library, s3
 Requires at least: 6.6
 Tested up to: 7.1
 Requires PHP: 8.1
-Stable tag: 0.1.6
+Stable tag: 0.1.7
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -383,7 +383,7 @@ Depending on the provider you choose:
 
 == Changelog ==
 
-= Unreleased =
+= 0.1.7 =
 
 **New**
 
@@ -415,18 +415,11 @@ Depending on the provider you choose:
 * Each release now ships the exact AWS SDK version it was tested with.
 * Tidier code names in the admin screen styles.
 
-= 0.1.5 =
-
-**Fixes**
-
-* Media that is only in the cloud (after Smart Local Cleanup or Full Cloud Migration) now shows while you edit a post, in both the block editor and the classic editor, including video and audio.
-* Saving a post keeps your site's own media addresses in the content, so it keeps working after a Bring Back or a CDN domain change.
-
 Older releases: see the [full changelog](https://omnioffloader.vercel.app/changelog/).
 
 == Upgrade Notice ==
 
-= Unreleased =
+= 0.1.7 =
 A new Storage overview on the Dashboard, and faster Bring Back and Tools screens on large media libraries. Recommended for all users.
 
 = 0.1.6 =

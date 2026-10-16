@@ -437,6 +437,7 @@ class Plugin {
 			'restore'   => __( 'A bulk restore is running — wait for it to finish first.', 'omnioffloader' ),
 			'retention' => __( 'A retention policy update is running — wait for it to finish first.', 'omnioffloader' ),
 			'move'      => __( 'A move to the current folder is running — wait for it to finish first.', 'omnioffloader' ),
+			'verify'    => __( 'A WP-CLI verify --repair is running — wait for it to finish first.', 'omnioffloader' ),
 		);
 
 		if ( $active === $job ) {
@@ -445,10 +446,13 @@ class Plugin {
 				'restore'   => __( 'A bulk restore is already running.', 'omnioffloader' ),
 				'retention' => __( 'A retention policy update is already running.', 'omnioffloader' ),
 				'move'      => __( 'A move to the current folder is already running.', 'omnioffloader' ),
+				'verify'    => __( 'A WP-CLI verify --repair is already running.', 'omnioffloader' ),
 			);
 		}
 
-		return new \WP_Error( 'omnioffloader_bulk_running', $messages[ $active ], array( 'status' => 409 ) );
+		$message = $messages[ $active ] ?? __( 'Another job is running — wait for it to finish first.', 'omnioffloader' );
+
+		return new \WP_Error( 'omnioffloader_bulk_running', $message, array( 'status' => 409 ) );
 	}
 
 	/**

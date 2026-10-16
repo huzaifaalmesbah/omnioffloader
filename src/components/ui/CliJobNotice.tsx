@@ -27,6 +27,11 @@ export function cliJobTitle( job: JobType | '' ): string {
 			);
 		case 'offload':
 			return __( 'A WP-CLI offload is running.', 'omnioffloader' );
+		case 'verify':
+			return __(
+				'A WP-CLI verify --repair is running.',
+				'omnioffloader'
+			);
 		default:
 			return __( 'A WP-CLI job is running.', 'omnioffloader' );
 	}

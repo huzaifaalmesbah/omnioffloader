@@ -171,7 +171,7 @@ export interface MovePreflight {
 }
 
 /** A bulk job type; WP-CLI runs one of these at a time. */
-export type JobType = 'offload' | 'restore' | 'retention' | 'move';
+export type JobType = 'offload' | 'restore' | 'retention' | 'move' | 'verify';
 
 /**
  * Mirrors CoreController::get_cli_job_response(): the WP-CLI job running

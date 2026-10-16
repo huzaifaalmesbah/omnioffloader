@@ -70,6 +70,76 @@ function getCommands(): CliCommand[] {
 			],
 		},
 		{
+			name: 'wp omnioffloader verify',
+			summary: __(
+				'Check that every offloaded file is in your cloud storage, and on the server where its retention policy keeps it. --repair uploads or downloads what differs; it never deletes a file.',
+				'omnioffloader'
+			),
+			view: 'tools',
+			viewLabel: __( 'Open Tools', 'omnioffloader' ),
+			docs: 'wp-cli/verify/',
+			examples: [
+				{
+					command: 'wp omnioffloader verify',
+					description: __(
+						'Check everything; changes nothing.',
+						'omnioffloader'
+					),
+				},
+				{
+					command: 'wp omnioffloader verify --repair --dry-run',
+					description: __(
+						'See what --repair would fix.',
+						'omnioffloader'
+					),
+				},
+				{
+					command: 'wp omnioffloader verify --repair',
+					description: __(
+						'Upload or download what differs.',
+						'omnioffloader'
+					),
+				},
+			],
+			options: [
+				{
+					flag: '--ids=<ids>',
+					description: __(
+						'Comma-separated attachment IDs.',
+						'omnioffloader'
+					),
+				},
+				{
+					flag: '--limit=<number>',
+					description: __(
+						'Check at most this many attachments.',
+						'omnioffloader'
+					),
+				},
+				{
+					flag: '--repair',
+					description: __(
+						'Fix what can be fixed; never deletes a file.',
+						'omnioffloader'
+					),
+				},
+				{
+					flag: '--dry-run',
+					description: __(
+						'With --repair: list the repairs without making them.',
+						'omnioffloader'
+					),
+				},
+				{
+					flag: '--format=<format>',
+					description: __(
+						'table, json, csv or count.',
+						'omnioffloader'
+					),
+				},
+			],
+		},
+		{
 			name: 'wp omnioffloader errors',
 			summary: __(
 				'List media with errors (failed offloads, and offloaded media whose Bring Back, retention update or move failed), retry failed offloads, or clear error logs.',

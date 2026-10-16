@@ -51,8 +51,23 @@ function getCommands(): CliCommand[] {
 						'omnioffloader'
 					),
 				},
+				{
+					command: 'wp omnioffloader status --format=json',
+					description: __(
+						'The same as one JSON object, for monitoring scripts.',
+						'omnioffloader'
+					),
+				},
 			],
-			options: [],
+			options: [
+				{
+					flag: '--format=<format>',
+					description: __(
+						'text (default) or json.',
+						'omnioffloader'
+					),
+				},
+			],
 		},
 		{
 			name: 'wp omnioffloader stop',

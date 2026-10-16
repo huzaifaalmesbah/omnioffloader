@@ -279,9 +279,8 @@ class CoreController extends BaseController {
 		// Never cached: the address check is one comparison.
 		$stats['safe_mode'] = SafeMode::status();
 
-		// Running totals (no library scan) and where the media is.
-		$stats['storage']              = MediaCounters::storage();
-		$stats['storage']['locations'] = Helpers::get_storage_locations();
+		// Running totals for the Storage card (no library scan).
+		$stats['storage'] = MediaCounters::storage();
 
 		return rest_ensure_response( $stats );
 	}

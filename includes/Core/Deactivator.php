@@ -48,7 +48,6 @@ class Deactivator {
 		delete_transient( 'omnioffloader_restore_preflight' );
 		delete_transient( 'omnioffloader_retention_preflight' );
 		delete_transient( 'omnioffloader_move_preflight' );
-		delete_transient( 'omnioffloader_storage_locations' );
 		delete_site_transient( Plugin::cli_job_lock_key() );
 		Plugin::clear_cli_run();
 	}

@@ -11,9 +11,8 @@ interface StorageCardProps {
 
 /**
  * Where the offloaded media's bytes are: in the cloud, still on this server,
- * and how much space the retention policy freed — overall, per policy and
- * per provider/bucket. Totals come from the running counters, so the card
- * costs no library scan.
+ * and how much space the retention policy freed — overall and per policy.
+ * Totals come from the running counters, so the card costs no library scan.
  */
 export function StorageCard( { storage }: StorageCardProps ) {
 	const policies = storage.policies.filter( ( p ) => p.count > 0 );
@@ -105,45 +104,6 @@ export function StorageCard( { storage }: StorageCardProps ) {
 					</tbody>
 				</table>
 			</div>
-
-			{ storage.locations.length > 0 && (
-				<div className="omnioffloader-storage-scroll">
-					<table className="omnioffloader-storage-table">
-						<caption className="screen-reader-text">
-							{ __(
-								'Offloaded media by provider and bucket',
-								'omnioffloader'
-							) }
-						</caption>
-						<thead>
-							<tr>
-								<th scope="col">
-									{ __( 'Provider', 'omnioffloader' ) }
-								</th>
-								<th scope="col">
-									{ __( 'Bucket', 'omnioffloader' ) }
-								</th>
-								<th scope="col">
-									{ __( 'Items', 'omnioffloader' ) }
-								</th>
-							</tr>
-						</thead>
-						<tbody>
-							{ storage.locations.map( ( location ) => (
-								<tr
-									key={ `${ location.provider }|${ location.bucket }` }
-								>
-									<th scope="row">
-										{ location.name || location.provider }
-									</th>
-									<td>{ location.bucket || '—' }</td>
-									<td>{ location.count.toLocaleString() }</td>
-								</tr>
-							) ) }
-						</tbody>
-					</table>
-				</div>
-			) }
 
 			{ storage.unsized > 0 && (
 				<p className="omnioffloader-storage-note">

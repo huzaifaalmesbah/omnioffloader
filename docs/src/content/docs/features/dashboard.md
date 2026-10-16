@@ -16,7 +16,7 @@ sidebar:
 
 ## Storage
 
-![The Storage card on the Dashboard: totals in the cloud, still on the server and freed (1), a table by retention policy (2) and a table by provider and bucket (3)](/images/screenshots/dashboard-storage-marked.png)
+![The Storage card on the Dashboard: totals in the cloud, still on the server and freed (1), and a table by retention policy (2)](/images/screenshots/dashboard-storage-marked.png)
 
 The **Storage** card shows, for your offloaded media:
 
@@ -24,10 +24,7 @@ The **Storage** card shows, for your offloaded media:
 - **Still on this server:** the files your [retention policy](/features/retention-policies/) keeps on your server. With **Retain Local Files** that is everything; with **Smart Local Cleanup**, the originals; with **Full Cloud Migration**, nothing.
 - **Space freed:** what the retention policy removed from your server.
 
-Below that, two tables:
-
-- **By retention policy:** how many items follow each policy, and their bytes in the cloud, on the server and freed. Media keeps the policy it was offloaded (or last updated) with, so after you change the policy the table can show more than one row. [Apply the new policy to existing media](/features/retention-policies/) from the Tools screen.
-- **By provider and bucket:** how many items are in each place. Media stays where it was offloaded, so after a provider or bucket change it can be split across several.
+Below that, a table **by retention policy**: how many items follow each policy, and their bytes in the cloud, on the server and freed. Media keeps the policy it was offloaded (or last updated) with, so after you change the policy the table can show more than one row. [Apply the new policy to existing media](/features/retention-policies/) from the Tools screen.
 
 The totals are kept up to date as your media changes, so the card shows at once, however large your library is.
 

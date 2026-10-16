@@ -387,7 +387,7 @@ Depending on the provider you choose:
 
 **New**
 
-* **Storage** on the Dashboard: see how much of your media is in the cloud, how much is still on your server, and how much space was freed, by retention policy and by provider and bucket.
+* **Storage** on the Dashboard: see how much of your media is in the cloud, how much is still on your server, and how much space was freed, overall and by retention policy.
 
 **Improvements**
 

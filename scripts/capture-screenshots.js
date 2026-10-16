@@ -323,7 +323,7 @@ async function main() {
     },
 
     // 1b. Dashboard Storage card (docs only). Example numbers for a large
-    // library with all three policies and two buckets, so every row shows.
+    // library with all three policies, so every row shows.
     {
       id: 16,
       slug: 'dashboard-storage',
@@ -353,10 +353,6 @@ async function main() {
               { policy: 0, count: 4210, cloud_bytes: 10522669875, server_bytes: 10522669875, freed_bytes: 0 },
               { policy: 1, count: 9830, cloud_bytes: 22978075033, server_bytes: 6549825126, freed_bytes: 16428249907 },
               { policy: 2, count: 4600, cloud_bytes: 12025908428, server_bytes: 0, freed_bytes: 12025908428 }
-            ],
-            locations: [
-              { provider: 'cloudflare_r2', name: 'Cloudflare R2', bucket: 'media', count: 16900 },
-              { provider: 'amazon_s3', name: 'Amazon S3', bucket: 'old-uploads', count: 1740 }
             ]
           }
           }
@@ -368,8 +364,7 @@ async function main() {
       },
       annotations: [
         { selector: '.omnioffloader-media-summary', num: 1, label: 'In the Cloud, Still on This Server & Space Freed', position: 'top-right', offsetY: -16 },
-        { selector: '.omnioffloader-storage-table', index: 0, num: 2, label: 'By Retention Policy: Items, Cloud, Server & Freed', position: 'top-right', offsetY: -16 },
-        { selector: '.omnioffloader-storage-table', index: 1, num: 3, label: 'By Provider & Bucket', position: 'top-right', offsetY: -16 }
+        { selector: '.omnioffloader-storage-table', index: 0, num: 2, label: 'By Retention Policy: Items, Cloud, Server & Freed', position: 'top-right', offsetY: -16 }
       ]
     },
 

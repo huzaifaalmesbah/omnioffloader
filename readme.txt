@@ -12,13 +12,13 @@ Offload media to Amazon S3, Cloudflare R2, Wasabi or any S3 storage, serve it fr
 
 == Description ==
 
-Your media library is probably the biggest thing on your server. OmniOffloader moves it to cloud object storage, serves it from your own domain or CDN, and frees the disk space it was using — without changing a single URL in your content.
+Images, videos and files usually take up most of a WordPress site's disk space. OmniOffloader moves your media to cloud storage, serves it from your own domain or CDN, and frees up space on your server.
 
-Every upload is copied to the cloud automatically: the original, every generated thumbnail, the `-scaled` version and modern WebP/AVIF sources. Image URLs and `srcset` attributes are rewritten as pages render, so your posts, pages and page builders keep working exactly as before, and nothing in your database is search-replaced.
+You don't have to change anything in your posts. Your images keep working everywhere: in posts, pages, page builders and galleries. OmniOffloader simply loads them from the cloud instead of your server.
 
-And because offloading should never be a one-way door, **Bring Back** downloads everything from the cloud to your server again — one file or the whole library — and hands your URLs back to local paths.
+Changed your mind? **Bring Back** downloads your media to your server again, one file or the whole library, and everything loads from your server like before. Nothing is locked in.
 
-**Documentation:** step-by-step provider guides, every feature, WP-CLI and developer hooks at [omnioffloader.vercel.app](https://omnioffloader.vercel.app/).
+**Documentation:** setup guides for every provider, every feature and WP-CLI at [omnioffloader.vercel.app](https://omnioffloader.vercel.app/).
 
 = See it in action =
 
@@ -26,295 +26,322 @@ OmniOffloader in 2 minutes:
 
 https://www.youtube.com/watch?v=xzcemowK79Q
 
-The full walkthrough — install, connect a bucket, serve from your CDN, Bulk Offload, WP-CLI, Media Library, Bring Back and every other feature, step by step:
+The full walkthrough, step by step: install, connect a bucket, serve from your CDN, offload your library, the Media Library, Bring Back and more:
 
 https://www.youtube.com/watch?v=H68OvxS8DBM
 
-= Supported cloud storage providers =
+= Works with these cloud storage providers =
 
 * **Amazon S3**
 * **Cloudflare R2**
 * **DigitalOcean Spaces**
 * **Backblaze B2**
 * **Wasabi**
-* **Any S3-compatible storage** — MinIO, Storj, OVHcloud, Linode, Scaleway and others, through the generic option where you supply your own endpoint and region, and give it your own display name.
+* **Any other S3-compatible storage**, such as MinIO, Storj, OVHcloud, Linode or Scaleway. You enter the address and region your provider gives you, and you can even give it your own name.
 
-= Key features =
+= What you can do =
 
-* **Automatic offloading** — new uploads go to the cloud in the background, so the upload screen never waits on a cloud transfer.
-* **Bulk offload for existing media** — process the whole library or a set number of attachments (5, 10, 25, 50, 100 or any number), with a live progress bar, activity log and a Cancel button.
-* **Large libraries, much faster** — `wp omnioffloader offload --all --concurrency=32` (up to 64) uploads many files at the same time from WP-CLI on a VPS or dedicated server. Bring Back, retention and move take `--concurrency` too.
-* **Adjustable transfer speed** — offload your existing, not-yet-offloaded media library and bring it back faster by moving 1, 3 or 6 files at the same time, or your own number from 1 to 10. Every setting runs inside a single PHP process, so faster never means more server processes.
-* **Content URL rewriting** — images, galleries, video, audio, file, cover and media-text blocks, Classic Editor media tags and audio/video shortcodes are all served from the cloud, without editing post content.
-* **Serve from your CDN** — media is delivered from your custom domain or CDN edge, not your origin server. Not ready yet? Turn off **Serve Media from Cloud** to offload now and keep loading media from your server, then switch over with one click.
-* **Three retention policies** — keep every local copy, delete only generated thumbnails (Smart Local Cleanup), or move everything to the cloud (Full Cloud Migration).
-* **Apply a new policy to old media** — change the retention policy later and apply it to media you already offloaded, from the Tools screen or `wp omnioffloader retention`. Every file is checked in the cloud before its local copy is deleted, many attachments at once.
-* **Bring Back** — restore media from the cloud to your server, per file or in bulk, with a disk-space preflight so you know what it needs before it starts. Deleting the cloud copy afterwards is optional and off by default.
-* **Media Library integration** — a status column, grid view badges, a meta box on the edit screen, row actions and bulk actions for Offload and Bring Back.
-* **Mirror Delete** — deleting an attachment in WordPress removes its cloud copies too (on by default for new installs; never on a staging or dev copy).
-* **Object versioning and path prefix** — add a timestamp segment to object keys so CDN caches never serve a stale file, and store objects under a folder of your choice. Change the folder later and move existing media into it from Tools or with `wp omnioffloader move`.
-* **WP-CLI** — offload, restore, apply retention, move media to the current folder and check status from the terminal. Long jobs keep running after you close the terminal when started with `nohup`, and `wp omnioffloader stop` ends them from anywhere. A full command reference is on the Tools screen.
-* **Credentials in wp-config.php** — define keys as PHP constants instead of storing them in the database; the settings screen locks those fields.
+* **Offload new uploads automatically.** Every new image is copied to the cloud in the background, with all its sizes. You keep working; the upload screen never waits.
+* **Offload the media you already have.** Move your whole library, or just a part of it (10, 50, 100 items or any number), with a progress bar and a Cancel button.
+* **Serve media from your CDN.** Your images load from your own domain or CDN instead of your server. Not ready yet? Offload now, keep loading media from your server, and switch to the CDN later with one click.
+* **Choose what stays on your server.** Keep everything (safest), remove only the extra image sizes WordPress creates, or move everything to the cloud to free the most space.
+* **Change your mind later.** Picked a different option for what stays on your server? Apply it to media you already offloaded from the Tools screen. Every file is checked in the cloud before anything is deleted.
+* **Bring Back.** Download media from the cloud to your server again, one file or all of it. It first checks you have enough disk space. Your cloud copy is kept unless you choose to delete it.
+* **See everything in the Media Library.** A status column, badges, offload and Bring Back buttons, bulk actions, and filters for offloaded, local and failed media.
+* **Fix problems in one place.** The Tools screen lists any media that failed to offload or restore, with the reason, and a button to try the failed offloads again.
+* **Keep the cloud tidy.** When you delete media in WordPress, its cloud copy is deleted too (Mirror Delete, on by default for new sites).
+* **Organize your bucket.** Store your files in a folder of your choice, and add a version number to file names so your CDN never shows an old copy. Changed the folder? Move your existing media into the new one from the Tools screen.
+* **Choose the transfer speed.** Move 1, 3 or 6 files at the same time, or your own number up to 10. Pick a gentle speed on small hosting plans and a fast one on bigger servers.
+* **Keep your keys out of the database.** Put your access keys in `wp-config.php` instead, and the settings screen locks those fields.
+* **Use WP-CLI if you like the terminal.** Offload, restore, check and repair your media from the command line, much faster on a VPS. See the FAQ below.
 
-= Built for every host — shared plans to dedicated servers =
+= Built for every kind of hosting =
 
-OmniOffloader is designed to run on a small shared hosting plan just as well as on a VPS.
+OmniOffloader runs just as well on a small shared hosting plan as on a big server.
 
-* **One PHP process, low memory.** Bulk jobs run in the background, one short pass at a time. Faster transfer speeds upload several files side by side over the same connection instead of starting extra workers.
-* **You choose the pace.** Choose **Low** on a small shared plan to upload one file at a time, **Balanced** (the default) for most sites, or **Fast** / **Custom** on a VPS or dedicated server. WP-CLI uses the same setting.
-* **Large files in parts.** Files above 64 MB are uploaded in chunks, so a dropped connection costs one chunk instead of the whole transfer, and files beyond 5 GB are supported.
-* **No stuck jobs.** A file that your host's time limit cuts short is reported and skipped instead of retried forever, and a broken connection stops the run after 10 failures in a row with an explanation.
-* **Works where loopback requests are blocked.** If your host blocks WordPress's internal background requests, the open admin page keeps the job moving instead.
-* **Caching-friendly.** Progress stays live under LiteSpeed Cache, Breeze, Redis and Memcached.
+* **Light on your server.** Jobs run quietly in the background in small steps, and use little memory.
+* **You choose the pace.** Choose **Low** on a small shared plan, **Balanced** (the default) for most sites, or **Fast** on a VPS or dedicated server.
+* **Large files are no problem.** Videos and other files over 64 MB are uploaded in parts, so a dropped connection only costs one part. Files over 5 GB work too.
+* **No stuck jobs.** If one file can't be moved, it is reported and the job carries on. If the connection to your storage breaks, the job stops and tells you why.
+* **Works on strict hosts.** Some hosts block the background requests WordPress uses. Then the open admin page keeps the job going instead.
+* **Works with caching.** Progress stays live with LiteSpeed Cache, Breeze, Redis and Memcached.
 
 = Safe by design =
 
-* A local file is never deleted until its upload is confirmed in your bucket.
-* A cloud file is never deleted until Bring Back has confirmed the local copy — and only if you turned that option on.
-* Restores write to a temporary file first and move it into place, and never write outside your uploads folder.
-* Only one bulk job (offload, Bring Back, retention or move) runs at a time, whether it was started from the admin screens, the Media Library or WP-CLI.
-* Moving media between your server and the cloud is limited to administrators. Other users keep their normal rights: they upload and delete their own media.
-* Access keys are never shown in the browser or written to logs.
-* Safe mode for staging, development and local copies: a copy of your site never uploads to or deletes from the live site's cloud storage.
-* Several sites can share one bucket and one CDN address, each in its own folder. A site never uploads to or deletes from a folder another site already uses.
+* A file is only deleted from your server after its cloud copy is confirmed.
+* A file is only deleted from the cloud after Bring Back has confirmed it is back on your server, and only if you turned that option on.
+* Restored files never end up half-written, and never outside your uploads folder.
+* Only one big job runs at a time, so two jobs never work on the same files.
+* Only administrators can move media between your server and the cloud. Other users upload and delete their own media as usual.
+* Your access keys are never shown in the browser or written to logs.
+* **Staging and local copies can't touch your live site's media.** A copy of your site is recognised automatically and never uploads to or deletes from your cloud storage (Safe mode).
+* **Several sites can share one bucket**, each in its own folder. A site never touches a folder another site already uses.
+
+= Why move media to the cloud? =
+
+* **Free up disk space.** Cloud storage costs much less than hosting disk space.
+* **Faster pages.** A CDN serves your images from a location close to each visitor.
+* **Smaller backups.** A site without gigabytes of uploads is much quicker to back up and move.
+* **No lock-in.** Bring Back reverses everything whenever you want.
 
 = For developers =
+
+Hooks, a REST API (`omnioffloader/v1`) and WP-CLI (`wp omnioffloader`) are available.
 
 Filters: `omnioffloader_cloud_providers`, `omnioffloader_object_acl`, `omnioffloader_attachment_key`, `omnioffloader_attachment_delete_keys`, `omnioffloader_should_offload_attachment`, `omnioffloader_use_async_upload`, `omnioffloader_should_apply_retention`, `omnioffloader_media_block_names`, `omnioffloader_log_provider_errors`, `omnioffloader_multipart_threshold`, `omnioffloader_transfer_concurrency`, `omnioffloader_bulk_failure_limit`, `omnioffloader_free_disk_space`, `omnioffloader_cpanel_quota_file`, `omnioffloader_check_folder_claim`.
 
 Actions: `omnioffloader_before_offload`, `omnioffloader_after_offload`, `omnioffloader_before_restore`, `omnioffloader_after_restore`, `omnioffloader_transfer_heartbeat`.
 
-REST API namespace: `omnioffloader/v1`. WP-CLI: `wp omnioffloader`. Full reference with examples: [Hooks](https://omnioffloader.vercel.app/developers/hooks/) and [WP-CLI](https://omnioffloader.vercel.app/wp-cli/).
-
-= Why offload media to cloud storage? =
-
-* **Reclaim disk space** — media is usually the bulk of a WordPress install, and object storage costs a fraction of hosting disk.
-* **Faster media delivery** — files served from a CDN edge load closer to your visitors.
-* **Lighter backups and migrations** — a site without gigabytes of uploads is far quicker to back up and move.
-* **No lock-in** — Bring Back reverses the whole thing whenever you want.
+Full reference with examples: [Hooks](https://omnioffloader.vercel.app/developers/hooks/) and [WP-CLI](https://omnioffloader.vercel.app/wp-cli/).
 
 = Licensing note =
 
-This plugin bundles the AWS SDK for PHP (Apache-2.0), which is GPL-compatible under GPLv3 — covered by this plugin's "GPL-2.0-or-later" license.
+This plugin includes the AWS SDK for PHP (Apache-2.0). It is compatible with GPLv3, which this plugin's "GPL-2.0-or-later" license covers.
 
 == Installation ==
 
-1. Install the plugin from **Plugins → Add New**, or upload the `omnioffloader` folder to `/wp-content/plugins/`.
-2. Activate it through the **Plugins** screen.
-3. Open **OmniOffloader → Settings**.
-4. Pick your storage provider, enter its credentials and your Custom Domain / CDN URL, then click **Test Connection**.
-5. Choose a retention policy. Start with **Retain Local Files** — it keeps every local copy while you confirm everything serves correctly.
-6. Choose a **Transfer Speed** that suits your hosting (Balanced is a good start).
-7. Open **OmniOffloader → Offload** and start a bulk offload for your existing media. New uploads are offloaded automatically from now on.
+1. In WordPress, go to **Plugins → Add New**, search for **OmniOffloader**, then install and activate it.
+2. Open **OmniOffloader → Settings**.
+3. Choose your storage provider and enter the details it gave you (keys, bucket name and so on). Add your custom domain or CDN address, then click **Test Connection**. The FAQ below has a short guide for each provider.
+4. Under **Retention Policy**, start with **Retain Local Files**. It keeps a copy of everything on your server while you check that your media loads correctly.
+5. Leave **Transfer Speed** on **Balanced** for now.
+6. Click **Save changes**.
+7. Go to **OmniOffloader → Offload** and click **Start** to move the media you already have. New uploads are offloaded automatically from now on.
 
 == Frequently Asked Questions ==
 
 = Which cloud storage providers are supported? =
 
-Amazon S3, Cloudflare R2, DigitalOcean Spaces, Backblaze B2 and Wasabi each have a dedicated setup. Anything else that speaks the S3 API — MinIO, Storj, OVHcloud, Linode Object Storage, Scaleway and so on — works through **Any S3-Compatible Storage**, where you supply the endpoint and region yourself.
+Amazon S3, Cloudflare R2, DigitalOcean Spaces, Backblaze B2 and Wasabi each have their own setup. Any other S3-compatible storage (MinIO, Storj, OVHcloud, Linode, Scaleway and more) works through **Any S3-Compatible Storage**, where you enter the address and region from your provider.
 
-= How do I configure Cloudflare R2? =
+= How do I set up Cloudflare R2? =
 
-1. In the Cloudflare dashboard, go to **R2** and create a bucket.
-2. In the bucket's **Settings**, connect a **Custom Domain** (for example `https://media.yourdomain.com`) or enable the public `r2.dev` URL, so your files can be served publicly.
-3. Back on the R2 overview page, open **Manage R2 API Tokens**, create a token with **Object Read & Write** permission, and copy the Access Key ID and Secret Access Key.
-4. Copy the bucket's **S3 API** endpoint (`https://<account-id>.r2.cloudflarestorage.com`) from the bucket settings.
-5. In OmniOffloader Settings, select **Cloudflare R2** and enter the Access Key ID, Secret Access Key, Endpoint URL, Bucket Name and your custom domain, then click **Test Connection**.
+1. In your Cloudflare dashboard, go to **R2** and create a bucket.
+2. In the bucket's **Settings**, connect a **Custom Domain** (for example `https://media.yourdomain.com`) or turn on the public `r2.dev` address, so visitors can see your files.
+3. On the R2 overview page, open **Manage R2 API Tokens**. Create a token with **Object Read & Write** permission, and copy the Access Key ID and Secret Access Key.
+4. In the bucket settings, copy the **S3 API** address (`https://<account-id>.r2.cloudflarestorage.com`).
+5. In OmniOffloader Settings, choose **Cloudflare R2**. Enter the keys, that address as the Endpoint URL, the bucket name and your custom domain, then click **Test Connection**.
 
-Full guide: [omnioffloader.vercel.app/providers/cloudflare-r2/](https://omnioffloader.vercel.app/providers/cloudflare-r2/)
+Full guide with screenshots: [Cloudflare R2](https://omnioffloader.vercel.app/providers/cloudflare-r2/)
 
-= How do I configure Amazon S3? =
+= How do I set up Amazon S3? =
 
-1. In the AWS console, create an S3 bucket in your preferred region.
-2. In IAM, create a user with programmatic access and a policy that allows reading and writing objects in that bucket. Create an access key and copy the Access Key ID and Secret Access Key.
-3. To serve media publicly, allow public `s3:GetObject` on the bucket with a bucket policy, or put an **Amazon CloudFront** distribution in front of it.
-4. In OmniOffloader Settings, select **Amazon S3** and enter the keys, Bucket Name, Region (for example `us-east-1`) and your CloudFront or CDN URL (or leave it blank to serve directly from S3).
+1. In the AWS console, create an S3 bucket in the region you want.
+2. In IAM, create a user with an access key, and allow it to read and write files in that bucket. Copy the Access Key ID and Secret Access Key.
+3. So visitors can see your files, either allow public reading with a bucket policy, or put **Amazon CloudFront** in front of the bucket.
+4. In OmniOffloader Settings, choose **Amazon S3**. Enter the keys, bucket name, region (for example `us-east-1`) and your CloudFront or CDN address. Leave the address empty to serve straight from S3.
 
-Full guide: [omnioffloader.vercel.app/providers/amazon-s3/](https://omnioffloader.vercel.app/providers/amazon-s3/)
+Full guide: [Amazon S3](https://omnioffloader.vercel.app/providers/amazon-s3/)
 
-= How do I configure DigitalOcean Spaces? =
+= How do I set up DigitalOcean Spaces? =
 
-1. In the DigitalOcean control panel, create a Space and, if you want, enable its built-in CDN.
+1. In the DigitalOcean control panel, create a Space. Turn on its CDN if you want one.
 2. Create a **Spaces access key** and copy the key and secret.
-3. Note the region endpoint (for example `https://nyc3.digitaloceanspaces.com`) and region (`nyc3`).
-4. In OmniOffloader Settings, select **DigitalOcean Spaces** and enter the keys, Endpoint URL, Region, Space name and your CDN or custom domain.
+3. Note the region address (for example `https://nyc3.digitaloceanspaces.com`) and the region (`nyc3`).
+4. In OmniOffloader Settings, choose **DigitalOcean Spaces**. Enter the keys, that address as the Endpoint URL, the region, the Space name and your CDN or custom domain.
 
-Full guide: [omnioffloader.vercel.app/providers/digitalocean-spaces/](https://omnioffloader.vercel.app/providers/digitalocean-spaces/)
+Full guide: [DigitalOcean Spaces](https://omnioffloader.vercel.app/providers/digitalocean-spaces/)
 
-= How do I configure Backblaze B2? =
+= How do I set up Backblaze B2? =
 
-1. In the Backblaze B2 console, create a bucket and set **Files in Bucket are** to **Public** so media can be viewed in browsers.
+1. In the Backblaze B2 console, create a bucket and set **Files in Bucket are** to **Public**.
 2. Note the bucket's S3 Endpoint (for example `https://s3.us-east-005.backblazeb2.com`) and its region (`us-east-005`).
-3. Under **Application Keys**, add a key with **Read and Write** access to the bucket, and copy the `keyID` and `applicationKey`.
-4. In OmniOffloader Settings, select **Backblaze B2** and enter the Application Key ID, Application Key, Endpoint URL, Region and Bucket Name. Leave the CDN URL blank to serve directly from Backblaze, or enter your CDN domain.
+3. Under **Application Keys**, add a key with **Read and Write** access to the bucket. Copy the `keyID` and `applicationKey`.
+4. In OmniOffloader Settings, choose **Backblaze B2**. Enter the key ID, key, Endpoint URL, region and bucket name. Leave the CDN address empty to serve straight from Backblaze, or enter your CDN domain.
 
-Full guide: [omnioffloader.vercel.app/providers/backblaze-b2/](https://omnioffloader.vercel.app/providers/backblaze-b2/)
+Full guide: [Backblaze B2](https://omnioffloader.vercel.app/providers/backblaze-b2/)
 
-= How do I configure Wasabi? =
+= How do I set up Wasabi? =
 
 1. In the Wasabi console, create a bucket and note its region (for example `us-east-1`).
 2. Create an access key and copy the Access Key ID and Secret Access Key.
-3. Make the files publicly readable with a bucket policy, or serve them through a CDN in front of the bucket.
-4. In OmniOffloader Settings, select **Wasabi** and enter the keys, Bucket Name, Region and your CDN or custom domain.
+3. So visitors can see your files, allow public reading with a bucket policy, or put a CDN in front of the bucket.
+4. In OmniOffloader Settings, choose **Wasabi**. Enter the keys, bucket name, region and your CDN or custom domain.
 
-Full guide: [omnioffloader.vercel.app/providers/wasabi/](https://omnioffloader.vercel.app/providers/wasabi/)
+Full guide: [Wasabi](https://omnioffloader.vercel.app/providers/wasabi/)
 
-= How do I configure Storj or other S3-compatible storage? =
+= How do I set up Storj or another S3-compatible provider? =
+
+For Storj:
 
 1. In the Storj console, create a bucket and open **Access → Create S3 Credentials**. Copy the Access Key and Secret Key.
-2. Share the bucket publicly (**Objects → your bucket → Share**) and copy the link-sharing URL, for example `https://link.storjshare.io/s/<KEY>/<BUCKET>`. Replace `/s/` with `/raw/`.
-3. In OmniOffloader Settings, select **Any S3-Compatible Storage**.
-4. Set the S3 Endpoint URL to `https://gateway.storjshare.io`, Region to `us-east-1`, turn on **Use Path-Style Endpoint**, enter your keys and Bucket Name, and paste the `https://link.storjshare.io/raw/...` URL as the Custom Domain / CDN URL.
+2. Share the bucket publicly (**Objects → your bucket → Share**) and copy the link, for example `https://link.storjshare.io/s/<KEY>/<BUCKET>`. Change `/s/` to `/raw/`.
+3. In OmniOffloader Settings, choose **Any S3-Compatible Storage**.
+4. Enter `https://gateway.storjshare.io` as the Endpoint URL and `us-east-1` as the region, and turn on **Use Path-Style Endpoint**. Add your keys and bucket name, and paste the `https://link.storjshare.io/raw/...` link as your Custom Domain / CDN URL.
 
-The same fields work for MinIO, OVHcloud, Linode, Scaleway and other S3-compatible services. The optional **Provider Label** lets you name the provider as it appears in the plugin. Full guide: [omnioffloader.vercel.app/providers/s3-compatible/](https://omnioffloader.vercel.app/providers/s3-compatible/)
+The same fields work for MinIO, OVHcloud, Linode, Scaleway and others. Use **Provider Label** to give the provider your own name. Full guide: [S3-compatible storage](https://omnioffloader.vercel.app/providers/s3-compatible/)
+
+= Why do I need a custom domain or CDN address? =
+
+Most storage buckets don't show files to the public by default, and Cloudflare R2 has no public address at all until you add one. Connecting your own domain or a CDN to the bucket lets visitors see your media, and lets the CDN cache it close to them.
+
+= Will offloading break my image links? =
+
+No. OmniOffloader changes image addresses as each page loads, so posts, pages, featured images and responsive images all keep working. Your post content is never edited, and you don't need to search and replace anything in your database.
+
+= Do I have to delete the files on my server? =
+
+No. The default, **Retain Local Files**, deletes nothing. The cloud simply becomes a second copy. Choose **Smart Local Cleanup** to remove only the extra sizes WordPress creates and keep every original, or **Full Cloud Migration** to free the most space. A file is only removed from your server after its cloud copy is confirmed.
 
 = Which Transfer Speed should I choose? =
 
-It matters most when you offload media that is already in your library but not in the cloud yet — with Bulk Offload, Media Library bulk actions or WP-CLI — and when you use Bring Back. New uploads are offloaded in the background as they arrive, so you rarely notice their speed. The setting chooses how many files are uploaded or downloaded at the same time:
+It mostly matters when you move a lot of media at once: offloading your existing library, or Bring Back. It sets how many files move at the same time:
 
-* **Low** — one file at a time. The lightest option for small shared hosting plans.
-* **Balanced** — 3 files at a time. The default, and right for most sites.
-* **Fast** — 6 files at a time, for a VPS or dedicated server.
-* **Custom** — any number from 1 to 10.
+* **Low**: 1 file at a time. Best for small shared hosting plans.
+* **Balanced**: 3 files at a time. The default, and right for most sites.
+* **Fast**: 6 files at a time. For a VPS or dedicated server.
+* **Custom**: your own number, from 1 to 10.
 
-All four run in the same single PHP process; a faster setting overlaps the time spent waiting on the network instead of starting more processes. Each extra file only adds a little memory and bandwidth. Bulk Offload, Bring Back, new uploads and WP-CLI all follow this setting. For a one-off WP-CLI run on a VPS, `--concurrency=32` (up to 64) on `offload`, `restore`, `retention` or `move` goes beyond it for that run only.
+A faster setting doesn't start extra processes on your server; it just makes better use of the waiting time while files travel.
 
-= How long does a bulk offload take, and can I close the browser tab? =
+= How long does offloading take? Can I close the browser tab? =
 
-It depends mostly on how quickly your server reaches your storage provider, how large your files are, and how many thumbnail sizes your theme creates. A higher Transfer Speed finishes sooner on a server that can handle it.
+It depends on your server's connection to your storage, the size of your files, and how many image sizes your theme creates. A faster Transfer Speed finishes sooner if your server can handle it.
 
-Jobs run in the background and keep going after you close the tab. On hosts that block WordPress's internal loopback requests, the admin screen drives the job instead — there, leave the Offload page open until it finishes, or use WP-CLI.
-
-= Will offloading break my existing image URLs? =
-
-No. URLs are rewritten as pages render, so posts, pages, featured images and responsive `srcset` attributes all keep working. Nothing in your post content is edited, and no database search-replace is needed.
+Yes, you can close the tab: the job keeps running in the background. Only on hosts that block WordPress's background requests does the job need the Offload page to stay open. There, leave it open until it finishes, or use WP-CLI.
 
 = Can I move my media back to my server later? =
 
-Yes — that is what **Bring Back** is for. It downloads your media from the cloud to its original paths, checks that every file arrived, and then stops rewriting URLs so everything serves locally again. You can restore a single attachment, a set number, or the whole library. The cloud copy is kept unless you turn on deleting it after restore.
+Yes, that's what **Bring Back** is for. It downloads your media to its original place on your server, checks that every file arrived, and then loads everything from your server again. Bring back one item, a set number, or your whole library. Your cloud copy is kept unless you choose to delete it.
 
 = What happens to my images if I deactivate the plugin? =
 
-That depends on the retention policy you used. With **Retain Local Files**, every file is still on your server and nothing changes. With **Smart Local Cleanup** or **Full Cloud Migration**, some or all local files were deleted after upload, so URLs would point at files that are no longer on disk. **Run Bring Back before deactivating** if you used either cleanup policy.
+It depends on what you chose to keep on your server. With **Retain Local Files**, everything is still on your server, so nothing changes. With **Smart Local Cleanup** or **Full Cloud Migration**, some or all files are only in the cloud, and they would stop showing. **Run Bring Back before you deactivate** in that case.
 
-= I copied my live site to staging or a local dev site. Can it damage the live site's media? =
+= Some media failed to offload. What do I do? =
 
-No. A copy carries the live site's settings and access keys, so without protection it would upload into the live bucket (a new file with the same name could overwrite one the live site added later) and, with Mirror Delete on, delete files the live site still uses. OmniOffloader recognises a copy automatically and switches to **Safe mode**:
+Go to **OmniOffloader → Tools → Failed Items**. You'll see each item with the reason it failed. Fix the cause (for example a lost connection, or a file that is missing on your server), then click **Retry Failed Offloads**. In **Media → Library** (list view), the **Offload failed** filter shows the same items.
 
-* the site address changed from the one recorded as live (stored as a fingerprint, so migration tools' search-and-replace can't hide the change),
-* WordPress reports a staging, development or local environment (`WP_ENVIRONMENT_TYPE`, set by many managed hosts and local tools), or
-* the site runs on a local address such as `localhost`, `*.local` or `*.test`.
+= How do I check that all my files are really in the cloud? =
 
-In Safe mode nothing is uploaded to or deleted from your cloud storage. Media already in the cloud keeps loading from it, and new uploads stay on the copy's own server. Bring Back is turned off too; to download media from the cloud to the copy, turn on **Allow Bring Back on a copy (download only)** in Settings — the cloud copy is then always kept. A banner explains why Safe mode is on. If your live site really moved to a new domain, click **This is the live site**. To decide yourself, add `define( 'OMNIOFFLOADER_SAFE_MODE', true );` (or `false`) to `wp-config.php`, or turn off **Protect the live site when this is a copy** in Settings.
-
-= Can several separate sites share one bucket and one CDN address? =
-
-Yes, for example `example.com`, `shop.example.com` and `blog.example.com`. Install OmniOffloader on each site, enter the same bucket, keys and custom domain, and give each site its own folder under **Settings → Custom Path Prefix** (for example `www`, `shop` and `blog`). Each site's files then live under their own folder, such as `https://cdn.example.com/shop/2026/09/photo.jpg`.
-
-Separate sites share no database, so without a folder of their own two sites would store files under the same names. One site's upload would then overwrite the other's file, and Mirror Delete on one site would delete files the other still uses. To prevent this, each site marks its folder with a small `.omnioffloader-site.json` file naming the site. Settings refuses a folder another site already uses. If a site finds another site's marker in its folder, it switches to Safe mode and a banner explains why. Nothing is uploaded or deleted until you choose a different Path Prefix. If the folder really belongs to this site (for example after a domain change), click **This folder belongs to this site**.
-
-For a hard guarantee on Amazon S3, give each site its own access key, limited to its own folder.
-
-= Do I have to delete my local files? =
-
-No. The default policy, **Retain Local Files**, deletes nothing — the cloud simply becomes a second copy. Choose **Smart Local Cleanup** to delete only generated thumbnails while keeping every original, or **Full Cloud Migration** to reclaim the most space. Local files are only removed after the upload has been confirmed in your bucket.
+Run `wp omnioffloader verify` from WP-CLI. It checks every offloaded file in your cloud storage and on your server, and lists anything missing. Add `--repair` to fix what it can: it uploads or downloads the missing files and never deletes anything.
 
 = I changed the retention policy. Why are old files still on my server? =
 
-A retention policy is applied when a file is offloaded, so a new policy only affects new uploads at first. Go to **OmniOffloader → Tools → Apply Retention Policy to Existing Media** (or run `wp omnioffloader retention`) to update media you offloaded earlier. Before a local file is deleted, its cloud copy is checked by size. Files missing from the cloud are uploaded first. A file whose cloud copy differs is uploaded again and checked; if that fails, the local file is kept and reported. Moving to a looser policy (for example from Full Cloud Migration back to Retain Local Files) downloads the local copies again. For a large library on a VPS, `wp omnioffloader retention --concurrency=32 --yes` checks 32 attachments at once.
-
-= Why do I need a custom domain or CDN URL? =
-
-Most storage buckets do not serve files publicly by default, and Cloudflare R2 has no public URL at all until you connect one. Pointing a custom domain or CDN hostname at your bucket is what makes your media reachable — and it lets the files be cached at the edge.
+A new policy only applies to new uploads at first. To apply it to media you already offloaded, go to **OmniOffloader → Tools → Apply Retention Policy to Existing Media**. Before any file is deleted from your server, its cloud copy is checked, and missing files are uploaded first. Switching to a policy that keeps more files downloads them to your server again.
 
 = Can I offload now and switch to the CDN later? =
 
-Yes. With the **Retain Local Files** policy, turn off **Serve Media from Cloud** in **Settings → Retention Policy**. Media is still offloaded to your bucket, but your site keeps loading it from your own server. When your CDN is ready, turn it on: every offloaded file switches over at once, with nothing uploaded again. Clear your page cache after changing it. The cleanup policies delete local files, so with them media always loads from the cloud.
+Yes. With **Retain Local Files**, turn off **Serve Media from Cloud** in Settings. Your media is still copied to the cloud, but your site keeps loading it from your server. When your CDN is ready, turn it on and everything switches at once, with nothing uploaded again. Clear your page cache after the switch. (With the other two policies, files are removed from your server, so media always loads from the cloud.)
+
+= I copied my site to staging or my computer. Can the copy damage my live site's media? =
+
+No. A copy has your live site's settings and keys, so without protection it could upload into your live bucket or delete files your live site still uses. OmniOffloader notices a copy and turns on **Safe mode**. It notices when:
+
+* the site address changed,
+* WordPress is set to a staging, development or local environment, or
+* the site runs on a local address such as `localhost`, `.local` or `.test`.
+
+In Safe mode, nothing is uploaded to or deleted from your cloud storage. Media already in the cloud keeps showing, and new uploads stay on the copy. A banner explains why Safe mode is on.
+
+* Moved your live site to a new domain? Click **This is the live site**.
+* Want to bring media down to a copy? Turn on **Allow Bring Back on a copy (download only)** in Settings. The cloud copy is always kept.
+* Want to decide yourself? Add `define( 'OMNIOFFLOADER_SAFE_MODE', true );` (or `false`) to `wp-config.php`, or turn off **Protect the live site when this is a copy** in Settings.
+
+= Can several sites share one bucket and CDN? =
+
+Yes, for example `example.com`, `shop.example.com` and `blog.example.com`. Install OmniOffloader on each site with the same bucket, keys and CDN address, and give each site its own folder in **Settings → Custom Path Prefix** (such as `www`, `shop` and `blog`).
+
+Each site marks its folder, so two sites can't overwrite or delete each other's files. Settings won't let you pick a folder another site already uses. If the folder really belongs to this site (for example after a domain change), click **This folder belongs to this site**.
+
+On Amazon S3, you can also give each site its own access key that only works in its own folder.
+
+= I changed the folder (Path Prefix). What happens to media I already offloaded? =
+
+It stays in the old folder and keeps working. To move it into the new folder, use **Tools → Move Media to the Current Folder**, or run `wp omnioffloader move --all`. Within the same bucket, your storage provider copies the files itself, so nothing is downloaded to your server.
 
 = Can I keep my access keys out of the database? =
 
-Yes. Define them as constants in `wp-config.php`, named `OMNIOFFLOADER_{PROVIDER}_{FIELD}` — for example:
+Yes. Add them to `wp-config.php` as constants named `OMNIOFFLOADER_{PROVIDER}_{FIELD}`, for example:
 
 `define( 'OMNIOFFLOADER_CLOUDFLARE_R2_KEY', '...' );`
 `define( 'OMNIOFFLOADER_CLOUDFLARE_R2_SECRET', '...' );`
 
-Constants take priority over saved values, and the settings screen shows those fields as locked. Secrets are never sent back to the browser either way, and stored credentials are kept out of WordPress's autoloaded options.
-
-= Can I run it from WP-CLI? =
-
-Yes. **OmniOffloader → Tools** lists every command and option with copy buttons.
-
-`wp omnioffloader offload --all [--limit=<number>] [--dry-run]`
-`wp omnioffloader offload --ids=12,34`
-`wp omnioffloader offload --all --concurrency=32`
-`wp omnioffloader restore --all [--limit=<number>] [--delete-cloud] [--dry-run] [--concurrency=<number>]`
-`wp omnioffloader retention [--policy=<0|1|2>] [--dry-run] [--format=json] [--concurrency=<number>]`
-`wp omnioffloader move --all [--keep-old] [--dry-run]`
-`nohup wp omnioffloader offload --all > ~/offload.log 2>&1 &`
-`wp omnioffloader status [--format=json]`
-`wp omnioffloader verify [--repair] [--dry-run]`
-`wp omnioffloader errors [--retry] [--clear]`
-`wp omnioffloader stop`
-
-Start a long job with `nohup … &` (as above) to keep it running after you close the terminal; `status` shows its progress and `stop` ends it from any terminal. Every write command supports `--dry-run`, and destructive options ask for confirmation unless you pass `--yes`. Commands refuse to start while another bulk job is running (`--force` overrides this), so two jobs never touch the same files. WP-CLI commands use your Transfer Speed setting unless you pass `--concurrency`.
-
-= How can I offload a very large library faster? =
-
-Run the offload from WP-CLI on your server with more files at once: `wp omnioffloader offload --all --concurrency=32`, up to 64. The admin screens stay at 10 at most, because they run inside web requests. Try a short run first (`--limit=500`) and time it, then start the full run with `nohup … &` so it keeps going after you close the terminal.
-
-= How do I follow a long WP-CLI run? =
-
-Start it in the background with a log file in your home folder: `nohup wp omnioffloader offload --all > ~/offload.log 2>&1 &`. The answer `[1] 12345` is the job and process number, not an error. Follow the progress with `tail -f ~/offload.log` (Ctrl+C only stops watching, not the job) or `wp omnioffloader status`; the log gets a timestamped line every 25 attachments, so you can work out the speed and the time left. Stop it with `wp omnioffloader stop` and run the same command again to continue. Step-by-step guide: [Long runs and log files](https://omnioffloader.vercel.app/wp-cli/long-runs/).
+These always win over saved settings, and the settings screen shows those fields as locked. Either way, your secret key is never sent back to the browser.
 
 = Who can offload or bring back media? =
 
-Only administrators (users with the `manage_options` capability). Other users keep their normal WordPress rights: they upload and delete their own media, and with Mirror Delete on, deleting an attachment also removes its cloud copy.
+Only administrators. Other users upload and delete their own media as usual. With Mirror Delete on, deleting media also deletes its cloud copy.
 
 = What about very large videos or files? =
 
-Files above 64 MB are uploaded in parts, so a dropped connection costs one chunk rather than the whole transfer, and files larger than 5 GB are supported. If a transfer is still cut short by your host's time limit, that attachment is reported with an explanation and the job moves on.
+Files over 64 MB are uploaded in parts, so a dropped connection only costs one part, and files over 5 GB work too. If your host still cuts a transfer short, that item is reported with the reason and the job moves on.
 
-= Does it work with caching plugins and object caches? =
+= Does it work with caching plugins? =
 
-Yes. The plugin's own REST requests tell page caches not to store them (including LiteSpeed Cache and Breeze), and bulk progress stays live under Redis or Memcached object caching. On the front end the plugin only rewrites URLs and does not add database queries per image.
+Yes. Progress stays live with LiteSpeed Cache, Breeze, Redis and Memcached. On your public pages, OmniOffloader only changes image addresses, and doesn't slow them down with extra database work.
 
-= Does this plugin work on multisite? =
+= Does it work on multisite? =
 
-Yes, per site. Each site in a network has its own settings, credentials and background queues. Only a network administrator can point a provider at a private or local endpoint address. Multisite has not had a dedicated test pass yet, so test on a staging network first.
+Yes, site by site. Each site in the network has its own settings, keys and jobs. Only a network administrator can point a site at a private or local storage address. Multisite hasn't had a dedicated test pass yet, so please try it on a staging network first.
 
-= I changed the Path Prefix. What happens to media I already offloaded? =
+= Can I use it from WP-CLI? =
 
-It stays in its old folder and keeps working. To move it into the new folder, run `wp omnioffloader move --all` (fastest) or use **Tools → Move Media to the Current Folder**. Within the same bucket your storage provider copies the files, so nothing is downloaded.
+Yes. **OmniOffloader → Tools** lists every command with examples and copy buttons. The main ones:
+
+`wp omnioffloader offload --all` offloads every local item.
+`wp omnioffloader restore --all` brings everything back.
+`wp omnioffloader retention` applies a changed retention policy to existing media.
+`wp omnioffloader move --all` moves media into the current folder.
+`wp omnioffloader verify --repair` checks every file and fixes what it can.
+`wp omnioffloader errors --retry` retries failed offloads.
+`wp omnioffloader status` shows what is running and your media counts.
+`wp omnioffloader stop` stops the running job.
+
+Every command that changes something supports `--dry-run`, so you can see what it would do first. Only one job runs at a time, so two jobs never touch the same files.
+
+= How can I offload a very large library faster? =
+
+Use WP-CLI on your server and move more files at once, for example `wp omnioffloader offload --all --concurrency=32` (up to 64). Try a short run first with `--limit=500`. To keep a long job running after you close the terminal, start it like this:
+
+`nohup wp omnioffloader offload --all > ~/offload.log 2>&1 &`
+
+Check on it any time with `wp omnioffloader status`, and stop it with `wp omnioffloader stop`. Run the same command again to continue where it stopped. Step by step: [Long runs and log files](https://omnioffloader.vercel.app/wp-cli/long-runs/).
 
 == Screenshots ==
 
-1. Dashboard — Real-time cloud provider status, media offload stats, and quick actions.
-2. Cloud Provider & Credentials — Multi-cloud provider selection (Cloudflare R2, AWS S3, Wasabi, DigitalOcean, Backblaze B2, S3-Compatible) with instant "Test Connection" verification.
-3. Retention & Delivery Policies — Flexible local retention policies (Retain Local, Smart Cleanup, Full Migration) and Serve Media from Cloud, followed by Transfer Speed, Mirror Delete, Object Versioning, and custom path prefixes.
-4. Bulk Offload — Library counts, All Local Media or a custom batch with presets, the Start button, and a "Run this job from WP-CLI" panel.
-5. Zero-Lock-In Bring Back (Restore) — Safely download offloaded media back to your local server with automatic disk space pre-flight checks and atomic restore.
-6. WordPress Media Library Integration — Dedicated cloud offload status column, offload state filter, contextual row actions, and native bulk offload/restore actions.
-7. Apply Retention Policy to Existing Media — Tools screen to synchronize existing media with updated retention policies, including pre-flight storage estimates and batch scopes.
-8. Safe Mode — A staging, development or local copy is recognised automatically and stops writing to the live site's cloud storage, with a "This is the live site" button for a real domain move.
-9. Move Media to the Current Folder — After a Path Prefix change, move media from earlier folders into the current one; within the same bucket the files are copied by your storage provider, with nothing downloaded.
-10. WP-CLI Reference — Every command on the Tools screen with examples and copy buttons, plus how to run a long job in the background, watch it and stop it.
+1. Dashboard: your storage provider, how much media is offloaded, and quick links.
+2. Settings: choose your storage provider, enter its details and test the connection.
+3. Settings: choose what stays on your server, whether media loads from the cloud, transfer speed, Mirror Delete, versioning and the bucket folder.
+4. Offload: move all your existing media, or just a set number, with progress and a WP-CLI option.
+5. Bring Back: download media to your server again, after a disk space check.
+6. Media Library: offload status for every item, a filter, and Offload / Bring Back actions.
+7. Tools: apply a changed retention policy to media you already offloaded.
+8. Safe mode: a staging, development or local copy is recognised and never writes to your live site's cloud storage.
+9. Tools: move media from an earlier folder into the current one.
+10. Tools: every WP-CLI command with examples and copy buttons.
 
 == External services ==
 
-This plugin connects to the cloud storage provider **you choose and configure** in its settings. Nothing is sent anywhere until you enter credentials for a provider, and it only ever connects to that provider.
+This plugin connects to the cloud storage provider **you choose** in its settings. Nothing is sent until you enter that provider's details, and it only connects to that provider.
 
-**What is sent and when:** your media files (originals, thumbnails and other generated sizes) and their file paths are uploaded when media is offloaded — automatically on upload, from Bulk Offload, the Media Library, or WP-CLI. Files are downloaded again when you use Bring Back or apply a looser retention policy, and deleted from the bucket when you delete an attachment with Mirror Delete on, or restore with "delete from cloud" on. **Test Connection** sends a request to check that your bucket is reachable. Every request is signed with the access key you entered; the secret key itself is never transmitted. Visitors then load the offloaded files from the storage or CDN address you configured.
+**What is sent, and when:**
 
-Depending on the provider you select:
+* **Uploads:** your media files (the original and every image size) and their file paths, when media is offloaded: automatically when you upload, or when you use Offload, the Media Library or WP-CLI.
+* **Downloads:** your files come back from the cloud when you use Bring Back, or switch to a retention policy that keeps more files on your server.
+* **Deletes:** files are deleted from your bucket when you delete media with Mirror Delete on, or bring media back with "delete from cloud" on.
+* **Test Connection:** one request to check your bucket can be reached.
 
-* **Amazon S3** (Amazon Web Services) — [Service Terms](https://aws.amazon.com/service-terms/), [Privacy Notice](https://aws.amazon.com/privacy/)
-* **Cloudflare R2** (Cloudflare) — [Terms](https://www.cloudflare.com/terms/), [Privacy Policy](https://www.cloudflare.com/privacypolicy/)
-* **DigitalOcean Spaces** (DigitalOcean) — [Terms of Service](https://www.digitalocean.com/legal/terms-of-service-agreement), [Privacy Policy](https://www.digitalocean.com/legal/privacy-policy)
-* **Backblaze B2** (Backblaze) — [Terms of Service](https://www.backblaze.com/company/terms.html), [Privacy Policy](https://www.backblaze.com/company/privacy.html)
-* **Wasabi** (Wasabi Technologies) — [Customer Agreement](https://wasabi.com/legal/customer-agreement), [Privacy Policy](https://wasabi.com/legal/privacy-policy)
-* **Any S3-compatible storage** — the service at the endpoint you enter; its own terms and privacy policy apply.
+Every request is signed with the access key you entered; your secret key itself is never sent. Visitors then load your offloaded files from the storage or CDN address you set.
 
-**Usage insights (Appsero, opt-in):** the plugin uses the [Appsero](https://appsero.com) SDK to ask an administrator, in an admin notice, whether to share usage data. **Nothing is collected by default** and no site details are sent unless an administrator clicks Allow. Clicking "No thanks" sends only an anonymous note that usage sharing was declined (the project ID and a one-way hash of the site address). Once allowed, a report is sent to `api.appsero.com` about once a week: the site URL and name, the admin email and the first administrator's first and last name, server and WordPress details (PHP, MySQL and WordPress versions, memory limit, locale, multisite, theme), user counts, the number and list of active plugins, the server IP address and the plugin version. To read the server's public IP address, the SDK first sends a request to [icanhazip.com](https://icanhazip.com/), which sees only that request ([Privacy Policy](https://www.cloudflare.com/privacypolicy/)). Your media, file names and storage credentials are never sent. You can stop sharing anytime with the "Stop sharing usage data" link under the plugin on the Plugins screen. Separately, the optional feedback form shown when you deactivate the plugin sends the same details along with the reason you choose — only if you submit it; "Skip & Deactivate" sends nothing. [Appsero Privacy Policy](https://appsero.com/privacy-policy/)
+Depending on the provider you choose:
+
+* **Amazon S3** (Amazon Web Services): [Service Terms](https://aws.amazon.com/service-terms/), [Privacy Notice](https://aws.amazon.com/privacy/)
+* **Cloudflare R2** (Cloudflare): [Terms](https://www.cloudflare.com/terms/), [Privacy Policy](https://www.cloudflare.com/privacypolicy/)
+* **DigitalOcean Spaces** (DigitalOcean): [Terms of Service](https://www.digitalocean.com/legal/terms-of-service-agreement), [Privacy Policy](https://www.digitalocean.com/legal/privacy-policy)
+* **Backblaze B2** (Backblaze): [Terms of Service](https://www.backblaze.com/company/terms.html), [Privacy Policy](https://www.backblaze.com/company/privacy.html)
+* **Wasabi** (Wasabi Technologies): [Customer Agreement](https://wasabi.com/legal/customer-agreement), [Privacy Policy](https://wasabi.com/legal/privacy-policy)
+* **Any S3-compatible storage**: the service at the address you enter; its own terms and privacy policy apply.
+
+**Usage insights (Appsero, only if you allow it):** an admin notice asks an administrator whether to share usage data, using the [Appsero](https://appsero.com) SDK. **Nothing is collected by default.**
+
+* **If you click "No thanks":** only an anonymous note that sharing was declined is sent (the project ID and a one-way hash of your site address).
+* **If you click "Allow":** about once a week, a report is sent to `api.appsero.com` with your site address and name, the admin email, the first administrator's first and last name, server and WordPress details (PHP, MySQL and WordPress versions, memory limit, language, multisite, theme), user counts, the number and list of active plugins, the server's IP address and the plugin version. To find the server's public IP address, the SDK first sends a request to [icanhazip.com](https://icanhazip.com/), which sees only that request ([Privacy Policy](https://www.cloudflare.com/privacypolicy/)).
+* **Never sent:** your media, file names or storage keys.
+* **Stop anytime:** click "Stop sharing usage data" under the plugin on the Plugins screen.
+* **Deactivation feedback:** when you deactivate the plugin, an optional form asks why. Submitting it sends the same details as the weekly report, plus your answer. "Skip & Deactivate" sends nothing.
+
+[Appsero Privacy Policy](https://appsero.com/privacy-policy/)
 
 == Changelog ==
 
@@ -322,49 +349,49 @@ Depending on the provider you select:
 
 **New**
 
-* Opt-in usage insights through the Appsero SDK. An admin notice asks first; nothing is collected unless an administrator allows it. See External services for exactly what is sent.
-* Failed Items on the Tools screen: every attachment whose last offload, Bring Back, retention update or move failed, with its error, and a Retry Failed Offloads button.
-* Media Library: an "Offload failed" filter. Select the failed items and choose Offload to retry only some of them.
-* WP-CLI: `wp omnioffloader verify` checks every offloaded file against your cloud storage and the server; `--repair` uploads or downloads what differs and never deletes a file.
-* WP-CLI: `wp omnioffloader errors` lists media with errors, retries failed offloads (`--retry`) and clears error logs (`--clear`).
-* WP-CLI: `wp omnioffloader status --format=json` for monitoring scripts.
+* **Failed Items** on the Tools screen: see every item that failed to offload, bring back, update or move, with the reason, and retry failed offloads with one click.
+* Media Library: a new **Offload failed** filter. Select the items and choose **Offload** to retry only those.
+* WP-CLI: `wp omnioffloader verify` checks that every offloaded file is in your cloud storage and on your server. Add `--repair` to fix what it finds; it never deletes anything.
+* WP-CLI: `wp omnioffloader errors` lists media with errors, retries failed offloads (`--retry`) and clears old errors (`--clear`).
+* WP-CLI: `wp omnioffloader status --format=json`, for monitoring scripts.
+* Optional usage insights through Appsero. An admin notice asks first, and nothing is collected unless an administrator allows it. See **External services** for exactly what is sent.
 
-**Fixes**
+**Improvements**
 
-* A single-item Offload or Bring Back is now refused while any bulk job runs (offload, Bring Back, retention update or move, from the admin or WP-CLI). Before, only a retention update blocked a single Bring Back.
-* Media Library status text is fully translatable, and uses "…" (Offloading…, Restoring…, Queued…).
-* The OmniOffloader screens open at once: settings, stats and every provider's fields now come with the page instead of separate requests, so the Settings fields no longer appear after a delay, and switching provider shows its fields immediately.
+* The OmniOffloader screens open right away, and the Settings fields no longer appear after a delay. Switching provider shows its fields instantly.
+* While a bigger job is running, you now get a message instead of offloading or bringing back a single item, so two jobs never work on the same files.
+* Media Library status labels can now be fully translated.
 
 **Under the hood**
 
-* Dependencies are pinned with a committed `composer.lock`, so each release ships the AWS SDK version it was tested with.
-* The admin screen's CSS classes use the `omnioffloader-` prefix.
+* Each release now ships the exact AWS SDK version it was tested with.
+* Tidier code names in the admin screen styles.
 
 = 0.1.5 =
 
 **Fixes**
 
-* Editors: media that is no longer on the server (Smart Local Cleanup, Full Cloud Migration) now shows while you edit, in the block editor and the classic editor, including video and audio shortcodes and restored autosaves or revisions. Editors load it from the cloud like the front end does.
-* Saving a post stores your site's own URLs for offloaded media, including media you just inserted, so content keeps working after a Bring Back or a change of CDN domain.
+* Media that is only in the cloud (after Smart Local Cleanup or Full Cloud Migration) now shows while you edit a post, in both the block editor and the classic editor, including video and audio.
+* Saving a post keeps your site's own media addresses in the content, so it keeps working after a Bring Back or a CDN domain change.
 
 Older releases: see the [full changelog](https://omnioffloader.vercel.app/changelog/).
 
 == Upgrade Notice ==
 
 = 0.1.6 =
-New `wp omnioffloader verify` integrity check with `--repair`, a Failed Items list with one-click retry, faster-opening admin screens, opt-in usage insights, and fixes. Recommended for all users.
+See and retry failed media from the Tools screen, check and repair your files with `wp omnioffloader verify`, faster-opening screens, and optional usage insights. Recommended for all users.
 
 = 0.1.5 =
-Offloaded media whose local copy was removed now displays while you edit a post, in the block editor and the classic editor. Recommended for all users.
+Media that is only in the cloud now shows while you edit a post. Recommended for all users.
 
 = 0.1.4 =
-Serve Media from Cloud, moving media into the current folder after a Path Prefix change (Tools or `wp omnioffloader move`), much faster WP-CLI offloads with `--concurrency`, a new `wp omnioffloader stop` command, and many fixes. Recommended for all users.
+Load media from your server until your CDN is ready (Serve Media from Cloud), move media into a new folder, much faster WP-CLI offloads, a new `wp omnioffloader stop` command, and many fixes. Recommended for all users.
 
 = 0.1.3 =
-Faster offloading of existing media with a new Transfer Speed setting, a Tools screen to apply a changed retention policy to offloaded media, a new `wp omnioffloader retention` command, plus security and performance fixes. Recommended for all users.
+Faster offloading with a new Transfer Speed setting, a Tools screen to apply a changed retention policy to media you already offloaded, plus security and performance fixes. Recommended for all users.
 
 = 0.1.2 =
-Adds custom batch quantity limits and presets for Bulk Offload and Bring Back, proportional Bring Back disk estimation, WP-CLI restore --limit support, and fixes real-time progress updates under LiteSpeed Cache, Breeze, and persistent Object Cache (Redis/Memcached). Recommended for all users.
+Offload or bring back a set number of items, a better disk space estimate for Bring Back, and live progress with LiteSpeed Cache, Breeze, Redis and Memcached. Recommended for all users.
 
 = 0.1.1 =
-Adds presets for Amazon S3, DigitalOcean Spaces, Backblaze B2, and Wasabi; real-time Media Library live status badges, meta box, and bulk actions; multipart uploads for large files; and major background queue stability and performance improvements. Recommended for all users.
+Adds Amazon S3, DigitalOcean Spaces, Backblaze B2 and Wasabi, live status in the Media Library, uploads in parts for large files, and more reliable background jobs. Recommended for all users.

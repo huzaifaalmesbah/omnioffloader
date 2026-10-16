@@ -51,7 +51,7 @@ export function RetentionSyncCard() {
 	if ( ! stats?.configured ) {
 		return (
 			<Card title={ __( 'Apply Retention Policy', 'omnioffloader' ) }>
-				<p className="smowp-muted">
+				<p className="omnioffloader-muted">
 					{ __(
 						'Configure a cloud provider in Settings first.',
 						'omnioffloader'
@@ -89,7 +89,7 @@ export function RetentionSyncCard() {
 			<CliJobNotice />
 
 			{ isDirty && (
-				<p className="smowp-warning">
+				<p className="omnioffloader-warning">
 					{ __(
 						'You have unsaved settings. Save them first — this applies the saved retention policy.',
 						'omnioffloader'
@@ -97,30 +97,30 @@ export function RetentionSyncCard() {
 				</p>
 			) }
 
-			<div className="smowp-media-summary">
-				<div className="smowp-media-chip">
-					<span className="smowp-media-chip__label">
+			<div className="omnioffloader-media-summary">
+				<div className="omnioffloader-media-chip">
+					<span className="omnioffloader-media-chip__label">
 						{ __( 'Current Policy', 'omnioffloader' ) }
 					</span>
-					<strong className="smowp-media-chip__value smowp-media-chip__value--text">
+					<strong className="omnioffloader-media-chip__value omnioffloader-media-chip__value--text">
 						{ preflight ? policyLabel : '—' }
 					</strong>
 				</div>
-				<div className="smowp-media-chip smowp-media-chip--local">
-					<span className="smowp-media-chip__label">
+				<div className="omnioffloader-media-chip omnioffloader-media-chip--local">
+					<span className="omnioffloader-media-chip__label">
 						{ __( 'Need Updating', 'omnioffloader' ) }
 					</span>
-					<strong className="smowp-media-chip__value">
+					<strong className="omnioffloader-media-chip__value">
 						{ preflight ? eligible : '—' }
 					</strong>
 				</div>
-				<div className="smowp-media-chip smowp-media-chip--offloaded">
-					<span className="smowp-media-chip__label">
+				<div className="omnioffloader-media-chip omnioffloader-media-chip--offloaded">
+					<span className="omnioffloader-media-chip__label">
 						{ preflight && preflight.to_download > 0
 							? __( 'To Clean / Download', 'omnioffloader' )
 							: __( 'Local Space to Free', 'omnioffloader' ) }
 					</span>
-					<strong className="smowp-media-chip__value">
+					<strong className="omnioffloader-media-chip__value">
 						{ preflight && preflight.to_download > 0
 							? `${ preflight.to_clean } / ${ preflight.to_download }`
 							: formatBytes( preflight?.freed_bytes ?? 0 ) }
@@ -129,14 +129,14 @@ export function RetentionSyncCard() {
 			</div>
 
 			{ preflight && eligible === 0 && ! running && (
-				<div className="smowp-notice-banner smowp-notice-banner--success">
+				<div className="omnioffloader-notice-banner omnioffloader-notice-banner--success">
 					<span
-						className="smowp-notice-banner__icon"
+						className="omnioffloader-notice-banner__icon"
 						aria-hidden="true"
 					>
 						✓
 					</span>
-					<div className="smowp-notice-banner__text">
+					<div className="omnioffloader-notice-banner__text">
 						<strong>
 							{ sprintf(
 								/* translators: %s: retention policy name. */
@@ -158,8 +158,8 @@ export function RetentionSyncCard() {
 			) }
 
 			{ preflight && eligible > 0 && (
-				<div className="smowp-bulk-action">
-					<p className="smowp-bulk-action__info">
+				<div className="omnioffloader-bulk-action">
+					<p className="omnioffloader-bulk-action__info">
 						{ sprintf(
 							/* translators: 1: attachment count, 2: retention policy name. */
 							_n(
@@ -173,7 +173,7 @@ export function RetentionSyncCard() {
 						) }
 					</p>
 
-					<ul className="smowp-retention-facts">
+					<ul className="omnioffloader-retention-facts">
 						{ preflight.to_clean > 0 && (
 							<li>
 								{ sprintf(
@@ -232,7 +232,7 @@ export function RetentionSyncCard() {
 					/>
 
 					{ ! preflight.disk_ok && (
-						<p className="smowp-warning">
+						<p className="omnioffloader-warning">
 							{ __(
 								'Warning: free disk space may not be enough for the downloads. Free up space before starting.',
 								'omnioffloader'
@@ -262,7 +262,7 @@ export function RetentionSyncCard() {
 					/>
 
 					{ deletesOriginals && (
-						<div className="smowp-retention-confirm">
+						<div className="omnioffloader-retention-confirm">
 							<CheckboxControl
 								label={ __(
 									'I understand that original files will only exist in cloud storage. Image editing and thumbnail regeneration will need Bring Back first.',
@@ -277,14 +277,14 @@ export function RetentionSyncCard() {
 					) }
 
 					{ ! running && (
-						<div className="smowp-bulk-action__btn-wrap">
+						<div className="omnioffloader-bulk-action__btn-wrap">
 							<Button
 								variant="primary"
-								className="smowp-btn-primary"
+								className="omnioffloader-btn-primary"
 								disabled={ ! canStart }
 								aria-describedby={
 									cliJob
-										? 'smowp-retention-disabled-reason'
+										? 'omnioffloader-retention-disabled-reason'
 										: undefined
 								}
 								isBusy={ busy }
@@ -317,8 +317,8 @@ export function RetentionSyncCard() {
 							</Button>
 							{ cliJob && (
 								<p
-									id="smowp-retention-disabled-reason"
-									className="smowp-disabled-reason"
+									id="omnioffloader-retention-disabled-reason"
+									className="omnioffloader-disabled-reason"
 								>
 									{ cliJobTitle( cliJob.job ) }
 								</p>
@@ -340,7 +340,7 @@ export function RetentionSyncCard() {
 			{ showProgress && state && (
 				<div
 					className={
-						'smowp-progress-card' +
+						'omnioffloader-progress-card' +
 						( running ? ' is-running' : '' ) +
 						( state.status === 'done' ? ' is-done' : '' ) +
 						( state.status === 'cancelled'
@@ -349,30 +349,30 @@ export function RetentionSyncCard() {
 						( state.status === 'failed' ? ' is-failed' : '' )
 					}
 				>
-					<div className="smowp-progress-card__header">
-						<div className="smowp-progress-card__status">
+					<div className="omnioffloader-progress-card__header">
+						<div className="omnioffloader-progress-card__status">
 							{ running && (
-								<span className="smowp-badge smowp-badge--running">
-									<span className="smowp-badge-pulse" />
+								<span className="omnioffloader-ui-badge omnioffloader-ui-badge--running">
+									<span className="omnioffloader-ui-badge-pulse" />
 									{ __( 'Applying…', 'omnioffloader' ) }
 								</span>
 							) }
 							{ state.status === 'done' && (
-								<span className="smowp-badge smowp-badge--ok">
+								<span className="omnioffloader-ui-badge omnioffloader-ui-badge--ok">
 									{ __( 'Finished', 'omnioffloader' ) }
 								</span>
 							) }
 							{ state.status === 'cancelled' && (
-								<span className="smowp-badge smowp-badge--fail">
+								<span className="omnioffloader-ui-badge omnioffloader-ui-badge--fail">
 									{ __( 'Cancelled', 'omnioffloader' ) }
 								</span>
 							) }
 							{ state.status === 'failed' && (
-								<span className="smowp-badge smowp-badge--fail">
+								<span className="omnioffloader-ui-badge omnioffloader-ui-badge--fail">
 									{ __( 'Stopped', 'omnioffloader' ) }
 								</span>
 							) }
-							<span className="smowp-progress-card__count">
+							<span className="omnioffloader-progress-card__count">
 								{ sprintf(
 									/* translators: 1: updated count, 2: total count. */
 									__(
@@ -385,7 +385,7 @@ export function RetentionSyncCard() {
 							</span>
 						</div>
 
-						<span className="smowp-progress-card__pct">
+						<span className="omnioffloader-progress-card__pct">
 							{ state.total > 0
 								? Math.min(
 										100,
@@ -409,14 +409,14 @@ export function RetentionSyncCard() {
 						<Notice
 							status="error"
 							isDismissible={ false }
-							className="smowp-progress-card__notice"
+							className="omnioffloader-progress-card__notice"
 						>
 							{ state.message }
 						</Notice>
 					) }
 
-					<div className="smowp-progress-card__footer">
-						<span className="smowp-progress-card__errors">
+					<div className="omnioffloader-progress-card__footer">
+						<span className="omnioffloader-progress-card__errors">
 							{ [
 								sprintf(
 									/* translators: %s: formatted byte size. */
@@ -452,12 +452,12 @@ export function RetentionSyncCard() {
 								.join( ' · ' ) }
 						</span>
 
-						<div className="smowp-progress-card__actions">
+						<div className="omnioffloader-progress-card__actions">
 							{ running ? (
 								<Button
 									variant="secondary"
 									isDestructive
-									className="smowp-btn-destructive"
+									className="omnioffloader-btn-destructive"
 									disabled={ busy }
 									onClick={ () => void cancel() }
 								>
@@ -466,7 +466,7 @@ export function RetentionSyncCard() {
 							) : (
 								<Button
 									variant="secondary"
-									className="smowp-btn-dismiss"
+									className="omnioffloader-btn-dismiss"
 									onClick={ dismiss }
 								>
 									{ __( 'Dismiss', 'omnioffloader' ) }

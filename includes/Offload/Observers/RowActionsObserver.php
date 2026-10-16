@@ -92,7 +92,7 @@ class RowActionsObserver implements ObserverInterface {
 			$actions['omnioffloader_processing'] = sprintf(
 				'<span class="omnioffloader-row-action is-busy" data-attachment-id="%d">%s</span>',
 				$attachment_id,
-				$is_restoring ? esc_html__( 'Restoring...', 'omnioffloader' ) : esc_html__( 'Offloading...', 'omnioffloader' )
+				$is_restoring ? esc_html__( 'Restoring…', 'omnioffloader' ) : esc_html__( 'Offloading…', 'omnioffloader' )
 			);
 
 			return $actions;
@@ -103,7 +103,7 @@ class RowActionsObserver implements ObserverInterface {
 			$actions['omnioffloader_queued'] = sprintf(
 				'<span class="omnioffloader-row-action is-busy" data-attachment-id="%d">%s</span>',
 				$attachment_id,
-				$is_restoring ? esc_html__( 'Queued...', 'omnioffloader' ) : esc_html__( 'Queued...', 'omnioffloader' )
+				$is_restoring ? esc_html__( 'Queued…', 'omnioffloader' ) : esc_html__( 'Queued…', 'omnioffloader' )
 			);
 
 			return $actions;
@@ -163,7 +163,7 @@ class RowActionsObserver implements ObserverInterface {
 			return sprintf(
 				'<span class="omnioffloader_processing omnioffloader_action"><span class="omnioffloader-row-action is-busy" data-attachment-id="%d">%s</span></span>',
 				$attachment_id,
-				$is_restoring ? esc_html__( 'Restoring...', 'omnioffloader' ) : esc_html__( 'Offloading...', 'omnioffloader' )
+				$is_restoring ? esc_html__( 'Restoring…', 'omnioffloader' ) : esc_html__( 'Offloading…', 'omnioffloader' )
 			);
 		}
 
@@ -173,7 +173,7 @@ class RowActionsObserver implements ObserverInterface {
 			return sprintf(
 				'<span class="omnioffloader_queued omnioffloader_action"><span class="omnioffloader-row-action is-busy" data-attachment-id="%d">%s</span></span>',
 				$attachment_id,
-				$is_restoring ? esc_html__( 'Queued...', 'omnioffloader' ) : esc_html__( 'Queued...', 'omnioffloader' )
+				$is_restoring ? esc_html__( 'Queued…', 'omnioffloader' ) : esc_html__( 'Queued…', 'omnioffloader' )
 			);
 		}
 
@@ -245,6 +245,13 @@ class RowActionsObserver implements ObserverInterface {
 			wp_die( esc_html( SafeMode::message() ) );
 		}
 
+		// A bulk run may be uploading or deleting this attachment's files.
+		$conflict = \OmniOffloader\Core\Plugin::get_instance()->bulk_job_conflict( 'single' );
+
+		if ( null !== $conflict ) {
+			wp_die( esc_html( $conflict->get_error_message() ) );
+		}
+
 		wp_raise_memory_limit( 'admin' );
 		if ( function_exists( 'set_time_limit' ) ) {
 			// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged, Squiz.PHP.DiscouragedFunctions.Discouraged -- safe timeout extension for large file transfers.
@@ -297,9 +304,11 @@ class RowActionsObserver implements ObserverInterface {
 			wp_die( esc_html( SafeMode::bring_back_message() ) );
 		}
 
-		// See BringBackController: never restore alongside a retention run.
-		if ( 'retention' === \OmniOffloader\Core\Plugin::get_instance()->get_active_bulk_job() ) {
-			wp_die( esc_html__( 'A retention policy update is running — wait for it to finish first.', 'omnioffloader' ) );
+		// See BringBackController: never restore alongside a bulk run.
+		$conflict = \OmniOffloader\Core\Plugin::get_instance()->bulk_job_conflict( 'single' );
+
+		if ( null !== $conflict ) {
+			wp_die( esc_html( $conflict->get_error_message() ) );
 		}
 
 		$settings = \OmniOffloader\Core\Plugin::get_settings();

@@ -4,7 +4,7 @@ Tags: offload, cloud storage, cdn, media library, s3
 Requires at least: 6.6
 Tested up to: 7.1
 Requires PHP: 8.1
-Stable tag: 0.1.5
+Stable tag: 0.1.6
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -251,7 +251,9 @@ Yes. **OmniOffloader → Tools** lists every command and option with copy button
 `wp omnioffloader retention [--policy=<0|1|2>] [--dry-run] [--format=json] [--concurrency=<number>]`
 `wp omnioffloader move --all [--keep-old] [--dry-run]`
 `nohup wp omnioffloader offload --all > ~/offload.log 2>&1 &`
-`wp omnioffloader status`
+`wp omnioffloader status [--format=json]`
+`wp omnioffloader verify [--repair] [--dry-run]`
+`wp omnioffloader errors [--retry] [--clear]`
 `wp omnioffloader stop`
 
 Start a long job with `nohup … &` (as above) to keep it running after you close the terminal; `status` shows its progress and `stop` ends it from any terminal. Every write command supports `--dry-run`, and destructive options ask for confirmation unless you pass `--yes`. Commands refuse to start while another bulk job is running (`--force` overrides this), so two jobs never touch the same files. WP-CLI commands use your Transfer Speed setting unless you pass `--concurrency`.
@@ -321,6 +323,22 @@ Depending on the provider you select:
 **New**
 
 * Opt-in usage insights through the Appsero SDK. An admin notice asks first; nothing is collected unless an administrator allows it. See External services for exactly what is sent.
+* Failed Items on the Tools screen: every attachment whose last offload, Bring Back, retention update or move failed, with its error, and a Retry Failed Offloads button.
+* Media Library: an "Offload failed" filter. Select the failed items and choose Offload to retry only some of them.
+* WP-CLI: `wp omnioffloader verify` checks every offloaded file against your cloud storage and the server; `--repair` uploads or downloads what differs and never deletes a file.
+* WP-CLI: `wp omnioffloader errors` lists media with errors, retries failed offloads (`--retry`) and clears error logs (`--clear`).
+* WP-CLI: `wp omnioffloader status --format=json` for monitoring scripts.
+
+**Fixes**
+
+* A single-item Offload or Bring Back is now refused while any bulk job runs (offload, Bring Back, retention update or move, from the admin or WP-CLI). Before, only a retention update blocked a single Bring Back.
+* Media Library status text is fully translatable, and uses "…" (Offloading…, Restoring…, Queued…).
+* The OmniOffloader screens open at once: settings, stats and every provider's fields now come with the page instead of separate requests, so the Settings fields no longer appear after a delay, and switching provider shows its fields immediately.
+
+**Under the hood**
+
+* Dependencies are pinned with a committed `composer.lock`, so each release ships the AWS SDK version it was tested with.
+* The admin screen's CSS classes use the `omnioffloader-` prefix.
 
 = 0.1.5 =
 
@@ -329,77 +347,12 @@ Depending on the provider you select:
 * Editors: media that is no longer on the server (Smart Local Cleanup, Full Cloud Migration) now shows while you edit, in the block editor and the classic editor, including video and audio shortcodes and restored autosaves or revisions. Editors load it from the cloud like the front end does.
 * Saving a post stores your site's own URLs for offloaded media, including media you just inserted, so content keeps working after a Bring Back or a change of CDN domain.
 
-= 0.1.4 =
-
-**Serve Media from Cloud**
-
-* New setting in **Settings → Retention Policy**: with **Retain Local Files**, turn off **Serve Media from Cloud** to keep offloading media while your site still loads it from your own server, for example while you set up your CDN. Turn it on and every offloaded file switches to your cloud storage or CDN at once, with no re-upload.
-* Smart Local Cleanup and Full Cloud Migration delete local files, so with those policies media always loads from the cloud. Files an earlier policy already removed keep loading from the cloud until they are downloaded again, so turning serving off never breaks an image.
-
-**Move media to the current folder**
-
-* You can change the Path Prefix while media is offloaded. Settings explains that existing media stays in its folder and keeps working, and **Save changes** asks you to confirm. Once saved, Settings shows how many attachments are outside the current folder and how to move them: `wp omnioffloader move --all` (recommended, with copy buttons and a background version for large libraries) or **Move media in Tools**.
-* New `wp omnioffloader move`: moves media offloaded under an earlier Path Prefix into the current folder. Within the same bucket your storage provider copies the files itself, so nothing is downloaded and your server's files are not touched; old copies are deleted once the new ones are verified. Files that can't be copied that way (over 5 GB, or in another bucket) go through the server. Supports `--dry-run`, `--ids`, `--limit`, `--keep-old` and `--concurrency` (up to 64 files at once).
-* New **Tools → Move Media to the Current Folder**: the same move from the admin screen, with a progress bar and Cancel. Shown only when some media is outside the current folder.
-* The OmniOffloader box on an attachment's edit screen shows its bucket **Folder**, marked *Not in the current folder* when needed. `wp omnioffloader status` shows the current folder and how many offloaded attachments are in other folders.
-
-**WP-CLI: faster offloads**
-
-* New `wp omnioffloader offload --concurrency=<1–64>`: upload up to 64 files at the same time for that run, instead of the Transfer Speed setting (at most 10, which the admin screens keep). For a VPS or dedicated server offloading a large library.
-* `restore` and `retention` take `--concurrency` too. A stricter retention policy now checks a group of attachments in cloud storage at once (Transfer Speed on the Tools screen, `--concurrency` in WP-CLI), so it is much faster on large libraries; every file is still verified by size before deletion.
-* **Tools → Apply Retention Policy** links to its WP-CLI command, like Offload and Bring Back.
-
-**WP-CLI: stop, status and long runs**
-
-* Long runs started with `nohup wp omnioffloader … > file.log 2>&1 &` keep going after you close the terminal and write a progress line every 25 attachments to the log. A run without a terminal that would ask for confirmation stops with a message asking for `--yes`, instead of waiting for an answer.
-* New `wp omnioffloader stop` ends the running job (offload, Bring Back, retention or move) from any terminal. A WP-CLI run finishes the file it is transferring first; a job started from the admin screen is cancelled.
-* `wp omnioffloader status` starts with what is running now: progress, start time, speed, time left and expected finish, files transferred at once, log file and how to stop it. When nothing runs, it shows how the last WP-CLI job ended and the command to offload media that is still local.
-* Long runs write to the database far less often: locks are renewed every 30 seconds and progress is saved at most every 5 seconds, instead of several writes per attachment.
-* A lock left behind by a killed run (for example after a server restart) is cleared by the next command on the same server, instead of blocking it for 10 minutes.
-* New documentation page [Long runs and log files](https://omnioffloader.vercel.app/wp-cli/long-runs/): start a big job with a log file, watch it, work out the speed and time left, and what to do when it ends.
-
-**Admin screens**
-
-* The WP-CLI reference on the Tools screen covers the new `move` and `stop` commands and how to keep a job running with `nohup`.
-* The Offload and Bring Back pages have a **Run this job from WP-CLI** panel whose **View command** button opens the command in the WP-CLI reference on the Tools screen (recommended for libraries of 5,000+ items).
-* Every OmniOffloader screen links to the documentation: a **Documentation** link in the page header, **Learn more** on each section and setting, and a setup guide for the selected storage provider.
-* While a WP-CLI job runs, the Offload, Bring Back and Tools screens show which one, with its progress, speed, time left and how to follow or stop it, and their Start buttons wait until it finishes. They check when you open them or come back to the tab, and poll only while a WP-CLI job runs.
-* Each page keeps its scroll position when you switch pages and come back, and links to a section open the page right at it.
-* Confirmations (Bring Back that deletes cloud copies, a bucket folder change, moving media, Safe mode's live-site and folder buttons) use the plugin's own dialog with clear button labels, instead of the browser's OK / Cancel box.
-* Dashboard: the status no longer says "Connected & Active" just because credentials are saved. It shows **Active**, or **Safe mode** on a copy of the site, and says when your site still loads media from the server (Serve Media from Cloud off).
-* Accessibility: screen readers hear when a bulk job starts, the result of Test Connection, and why a Start button is disabled (now also shown as text under the button); after switching pages, focus moves to the new page's title.
-
-**Fixes**
-
-* Switching to another storage provider no longer breaks media you already offloaded: it keeps loading from the provider it was offloaded to (through its saved settings), Mirror Delete deletes it there, and Move Media brings it over to the new provider.
-* The bucket, endpoint and region can no longer be changed while media is offloaded there, which used to break those URLs and Bring Back. Settings explains the steps: Bring Back, change the bucket, offload again. A region may only contain letters, numbers and dashes.
-* Sharing a bucket: every folder this site has used, including folders from before 0.1.4, stays protected, and each upload or delete is checked against the folder it really goes to. If another site takes over an old folder, this site stops writing to it and `wp omnioffloader status` warns about it.
-* Multisite: a site administrator can no longer point a provider at a private or local endpoint address (only a network administrator can), so a sub-site can't make the server send requests into its own network.
-* Full Cloud Migration and Smart Local Cleanup: a new upload no longer reuses a file name that another attachment still has in your cloud storage (the original of a scaled image, a thumbnail size, a PDF preview or an edit backup), which could overwrite that attachment's files.
-* Bring Back with "Delete from Cloud After Restore" no longer deletes cloud files it did not download, such as the original WordPress keeps after you edit an image. Only files that are now on your server are removed from the cloud.
-* Bulk Bring Back with **Delete from Cloud After Restore** now asks for confirmation before it starts, as WP-CLI's `--delete-cloud` does.
-* Bring Back (and loosening the retention policy) no longer fails for an image whose original was already gone before it was offloaded, for example removed by an image optimizer.
-* Safe mode: **This is the live site** now asks for confirmation before turning Safe mode off, since clicking it on a staging copy lets that copy write to the live site's cloud storage. If it fails, the real reason is shown.
-* Cover and Media & Text blocks no longer rewrite links to other files from the same upload folder (another image or a PDF inside the block) to the cloud. Only the block's own media is rewritten.
-* Bulk jobs: a run whose last worker was stopped by the server no longer shows "running" forever; it finishes on its own once it has been quiet for a minute and the admin screen checks on it.
-* Bulk jobs: cancelling and immediately starting again no longer lets the cancelled run carry on inside the new one.
-* Background upload of new media: a large file is no longer uploaded twice at the same time, and an upload the server keeps stopping (time or memory limit) is marked failed after three tries instead of being retried forever.
-* WP-CLI: closing the SSH window during `wp omnioffloader offload`, `restore` or `retention` now releases the job lock right away, as Ctrl+C does. Before, the next run was refused for up to 10 minutes.
-* WP-CLI: media the run was transferring when it was interrupted (Ctrl+C, a closed window, a killed process) no longer shows "Offloading..." or "Restoring..." in the Media Library forever. It goes back to its real status and the next run picks it up.
-* WP-CLI: a run started with `--force` next to another one no longer releases the other run's lock when it ends, and stopping after the failure limit says whether the connection or the attachments are at fault.
-* WP-CLI: `wp omnioffloader retention` now stops after repeated failures when the storage provider can't be reached, and stops at once when the server runs out of disk space, like `restore`.
-* Media Library: when Offload or Bring Back fails, the reason is shown as a notice (for example Safe mode, or another job running) instead of the page silently reloading; a failed bulk action shows it too.
-* Attachments whose file isn't on the server (a copy of the site without its uploads, or files deleted outside WordPress) are now marked **File missing** instead of failing on every run: they are skipped before anything is uploaded, left out of **Local (Ready to Offload)** and later runs, and counted on the Offload page and in `wp omnioffloader status`. Once the file is back, the next offload picks it up by itself.
-* Media Library: an item stuck on "Queued for background offload" or "Offloading..." (for example when thumbnail generation failed, or the background queue was cleared) goes back to its real status by itself once no job is running.
-* Media Library: picking Offload or Bring Back for items that have nothing to do (already offloaded, or already local) while a bulk job of the same kind runs no longer stops that job.
-* Media Library: a single Offload or Bring Back still in progress keeps its badge while another tab is open.
-* Media Library: status checks slow down while nothing changes (from every 1.8 up to every 6 seconds) and keep going after a failed check instead of freezing until the tab is focused again. The status shows the provider's name (for example "Cloudflare R2") instead of its internal key.
-* Uninstalling with `wp plugin uninstall --deactivate` no longer shows a PHP warning ("Constant OMNIOFFLOADER_DIR already defined").
-* Settings: a save error stays visible until you change something or save again, and a save that stored the provider details but not the other settings says so. The Path Prefix field shows the folder name as it will be saved ("My Media" becomes "My-Media").
-
 Older releases: see the [full changelog](https://omnioffloader.vercel.app/changelog/).
 
 == Upgrade Notice ==
+
+= 0.1.6 =
+New `wp omnioffloader verify` integrity check with `--repair`, a Failed Items list with one-click retry, faster-opening admin screens, opt-in usage insights, and fixes. Recommended for all users.
 
 = 0.1.5 =
 Offloaded media whose local copy was removed now displays while you edit a post, in the block editor and the classic editor. Recommended for all users.

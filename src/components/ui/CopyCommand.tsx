@@ -31,7 +31,7 @@ export function CopyCommand( { command }: CopyCommandProps ) {
 	};
 
 	return (
-		<div className="smowp-copy-command">
+		<div className="omnioffloader-copy-command">
 			<code>{ command }</code>
 			<Button
 				icon={ copy }

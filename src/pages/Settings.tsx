@@ -88,7 +88,7 @@ export function SettingsPage( { onNavigate }: SettingsProps ) {
 		settings.retention_policy === RetentionPolicy.RetainLocal;
 
 	return (
-		<div className="smowp-page">
+		<div className="omnioffloader-page">
 			<Card
 				title={ __( 'Cloud Provider', 'omnioffloader' ) }
 				docs="providers/"
@@ -97,13 +97,13 @@ export function SettingsPage( { onNavigate }: SettingsProps ) {
 					'omnioffloader'
 				) }
 			>
-				<div className="smowp-form-layout">
-					<div className="smowp-provider-selector-wrap">
-						<span className="smowp-provider-selector-label">
+				<div className="omnioffloader-form-layout">
+					<div className="omnioffloader-provider-selector-wrap">
+						<span className="omnioffloader-provider-selector-label">
 							{ __( 'Storage Provider', 'omnioffloader' ) }
 						</span>
 						<div
-							className="smowp-provider-selector-grid"
+							className="omnioffloader-provider-selector-grid"
 							role="radiogroup"
 							aria-label={ __(
 								'Cloud Storage Provider',
@@ -124,7 +124,7 @@ export function SettingsPage( { onNavigate }: SettingsProps ) {
 											settings.provider
 										) }
 										className={
-											'smowp-provider-card' +
+											'omnioffloader-provider-card' +
 											( isSelected ? ' is-selected' : '' )
 										}
 										onClick={ () =>
@@ -144,28 +144,28 @@ export function SettingsPage( { onNavigate }: SettingsProps ) {
 											)
 										}
 									>
-										<div className="smowp-provider-card__head">
-											<div className="smowp-provider-card__icon">
+										<div className="omnioffloader-provider-card__head">
+											<div className="omnioffloader-provider-card__icon">
 												<Icon
 													icon={ cloudUpload }
 													size={ 22 }
 												/>
 											</div>
-											<div className="smowp-provider-card__title-wrap">
+											<div className="omnioffloader-provider-card__title-wrap">
 												<strong>
 													{ provider.name }
 												</strong>
-												<span className="smowp-provider-card__sub">
+												<span className="omnioffloader-provider-card__sub">
 													{ __(
 														'S3-compatible Object Storage',
 														'omnioffloader'
 													) }
 												</span>
 											</div>
-											<div className="smowp-provider-card__check">
-												<span className="smowp-radio-circle">
+											<div className="omnioffloader-provider-card__check">
+												<span className="omnioffloader-radio-circle">
 													{ isSelected && (
-														<span className="smowp-radio-dot" />
+														<span className="omnioffloader-radio-dot" />
 													) }
 												</span>
 											</div>
@@ -181,7 +181,7 @@ export function SettingsPage( { onNavigate }: SettingsProps ) {
 							( p ) => p.key === settings.provider
 						) && (
 							<>
-								<p className="smowp-muted">
+								<p className="omnioffloader-muted">
 									{ __(
 										'Need a bucket, access keys or a CDN address?',
 										'omnioffloader'
@@ -257,7 +257,7 @@ export function SettingsPage( { onNavigate }: SettingsProps ) {
 					}
 				/>
 
-				<p className="smowp-muted smowp-retention-hint">
+				<p className="omnioffloader-muted omnioffloader-retention-hint">
 					{ __(
 						'A new policy applies to new uploads. Media you already offloaded keeps its current local files until you apply the policy to it from Tools.',
 						'omnioffloader'
@@ -297,14 +297,14 @@ export function SettingsPage( { onNavigate }: SettingsProps ) {
 				{ ! isDirty &&
 					retentionPreflight &&
 					retentionPreflight.eligible > 0 && (
-						<div className="smowp-notice-banner smowp-notice-banner--info smowp-retention-notice">
+						<div className="omnioffloader-notice-banner omnioffloader-notice-banner--info omnioffloader-retention-notice">
 							<span
-								className="smowp-notice-banner__icon"
+								className="omnioffloader-notice-banner__icon"
 								aria-hidden="true"
 							>
 								ℹ
 							</span>
-							<div className="smowp-notice-banner__text">
+							<div className="omnioffloader-notice-banner__text">
 								<strong>
 									{ sprintf(
 										/* translators: %d: attachment count. */
@@ -356,7 +356,7 @@ export function SettingsPage( { onNavigate }: SettingsProps ) {
 					__nextHasNoMarginBottom
 				/>
 
-				<div className="smowp-setting-row">
+				<div className="omnioffloader-setting-row">
 					<SelectControl
 						label={ __( 'Transfer Speed', 'omnioffloader' ) }
 						help={
@@ -408,7 +408,7 @@ export function SettingsPage( { onNavigate }: SettingsProps ) {
 
 					{ settings.transfer_speed === 'custom' && (
 						<TextControl
-							className="smowp-setting-row__sub"
+							className="omnioffloader-setting-row__sub"
 							type="number"
 							min={ 1 }
 							max={ 10 }
@@ -507,7 +507,7 @@ export function SettingsPage( { onNavigate }: SettingsProps ) {
 					<Notice
 						status="warning"
 						isDismissible={ false }
-						className="smowp-prefix-notice"
+						className="omnioffloader-prefix-notice"
 					>
 						<p>
 							{ sprintf(
@@ -540,7 +540,7 @@ export function SettingsPage( { onNavigate }: SettingsProps ) {
 						<Notice
 							status="info"
 							isDismissible={ false }
-							className="smowp-prefix-notice"
+							className="omnioffloader-prefix-notice"
 						>
 							<p>
 								<strong>
@@ -561,9 +561,9 @@ export function SettingsPage( { onNavigate }: SettingsProps ) {
 									'omnioffloader'
 								) }
 							</p>
-							<ul className="smowp-prefix-notice__options">
-								<li className="smowp-prefix-notice__option is-recommended">
-									<span className="smowp-badge smowp-badge--accent">
+							<ul className="omnioffloader-prefix-notice__options">
+								<li className="omnioffloader-prefix-notice__option is-recommended">
+									<span className="omnioffloader-ui-badge omnioffloader-ui-badge--accent">
 										{ __( 'Recommended', 'omnioffloader' ) }
 									</span>{ ' ' }
 									{ __(
@@ -571,7 +571,7 @@ export function SettingsPage( { onNavigate }: SettingsProps ) {
 										'omnioffloader'
 									) }
 									<CopyCommand command="wp omnioffloader move --all" />
-									<span className="smowp-prefix-notice__cmd-label">
+									<span className="omnioffloader-prefix-notice__cmd-label">
 										{ __(
 											'Large library? Run it in the background, so closing the terminal does not stop it, with progress saved to ~/move.log:',
 											'omnioffloader'
@@ -585,7 +585,7 @@ export function SettingsPage( { onNavigate }: SettingsProps ) {
 										) }
 									</DocsLink>
 								</li>
-								<li className="smowp-prefix-notice__option">
+								<li className="omnioffloader-prefix-notice__option">
 									{ __(
 										'Or in the admin:',
 										'omnioffloader'
@@ -612,7 +612,7 @@ export function SettingsPage( { onNavigate }: SettingsProps ) {
 				title={ __( 'Staging & Dev Copies', 'omnioffloader' ) }
 				docs="features/safe-mode/"
 			>
-				<p className="smowp-muted">
+				<p className="omnioffloader-muted">
 					{ stats?.safe_mode?.active
 						? __(
 								'Safe mode is on for this site.',

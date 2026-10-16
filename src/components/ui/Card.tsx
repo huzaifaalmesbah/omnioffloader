@@ -23,12 +23,14 @@ export function Card( {
 		<section
 			id={ id }
 			tabIndex={ id ? -1 : undefined }
-			className={ 'smowp-card' + ( className ? ` ${ className }` : '' ) }
+			className={
+				'omnioffloader-card' + ( className ? ` ${ className }` : '' )
+			}
 		>
 			{ ( title || description ) && (
-				<div className="smowp-card__head">
+				<div className="omnioffloader-card__head">
 					{ title && (
-						<div className="smowp-card__title">
+						<div className="omnioffloader-card__title">
 							<h2>{ title }</h2>
 							{ docs && <DocsLink path={ docs } /> }
 						</div>

@@ -24,8 +24,8 @@ export function StatCard( {
 	return (
 		<div
 			className={
-				'smowp-card smowp-stat' +
-				` smowp-stat--${ variant }` +
+				'omnioffloader-card omnioffloader-stat' +
+				` omnioffloader-stat--${ variant }` +
 				( isClickable ? ' is-clickable' : '' )
 			}
 			role={ isClickable ? 'button' : undefined }
@@ -42,17 +42,17 @@ export function StatCard( {
 					: undefined
 			}
 		>
-			<div className="smowp-stat__top">
-				<span className="smowp-stat__icon">
+			<div className="omnioffloader-stat__top">
+				<span className="omnioffloader-stat__icon">
 					<Icon icon={ icon } size={ 22 } />
 				</span>
 				{ badge && (
-					<span className="smowp-stat__badge">{ badge }</span>
+					<span className="omnioffloader-stat__badge">{ badge }</span>
 				) }
 			</div>
-			<div className="smowp-stat__body">
-				<strong className="smowp-stat__value">{ value }</strong>
-				<span className="smowp-stat__label">{ label }</span>
+			<div className="omnioffloader-stat__body">
+				<strong className="omnioffloader-stat__value">{ value }</strong>
+				<span className="omnioffloader-stat__label">{ label }</span>
 			</div>
 		</div>
 	);

@@ -118,13 +118,15 @@ export function ActivityLog( {
 	}
 
 	return (
-		<div className="smowp-activity-log">
-			<div className="smowp-activity-log__header">
-				<div className="smowp-activity-log__title-wrap">
-					<h3 className="smowp-activity-log__title">{ logTitle }</h3>
+		<div className="omnioffloader-activity-log">
+			<div className="omnioffloader-activity-log__header">
+				<div className="omnioffloader-activity-log__title-wrap">
+					<h3 className="omnioffloader-activity-log__title">
+						{ logTitle }
+					</h3>
 					{ running && (
-						<span className="smowp-activity-log__live-pill">
-							<span className="smowp-badge-pulse" />
+						<span className="omnioffloader-activity-log__live-pill">
+							<span className="omnioffloader-ui-badge-pulse" />
 							{ total > 0
 								? sprintf(
 										/* translators: %d: percentage complete */
@@ -135,15 +137,15 @@ export function ActivityLog( {
 						</span>
 					) }
 				</div>
-				<span className="smowp-activity-log__count">
+				<span className="omnioffloader-activity-log__count">
 					{ countMessage }
 				</span>
 			</div>
 
-			<div className="smowp-activity-log__list">
+			<div className="omnioffloader-activity-log__list">
 				{ running && currentItem && (
-					<div className="smowp-activity-log__item is-processing">
-						<div className="smowp-activity-log__thumb">
+					<div className="omnioffloader-activity-log__item is-processing">
+						<div className="omnioffloader-activity-log__thumb">
 							{ currentItem.thumb ? (
 								<img
 									src={ currentItem.thumb }
@@ -155,23 +157,23 @@ export function ActivityLog( {
 							) }
 						</div>
 
-						<div className="smowp-activity-log__meta">
+						<div className="omnioffloader-activity-log__meta">
 							<span
-								className="smowp-activity-log__filename"
+								className="omnioffloader-activity-log__filename"
 								title={ currentItem.title }
 							>
 								{ currentItem.title }
 							</span>
-							<span className="smowp-activity-log__sub">
-								<span className="smowp-activity-log__status-now">
+							<span className="omnioffloader-activity-log__sub">
+								<span className="omnioffloader-activity-log__status-now">
 									{ labels.working }
 								</span>
 							</span>
 						</div>
 
-						<div className="smowp-activity-log__badge-wrap">
-							<span className="smowp-badge smowp-badge--processing">
-								<span className="smowp-spinner-dot" />
+						<div className="omnioffloader-activity-log__badge-wrap">
+							<span className="omnioffloader-ui-badge omnioffloader-ui-badge--processing">
+								<span className="omnioffloader-spinner-dot" />
 								<span>{ labels.working }</span>
 							</span>
 						</div>
@@ -179,8 +181,8 @@ export function ActivityLog( {
 				) }
 
 				{ displayItems.length === 0 && running && ! currentItem && (
-					<div className="smowp-activity-log__empty">
-						<span className="smowp-badge-pulse" />
+					<div className="omnioffloader-activity-log__empty">
+						<span className="omnioffloader-ui-badge-pulse" />
 						<p>
 							{ __(
 								'Processing queue… completed items will appear here.',
@@ -193,11 +195,11 @@ export function ActivityLog( {
 				{ displayItems.map( ( item ) => {
 					const isOk = item.status === 'success';
 					const isSkipped = item.status === 'skipped';
-					let badgeVariant = 'smowp-badge--fail';
+					let badgeVariant = 'omnioffloader-ui-badge--fail';
 					if ( isOk ) {
-						badgeVariant = 'smowp-badge--ok';
+						badgeVariant = 'omnioffloader-ui-badge--ok';
 					} else if ( isSkipped ) {
-						badgeVariant = 'smowp-badge--neutral';
+						badgeVariant = 'omnioffloader-ui-badge--neutral';
 					}
 					const timeStr = item.timestamp
 						? new Date( item.timestamp * 1000 ).toLocaleTimeString(
@@ -210,11 +212,11 @@ export function ActivityLog( {
 						<div
 							key={ `${ item.id }-${ item.timestamp }` }
 							className={
-								'smowp-activity-log__item' +
+								'omnioffloader-activity-log__item' +
 								( isOk || isSkipped ? ' is-ok' : ' is-error' )
 							}
 						>
-							<div className="smowp-activity-log__thumb">
+							<div className="omnioffloader-activity-log__thumb">
 								{ item.thumb ? (
 									<img
 										src={ item.thumb }
@@ -226,14 +228,14 @@ export function ActivityLog( {
 								) }
 							</div>
 
-							<div className="smowp-activity-log__meta">
+							<div className="omnioffloader-activity-log__meta">
 								<span
-									className="smowp-activity-log__filename"
+									className="omnioffloader-activity-log__filename"
 									title={ item.title }
 								>
 									{ item.title }
 								</span>
-								<span className="smowp-activity-log__sub">
+								<span className="omnioffloader-activity-log__sub">
 									{ sprintf(
 										/* translators: 1: attachment ID, 2: time. */
 										__( '#%1$d · %2$s', 'omnioffloader' ),
@@ -241,16 +243,18 @@ export function ActivityLog( {
 										timeStr
 									) }
 									{ ! isOk && !! item.error && (
-										<span className="smowp-activity-log__error-text">
+										<span className="omnioffloader-activity-log__error-text">
 											{ ` — ${ item.error }` }
 										</span>
 									) }
 								</span>
 							</div>
 
-							<div className="smowp-activity-log__badge-wrap">
+							<div className="omnioffloader-activity-log__badge-wrap">
 								<span
-									className={ 'smowp-badge ' + badgeVariant }
+									className={
+										'omnioffloader-ui-badge ' + badgeVariant
+									}
 								>
 									{ isOk && `✓ ${ successLabel }` }
 									{ isSkipped &&

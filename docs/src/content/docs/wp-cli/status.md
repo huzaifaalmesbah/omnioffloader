@@ -12,10 +12,12 @@ The admin screen with the same information is **OmniOffloader → Dashboard**.
 ## Synopsis
 
 ```bash
-wp omnioffloader status
+wp omnioffloader status [--format=<format>]
 ```
 
-This command has no options.
+| Option | Description |
+| --- | --- |
+| `--format=<format>` | `text` (default) or `json`. See [JSON output](#json-output). |
 
 ## While a job runs
 
@@ -123,3 +125,43 @@ Otherwise it exits with `0`. That makes it easy to use in a health check:
 ```bash
 wp omnioffloader status --path=/var/www/html > /dev/null || echo "OmniOffloader: storage unreachable"
 ```
+
+## JSON output
+
+`--format=json` prints the same information as one JSON object, for monitoring scripts and dashboards. The exit code works the same way.
+
+```bash
+wp omnioffloader status --format=json
+```
+
+```json
+{
+    "version": "0.1.6",
+    "healthy": true,
+    "engine": true,
+    "provider": { "key": "cloudflare_r2", "name": "Cloudflare R2", "bucket": "my-media", "domain": "https://media.example.com" },
+    "connection": { "ok": true, "error": null },
+    "safe_mode": { "active": false, "reason": null },
+    "folder": { "prefix": "shop/", "offloaded_elsewhere": 0, "lost_folders": [] },
+    "media": { "total": 59177, "offloaded": 3420, "local": 55757, "missing": 0, "outdated_retention": 0 },
+    "running": { "job": "offload", "source": "cli" },
+    "admin_jobs": {
+        "offload": { "status": "idle", "processed": 0, "total": 0, "errors": 0, "updated_at": null },
+        "restore": { "...": "..." },
+        "retention": { "...": "..." },
+        "move": { "...": "..." }
+    },
+    "cli_run": { "job": "offload", "pid": 11030, "host": "web1", "alive": true, "stopping": false, "processed": 3420, "total": 59177, "failed": 2, "started": 1791348300, "updated": 1791349800, "log": "/home/example/offload.log" },
+    "cli_last": null
+}
+```
+
+| Key | Meaning |
+| --- | --- |
+| `healthy` | `false` when no provider is configured or the bucket can't be reached (the command then exits with `1`). |
+| `provider`, `connection`, `folder` | `null` when no provider is configured. |
+| `safe_mode.reason` | `constant`, `environment`, `local`, `address` or `folder`. See [Safe mode](/features/safe-mode/). |
+| `media.outdated_retention` | Offloaded attachments that still follow an older retention policy. |
+| `running` | The job running now, from the admin screen (`admin`) or WP-CLI (`cli`), or `null`. |
+| `cli_run` | The WP-CLI run record while one exists. `alive` is `false` when its process is gone, and `null` when it runs on another server. |
+| `cli_last` | How the last WP-CLI run ended, when nothing runs. Times are Unix timestamps. |

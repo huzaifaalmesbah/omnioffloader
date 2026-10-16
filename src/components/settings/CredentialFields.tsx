@@ -40,7 +40,7 @@ export function CredentialFields( { provider }: CredentialFieldsProps ) {
 
 	if ( ! fields ) {
 		return (
-			<p className="smowp-muted">
+			<p className="omnioffloader-muted">
 				{ __( 'Loading credentials…', 'omnioffloader' ) }
 			</p>
 		);
@@ -49,7 +49,7 @@ export function CredentialFields( { provider }: CredentialFieldsProps ) {
 	const constPrefix = 'OMNIOFFLOADER_';
 
 	return (
-		<div className="smowp-credential-fields">
+		<div className="omnioffloader-credential-fields">
 			{ fields.map( ( field ) => {
 				const draftValue = currentDraft[ field.name ];
 				const value =
@@ -86,7 +86,7 @@ export function CredentialFields( { provider }: CredentialFieldsProps ) {
 					);
 				} else if ( bucketChanges ) {
 					help = (
-						<span className="smowp-field-warning">
+						<span className="omnioffloader-field-warning">
 							{ sprintf(
 								/* translators: %s: bucket name. */
 								__(

@@ -27,6 +27,11 @@ export function cliJobTitle( job: JobType | '' ): string {
 			);
 		case 'offload':
 			return __( 'A WP-CLI offload is running.', 'omnioffloader' );
+		case 'verify':
+			return __(
+				'A WP-CLI verify --repair is running.',
+				'omnioffloader'
+			);
 		default:
 			return __( 'A WP-CLI job is running.', 'omnioffloader' );
 	}
@@ -162,7 +167,7 @@ export function CliJobNotice() {
 		<Notice
 			status="warning"
 			isDismissible={ false }
-			className="smowp-cli-job-notice"
+			className="omnioffloader-cli-job-notice"
 		>
 			<p>
 				<strong>
@@ -193,12 +198,12 @@ export function CliJobNotice() {
 				/>
 			) }
 			{ details.length > 0 && (
-				<p className="smowp-cli-job-notice__facts">
+				<p className="omnioffloader-cli-job-notice__facts">
 					{ details.join( ' · ' ) }
 				</p>
 			) }
 			{ cliJob.quiet && (
-				<p className="smowp-cli-job-notice__facts">
+				<p className="omnioffloader-cli-job-notice__facts">
 					{ __(
 						'No progress for a few minutes: a large file may still be transferring.',
 						'omnioffloader'
@@ -206,7 +211,7 @@ export function CliJobNotice() {
 				</p>
 			) }
 			{ '' !== cliJob.log && (
-				<p className="smowp-cli-job-notice__facts">
+				<p className="omnioffloader-cli-job-notice__facts">
 					{ createInterpolateElement(
 						/* translators: <log /> is the log file's path. */
 						__( 'Log file: <log />', 'omnioffloader' ),

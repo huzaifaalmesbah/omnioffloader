@@ -1,6 +1,6 @@
 {
 	"name": "omnioffloader",
-	"version": "0.1.5",
+	"version": "0.1.6",
 	"description": "Offload WordPress media to Amazon S3, Cloudflare R2, Wasabi or any S3-compatible storage, serve it from a CDN, and restore it anytime with Bring Back.",
 	"author": "Huzaifa Al Mesbah",
 	"license": "GPL-2.0-or-later",

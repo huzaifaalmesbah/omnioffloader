@@ -210,7 +210,7 @@ class OffloadStatusObserver implements ObserverInterface {
 
 			case 'processing':
 				$is_restoring = ( ! empty( $status['label'] ) && false !== stripos( (string) $status['label'], 'restor' ) );
-				$tooltip      = $is_restoring ? __( 'Restoring in background...', 'omnioffloader' ) : __( 'Offloading in background...', 'omnioffloader' );
+				$tooltip      = $is_restoring ? __( 'Restoring in background…', 'omnioffloader' ) : __( 'Offloading in background…', 'omnioffloader' );
 				$html        .= sprintf(
 					'<span class="omnioffloader-status-icon omnioffloader-status-icon--processing" title="%s" aria-label="%s">%s<span class="screen-reader-text">%s</span></span>',
 					esc_attr( $tooltip ),
@@ -221,7 +221,7 @@ class OffloadStatusObserver implements ObserverInterface {
 				break;
 
 			case 'queued':
-				$tooltip = __( 'Queued for background offload...', 'omnioffloader' );
+				$tooltip = __( 'Queued for background offload…', 'omnioffloader' );
 				$html   .= sprintf(
 					'<span class="omnioffloader-status-icon omnioffloader-status-icon--queued" title="%s" aria-label="%s">%s<span class="screen-reader-text">%s</span></span>',
 					esc_attr( $tooltip ),
@@ -355,7 +355,7 @@ class OffloadStatusObserver implements ObserverInterface {
 
 			case 'processing':
 				$is_restoring = ( ! empty( $status['label'] ) && false !== stripos( (string) $status['label'], 'restor' ) );
-				$label_text   = $is_restoring ? __( 'Restoring...', 'omnioffloader' ) : __( 'Offloading...', 'omnioffloader' );
+				$label_text   = $is_restoring ? __( 'Restoring…', 'omnioffloader' ) : __( 'Offloading…', 'omnioffloader' );
 				$html        .= sprintf(
 					'<span class="omnioffloader-badge omnioffloader-badge--processing">%s <span class="omnioffloader-badge__text">%s</span></span>',
 					self::ICON_SPINNER,
@@ -466,7 +466,7 @@ class OffloadStatusObserver implements ObserverInterface {
 
 			case 'processing':
 				$is_restoring = ( ! empty( $status['label'] ) && false !== stripos( (string) $status['label'], 'restor' ) );
-				$label_text   = $is_restoring ? __( 'Restoring to local server, please wait...', 'omnioffloader' ) : __( 'Offloading to cloud storage, please wait...', 'omnioffloader' );
+				$label_text   = $is_restoring ? __( 'Restoring to local server, please wait…', 'omnioffloader' ) : __( 'Offloading to cloud storage, please wait…', 'omnioffloader' );
 				$html        .= sprintf(
 					'<span class="omnioffloader-badge omnioffloader-badge--processing">%s <span class="omnioffloader-badge__text">%s</span></span>',
 					self::ICON_SPINNER,
@@ -712,8 +712,8 @@ class OffloadStatusObserver implements ObserverInterface {
 				'iconWarning' => self::ICON_WARNING,
 				'iconSpinner' => self::ICON_SPINNER,
 				'i18n'        => array(
-					'offloading' => __( 'Offloading...', 'omnioffloader' ),
-					'restoring'  => __( 'Restoring...', 'omnioffloader' ),
+					'offloading' => __( 'Offloading…', 'omnioffloader' ),
+					'restoring'  => __( 'Restoring…', 'omnioffloader' ),
 					'offloaded'  => __( 'Offloaded', 'omnioffloader' ),
 					'local'      => __( 'Not offloaded', 'omnioffloader' ),
 					'failed'     => __( 'Offload failed', 'omnioffloader' ),
@@ -721,7 +721,7 @@ class OffloadStatusObserver implements ObserverInterface {
 					'retry'      => __( 'Retry Offload', 'omnioffloader' ),
 					'offloadNow' => __( 'Offload now', 'omnioffloader' ),
 					'bringBack'  => __( 'Bring Back', 'omnioffloader' ),
-					'queued'     => __( 'Queued...', 'omnioffloader' ),
+					'queued'     => __( 'Queued…', 'omnioffloader' ),
 					'failedTry'  => __( 'OmniOffloader could not complete that action. Please try again.', 'omnioffloader' ),
 					'dismiss'    => __( 'Dismiss this notice.', 'omnioffloader' ),
 				),

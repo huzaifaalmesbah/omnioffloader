@@ -13,6 +13,8 @@ interface OmnioffloaderGlobal {
 declare global {
 	interface Window {
 		omnioffloader: OmnioffloaderGlobal;
+		/** REST bodies by request path (Admin\Settings::preload_data()); read via api/preload. */
+		omnioffloaderPreload?: Record< string, unknown >;
 	}
 }
 

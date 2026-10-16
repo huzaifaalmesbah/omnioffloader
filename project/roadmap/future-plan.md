@@ -16,6 +16,12 @@ Effort: **S** ≤ 1 day · **M** 2–4 days · **L** 1–2 weeks.
 
 ---
 
+## Done in 0.1.6
+
+Carried over from the 0.1.4 plan: integrity checker as `wp omnioffloader verify [--repair]` (1.1 — the admin Verify screen and orphan-object scan are still open), failed items list/filter/retry with `wp omnioffloader errors` (1.3), pinned `composer.lock` (3.1), single-item actions refuse during any job (3.5), `media-status.js` strings (3.8), `status --format=json` (3.9), CSS prefix rename (3.7). Also opt-in Appsero usage insights.
+
+Still open from the original 0.1.5 plan: O(1) preflights + storage dashboard (2.2, 1.2), batch deletes (2.5), lighter Media Library polling (2.4), shared bulk hook/panel (3.2). The 0.1.6 "More providers" theme (1.4) and folding `/bulk/action` into the bulk routes (3.4) move to a later release.
+
 ## Where 0.1.3 stands
 
 - Six providers on one `AbstractS3Provider` base: Amazon S3, Cloudflare R2,

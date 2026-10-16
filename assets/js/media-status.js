@@ -15,6 +15,18 @@
 	var warningIcon = config.iconWarning || '';
 	var spinnerIcon = config.iconSpinner || '';
 
+	/**
+	 * A translated string from the localized config (OffloadStatusObserver).
+	 * Every string comes from PHP, so translations apply; there are no
+	 * English fallbacks here.
+	 *
+	 * @param {string} key String key.
+	 * @return {string} The string, or '' when missing.
+	 */
+	function t(key) {
+		return (config.i18n && config.i18n[key]) ? String(config.i18n[key]) : '';
+	}
+
 	var pollTimer = null;
 
 	// Poll interval while something runs: starts fast, eases off while
@@ -73,17 +85,16 @@
 	 * @param {Object} xhr jQuery XHR of the failed request.
 	 */
 	function showActionError(xhr) {
-		var i18n = config.i18n || {};
 		var message = (xhr && xhr.responseJSON && xhr.responseJSON.message)
 			? String(xhr.responseJSON.message)
-			: (i18n.failedTry || 'The action could not be completed. Please try again.');
+			: t('failedTry');
 
 		var $notice = $('<div class="notice notice-error is-dismissible omnioffloader-action-error"><p></p></div>');
 		$notice.find('p').text(message);
 		$notice.append(
 			$('<button type="button" class="notice-dismiss"><span class="screen-reader-text"></span></button>')
 		);
-		$notice.find('.screen-reader-text').text(i18n.dismiss || 'Dismiss this notice.');
+		$notice.find('.screen-reader-text').text(t('dismiss'));
 		$notice.on('click', '.notice-dismiss', function() {
 			$notice.remove();
 		});
@@ -132,19 +143,19 @@
 		var label = (data && typeof data === 'object') ? (data.label || '') : '';
 
 		if (isOffloaded && status !== 'processing') {
-			return '<span class="omnioffloader-grid-badge omnioffloader-grid-badge--offloaded" title="' + escAttr((label || (config.i18n && config.i18n.offloaded ? config.i18n.offloaded : 'Offloaded'))) + '">' + cloudIcon + '</span>';
+			return '<span class="omnioffloader-grid-badge omnioffloader-grid-badge--offloaded" title="' + escAttr((label || t('offloaded'))) + '">' + cloudIcon + '</span>';
 		}
 		if (status === 'processing') {
-			return '<span class="omnioffloader-grid-badge omnioffloader-grid-badge--processing" title="' + escAttr((label || (config.i18n && config.i18n.offloading ? config.i18n.offloading : 'Offloading...'))) + '">' + spinnerIcon + '</span>';
+			return '<span class="omnioffloader-grid-badge omnioffloader-grid-badge--processing" title="' + escAttr((label || t('offloading'))) + '">' + spinnerIcon + '</span>';
 		}
 		if (status === 'queued') {
-			return '<span class="omnioffloader-grid-badge omnioffloader-grid-badge--queued" title="' + escAttr((label || (config.i18n && config.i18n.queued ? config.i18n.queued : 'Queued...'))) + '">' + spinnerIcon + '</span>';
+			return '<span class="omnioffloader-grid-badge omnioffloader-grid-badge--queued" title="' + escAttr((label || t('queued'))) + '">' + spinnerIcon + '</span>';
 		}
 		if (status === 'failed') {
-			return '<span class="omnioffloader-grid-badge omnioffloader-grid-badge--failed" title="' + escAttr((label || (config.i18n && config.i18n.failed ? config.i18n.failed : 'Offload failed'))) + '">' + warningIcon + '</span>';
+			return '<span class="omnioffloader-grid-badge omnioffloader-grid-badge--failed" title="' + escAttr((label || t('failed'))) + '">' + warningIcon + '</span>';
 		}
 		if (status === 'missing') {
-			return '<span class="omnioffloader-grid-badge omnioffloader-grid-badge--missing" title="' + escAttr((label || (config.i18n && config.i18n.missing ? config.i18n.missing : 'File missing on this server'))) + '">' + warningIcon + '</span>';
+			return '<span class="omnioffloader-grid-badge omnioffloader-grid-badge--missing" title="' + escAttr((label || t('missing'))) + '">' + warningIcon + '</span>';
 		}
 
 		return '';
@@ -221,8 +232,8 @@
 		var $row = $link.closest('tr');
 		var $cell = $row.find('.column-omnioffloader_status .omnioffloader-status-cell');
 		var loadingText = (action === 'restore')
-			? (config.i18n && config.i18n.restoring ? config.i18n.restoring : 'Restoring...')
-			: (config.i18n && config.i18n.offloading ? config.i18n.offloading : 'Offloading...');
+			? t('restoring')
+			: t('offloading');
 
 		// Immediately show animated spinner in status column cell
 		if ($cell.length) {
@@ -325,8 +336,8 @@
 		$btn.addClass('is-busy').prop('disabled', true);
 
 		var loadingText = (action === 'restore')
-			? (config.i18n && config.i18n.restoring ? config.i18n.restoring : 'Restoring...')
-			: (config.i18n && config.i18n.offloading ? config.i18n.offloading : 'Offloading...');
+			? t('restoring')
+			: t('offloading');
 
 		// Check if inside Meta Box on post.php
 		var $metaBoxWrap = $btn.closest('.omnioffloader-meta-box-wrap');
@@ -679,8 +690,8 @@
 				var curId = bulk.current_id;
 				var curType = bulk.type || 'offload';
 				var curText = (curType === 'restore')
-					? (config.i18n && config.i18n.restoring ? config.i18n.restoring : 'Restoring...')
-					: (config.i18n && config.i18n.offloading ? config.i18n.offloading : 'Offloading...');
+					? t('restoring')
+					: t('offloading');
 				var $curAction = $('.omnioffloader-row-action[data-attachment-id="' + curId + '"]');
 				if ($curAction.length && !$curAction.hasClass('is-busy')) {
 					$curAction.addClass('is-busy').text(curText);
@@ -743,8 +754,8 @@
 
 		var actionType = (actionValue === 'omnioffloader_bulk_offload') ? 'offload' : 'restore';
 		var loadingText = (actionType === 'restore')
-			? (config.i18n && config.i18n.restoring ? config.i18n.restoring : 'Restoring...')
-			: (config.i18n && config.i18n.offloading ? config.i18n.offloading : 'Offloading...');
+			? t('restoring')
+			: t('offloading');
 
 		var selectedIds = [];
 		$checkedBoxes.each(function() {

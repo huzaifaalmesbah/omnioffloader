@@ -14,7 +14,10 @@ interface DocsLinkProps {
  */
 export function DocsLink( { path, children }: DocsLinkProps ) {
 	return (
-		<ExternalLink className="smowp-docs-link" href={ docsUrl( path ) }>
+		<ExternalLink
+			className="omnioffloader-docs-link"
+			href={ docsUrl( path ) }
+		>
 			{ children ?? __( 'Learn more', 'omnioffloader' ) }
 		</ExternalLink>
 	);

@@ -7,6 +7,8 @@
 
 namespace OmniOffloader\Admin;
 
+use OmniOffloader\Providers\ProviderRegistry;
+
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
@@ -139,10 +141,59 @@ class Settings {
 			)
 		);
 
+		// The first screen needs these before it can draw anything; embedded in
+		// the page they save a round of REST requests (seconds on slow hosts).
+		wp_add_inline_script(
+			'omnioffloader-admin-app',
+			'window.omnioffloaderPreload = ' . wp_json_encode( $this->preload_data() ) . ';',
+			'before'
+		);
+
 		wp_set_script_translations(
 			'omnioffloader-admin-app',
 			'omnioffloader'
 		);
+	}
+
+	/**
+	 * REST responses the admin app reads on load, keyed by request path
+	 * (see src/api/preload.ts). Run through the REST server like a real
+	 * request, so permission checks and response shapes are the same.
+	 *
+	 * Credential fields come masked, as over REST, for every provider so
+	 * switching provider in Settings needs no request either. Nothing here
+	 * makes a remote call.
+	 *
+	 * @since 0.1.6
+	 *
+	 * @return array<string, array<string, mixed>>
+	 */
+	private function preload_data() {
+		$paths = array(
+			'/omnioffloader/v1/core/settings',
+			'/omnioffloader/v1/core/providers',
+			'/omnioffloader/v1/core/stats',
+			'/omnioffloader/v1/core/cli-job',
+		);
+
+		foreach ( array_keys( ProviderRegistry::get_providers() ) as $key ) {
+			$paths[] = '/omnioffloader/v1/provider/credentials?provider=' . rawurlencode( (string) $key );
+		}
+
+		$preloaded = array_reduce( $paths, 'rest_preload_api_request', array() );
+
+		// Only the bodies are read; drop errors so the app fetches those itself.
+		$data = array();
+
+		foreach ( $preloaded as $path => $response ) {
+			$body = $response['body'] ?? null;
+
+			if ( is_array( $body ) && ! ( isset( $body['code'], $body['message'] ) && is_string( $body['code'] ) ) ) {
+				$data[ $path ] = $body;
+			}
+		}
+
+		return $data;
 	}
 
 	/**

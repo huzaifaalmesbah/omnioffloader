@@ -159,15 +159,14 @@ class BringBackController extends BaseController {
 			);
 		}
 
-		// A retention run may be deleting this attachment's local files right
-		// now; restoring (and maybe deleting cloud copies) alongside it could
-		// leave no copy at all.
-		if ( 'retention' === Plugin::get_instance()->get_active_bulk_job() ) {
-			return new \WP_Error(
-				'omnioffloader_bulk_running',
-				__( 'A retention policy update is running — wait for it to finish first.', 'omnioffloader' ),
-				array( 'status' => 409 )
-			);
+		// Any bulk run (admin queue or WP-CLI) may be working on this
+		// attachment's files right now — a retention run deleting them, a
+		// move re-uploading them. Restoring (and maybe deleting cloud copies)
+		// alongside it could leave no copy at all.
+		$conflict = Plugin::get_instance()->bulk_job_conflict( 'single' );
+
+		if ( null !== $conflict ) {
+			return $conflict;
 		}
 
 		$requested    = $request->get_param( 'delete_cloud' );

@@ -21,24 +21,26 @@ export function ProgressBar( {
 	return (
 		<div
 			className={
-				'smowp-progress-wrapper' +
+				'omnioffloader-progress-wrapper' +
 				( className ? ` ${ className }` : '' )
 			}
 		>
 			{ ( label || showPercentage ) && (
-				<div className="smowp-progress-meta">
+				<div className="omnioffloader-progress-meta">
 					{ label && (
-						<span className="smowp-progress-title">{ label }</span>
+						<span className="omnioffloader-progress-title">
+							{ label }
+						</span>
 					) }
 					{ showPercentage && (
-						<span className="smowp-progress-percent">
+						<span className="omnioffloader-progress-percent">
 							{ percent }%
 						</span>
 					) }
 				</div>
 			) }
 			<div
-				className="smowp-progress"
+				className="omnioffloader-progress"
 				role="progressbar"
 				aria-label={ label || __( 'Progress', 'omnioffloader' ) }
 				aria-valuenow={ percent }
@@ -52,7 +54,7 @@ export function ProgressBar( {
 				) }
 			>
 				<div
-					className="smowp-progress__fill"
+					className="omnioffloader-progress__fill"
 					style={ { width: `${ percent }%` } }
 				/>
 			</div>

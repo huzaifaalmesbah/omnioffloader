@@ -7,6 +7,7 @@
 
 namespace OmniOffloader\Offload\Observers;
 
+use OmniOffloader\Core\Helpers;
 use OmniOffloader\Offload\ObserverInterface;
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -56,6 +57,7 @@ class MediaLibraryFilterObserver implements ObserverInterface {
 			<option value=""><?php esc_html_e( 'All offload states', 'omnioffloader' ); ?></option>
 			<option value="offloaded" <?php selected( 'offloaded', $current ); ?>><?php esc_html_e( 'Offloaded', 'omnioffloader' ); ?></option>
 			<option value="local" <?php selected( 'local', $current ); ?>><?php esc_html_e( 'Local only', 'omnioffloader' ); ?></option>
+			<option value="failed" <?php selected( 'failed', $current ); ?>><?php esc_html_e( 'Offload failed', 'omnioffloader' ); ?></option>
 		</select>
 		<?php
 	}
@@ -81,6 +83,33 @@ class MediaLibraryFilterObserver implements ObserverInterface {
 					array(
 						'key'   => 'omnioffloader_offloaded',
 						'value' => '1',
+					),
+				)
+			);
+		} elseif ( 'failed' === $current ) {
+			// Same set as Helpers::failed_ids( 'local' ): what a retry offloads.
+			$query->set(
+				'meta_query',
+				array(
+					array(
+						'key'     => 'omnioffloader_error_log',
+						'compare' => 'EXISTS',
+					),
+					array(
+						'key'     => 'omnioffloader_offloaded',
+						'compare' => 'NOT EXISTS',
+					),
+					array(
+						'relation' => 'OR',
+						array(
+							'key'     => 'omnioffloader_status',
+							'compare' => 'NOT EXISTS',
+						),
+						array(
+							'key'     => 'omnioffloader_status',
+							'value'   => Helpers::STATUS_MISSING,
+							'compare' => '!=',
+						),
 					),
 				)
 			);

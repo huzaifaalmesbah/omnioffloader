@@ -73,7 +73,7 @@ export function ConfirmProvider( { children }: { children: React.ReactNode } ) {
 				<Modal
 					title={ options.title }
 					icon={
-						<span className="smowp-confirm__icon">
+						<span className="omnioffloader-confirm__icon">
 							<Icon
 								icon={ options.isDestructive ? caution : info }
 								size={ 22 }
@@ -82,24 +82,24 @@ export function ConfirmProvider( { children }: { children: React.ReactNode } ) {
 					}
 					onRequestClose={ () => answer( false ) }
 					className={
-						'smowp-confirm' +
+						'omnioffloader-confirm' +
 						( options.isDestructive ? ' is-destructive' : '' )
 					}
-					overlayClassName="smowp-confirm-overlay"
+					overlayClassName="omnioffloader-confirm-overlay"
 				>
-					<div className="smowp-confirm__message">
+					<div className="omnioffloader-confirm__message">
 						{ options.message }
 					</div>
-					<div className="smowp-confirm__actions">
+					<div className="omnioffloader-confirm__actions">
 						<Button
-							className="smowp-confirm__cancel"
+							className="omnioffloader-confirm__cancel"
 							onClick={ () => answer( false ) }
 						>
 							{ options.cancelLabel ??
 								__( 'Cancel', 'omnioffloader' ) }
 						</Button>
 						<Button
-							className="smowp-confirm__ok"
+							className="omnioffloader-confirm__ok"
 							onClick={ () => answer( true ) }
 						>
 							{ options.confirmLabel }

@@ -21,16 +21,16 @@ export function CliHint( { command, count, onNavigate }: CliHintProps ) {
 	const large = count >= LARGE_LIBRARY;
 
 	return (
-		<div className="smowp-cli-hint">
-			<span className="smowp-cli-hint__icon" aria-hidden="true">
+		<div className="omnioffloader-cli-hint">
+			<span className="omnioffloader-cli-hint__icon" aria-hidden="true">
 				<Icon icon={ code } size={ 20 } />
 			</span>
-			<div className="smowp-cli-hint__text">
+			<div className="omnioffloader-cli-hint__text">
 				<strong>
 					{ __( 'Run this job from WP-CLI', 'omnioffloader' ) }
 				</strong>
 				{ large && (
-					<span className="smowp-badge smowp-badge--accent">
+					<span className="omnioffloader-ui-badge omnioffloader-ui-badge--accent">
 						{ __( 'Recommended', 'omnioffloader' ) }
 					</span>
 				) }
@@ -48,7 +48,7 @@ export function CliHint( { command, count, onNavigate }: CliHintProps ) {
 			</div>
 			<Button
 				variant="secondary"
-				className="smowp-cli-hint__button"
+				className="omnioffloader-cli-hint__button"
 				onClick={ () => onNavigate( 'tools', cliSectionId( command ) ) }
 			>
 				{ __( 'View command', 'omnioffloader' ) }

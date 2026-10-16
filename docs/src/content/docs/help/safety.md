@@ -84,4 +84,14 @@ OmniOffloader connects only to the storage provider **you** choose and configure
 
 Every request is signed with your access key. The secret key itself is never transmitted. Visitors load offloaded files from the storage or CDN address you configured.
 
-No analytics, tracking or other data is sent to the plugin author or anyone else.
+### Usage insights (opt-in)
+
+OmniOffloader uses the [Appsero](https://appsero.com) SDK to ask an administrator, in an admin notice, whether to share usage data. **Nothing is collected by default.** No site details are sent unless an administrator clicks **Allow**. Clicking **No thanks** sends only an anonymous note that sharing was declined: the project ID and a one-way hash of the site address.
+
+- **What is sent:** the site URL and name, the admin email and the first administrator's first and last name, server and WordPress details (PHP, MySQL and WordPress versions, memory limit, locale, multisite, theme), user counts, the number and list of active plugins, the server IP address and the plugin version. It goes to `api.appsero.com` about once a week.
+- **IP lookup:** to read the server's public IP address, the SDK first sends a request to `icanhazip.com`.
+- **Never sent:** your media, file names or storage credentials.
+- **Deactivation feedback:** when you deactivate the plugin, an optional form asks why. Submitting it sends the same details along with your reason. **Skip & Deactivate** sends nothing.
+- **Stop sharing:** use the **Stop sharing usage data** link under OmniOffloader on the Plugins screen.
+
+See the [Appsero Privacy Policy](https://appsero.com/privacy-policy/).

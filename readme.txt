@@ -251,7 +251,9 @@ Yes. **OmniOffloader → Tools** lists every command and option with copy button
 `wp omnioffloader retention [--policy=<0|1|2>] [--dry-run] [--format=json] [--concurrency=<number>]`
 `wp omnioffloader move --all [--keep-old] [--dry-run]`
 `nohup wp omnioffloader offload --all > ~/offload.log 2>&1 &`
-`wp omnioffloader status`
+`wp omnioffloader status [--format=json]`
+`wp omnioffloader verify [--repair] [--dry-run]`
+`wp omnioffloader errors [--retry] [--clear]`
 `wp omnioffloader stop`
 
 Start a long job with `nohup … &` (as above) to keep it running after you close the terminal; `status` shows its progress and `stop` ends it from any terminal. Every write command supports `--dry-run`, and destructive options ask for confirmation unless you pass `--yes`. Commands refuse to start while another bulk job is running (`--force` overrides this), so two jobs never touch the same files. WP-CLI commands use your Transfer Speed setting unless you pass `--concurrency`.
@@ -321,6 +323,21 @@ Depending on the provider you select:
 **New**
 
 * Opt-in usage insights through the Appsero SDK. An admin notice asks first; nothing is collected unless an administrator allows it. See External services for exactly what is sent.
+* Failed Items on the Tools screen: every attachment whose last offload, Bring Back, retention update or move failed, with its error, and a Retry Failed Offloads button.
+* Media Library: an "Offload failed" filter. Select the failed items and choose Offload to retry only some of them.
+* WP-CLI: `wp omnioffloader verify` checks every offloaded file against your cloud storage and the server; `--repair` uploads or downloads what differs and never deletes a file.
+* WP-CLI: `wp omnioffloader errors` lists media with errors, retries failed offloads (`--retry`) and clears error logs (`--clear`).
+* WP-CLI: `wp omnioffloader status --format=json` for monitoring scripts.
+
+**Fixes**
+
+* A single-item Offload or Bring Back is now refused while any bulk job runs (offload, Bring Back, retention update or move, from the admin or WP-CLI). Before, only a retention update blocked a single Bring Back.
+* Media Library status text is fully translatable, and uses "…" (Offloading…, Restoring…, Queued…).
+
+**Under the hood**
+
+* Dependencies are pinned with a committed `composer.lock`, so each release ships the AWS SDK version it was tested with.
+* The admin screen's CSS classes use the `omnioffloader-` prefix.
 
 = 0.1.5 =
 

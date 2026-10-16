@@ -487,8 +487,7 @@ class Helpers {
 	}
 
 	/**
-	 * FROM / WHERE clauses for attachments with an error log
-	 * (omnioffloader_error_log), optionally narrowed by offload state.
+	 * How many attachments have an error log (omnioffloader_error_log).
 	 *
 	 * 'local' is what a retry offloads: the last offload attempt failed (a
 	 * missing file is left out; it has its own status).
@@ -498,40 +497,30 @@ class Helpers {
 	 * @since 0.1.6
 	 *
 	 * @param string $state 'all', 'local' or 'offloaded'.
-	 * @return string
-	 */
-	private static function failed_sql( $state ) {
-		global $wpdb;
-
-		$sql = "FROM {$wpdb->posts} p
-			INNER JOIN {$wpdb->postmeta} e ON e.post_id = p.ID AND e.meta_key = 'omnioffloader_error_log'
-			WHERE p.post_type = 'attachment' AND p.post_status = 'inherit'";
-
-		$offloaded = "EXISTS ( SELECT 1 FROM {$wpdb->postmeta} o WHERE o.post_id = p.ID AND o.meta_key = 'omnioffloader_offloaded' AND o.meta_value = '1' )";
-
-		if ( 'local' === $state ) {
-			// A missing file has its own status and cannot be retried.
-			$sql .= ' AND NOT ' . $offloaded . " AND NOT EXISTS ( SELECT 1 FROM {$wpdb->postmeta} m WHERE m.post_id = p.ID AND m.meta_key = 'omnioffloader_status' AND m.meta_value = '" . self::STATUS_MISSING . "' )";
-		} elseif ( 'offloaded' === $state ) {
-			$sql .= ' AND ' . $offloaded;
-		}
-
-		return $sql;
-	}
-
-	/**
-	 * How many attachments have an error log.
-	 *
-	 * @since 0.1.6
-	 *
-	 * @param string $state 'all', 'local' or 'offloaded' (see failed_sql()).
 	 * @return int
 	 */
 	public static function count_failed( $state = 'all' ) {
 		global $wpdb;
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared -- fixed SQL from failed_sql(); no user input.
-		return (int) $wpdb->get_var( 'SELECT COUNT(*) ' . self::failed_sql( $state ) );
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- live count for the admin list and WP-CLI.
+		return (int) $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT COUNT(*) FROM {$wpdb->posts} p
+				INNER JOIN {$wpdb->postmeta} e ON e.post_id = p.ID AND e.meta_key = 'omnioffloader_error_log'
+				WHERE p.post_type = 'attachment' AND p.post_status = 'inherit'
+				AND (
+					%s = 'all'
+					OR ( %s = 'offloaded' AND EXISTS ( SELECT 1 FROM {$wpdb->postmeta} o WHERE o.post_id = p.ID AND o.meta_key = 'omnioffloader_offloaded' AND o.meta_value = '1' ) )
+					OR ( %s = 'local'
+						AND NOT EXISTS ( SELECT 1 FROM {$wpdb->postmeta} o WHERE o.post_id = p.ID AND o.meta_key = 'omnioffloader_offloaded' AND o.meta_value = '1' )
+						AND NOT EXISTS ( SELECT 1 FROM {$wpdb->postmeta} m WHERE m.post_id = p.ID AND m.meta_key = 'omnioffloader_status' AND m.meta_value = %s ) )
+				)",
+				$state,
+				$state,
+				$state,
+				self::STATUS_MISSING
+			)
+		);
 	}
 
 	/**
@@ -539,7 +528,7 @@ class Helpers {
 	 *
 	 * @since 0.1.6
 	 *
-	 * @param string $state  'all', 'local' or 'offloaded' (see failed_sql()).
+	 * @param string $state  'all', 'local' or 'offloaded' (see count_failed()).
 	 * @param int    $limit  Most IDs to return; 0 for all.
 	 * @param int    $offset IDs to skip (paging).
 	 * @return int[]
@@ -547,14 +536,31 @@ class Helpers {
 	public static function failed_ids( $state = 'all', $limit = 0, $offset = 0 ) {
 		global $wpdb;
 
-		$sql = 'SELECT p.ID ' . self::failed_sql( $state ) . ' ORDER BY p.ID DESC';
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- live list for the admin and WP-CLI; paged.
+		$ids = $wpdb->get_col(
+			$wpdb->prepare(
+				"SELECT p.ID FROM {$wpdb->posts} p
+				INNER JOIN {$wpdb->postmeta} e ON e.post_id = p.ID AND e.meta_key = 'omnioffloader_error_log'
+				WHERE p.post_type = 'attachment' AND p.post_status = 'inherit'
+				AND (
+					%s = 'all'
+					OR ( %s = 'offloaded' AND EXISTS ( SELECT 1 FROM {$wpdb->postmeta} o WHERE o.post_id = p.ID AND o.meta_key = 'omnioffloader_offloaded' AND o.meta_value = '1' ) )
+					OR ( %s = 'local'
+						AND NOT EXISTS ( SELECT 1 FROM {$wpdb->postmeta} o WHERE o.post_id = p.ID AND o.meta_key = 'omnioffloader_offloaded' AND o.meta_value = '1' )
+						AND NOT EXISTS ( SELECT 1 FROM {$wpdb->postmeta} m WHERE m.post_id = p.ID AND m.meta_key = 'omnioffloader_status' AND m.meta_value = %s ) )
+				)
+				ORDER BY p.ID DESC
+				LIMIT %d OFFSET %d",
+				$state,
+				$state,
+				$state,
+				self::STATUS_MISSING,
+				$limit > 0 ? $limit : PHP_INT_MAX,
+				max( 0, $offset )
+			)
+		);
 
-		if ( $limit > 0 ) {
-			$sql .= $wpdb->prepare( ' LIMIT %d OFFSET %d', $limit, max( 0, $offset ) );
-		}
-
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared -- fixed SQL from failed_sql(); LIMIT prepared above.
-		return array_map( 'intval', (array) $wpdb->get_col( $sql ) );
+		return array_map( 'intval', (array) $ids );
 	}
 
 	/**

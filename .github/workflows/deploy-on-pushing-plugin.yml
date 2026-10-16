@@ -35,7 +35,7 @@ jobs:
     # A GitHub prerelease (beta, RC) never reaches WordPress.org, which has no
     # beta channel: anything committed there is a real version.
     if: ${{ github.event_name != 'release' || !github.event.release.prerelease }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: write
     
@@ -45,7 +45,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           ref: ${{ inputs.tag || github.event.release.tag_name || github.ref }}
 
@@ -62,10 +62,10 @@ jobs:
           find vendor -type f \( -name "*.py" -o -name "*.sh" -o -name "*.bat" -o -name "*.cmd" -o -name "*.exe" -o -name "*.bin" -o -name "*.dylib" -o -name "*.so" -o -name "*.neon" -o -name "*.dist" -o -name "*.sample" -o -name ".DS_Store" -o -name "Thumbs.db" -o -name ".editorconfig" -o -name ".git*" \) -delete || true
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@v6
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: '24'
           cache: 'pnpm'
@@ -115,7 +115,7 @@ jobs:
 
       - name: Upload release asset
         if: ${{ !inputs.dry-run }}
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:

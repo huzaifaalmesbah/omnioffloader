@@ -416,11 +416,13 @@ class Plugin {
 	}
 
 	/**
-	 * Refusal for starting a bulk job while another one runs.
+	 * Refusal for starting a bulk job, or a single-item offload / Bring Back,
+	 * while a bulk job runs.
 	 *
 	 * @since 0.1.3
+	 * @since 0.1.6 Accepts 'single' for one-item actions: any run refuses them.
 	 *
-	 * @param string $job The job about to start ('offload', 'restore', 'retention' or 'move').
+	 * @param string $job The job about to start ('offload', 'restore', 'retention', 'move' or 'single').
 	 * @return \WP_Error|null
 	 */
 	public function bulk_job_conflict( $job ) {

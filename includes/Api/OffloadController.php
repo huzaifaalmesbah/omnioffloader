@@ -208,6 +208,13 @@ class OffloadController extends BaseController {
 			);
 		}
 
+		// A bulk run may be uploading or deleting this attachment's files.
+		$conflict = Plugin::get_instance()->bulk_job_conflict( 'single' );
+
+		if ( null !== $conflict ) {
+			return $conflict;
+		}
+
 		$provider = Plugin::get_instance()->get_provider();
 
 		// require_engine() above guarantees this; keeps the type exact.

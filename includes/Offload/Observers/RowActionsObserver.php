@@ -245,6 +245,13 @@ class RowActionsObserver implements ObserverInterface {
 			wp_die( esc_html( SafeMode::message() ) );
 		}
 
+		// A bulk run may be uploading or deleting this attachment's files.
+		$conflict = \OmniOffloader\Core\Plugin::get_instance()->bulk_job_conflict( 'single' );
+
+		if ( null !== $conflict ) {
+			wp_die( esc_html( $conflict->get_error_message() ) );
+		}
+
 		wp_raise_memory_limit( 'admin' );
 		if ( function_exists( 'set_time_limit' ) ) {
 			// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged, Squiz.PHP.DiscouragedFunctions.Discouraged -- safe timeout extension for large file transfers.
@@ -297,9 +304,11 @@ class RowActionsObserver implements ObserverInterface {
 			wp_die( esc_html( SafeMode::bring_back_message() ) );
 		}
 
-		// See BringBackController: never restore alongside a retention run.
-		if ( 'retention' === \OmniOffloader\Core\Plugin::get_instance()->get_active_bulk_job() ) {
-			wp_die( esc_html__( 'A retention policy update is running — wait for it to finish first.', 'omnioffloader' ) );
+		// See BringBackController: never restore alongside a bulk run.
+		$conflict = \OmniOffloader\Core\Plugin::get_instance()->bulk_job_conflict( 'single' );
+
+		if ( null !== $conflict ) {
+			wp_die( esc_html( $conflict->get_error_message() ) );
 		}
 
 		$settings = \OmniOffloader\Core\Plugin::get_settings();

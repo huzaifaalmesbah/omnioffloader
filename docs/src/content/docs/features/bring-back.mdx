@@ -102,7 +102,7 @@ These keep the cloud copy. The one exception: picked in the Media Library while 
 - **Cloud deletion is opt-in.** Deleting cloud files is off by default. When on, a cloud file is only deleted after the local copy is verified. A file that is not on the server afterwards, such as the original kept from an image edit, stays in the cloud.
 - **Confined to uploads.** Restores never write outside your WordPress uploads folder.
 - **Partial downloads cleaned up.** If the server stops a restore mid-file, the leftover temporary file is removed.
-- **One job at a time.** Bring Back never runs together with Bulk Offload, a retention update or a move to the current folder. A single-item Bring Back is refused while a retention update is running.
+- **One job at a time.** Bring Back never runs together with Bulk Offload, a retention update or a move to the current folder. A single-item offload or Bring Back is refused while any bulk job (offload, Bring Back, retention update or move, from the admin or WP-CLI) is running.
 
 ## Faster restores
 

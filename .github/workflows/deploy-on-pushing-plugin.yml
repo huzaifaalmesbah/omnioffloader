@@ -13,18 +13,28 @@ on:
         type: string
         description: 'Release tag to deploy, e.g. 0.1.7'
         required: true
+      dry-run:
+        type: boolean
+        default: false
   workflow_dispatch:
     inputs:
       tag:
         type: string
         description: 'Release tag to deploy, e.g. 0.1.7 (empty: the selected ref)'
         required: false
+      dry-run:
+        type: boolean
+        description: 'Dry run: build and prepare the SVN commit, but publish nothing to WordPress.org or the GitHub Release.'
+        default: false
 
 permissions: {}
 
 jobs:
   deploy:
     name: Deploy to WordPress.org
+    # A GitHub prerelease (beta, RC) never reaches WordPress.org, which has no
+    # beta channel: anything committed there is a real version.
+    if: ${{ github.event_name != 'release' || !github.event.release.prerelease }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -82,12 +92,29 @@ jobs:
         uses: 10up/action-wordpress-plugin-deploy@stable
         with:
           generate-zip: true
+          dry-run: ${{ inputs.dry-run || false }}
         env:
           SVN_USERNAME: ${{ secrets.SVN_USERNAME }}
           SVN_PASSWORD: ${{ secrets.SVN_PASSWORD }}
           VERSION: ${{ env.TAG }}
 
+      - name: List what would be deployed
+        if: ${{ inputs.dry-run }}
+        env:
+          ZIP: ${{ steps.deploy.outputs.zip-path }}
+        run: |
+          {
+            echo "### Dry run: nothing was published"
+            echo ""
+            echo "Files at the top level of the plugin (vendor/, build/, includes/ and assets/ left out):"
+            echo '```'
+            unzip -Z1 "$ZIP" | grep -v '/$' | sed 's#^[^/]*/##' | grep -v -E '^(vendor|build|includes|assets)/'
+            echo '```'
+            echo "Total files: $(unzip -Z1 "$ZIP" | grep -c -v '/$')"
+          } >> "$GITHUB_STEP_SUMMARY"
+
       - name: Upload release asset
+        if: ${{ !inputs.dry-run }}
         uses: softprops/action-gh-release@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

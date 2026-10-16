@@ -482,6 +482,9 @@ class Plugin {
 		add_filter( 'is_protected_meta', array( $this, 'protect_offload_meta' ), 10, 2 );
 
 		add_action( 'admin_notices', array( $this, 'safe_mode_notice' ) );
+
+		// Opt-in usage insights; sends nothing until an administrator allows it.
+		Insights::boot();
 	}
 
 	/**

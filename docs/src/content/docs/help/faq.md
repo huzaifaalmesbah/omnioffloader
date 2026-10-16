@@ -86,4 +86,4 @@ Yes, per site. Each site in a network has its own settings, credentials and back
 
 ### Does the plugin send any data to its author?
 
-No. OmniOffloader only connects to the storage provider you configure. There is no analytics or tracking. See [How your media stays safe](/help/safety/#privacy-and-external-services).
+Not unless an administrator allows it. From 0.1.6, an admin notice asks whether to share usage data through the Appsero SDK. Until someone clicks **Allow**, OmniOffloader only connects to the storage provider you configure. Your media, file names and storage credentials are never sent, and you can stop sharing anytime from the Plugins screen. See [Usage insights](/help/safety/#usage-insights-opt-in) for exactly what is sent.

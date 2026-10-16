@@ -53,6 +53,7 @@ class Uninstaller {
 		delete_option( 'omnioffloader_cli_last_run' );
 		// Left behind by pre-release builds with secondary storage.
 		delete_option( 'omnioffloader_secondary_credentials' );
+		MediaCounters::delete_all();
 
 		// Queues: batch rows, run status, process lock, cron and state.
 		AsyncUploadProcessor::purge_stored_data();

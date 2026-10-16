@@ -869,34 +869,23 @@ class Helpers {
 	 * counted and are reported in `unsized` instead. Only computed on the
 	 * Bring Back page / preflight endpoint.
 	 *
-	 * The count and estimate are cached for an hour: every offload, restore
-	 * and delete clears the cache (flush_media_stats()), and on a large
-	 * library the scan takes seconds. Free space is read on every call.
+	 * The count and estimate come from MediaCounters, kept current as media
+	 * changes, so they cost a few small queries however big the library is.
+	 * Free space is read on every call.
 	 *
-	 * @param bool $force_refresh Optional. True to bypass transient cache and recompute. Default false.
+	 * @since 0.1.7 Reads the running counters instead of scanning.
+	 *
+	 * @param bool $force_refresh Ignored since 0.1.7; the counters are always current.
 	 * @return array{offloaded: int, estimated_bytes: int, unsized: int, quota: array{limit: int, used: int, remaining: int, updated_at: int}|null, free_bytes: int, disk_ok: bool}
 	 */
 	public static function get_restore_preflight( $force_refresh = false ) {
-		$cached = $force_refresh ? false : get_transient( 'omnioffloader_restore_preflight' );
+		// The running counters are always current; nothing to refresh.
+		unset( $force_refresh );
 
-		// 'unsized' marks the current shape; older cached values are rebuilt.
-		if ( is_array( $cached ) && isset( $cached['offloaded'], $cached['estimated_bytes'], $cached['unsized'] ) ) {
-			$offloaded = (int) $cached['offloaded'];
-			$estimated = (int) $cached['estimated_bytes'];
-			$unsized   = (int) $cached['unsized'];
-		} else {
-			list( $offloaded, $estimated, $unsized ) = self::scan_restore_size();
-
-			set_transient(
-				'omnioffloader_restore_preflight',
-				array(
-					'offloaded'       => $offloaded,
-					'estimated_bytes' => $estimated,
-					'unsized'         => $unsized,
-				),
-				HOUR_IN_SECONDS
-			);
-		}
+		$estimate  = MediaCounters::restore_estimate();
+		$offloaded = $estimate['offloaded'];
+		$estimated = $estimate['estimated_bytes'];
+		$unsized   = $estimate['unsized'];
 
 		$free  = (int) self::free_disk_space();
 		$quota = self::hosting_quota();
@@ -916,107 +905,43 @@ class Helpers {
 	}
 
 	/**
-	 * Count offloaded attachments and add up the bytes a restore downloads.
-	 *
-	 * Reads only the `_wp_attachment_metadata` and `omnioffloader_retention`
-	 * rows, 500 attachments per query, rather than priming every meta row of
-	 * every attachment. No filesystem access: the retention policy each
-	 * attachment was cleaned up under says which of its files left the server.
-	 *
-	 * @since 0.1.3 Split out of get_restore_preflight().
-	 *
-	 * @return array{0: int, 1: int, 2: int} Offloaded count, estimated bytes,
-	 *                                      attachments with files to download
-	 *                                      but no recorded size.
-	 */
-	private static function scan_restore_size() {
-		global $wpdb;
-
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- indexed meta join query cached via transient by the caller.
-		$ids = $wpdb->get_col(
-			"SELECT p.ID FROM {$wpdb->posts} p
-			 INNER JOIN {$wpdb->postmeta} m ON m.post_id = p.ID AND m.meta_key = 'omnioffloader_offloaded' AND m.meta_value = '1'
-			 WHERE p.post_type = 'attachment'"
-		);
-
-		$estimated = 0;
-		$unsized   = 0;
-
-		foreach ( array_chunk( array_map( 'intval', $ids ), 500 ) as $chunk ) {
-			$placeholders = implode( ', ', array_fill( 0, count( $chunk ), '%d' ) );
-
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- one query per 500 attachments, cached via transient by the caller; placeholders are generated above.
-			$rows = $wpdb->get_results( $wpdb->prepare( "SELECT post_id, meta_key, meta_value FROM {$wpdb->postmeta} WHERE meta_key IN ( '_wp_attachment_metadata', 'omnioffloader_retention' ) AND post_id IN ( {$placeholders} )", $chunk ) );
-
-			$metadata = array();
-			$policies = array();
-
-			foreach ( $rows as $row ) {
-				if ( 'omnioffloader_retention' === $row->meta_key ) {
-					$policies[ (int) $row->post_id ] = max( 0, min( 2, (int) $row->meta_value ) );
-				} else {
-					$metadata[ (int) $row->post_id ] = maybe_unserialize( $row->meta_value );
-				}
-			}
-
-			foreach ( $chunk as $id ) {
-				// Missing meta means Retain Local (see RetentionApplier::stored_policy()).
-				$roles = RetentionApplier::local_roles( $policies[ $id ] ?? 0 );
-
-				if ( $roles['main'] && $roles['sizes'] ) {
-					continue;
-				}
-
-				$meta   = isset( $metadata[ $id ] ) && is_array( $metadata[ $id ] ) ? $metadata[ $id ] : array();
-				$known  = true;
-				$sizes  = ! empty( $meta['sizes'] ) && is_array( $meta['sizes'] ) ? $meta['sizes'] : array();
-				$amount = 0;
-
-				if ( ! $roles['main'] ) {
-					if ( isset( $meta['filesize'] ) && is_numeric( $meta['filesize'] ) ) {
-						$amount += (int) $meta['filesize'];
-					} else {
-						$known = false;
-					}
-				}
-
-				if ( ! $roles['sizes'] ) {
-					foreach ( $sizes as $size_data ) {
-						if ( is_array( $size_data ) && isset( $size_data['filesize'] ) && is_numeric( $size_data['filesize'] ) ) {
-							$amount += (int) $size_data['filesize'];
-						} elseif ( is_array( $size_data ) ) {
-							$known = false;
-						}
-					}
-				}
-
-				$estimated += $amount;
-
-				if ( ! $known ) {
-					++$unsized;
-				}
-			}
-		}
-
-		return array( count( $ids ), $estimated, $unsized );
-	}
-
-	/**
 	 * Retention preflight: how many offloaded attachments still follow a
 	 * different policy than the saved one, and roughly how many bytes applying
 	 * it would free or download.
 	 *
 	 * Byte counts come from stored metadata (upper-bound estimates, like the
-	 * restore preflight). No filesystem or network access.
+	 * restore preflight). No filesystem or network access. Read from
+	 * MediaCounters; only when an `omnioffloader_should_apply_retention`
+	 * filter is attached is each attachment scanned (cached for a minute).
 	 *
 	 * @since 0.1.3
+	 * @since 0.1.7 Reads the running counters unless the filter is attached.
 	 *
-	 * @param bool $force_refresh Optional. True to bypass the transient cache.
+	 * @param bool $force_refresh Optional. True to bypass the scan's transient cache.
 	 * @return array{policy: int, eligible: int, to_clean: int, to_download: int, freed_bytes: int, download_bytes: int, free_bytes: int, disk_ok: bool}
 	 */
 	public static function get_retention_preflight( $force_refresh = false ) {
 		$settings = Plugin::get_settings();
 		$policy   = Plugin::sanitize_retention_policy( $settings['retention_policy'] );
+
+		// Totals from the running counters, unless a filter excludes single
+		// attachments: then each one has to be asked (the scan below).
+		if ( ! has_filter( 'omnioffloader_should_apply_retention' ) ) {
+			$estimate = MediaCounters::retention_estimate( $policy );
+			$free     = (int) self::free_disk_space();
+
+			return array(
+				'policy'         => $policy,
+				'eligible'       => $estimate['eligible'],
+				'to_clean'       => $estimate['to_clean'],
+				'to_download'    => $estimate['to_download'],
+				'freed_bytes'    => $estimate['freed_bytes'],
+				'download_bytes' => $estimate['download_bytes'],
+				// 0 means unknown (disk_free_space disabled on the host).
+				'free_bytes'     => $free,
+				'disk_ok'        => 0 === $free || $free > $estimate['download_bytes'] * 1.1,
+			);
+		}
 
 		if ( ! $force_refresh ) {
 			$cached = get_transient( 'omnioffloader_retention_preflight' );

@@ -491,6 +491,10 @@ class Plugin {
 
 		// Opt-in usage insights; sends nothing until an administrator allows it.
 		Insights::boot();
+
+		// Keeps the Bring Back / retention preflight totals current as media
+		// changes, in every context (uploads, bulk runs, WP-CLI, deletes).
+		MediaCounters::register();
 	}
 
 	/**

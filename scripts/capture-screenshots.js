@@ -41,9 +41,14 @@ const DEFAULT_MOCKS = [
 ];
 
 async function getAuthCookies() {
-  const cmd = `wp eval '$u=1;$e=time()+86400;echo SECURE_AUTH_COOKIE."=".wp_generate_auth_cookie($u,$e,"secure_auth").";".LOGGED_IN_COOKIE."=".wp_generate_auth_cookie($u,$e,"logged_in");'`;
-  const raw = execSync(cmd, { cwd: WP_ROOT }).toString().trim();
-  const line = raw.split('\n').pop().trim();
+  // Markers around the cookies: other plugins' notices may be printed too.
+  const cmd = `wp eval '$u=1;$e=time()+86400;echo "@@COOKIES@@".SECURE_AUTH_COOKIE."=".wp_generate_auth_cookie($u,$e,"secure_auth").";".LOGGED_IN_COOKIE."=".wp_generate_auth_cookie($u,$e,"logged_in")."@@END@@";' 2>/dev/null`;
+  const raw = execSync(cmd, { cwd: WP_ROOT }).toString();
+  const match = raw.match(/@@COOKIES@@(.*?)@@END@@/);
+  if (!match) {
+    throw new Error('Could not read the auth cookies from WP-CLI.');
+  }
+  const line = match[1].trim();
   return line.split(';').map(c => {
     const [name, ...rest] = c.trim().split('=');
     return {
@@ -231,6 +236,26 @@ async function captureScreen(browser, cookies, config, totalScreens) {
     });
   }
 
+  // The admin page embeds its first REST responses (window.omnioffloaderPreload),
+  // so faked routes must replace those too, not only the requests.
+  await page.evaluateOnNewDocument((mockList) => {
+    let preload;
+    Object.defineProperty(window, 'omnioffloaderPreload', {
+      configurable: true,
+      get() { return preload; },
+      set(value) {
+        preload = value || {};
+        for (const key of Object.keys(preload)) {
+          const route = key.replace('/omnioffloader/v1', '').split('?')[0];
+          const mock = mockList.find(m => m.path.replace('/omnioffloader/v1', '') === route);
+          if (mock) {
+            preload[key] = mock.data;
+          }
+        }
+      },
+    });
+  }, mocks);
+
   await page.goto(config.url, { waitUntil: 'networkidle2' });
   if (config.waitFor) {
     await page.waitForSelector(config.waitFor, { timeout: 10000 });
@@ -294,6 +319,57 @@ async function main() {
         { selector: '.omnioffloader-stats-grid', num: 2, label: 'Real-Time Storage & Sync Metrics', position: 'top-left', offsetY: -16 },
         { selector: '.omnioffloader-quick-actions-grid', num: 3, label: 'One-Click Quick Actions (Bulk Offload, Restore, Settings)', position: 'top-right', offsetY: -16 },
         { selector: '.omnioffloader-sidebar__nav', num: 4, label: 'Feature Navigation Menu', position: 'top-left', offsetY: -16 }
+      ]
+    },
+
+    // 1b. Dashboard Storage card (docs only). Example numbers for a large
+    // library with all three policies and two buckets, so every row shows.
+    {
+      id: 16,
+      slug: 'dashboard-storage',
+      wpOrgNum: null,
+      width: 1440,
+      height: 900,
+      title: 'Dashboard Storage',
+      url: 'https://wp71.test/wp-admin/admin.php?page=omnioffloader&view=dashboard',
+      waitFor: '#omnioffloader-admin-app',
+      mocks: [
+        {
+          path: '/omnioffloader/v1/core/stats',
+          data: {
+            total: 18900,
+            offloaded: 18640,
+            local: 260,
+            missing: 0,
+            configured: true,
+            provider: 'cloudflare_r2',
+            safe_mode: { active: false, reason: '', locked: false, live_address: 'example.com', current_address: 'example.com', environment: 'production', bring_back: true, folder_owner: '', folder: '' },
+            storage: {
+            cloud_bytes: 45526653337,
+            server_bytes: 17072495001,
+            freed_bytes: 28454158336,
+            unsized: 37,
+            policies: [
+              { policy: 0, count: 4210, cloud_bytes: 10522669875, server_bytes: 10522669875, freed_bytes: 0 },
+              { policy: 1, count: 9830, cloud_bytes: 22978075033, server_bytes: 6549825126, freed_bytes: 16428249907 },
+              { policy: 2, count: 4600, cloud_bytes: 12025908428, server_bytes: 0, freed_bytes: 12025908428 }
+            ],
+            locations: [
+              { provider: 'cloudflare_r2', name: 'Cloudflare R2', bucket: 'media', count: 16900 },
+              { provider: 'amazon_s3', name: 'Amazon S3', bucket: 'old-uploads', count: 1740 }
+            ]
+          }
+          }
+        }
+      ],
+      beforeCapture: async (page) => {
+        await page.waitForSelector('.omnioffloader-storage-table', { timeout: 10000 });
+        await scrollBelowHeader(page, '.omnioffloader-stats-grid', 0);
+      },
+      annotations: [
+        { selector: '.omnioffloader-media-summary', num: 1, label: 'In the Cloud, Still on This Server & Space Freed', position: 'top-right', offsetY: -16 },
+        { selector: '.omnioffloader-storage-table', index: 0, num: 2, label: 'By Retention Policy: Items, Cloud, Server & Freed', position: 'top-right', offsetY: -16 },
+        { selector: '.omnioffloader-storage-table', index: 1, num: 3, label: 'By Provider & Bucket', position: 'top-right', offsetY: -16 }
       ]
     },
 

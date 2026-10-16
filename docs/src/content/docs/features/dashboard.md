@@ -7,12 +7,16 @@ sidebar:
 
 **OmniOffloader → Dashboard** is the first screen you see. It shows whether offloading is active, your media counts, and where your storage goes.
 
+![The OmniOffloader Dashboard: provider status, media counts and quick actions](/images/screenshots/dashboard-marked.png)
+
 ## Status and media counts
 
 - **Active / Safe mode / Setup Required:** whether new uploads are being offloaded, and to which provider.
 - **Total media items**, **Offloaded to cloud** (with the share) and **Local only** (media not offloaded yet). Click a count to open the **Offload** screen.
 
 ## Storage
+
+![The Storage card on the Dashboard: totals in the cloud, still on the server and freed (1), a table by retention policy (2) and a table by provider and bucket (3)](/images/screenshots/dashboard-storage-marked.png)
 
 The **Storage** card shows, for your offloaded media:
 

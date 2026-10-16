@@ -109,13 +109,13 @@ export function DashboardPage( { onNavigate }: DashboardProps ) {
 			<div className="omnioffloader-stats-grid">
 				<StatCard
 					icon={ image }
-					value={ String( stats?.total ?? '—' ) }
+					value={ stats ? stats.total.toLocaleString() : '—' }
 					label={ __( 'Total media items', 'omnioffloader' ) }
 					variant="default"
 				/>
 				<StatCard
 					icon={ cloudUpload }
-					value={ String( stats?.offloaded ?? '—' ) }
+					value={ stats ? stats.offloaded.toLocaleString() : '—' }
 					label={ __( 'Offloaded to cloud', 'omnioffloader' ) }
 					variant="success"
 					badge={ total > 0 ? `${ offloadedPct }%` : undefined }
@@ -123,7 +123,7 @@ export function DashboardPage( { onNavigate }: DashboardProps ) {
 				/>
 				<StatCard
 					icon={ upload }
-					value={ String( stats?.local ?? '—' ) }
+					value={ stats ? stats.local.toLocaleString() : '—' }
 					label={ __( 'Local only', 'omnioffloader' ) }
 					variant="local"
 					badge={

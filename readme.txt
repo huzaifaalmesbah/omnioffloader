@@ -383,6 +383,12 @@ Depending on the provider you choose:
 
 == Changelog ==
 
+= Unreleased =
+
+**Improvements**
+
+* The Bring Back and Tools screens show their numbers instantly, even with tens of thousands of media items. OmniOffloader now keeps a running total as media changes, instead of going through the whole library each time you open the page.
+
 = 0.1.6 =
 
 **New**
@@ -415,6 +421,9 @@ Depending on the provider you choose:
 Older releases: see the [full changelog](https://omnioffloader.vercel.app/changelog/).
 
 == Upgrade Notice ==
+
+= Unreleased =
+Faster Bring Back and Tools screens on large media libraries. Recommended for all users.
 
 = 0.1.6 =
 See and retry failed media from the Tools screen, check and repair your files with `wp omnioffloader verify`, faster-opening screens, and optional usage insights. Recommended for all users.

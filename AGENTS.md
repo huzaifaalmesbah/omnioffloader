@@ -9,7 +9,7 @@
 ## 1. Project Overview & Core Tech Stack
 
 * **Plugin Slug**: `omnioffloader`
-* **Version**: `0.1.3` (⚠️ **VERSION CEILING: `0.9.0`**. Never bump, tag, or release `1.0.0` or higher without explicit permission)
+* **Version**: `0.1.6`
 * **PHP Requirements**: PHP 8.1+ with Composer PSR-4 autoloading (`OmniOffloader\` → `includes/`).
 * **Static Analysis**: **PHPStan Level 8** (`szepeviktor/phpstan-wordpress`).
 * **Coding Standards**: WordPress Coding Standards (**WPCS 3.1**).

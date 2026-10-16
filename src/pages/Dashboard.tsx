@@ -10,6 +10,7 @@ import {
 
 import { Card } from '../components/ui/Card';
 import { StatCard } from '../components/ui/StatCard';
+import { StorageCard } from '../components/ui/StorageCard';
 import { useCore } from '../context/CoreContext';
 import { PLUGIN_ICON } from '../utils/constants';
 
@@ -133,6 +134,10 @@ export function DashboardPage( { onNavigate }: DashboardProps ) {
 					onClick={ () => onNavigate( 'offload' ) }
 				/>
 			</div>
+
+			{ stats?.configured && stats.storage && (
+				<StorageCard storage={ stats.storage } />
+			) }
 
 			<Card
 				title={ __( 'Quick Actions', 'omnioffloader' ) }

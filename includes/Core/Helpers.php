@@ -7,6 +7,7 @@
 
 namespace OmniOffloader\Core;
 
+use OmniOffloader\Providers\ProviderRegistry;
 use OmniOffloader\Services\RetentionApplier;
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -455,6 +456,66 @@ class Helpers {
 	}
 
 	/**
+	 * Offloaded attachments per provider and bucket, for the Dashboard: media
+	 * stays where it was offloaded, so after a provider or bucket change it
+	 * is split across locations.
+	 *
+	 * One grouped count of indexed meta rows, cached for an hour and cleared
+	 * with the media stats (flush_media_stats()) whenever media moves.
+	 *
+	 * @since 0.1.7
+	 *
+	 * @return array<int, array{provider: string, name: string, bucket: string, count: int}> Largest first.
+	 */
+	public static function get_storage_locations() {
+		$cached = get_transient( 'omnioffloader_storage_locations' );
+
+		if ( is_array( $cached ) ) {
+			return $cached;
+		}
+
+		global $wpdb;
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- one grouped count, cached via transient below.
+		$rows = $wpdb->get_results(
+			"SELECT COALESCE( pv.meta_value, '' ) AS provider, COALESCE( bk.meta_value, '' ) AS bucket, COUNT(*) AS total
+			 FROM {$wpdb->postmeta} o
+			 LEFT JOIN {$wpdb->postmeta} pv ON pv.post_id = o.post_id AND pv.meta_key = 'omnioffloader_provider'
+			 LEFT JOIN {$wpdb->postmeta} bk ON bk.post_id = o.post_id AND bk.meta_key = 'omnioffloader_bucket'
+			 WHERE o.meta_key = 'omnioffloader_offloaded' AND o.meta_value = '1'
+			 GROUP BY provider, bucket
+			 ORDER BY total DESC"
+		);
+
+		$names     = array();
+		$locations = array();
+
+		foreach ( $rows as $row ) {
+			$key = ProviderRegistry::canonical_key( (string) $row->provider );
+
+			// Named by the provider class, only for providers holding media.
+			if ( ! isset( $names[ $key ] ) ) {
+				try {
+					$names[ $key ] = ProviderRegistry::create( $key )->get_name();
+				} catch ( \InvalidArgumentException $e ) {
+					$names[ $key ] = $key;
+				}
+			}
+
+			$locations[] = array(
+				'provider' => $key,
+				'name'     => $names[ $key ],
+				'bucket'   => (string) $row->bucket,
+				'count'    => (int) $row->total,
+			);
+		}
+
+		set_transient( 'omnioffloader_storage_locations', $locations, HOUR_IN_SECONDS );
+
+		return $locations;
+	}
+
+	/**
 	 * Bust the cached media stats (call after offload/restore state changes).
 	 *
 	 * Flushes transients from external object cache (Redis/Memcached) as well
@@ -473,13 +534,14 @@ class Helpers {
 		delete_transient( 'omnioffloader_restore_preflight' );
 		delete_transient( 'omnioffloader_retention_preflight' );
 		delete_transient( 'omnioffloader_move_preflight' );
+		delete_transient( 'omnioffloader_storage_locations' );
 
 		// With a persistent object cache, delete_transient() only clears the
 		// cache; rows written to wp_options before the cache was enabled would
 		// otherwise resurface. Without one, delete_transient() already removed
 		// those rows, so this is skipped (it costs two queries per key).
 		if ( wp_using_ext_object_cache() ) {
-			foreach ( array( 'omnioffloader_media_stats', 'omnioffloader_restore_preflight', 'omnioffloader_retention_preflight', 'omnioffloader_move_preflight' ) as $key ) {
+			foreach ( array( 'omnioffloader_media_stats', 'omnioffloader_restore_preflight', 'omnioffloader_retention_preflight', 'omnioffloader_move_preflight', 'omnioffloader_storage_locations' ) as $key ) {
 				delete_option( '_transient_' . $key );
 				delete_option( '_transient_timeout_' . $key );
 			}

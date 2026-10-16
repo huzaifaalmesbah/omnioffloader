@@ -68,6 +68,7 @@ class Uninstaller {
 		delete_transient( 'omnioffloader_restore_preflight' );
 		delete_transient( 'omnioffloader_retention_preflight' );
 		delete_transient( 'omnioffloader_move_preflight' );
+		delete_transient( 'omnioffloader_storage_locations' );
 
 		delete_post_meta_by_key( 'omnioffloader_status' );
 		delete_post_meta_by_key( 'omnioffloader_async_attempts' );

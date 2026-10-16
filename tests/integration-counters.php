@@ -229,6 +229,19 @@ function omnioffloader_compare( $label ) {
 
 		omnioffloader_check( $scan === $counted, "{$label} — counters match a full scan (target policy {$target})" );
 	}
+
+	// Storage card: freed space is what a full Bring Back downloads, and the
+	// policy rows add up to the totals.
+	$storage = MediaCounters::storage();
+	$scan    = omnioffloader_scan( 0 );
+	$rows    = array_sum( wp_list_pluck( $storage['policies'], 'cloud_bytes' ) );
+	omnioffloader_check(
+		$storage['freed_bytes'] === $scan['estimated_bytes']
+		&& $storage['cloud_bytes'] === $storage['server_bytes'] + $storage['freed_bytes']
+		&& $rows === $storage['cloud_bytes']
+		&& array_sum( wp_list_pluck( $storage['policies'], 'count' ) ) === $scan['offloaded'],
+		"{$label} — storage totals add up"
+	);
 }
 
 // ---------------------------------------------------------------------------

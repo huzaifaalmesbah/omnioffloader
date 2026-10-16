@@ -179,7 +179,7 @@ Progress polling (`useBulkOffload`, `useBringBack`, `useRetentionSync`, `useMove
 
 All mutations via REST; `@wordpress/api-fetch` sends the nonce. Every route: explicit `permission_callback` (`manage_options`; only the read-only `/offload/attachment-status` uses `upload_files`), `args` with type/sanitize callbacks **plus `'validate_callback' => 'rest_validate_request_arg'`** (core skips schema checks — type, enum, min/max — when only a sanitizer is given), `WP_REST_Server` method constants, `rest_ensure_response()` / `WP_Error` with status + stable `omnioffloader_*` error codes.
 
-- `GET/POST /core/settings` · `GET /core/providers` · `GET /core/stats` (includes `safe_mode`) · `GET /core/cli-job` (the WP-CLI job running now, from its live claim + `omnioffloader_cli_run`; the admin `useCliJob` checks on open, on tab return and after a 409 `omnioffloader_bulk_running`, and polls only while one runs) · `POST /core/safe-mode/live` · `POST /core/folder-claim/take-over`
+- `GET/POST /core/settings` · `GET /core/providers` · `GET /core/stats` (includes `safe_mode` and `storage`: `MediaCounters::storage()` totals + `Helpers::get_storage_locations()`, a grouped count per provider/bucket cached in `omnioffloader_storage_locations` and cleared by `flush_media_stats()` — the Dashboard Storage card) · `GET /core/cli-job` (the WP-CLI job running now, from its live claim + `omnioffloader_cli_run`; the admin `useCliJob` checks on open, on tab return and after a 409 `omnioffloader_bulk_running`, and polls only while one runs) · `POST /core/safe-mode/live` · `POST /core/folder-claim/take-over`
 - `GET/POST /provider/credentials` · `POST /provider/test-connection` — all take a provider arg
 - `POST /offload/attachment/{id}` · `POST /offload/bulk` · `GET /offload/bulk/progress` · `POST /offload/bulk/cancel` · `GET /offload/errors` (`state` all/local/offloaded, `Helpers::failed_ids()`) · `POST /offload/errors/retry` (queues every failed offload as a bulk offload — Tools → Failed Items)
 - `GET /bring-back/preflight` · `POST /bring-back/attachment/{id}` · `POST /bring-back/bulk` · `GET /bring-back/bulk/progress` · `POST /bring-back/bulk/cancel`
@@ -213,7 +213,7 @@ Credentials: `GET` returns secrets masked (`is_set: true`); `POST` ignores maske
 
 The policy is applied once at offload time (`LocalCleaner`). Changing the setting later does nothing to existing media until `RetentionApplier` runs (Tools page, `wp omnioffloader retention`). Stricter: every local file is verified in the bucket **by size** before deletion; missing objects are uploaded first; mismatches are kept and logged. Looser: `AttachmentRestorer::restore_local_copies()` downloads files while the attachment stays offloaded.
 
-**Transients:** `omnioffloader_media_stats`, `omnioffloader_retention_preflight` (only the filtered scan), `omnioffloader_counters_checked`, `omnioffloader_move_preflight` (count of media outside the current folder for the admin screens, keyed by provider/bucket/folder, cleared by `flush_media_stats()`), `omnioffloader_activation_redirect`.
+**Transients:** `omnioffloader_media_stats`, `omnioffloader_storage_locations`, `omnioffloader_retention_preflight` (only the filtered scan), `omnioffloader_counters_checked`, `omnioffloader_move_preflight` (count of media outside the current folder for the admin screens, keyed by provider/bucket/folder, cleared by `flush_media_stats()`), `omnioffloader_activation_redirect`.
 
 **Cron:** watchdog event only while a bulk job runs; unschedule when idle.
 

@@ -9,6 +9,7 @@ namespace OmniOffloader\Api;
 
 use OmniOffloader\Core\FolderClaim;
 use OmniOffloader\Core\Helpers;
+use OmniOffloader\Core\MediaCounters;
 use OmniOffloader\Core\Plugin;
 use OmniOffloader\Core\SafeMode;
 use OmniOffloader\Providers\ProviderRegistry;
@@ -277,6 +278,10 @@ class CoreController extends BaseController {
 		$stats['provider']   = self::get_provider_key();
 		// Never cached: the address check is one comparison.
 		$stats['safe_mode'] = SafeMode::status();
+
+		// Running totals (no library scan) and where the media is.
+		$stats['storage']              = MediaCounters::storage();
+		$stats['storage']['locations'] = Helpers::get_storage_locations();
 
 		return rest_ensure_response( $stats );
 	}

@@ -12,6 +12,39 @@ export interface MediaStats {
 	configured: boolean;
 	provider: string;
 	safe_mode: SafeModeStatus;
+	/** Mirrors MediaCounters::storage() + Helpers::get_storage_locations(). */
+	storage?: StorageStats;
+}
+
+/** One retention policy's share of the offloaded media. */
+export interface StoragePolicyStats {
+	policy: 0 | 1 | 2;
+	count: number;
+	cloud_bytes: number;
+	server_bytes: number;
+	freed_bytes: number;
+}
+
+/** Where offloaded media is: a provider and bucket. */
+export interface StorageLocation {
+	provider: string;
+	name: string;
+	bucket: string;
+	count: number;
+}
+
+/** Storage totals for the Dashboard (from the running counters). */
+export interface StorageStats {
+	/** Every offloaded file, original and sizes. */
+	cloud_bytes: number;
+	/** Files of offloaded media that their retention policy keeps on this server. */
+	server_bytes: number;
+	/** Removed from this server by the retention policy. */
+	freed_bytes: number;
+	/** Offloaded items with no recorded file size (uploaded before WordPress 6.0). */
+	unsized: number;
+	policies: StoragePolicyStats[];
+	locations: StorageLocation[];
 }
 
 /** Why Safe mode is on; '' when it is off. */

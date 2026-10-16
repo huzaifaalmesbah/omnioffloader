@@ -7,51 +7,51 @@
 // Tokens
 // ---------------------------------------------------------------------------
 :root {
-	--smowp-accent: #135dbe;
-	--smowp-accent-dark: #0e4690;
-	--smowp-accent-tint: #e7eff9;
-	--smowp-canvas: #f4f6f8;
-	--smowp-surface: #ffffff;
-	--smowp-text: #1e1e1e;
-	--smowp-text-muted: #757575;
-	--smowp-border: #e5e7eb;
-	--smowp-radius: 14px;
-	--smowp-radius-sm: 10px;
-	--smowp-shadow: 0 1px 3px rgba( 0, 0, 0, 0.06 );
-	--smowp-sidebar-width: 280px;
-	--smowp-savebar-height: 64px;
+	--omnioffloader-accent: #135dbe;
+	--omnioffloader-accent-dark: #0e4690;
+	--omnioffloader-accent-tint: #e7eff9;
+	--omnioffloader-canvas: #f4f6f8;
+	--omnioffloader-surface: #ffffff;
+	--omnioffloader-text: #1e1e1e;
+	--omnioffloader-text-muted: #757575;
+	--omnioffloader-border: #e5e7eb;
+	--omnioffloader-radius: 14px;
+	--omnioffloader-radius-sm: 10px;
+	--omnioffloader-shadow: 0 1px 3px rgba( 0, 0, 0, 0.06 );
+	--omnioffloader-sidebar-width: 280px;
+	--omnioffloader-savebar-height: 64px;
 }
 
 // ---------------------------------------------------------------------------
 // Full-page takeover
 // ---------------------------------------------------------------------------
-#omnioffloader-admin-app, #smowp-admin-app {
+#omnioffloader-admin-app {
 	min-height: calc( 100vh - 32px );
 	margin-left: -20px;
-	background: var( --smowp-canvas );
-	color: var( --smowp-text );
+	background: var( --omnioffloader-canvas );
+	color: var( --omnioffloader-text );
 	font-size: 13px;
 }
 
-.smowp-loading {
+.omnioffloader-loading {
 	display: flex;
 	align-items: center;
 	justify-content: center;
 	min-height: 60vh;
 }
 
-.smowp-app {
+.omnioffloader-app {
 	display: grid;
-	grid-template-columns: var( --smowp-sidebar-width ) 1fr;
+	grid-template-columns: var( --omnioffloader-sidebar-width ) 1fr;
 	min-height: calc( 100vh - 32px );
 }
 
 // ---------------------------------------------------------------------------
 // Sidebar
 // ---------------------------------------------------------------------------
-.smowp-sidebar {
-	background: var( --smowp-surface );
-	border-right: 1px solid var( --smowp-border );
+.omnioffloader-sidebar {
+	background: var( --omnioffloader-surface );
+	border-right: 1px solid var( --omnioffloader-border );
 	padding: 20px 14px;
 	position: sticky;
 	top: 32px;
@@ -60,12 +60,12 @@
 	box-sizing: border-box;
 }
 
-.smowp-sidebar__logo {
+.omnioffloader-sidebar__logo {
 	display: flex;
 	align-items: center;
 	gap: 12px;
 	padding: 4px 10px 18px;
-	border-bottom: 1px solid var( --smowp-border );
+	border-bottom: 1px solid var( --omnioffloader-border );
 	margin-bottom: 16px;
 
 	&-icon {
@@ -75,9 +75,9 @@
 		width: 36px;
 		height: 36px;
 		border-radius: 9px;
-		background: var( --smowp-accent-tint );
+		background: var( --omnioffloader-accent-tint );
 		border: 1px solid rgba( 19, 93, 190, 0.12 );
-		color: var( --smowp-accent );
+		color: var( --omnioffloader-accent );
 		flex-shrink: 0;
 
 		svg {
@@ -97,24 +97,24 @@
 		font-size: 16.5px;
 		font-weight: 700;
 		letter-spacing: -0.01em;
-		color: var( --smowp-text );
+		color: var( --omnioffloader-text );
 	}
 }
 
-.smowp-sidebar__version {
+.omnioffloader-sidebar__version {
 	font-size: 11px;
-	color: var( --smowp-text-muted );
+	color: var( --omnioffloader-text-muted );
 	font-weight: 500;
 	margin-top: 2px;
 }
 
-.smowp-sidebar__nav {
+.omnioffloader-sidebar__nav {
 	display: flex;
 	flex-direction: column;
 	gap: 4px;
 }
 
-.smowp-sidebar__item {
+.omnioffloader-sidebar__item {
 	display: flex;
 	align-items: center;
 	gap: 12px;
@@ -126,26 +126,26 @@
 	background: transparent;
 	cursor: pointer;
 	text-align: left;
-	color: var( --smowp-text );
+	color: var( --omnioffloader-text );
 	transition: background 0.15s ease;
 
 	&:hover {
-		background: var( --smowp-canvas );
+		background: var( --omnioffloader-canvas );
 	}
 
 	&.is-active {
-		background: var( --smowp-accent-tint );
-		border-left-color: var( --smowp-accent );
+		background: var( --omnioffloader-accent-tint );
+		border-left-color: var( --omnioffloader-accent );
 
-		.smowp-sidebar__item-icon,
+		.omnioffloader-sidebar__item-icon,
 		strong {
-			color: var( --smowp-accent-dark );
+			color: var( --omnioffloader-accent-dark );
 		}
 	}
 
 	&-icon {
 		display: inline-flex;
-		color: var( --smowp-text-muted );
+		color: var( --omnioffloader-text-muted );
 
 		svg {
 			fill: currentColor;
@@ -162,7 +162,7 @@
 		}
 
 		small {
-			color: var( --smowp-text-muted );
+			color: var( --omnioffloader-text-muted );
 			font-size: 11.5px;
 		}
 	}
@@ -171,19 +171,19 @@
 // ---------------------------------------------------------------------------
 // Main column: header / content / save bar
 // ---------------------------------------------------------------------------
-.smowp-main {
+.omnioffloader-main {
 	display: flex;
 	flex-direction: column;
 	min-width: 0;
 }
 
-.smowp-header {
+.omnioffloader-header {
 	display: flex;
 	align-items: center;
 	gap: 14px;
 	padding: 18px 32px;
-	background: var( --smowp-surface );
-	border-bottom: 1px solid var( --smowp-border );
+	background: var( --omnioffloader-surface );
+	border-bottom: 1px solid var( --omnioffloader-border );
 	position: sticky;
 	top: 32px;
 	z-index: 10;
@@ -195,8 +195,8 @@
 		width: 44px;
 		height: 44px;
 		border-radius: 12px;
-		background: var( --smowp-accent-tint );
-		color: var( --smowp-accent-dark );
+		background: var( --omnioffloader-accent-tint );
+		color: var( --omnioffloader-accent-dark );
 
 		svg {
 			fill: currentColor;
@@ -213,12 +213,12 @@
 
 		p {
 			margin: 2px 0 0;
-			color: var( --smowp-text-muted );
+			color: var( --omnioffloader-text-muted );
 		}
 	}
 }
 
-.smowp-content {
+.omnioffloader-content {
 	flex: 1;
 	padding: 28px 32px;
 	// App restores each page's scroll position before its cards load; the
@@ -226,11 +226,11 @@
 	overflow-anchor: none;
 
 	&.has-savebar {
-		padding-bottom: calc( var( --smowp-savebar-height ) + 28px );
+		padding-bottom: calc( var( --omnioffloader-savebar-height ) + 28px );
 	}
 }
 
-.smowp-page {
+.omnioffloader-page {
 	display: flex;
 	flex-direction: column;
 	gap: 20px;
@@ -242,23 +242,23 @@
 // ---------------------------------------------------------------------------
 // Save bar (sticky bottom)
 // ---------------------------------------------------------------------------
-.smowp-savebar {
+.omnioffloader-savebar {
 	position: fixed;
 	right: 0;
 	bottom: 0;
-	left: calc( 160px + var( --smowp-sidebar-width ) ); // WP admin menu + our sidebar.
+	left: calc( 160px + var( --omnioffloader-sidebar-width ) ); // WP admin menu + our sidebar.
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
-	height: var( --smowp-savebar-height );
+	height: var( --omnioffloader-savebar-height );
 	padding: 0 32px;
-	background: var( --smowp-surface );
-	border-top: 1px solid var( --smowp-border );
+	background: var( --omnioffloader-surface );
+	border-top: 1px solid var( --omnioffloader-border );
 	z-index: 20;
 	box-sizing: border-box;
 
 	&__status {
-		color: var( --smowp-text-muted );
+		color: var( --omnioffloader-text-muted );
 		font-size: 13px;
 	}
 
@@ -268,7 +268,7 @@
 	}
 
 	&__clean-text {
-		color: var( --smowp-text-muted );
+		color: var( --omnioffloader-text-muted );
 	}
 
 	&__actions {
@@ -285,14 +285,14 @@
 		border-radius: 6px;
 		font-size: 13px;
 		font-weight: 500;
-		animation: smowp-fade-in 0.2s cubic-bezier( 0.16, 1, 0.3, 1 );
+		animation: omnioffloader-fade-in 0.2s cubic-bezier( 0.16, 1, 0.3, 1 );
 
 		&.is-success {
 			background: #edfaef;
 			color: #1a7f37;
 			border: 1px solid #b7ebb9;
 
-			.smowp-savebar__feedback-icon {
+			.omnioffloader-savebar__feedback-icon {
 				color: #1a7f37;
 			}
 		}
@@ -302,7 +302,7 @@
 			color: #cf222e;
 			border: 1px solid #f8d7da;
 
-			.smowp-savebar__feedback-icon {
+			.omnioffloader-savebar__feedback-icon {
 				color: #cf222e;
 			}
 		}
@@ -317,15 +317,15 @@
 		line-height: 1.4;
 	}
 
-	.smowp-savebar__button.components-button.is-primary {
-		background: var( --smowp-accent );
+	.omnioffloader-savebar__button.components-button.is-primary {
+		background: var( --omnioffloader-accent );
 		color: #ffffff;
 		border-radius: 8px;
 		padding: 0 20px;
 		height: 38px;
 
 		&:hover:not( :disabled ):not( [aria-disabled="true"] ):not( .is-disabled ) {
-			background: var( --smowp-accent-dark );
+			background: var( --omnioffloader-accent-dark );
 		}
 
 		&:disabled,
@@ -340,7 +340,7 @@
 	}
 }
 
-@keyframes smowp-fade-in {
+@keyframes omnioffloader-fade-in {
 	from {
 		opacity: 0;
 		transform: translateY( 2px );
@@ -352,17 +352,17 @@
 }
 
 // Collapse offset when the WP admin menu is folded.
-.folded .smowp-savebar {
-	left: calc( 36px + var( --smowp-sidebar-width ) );
+.folded .omnioffloader-savebar {
+	left: calc( 36px + var( --omnioffloader-sidebar-width ) );
 }
 
 // ---------------------------------------------------------------------------
 // Cards
 // ---------------------------------------------------------------------------
-.smowp-card {
-	background: var( --smowp-surface );
-	border: 1px solid var( --smowp-border );
-	border-radius: var( --smowp-radius );
+.omnioffloader-card {
+	background: var( --omnioffloader-surface );
+	border: 1px solid var( --omnioffloader-border );
+	border-radius: var( --omnioffloader-radius );
 	box-shadow: 0 1px 3px rgba( 0, 0, 0, 0.04 ), 0 1px 2px rgba( 0, 0, 0, 0.02 );
 	padding: 22px 24px;
 
@@ -377,7 +377,7 @@
 
 		p {
 			margin: 4px 0 0;
-			color: var( --smowp-text-muted );
+			color: var( --omnioffloader-text-muted );
 		}
 	}
 
@@ -390,60 +390,60 @@
 	}
 }
 
-.smowp-field-warning {
+.omnioffloader-field-warning {
 	color: #996800;
 	font-weight: 500;
 }
 
 // The page title takes focus after a page switch (Header); it is not a control.
-.smowp-header__titles h1:focus {
+.omnioffloader-header__titles h1:focus {
 	outline: none;
 }
 
 // Why a Start button is disabled, under it (instead of a tooltip only).
-.smowp-disabled-reason {
+.omnioffloader-disabled-reason {
 	margin: 8px 0 0;
-	color: var( --smowp-text-muted );
+	color: var( --omnioffloader-text-muted );
 	font-size: 12.5px;
 }
 
 // A card or WP-CLI command a link brings into view takes focus; no ring
 // on the whole section.
-.smowp-card[id]:focus,
-.smowp-cli__command[id]:focus {
+.omnioffloader-card[id]:focus,
+.omnioffloader-cli__command[id]:focus {
 	outline: none;
 }
 
 // A job screen while a WP-CLI job runs (components/ui/CliJobNotice).
-.smowp-cli-job-notice.components-notice {
+.omnioffloader-cli-job-notice.components-notice {
 	margin: 0 0 16px;
 
 	p {
 		margin: 4px 0;
 	}
 
-	.smowp-progress-wrapper {
+	.omnioffloader-progress-wrapper {
 		margin: 8px 0;
 	}
 
 	// The status figures: smaller and quieter than the headline.
 	&__facts {
-		color: var( --smowp-text-muted );
+		color: var( --omnioffloader-text-muted );
 		font-size: 12.5px;
 		overflow-wrap: anywhere;
 	}
 }
 
 // Offload / Bring Back: pointer to the job's WP-CLI command in Tools.
-.smowp-cli-hint {
+.omnioffloader-cli-hint {
 	display: flex;
 	align-items: center;
 	gap: 14px;
 	margin: 16px 0 0;
 	padding: 14px 16px;
 	border: 1px solid rgba( 19, 93, 190, 0.25 );
-	border-radius: var( --smowp-radius-sm );
-	background: var( --smowp-accent-tint );
+	border-radius: var( --omnioffloader-radius-sm );
+	background: var( --omnioffloader-accent-tint );
 
 	&__icon {
 		display: inline-flex;
@@ -453,8 +453,8 @@
 		width: 36px;
 		height: 36px;
 		border-radius: 9px;
-		background: var( --smowp-surface );
-		color: var( --smowp-accent );
+		background: var( --omnioffloader-surface );
+		color: var( --omnioffloader-accent );
 	}
 
 	&__text {
@@ -463,19 +463,19 @@
 
 		strong {
 			margin-right: 8px;
-			color: var( --smowp-accent-dark );
+			color: var( --omnioffloader-accent-dark );
 		}
 
 		p {
 			margin: 2px 0 0;
-			color: var( --smowp-text-muted );
+			color: var( --omnioffloader-text-muted );
 			font-size: 13px;
 		}
 	}
 
 	&__button.components-button {
 		flex-shrink: 0;
-		background: var( --smowp-surface );
+		background: var( --omnioffloader-surface );
 	}
 
 	@media ( max-width: 600px ) {
@@ -489,7 +489,7 @@
 }
 
 // Path Prefix change notice under the field.
-.smowp-prefix-notice.components-notice {
+.omnioffloader-prefix-notice.components-notice {
 	margin: 16px 0 0;
 
 	p {
@@ -497,13 +497,13 @@
 	}
 }
 
-.smowp-prefix-notice__options {
+.omnioffloader-prefix-notice__options {
 	margin: 0;
 	padding: 0;
 	list-style: none;
 }
 
-.smowp-prefix-notice__option {
+.omnioffloader-prefix-notice__option {
 	margin: 0 0 8px;
 
 	&:last-child {
@@ -514,12 +514,12 @@
 	&.is-recommended {
 		padding: 10px 12px;
 		border: 1px solid rgba( 19, 93, 190, 0.25 );
-		border-radius: var( --smowp-radius-sm );
-		background: var( --smowp-accent-tint );
+		border-radius: var( --omnioffloader-radius-sm );
+		background: var( --omnioffloader-accent-tint );
 	}
 }
 
-.smowp-copy-command {
+.omnioffloader-copy-command {
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
@@ -527,12 +527,12 @@
 	margin-top: 8px;
 	padding: 8px 8px 8px 12px;
 	border-radius: 8px;
-	background: var( --smowp-surface );
+	background: var( --omnioffloader-surface );
 
 	code {
 		padding: 0;
 		background: none;
-		color: var( --smowp-accent-dark );
+		color: var( --omnioffloader-accent-dark );
 		font-size: 12.5px;
 		font-weight: 600;
 		overflow-wrap: anywhere;
@@ -541,34 +541,34 @@
 
 	.components-button {
 		flex-shrink: 0;
-		color: var( --smowp-accent );
+		color: var( --omnioffloader-accent );
 
 		&:hover:not( :disabled ) {
-			color: var( --smowp-accent-dark );
+			color: var( --omnioffloader-accent-dark );
 		}
 	}
 }
 
-.smowp-prefix-notice__option .smowp-docs-link {
+.omnioffloader-prefix-notice__option .omnioffloader-docs-link {
 	display: inline-block;
 	margin-top: 8px;
 }
 
-.smowp-prefix-notice__cmd-label {
+.omnioffloader-prefix-notice__cmd-label {
 	display: block;
 	margin-top: 10px;
 	font-size: 12.5px;
-	color: var( --smowp-text-muted );
+	color: var( --omnioffloader-text-muted );
 }
 
 // Confirmation dialog (components/ui/ConfirmDialog). The modal renders
 // outside #omnioffloader-admin-app, so it uses literal colours.
-.smowp-confirm-overlay {
+.omnioffloader-confirm-overlay {
 	background: rgba( 17, 24, 39, 0.45 );
 	backdrop-filter: blur( 2px );
 }
 
-.smowp-confirm.components-modal__frame {
+.omnioffloader-confirm.components-modal__frame {
 	width: 480px;
 	max-width: calc( 100vw - 32px );
 	border-radius: 14px;
@@ -605,7 +605,7 @@
 	}
 }
 
-.smowp-confirm__icon {
+.omnioffloader-confirm__icon {
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
@@ -625,13 +625,13 @@
 	}
 }
 
-.smowp-confirm__message {
+.omnioffloader-confirm__message {
 	color: #50575e;
 	font-size: 14px;
 	line-height: 1.6;
 }
 
-.smowp-confirm__actions {
+.omnioffloader-confirm__actions {
 	display: flex;
 	justify-content: flex-end;
 	gap: 10px;
@@ -647,7 +647,7 @@
 		transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 	}
 
-	.smowp-confirm__cancel {
+	.omnioffloader-confirm__cancel {
 		color: #1e1e1e;
 		background: #ffffff;
 		border: 1px solid #d0d5dd;
@@ -659,7 +659,7 @@
 		}
 	}
 
-	.smowp-confirm__ok {
+	.omnioffloader-confirm__ok {
 		color: #ffffff;
 		background: #135dbe;
 		border: 1px solid #135dbe;
@@ -672,7 +672,7 @@
 		}
 	}
 
-	.is-destructive & .smowp-confirm__ok {
+	.is-destructive & .omnioffloader-confirm__ok {
 		background: #d63638;
 		border-color: #d63638;
 
@@ -685,11 +685,11 @@
 }
 
 @media ( max-width: 480px ) {
-	.smowp-confirm.components-modal__frame .components-modal__content {
+	.omnioffloader-confirm.components-modal__frame .components-modal__content {
 		padding-left: 24px;
 	}
 
-	.smowp-confirm__actions {
+	.omnioffloader-confirm__actions {
 		flex-direction: column-reverse;
 
 		.components-button {
@@ -699,17 +699,17 @@
 }
 
 // "Learn more" / "Documentation" links to the public docs.
-.smowp-docs-link {
+.omnioffloader-docs-link {
 	font-size: 12.5px;
 	white-space: nowrap;
 }
 
-.smowp-header__docs {
+.omnioffloader-header__docs {
 	margin-left: auto;
 }
 
 // Hero banner (Dashboard)
-.smowp-hero {
+.omnioffloader-hero {
 	display: flex;
 	align-items: center;
 	gap: 20px;
@@ -757,7 +757,7 @@
 
 		.components-button.is-primary {
 			background: #ffffff;
-			color: var( --smowp-accent-dark );
+			color: var( --omnioffloader-accent-dark );
 			font-weight: 600;
 			border-radius: 8px;
 
@@ -785,7 +785,7 @@
 		background: rgba( 255, 255, 255, 0.18 );
 		color: #ffffff;
 
-		.smowp-badge-pulse {
+		.omnioffloader-ui-badge-pulse {
 			background: #34d399;
 			box-shadow: 0 0 0 0 rgba( 52, 211, 153, 0.7 );
 		}
@@ -807,20 +807,20 @@
 }
 
 // Stat cards grid (Dashboard)
-.smowp-stats-grid {
+.omnioffloader-stats-grid {
 	display: grid;
 	grid-template-columns: repeat( auto-fit, minmax( 220px, 1fr ) );
 	gap: 16px;
 }
 
-.smowp-stat {
+.omnioffloader-stat {
 	display: flex;
 	flex-direction: column;
 	gap: 10px;
 	padding: 18px 20px;
 	background: #ffffff;
-	border: 1px solid var( --smowp-border );
-	border-radius: var( --smowp-radius );
+	border: 1px solid var( --omnioffloader-border );
+	border-radius: var( --omnioffloader-radius );
 	outline: none;
 	user-select: none;
 
@@ -830,12 +830,12 @@
 
 		&:hover {
 			transform: translateY( -2px );
-			border-color: var( --smowp-accent );
+			border-color: var( --omnioffloader-accent );
 			box-shadow: 0 4px 12px rgba( 0, 0, 0, 0.06 );
 		}
 
 		&:focus-visible {
-			box-shadow: 0 0 0 2px #ffffff, 0 0 0 4px var( --smowp-accent );
+			box-shadow: 0 0 0 2px #ffffff, 0 0 0 4px var( --omnioffloader-accent );
 		}
 	}
 
@@ -852,8 +852,8 @@
 		width: 36px;
 		height: 36px;
 		border-radius: 10px;
-		background: var( --smowp-accent-tint );
-		color: var( --smowp-accent-dark );
+		background: var( --omnioffloader-accent-tint );
+		color: var( --omnioffloader-accent-dark );
 
 		svg {
 			fill: currentColor;
@@ -865,8 +865,8 @@
 		font-weight: 600;
 		padding: 2px 8px;
 		border-radius: 999px;
-		background: var( --smowp-canvas );
-		color: var( --smowp-text-muted );
+		background: var( --omnioffloader-canvas );
+		color: var( --omnioffloader-text-muted );
 	}
 
 	&__body {
@@ -879,36 +879,36 @@
 		font-size: 26px;
 		font-weight: 700;
 		line-height: 1.1;
-		color: var( --smowp-text );
+		color: var( --omnioffloader-text );
 		font-feature-settings: 'tnum';
 		font-variant-numeric: tabular-nums;
 	}
 
 	&__label {
 		font-size: 12.5px;
-		color: var( --smowp-text-muted );
+		color: var( --omnioffloader-text-muted );
 	}
 
 	// Variants
 	&--success {
-		.smowp-stat__icon {
+		.omnioffloader-stat__icon {
 			background: #ecfdf5;
 			color: #059669;
 		}
 
-		.smowp-stat__badge {
+		.omnioffloader-stat__badge {
 			background: #d1fae5;
 			color: #065f46;
 		}
 	}
 
 	&--local {
-		.smowp-stat__icon {
+		.omnioffloader-stat__icon {
 			background: #eff6ff;
 			color: #2563eb;
 		}
 
-		.smowp-stat__badge {
+		.omnioffloader-stat__badge {
 			background: #e0f2fe;
 			color: #0369a1;
 		}
@@ -918,16 +918,16 @@
 // ---------------------------------------------------------------------------
 // Quick Actions Grid (Dashboard)
 // ---------------------------------------------------------------------------
-.smowp-quick-actions-grid {
+.omnioffloader-quick-actions-grid {
 	display: grid;
 	grid-template-columns: repeat( auto-fit, minmax( 240px, 1fr ) );
 	gap: 12px;
 }
 
-.smowp-quick-action-card {
+.omnioffloader-quick-action-card {
 	background: #ffffff;
-	border: 1px solid var( --smowp-border );
-	border-radius: var( --smowp-radius-sm );
+	border: 1px solid var( --omnioffloader-border );
+	border-radius: var( --omnioffloader-radius-sm );
 	padding: 14px 16px;
 	display: flex;
 	align-items: center;
@@ -938,18 +938,18 @@
 	user-select: none;
 
 	&:hover {
-		border-color: var( --smowp-accent );
+		border-color: var( --omnioffloader-accent );
 		background: #fafcff;
 		transform: translateX( 2px );
 
-		.smowp-quick-action-card__arrow {
+		.omnioffloader-quick-action-card__arrow {
 			transform: translateX( 3px );
-			color: var( --smowp-accent );
+			color: var( --omnioffloader-accent );
 		}
 	}
 
 	&:focus-visible {
-		box-shadow: 0 0 0 2px #ffffff, 0 0 0 4px var( --smowp-accent );
+		box-shadow: 0 0 0 2px #ffffff, 0 0 0 4px var( --omnioffloader-accent );
 	}
 
 	&__icon {
@@ -989,7 +989,7 @@
 			display: block;
 			font-size: 13px;
 			font-weight: 600;
-			color: var( --smowp-text );
+			color: var( --omnioffloader-text );
 			margin-bottom: 2px;
 			white-space: nowrap;
 			overflow: hidden;
@@ -999,7 +999,7 @@
 		p {
 			margin: 0;
 			font-size: 11.5px;
-			color: var( --smowp-text-muted );
+			color: var( --omnioffloader-text-muted );
 			white-space: nowrap;
 			overflow: hidden;
 			text-overflow: ellipsis;
@@ -1008,7 +1008,7 @@
 
 	&__arrow {
 		font-size: 15px;
-		color: var( --smowp-text-muted );
+		color: var( --omnioffloader-text-muted );
 		font-weight: 600;
 		transition: transform 0.15s ease, color 0.15s ease;
 	}
@@ -1017,7 +1017,7 @@
 // ---------------------------------------------------------------------------
 // Forms & Input Controls
 // ---------------------------------------------------------------------------
-.smowp-form-layout {
+.omnioffloader-form-layout {
 	max-width: 100%;
 	width: 100%;
 	display: flex;
@@ -1025,14 +1025,14 @@
 	gap: 18px;
 }
 
-.smowp-credential-fields {
+.omnioffloader-credential-fields {
 	display: flex;
 	flex-direction: column;
 	gap: 18px;
 	width: 100%;
 }
 
-.smowp-test-connection {
+.omnioffloader-test-connection {
 	display: flex;
 	flex-wrap: wrap;
 	align-items: center;
@@ -1045,15 +1045,15 @@
 		border-radius: 8px;
 		font-weight: 600;
 		font-size: 13px;
-		border: 1.5px solid var( --smowp-border );
+		border: 1.5px solid var( --omnioffloader-border );
 		background: #ffffff;
-		color: var( --smowp-text );
+		color: var( --omnioffloader-text );
 		transition: all 0.15s ease;
 
 		&:hover:not( :disabled ) {
-			border-color: var( --smowp-accent );
-			color: var( --smowp-accent );
-			background: var( --smowp-accent-tint );
+			border-color: var( --omnioffloader-accent );
+			color: var( --omnioffloader-accent );
+			background: var( --omnioffloader-accent-tint );
 		}
 
 		&:focus-visible {
@@ -1074,18 +1074,18 @@
 		font-size: 12.5px;
 		line-height: 1.5;
 		margin-top: 4px;
-		animation: smowp-fade-in 0.2s cubic-bezier( 0.16, 1, 0.3, 1 );
+		animation: omnioffloader-fade-in 0.2s cubic-bezier( 0.16, 1, 0.3, 1 );
 	}
 }
 
 // ---------------------------------------------------------------------------
 // Shared Radio & Check Indicators
 // ---------------------------------------------------------------------------
-.smowp-radio-circle {
+.omnioffloader-radio-circle {
 	width: 18px;
 	height: 18px;
 	border-radius: 50%;
-	border: 2px solid var( --smowp-border );
+	border: 2px solid var( --omnioffloader-border );
 	display: flex;
 	align-items: center;
 	justify-content: center;
@@ -1094,23 +1094,23 @@
 	flex-shrink: 0;
 }
 
-.smowp-radio-dot {
+.omnioffloader-radio-dot {
 	width: 8px;
 	height: 8px;
 	border-radius: 50%;
-	background: var( --smowp-accent );
+	background: var( --omnioffloader-accent );
 }
 
 // ---------------------------------------------------------------------------
 // Provider Selection Cards
 // ---------------------------------------------------------------------------
-.smowp-provider-selector-wrap {
+.omnioffloader-provider-selector-wrap {
 	display: flex;
 	flex-direction: column;
 	gap: 8px;
 }
 
-.smowp-provider-selector-label {
+.omnioffloader-provider-selector-label {
 	font-size: 12.5px !important;
 	font-weight: 600 !important;
 	color: #334155 !important;
@@ -1118,16 +1118,16 @@
 	text-transform: uppercase !important;
 }
 
-.smowp-provider-selector-grid {
+.omnioffloader-provider-selector-grid {
 	display: grid;
 	grid-template-columns: repeat( auto-fit, minmax( 280px, 1fr ) );
 	gap: 12px;
 }
 
-.smowp-provider-card {
+.omnioffloader-provider-card {
 	background: #ffffff;
 	border: 1.5px solid #cbd5e1;
-	border-radius: var( --smowp-radius-sm );
+	border-radius: var( --omnioffloader-radius-sm );
 	padding: 14px 16px;
 	cursor: pointer;
 	transition: all 0.15s ease;
@@ -1136,27 +1136,27 @@
 	box-shadow: 0 1px 2px rgba( 0, 0, 0, 0.02 );
 
 	&:hover {
-		border-color: var( --smowp-accent );
+		border-color: var( --omnioffloader-accent );
 		background: #fafcff;
 		transform: translateY( -1px );
 	}
 
 	&:focus-visible {
-		box-shadow: 0 0 0 2px #ffffff, 0 0 0 4px var( --smowp-accent );
+		box-shadow: 0 0 0 2px #ffffff, 0 0 0 4px var( --omnioffloader-accent );
 	}
 
 	&.is-selected {
-		border-color: var( --smowp-accent );
+		border-color: var( --omnioffloader-accent );
 		background: #f0f7ff;
-		box-shadow: 0 0 0 1px var( --smowp-accent );
+		box-shadow: 0 0 0 1px var( --omnioffloader-accent );
 
-		.smowp-provider-card__icon {
-			background: var( --smowp-accent );
+		.omnioffloader-provider-card__icon {
+			background: var( --omnioffloader-accent );
 			color: #ffffff;
 		}
 
-		.smowp-radio-circle {
-			border-color: var( --smowp-accent );
+		.omnioffloader-radio-circle {
+			border-color: var( --omnioffloader-accent );
 		}
 	}
 
@@ -1170,8 +1170,8 @@
 		width: 40px;
 		height: 40px;
 		border-radius: 10px;
-		background: var( --smowp-accent-tint );
-		color: var( --smowp-accent-dark );
+		background: var( --omnioffloader-accent-tint );
+		color: var( --omnioffloader-accent-dark );
 		display: flex;
 		align-items: center;
 		justify-content: center;
@@ -1192,13 +1192,13 @@
 		strong {
 			font-size: 14px;
 			font-weight: 700;
-			color: var( --smowp-text );
+			color: var( --omnioffloader-text );
 		}
 	}
 
 	&__sub {
 		font-size: 11.5px;
-		color: var( --smowp-text-muted );
+		color: var( --omnioffloader-text-muted );
 	}
 
 	&__check {
@@ -1207,7 +1207,7 @@
 }
 
 // Global Form Controls Override inside OmniOffloader
-.smowp-app {
+.omnioffloader-app {
 	.components-base-control {
 		margin-bottom: 0;
 
@@ -1253,7 +1253,7 @@
 		}
 
 		&:focus-within .components-input-control__backdrop {
-			border-color: var( --smowp-accent ) !important;
+			border-color: var( --omnioffloader-accent ) !important;
 			box-shadow: 0 0 0 3px rgba( 19, 93, 190, 0.15 ) !important;
 		}
 
@@ -1305,7 +1305,7 @@
 		}
 
 		&:focus {
-			border-color: var( --smowp-accent ) !important;
+			border-color: var( --omnioffloader-accent ) !important;
 			box-shadow: 0 0 0 3px rgba( 19, 93, 190, 0.15 ) !important;
 			outline: none !important;
 		}
@@ -1344,7 +1344,7 @@
 				margin: 0 !important;
 				width: 17px;
 				height: 17px;
-				accent-color: var( --smowp-accent );
+				accent-color: var( --omnioffloader-accent );
 			}
 
 			label {
@@ -1372,7 +1372,7 @@
 		}
 
 		.components-form-toggle.is-checked .components-form-toggle__track {
-			background: var( --smowp-accent ) !important;
+			background: var( --omnioffloader-accent ) !important;
 		}
 	}
 }
@@ -1380,28 +1380,28 @@
 // ---------------------------------------------------------------------------
 // Media Summary Chips & Notice Banners
 // ---------------------------------------------------------------------------
-.smowp-media-summary {
+.omnioffloader-media-summary {
 	display: grid;
 	grid-template-columns: repeat( auto-fit, minmax( 160px, 1fr ) );
 	gap: 12px;
 	margin-bottom: 18px;
 }
 
-.smowp-media-chip {
+.omnioffloader-media-chip {
 	display: flex;
 	flex-direction: column;
 	gap: 6px;
 	background: #ffffff;
-	border: 1px solid var( --smowp-border );
-	border-left: 4px solid var( --smowp-border );
-	border-radius: var( --smowp-radius-sm );
+	border: 1px solid var( --omnioffloader-border );
+	border-left: 4px solid var( --omnioffloader-border );
+	border-radius: var( --omnioffloader-radius-sm );
 	padding: 14px 18px;
 	box-shadow: 0 1px 2px rgba( 0, 0, 0, 0.02 );
 
 	&__label {
 		font-size: 11.5px;
 		font-weight: 600;
-		color: var( --smowp-text-muted );
+		color: var( --omnioffloader-text-muted );
 		text-transform: uppercase;
 		letter-spacing: 0.03em;
 	}
@@ -1409,7 +1409,7 @@
 	&__value {
 		font-size: 24px;
 		font-weight: 700;
-		color: var( --smowp-text );
+		color: var( --omnioffloader-text );
 		line-height: 1.1;
 		font-feature-settings: 'tnum';
 		font-variant-numeric: tabular-nums;
@@ -1418,26 +1418,26 @@
 	&--offloaded {
 		border-left-color: #10b981;
 
-		.smowp-media-chip__value {
+		.omnioffloader-media-chip__value {
 			color: #059669;
 		}
 	}
 
 	&--local {
-		border-left-color: var( --smowp-accent );
+		border-left-color: var( --omnioffloader-accent );
 
-		.smowp-media-chip__value {
-			color: var( --smowp-accent-dark );
+		.omnioffloader-media-chip__value {
+			color: var( --omnioffloader-accent-dark );
 		}
 	}
 }
 
-.smowp-notice-banner {
+.omnioffloader-notice-banner {
 	display: flex;
 	align-items: flex-start;
 	gap: 12px;
 	padding: 14px 18px;
-	border-radius: var( --smowp-radius-sm );
+	border-radius: var( --omnioffloader-radius-sm );
 	margin-bottom: 18px;
 	font-size: 13px;
 	line-height: 1.45;
@@ -1472,7 +1472,7 @@
 		border: 1px solid #bbf7d0;
 		color: #166534;
 
-		.smowp-notice-banner__icon {
+		.omnioffloader-notice-banner__icon {
 			background: #22c55e;
 			color: #ffffff;
 		}
@@ -1483,7 +1483,7 @@
 		border: 1px solid #bfdbfe;
 		color: #1e40af;
 
-		.smowp-notice-banner__icon {
+		.omnioffloader-notice-banner__icon {
 			background: #3b82f6;
 			color: #ffffff;
 		}
@@ -1493,14 +1493,14 @@
 // ---------------------------------------------------------------------------
 // Bring Back Selectable Option Cards (Radio Cards)
 // ---------------------------------------------------------------------------
-.smowp-bringback-options {
+.omnioffloader-bringback-options {
 	margin: 14px 0 18px;
 
 	&__title {
 		margin: 0 0 10px;
 		font-size: 13px;
 		font-weight: 700;
-		color: var( --smowp-text );
+		color: var( --omnioffloader-text );
 	}
 
 	&__grid {
@@ -1510,10 +1510,10 @@
 	}
 }
 
-.smowp-option-card {
+.omnioffloader-option-card {
 	background: #ffffff;
-	border: 1.5px solid var( --smowp-border );
-	border-radius: var( --smowp-radius-sm );
+	border: 1.5px solid var( --omnioffloader-border );
+	border-radius: var( --omnioffloader-radius-sm );
 	padding: 14px 16px;
 	display: flex;
 	align-items: flex-start;
@@ -1525,34 +1525,34 @@
 	user-select: none;
 
 	&:hover:not( .is-disabled ) {
-		border-color: var( --smowp-accent );
+		border-color: var( --omnioffloader-accent );
 		background: #fafcff;
 	}
 
 	&:focus-visible {
-		box-shadow: 0 0 0 2px #ffffff, 0 0 0 4px var( --smowp-accent );
+		box-shadow: 0 0 0 2px #ffffff, 0 0 0 4px var( --omnioffloader-accent );
 	}
 
-	.smowp-badge {
+	.omnioffloader-ui-badge {
 		padding: 2px 8px;
 		font-size: 11.5px;
 		line-height: 1.4;
-		border: 1px solid var( --smowp-border );
+		border: 1px solid var( --omnioffloader-border );
 		transition: all 0.15s ease;
 	}
 
 	&.is-selected {
-		border-color: var( --smowp-accent );
+		border-color: var( --omnioffloader-accent );
 		background: #f0f7ff;
-		box-shadow: 0 0 0 1px var( --smowp-accent );
+		box-shadow: 0 0 0 1px var( --omnioffloader-accent );
 
-		.smowp-option-card__radio .smowp-radio-circle {
-			border-color: var( --smowp-accent );
+		.omnioffloader-option-card__radio .omnioffloader-radio-circle {
+			border-color: var( --omnioffloader-accent );
 		}
 
-		.smowp-badge {
-			background: var( --smowp-accent-tint );
-			color: var( --smowp-accent-dark );
+		.omnioffloader-ui-badge {
+			background: var( --omnioffloader-accent-tint );
+			color: var( --omnioffloader-accent-dark );
 			border-color: rgba( 34, 113, 177, 0.25 );
 		}
 	}
@@ -1577,7 +1577,7 @@
 		p {
 			margin: 0;
 			font-size: 12px;
-			color: var( --smowp-text-muted );
+			color: var( --omnioffloader-text-muted );
 			line-height: 1.4;
 		}
 	}
@@ -1591,7 +1591,7 @@
 		strong {
 			font-size: 13px;
 			font-weight: 600;
-			color: var( --smowp-text );
+			color: var( --omnioffloader-text );
 		}
 	}
 }
@@ -1599,14 +1599,14 @@
 // ---------------------------------------------------------------------------
 // Batch Scope / Custom Quantity Selector
 // ---------------------------------------------------------------------------
-.smowp-batch-scope {
+.omnioffloader-batch-scope {
 	margin: 14px 0 16px;
 
 	&__title {
 		margin: 0 0 10px;
 		font-size: 13px;
 		font-weight: 700;
-		color: var( --smowp-text );
+		color: var( --omnioffloader-text );
 	}
 
 	&__grid {
@@ -1619,51 +1619,51 @@
 		margin-top: 10px;
 		padding: 12px 16px;
 		background: #f8fafc;
-		border: 1px solid var( --smowp-border );
-		border-radius: var( --smowp-radius-sm );
+		border: 1px solid var( --omnioffloader-border );
+		border-radius: var( --omnioffloader-radius-sm );
 	}
 }
 
-.smowp-custom-count-inline {
+.omnioffloader-custom-count-inline {
 	display: flex;
 	flex-wrap: wrap;
 	align-items: center;
 	gap: 14px;
 }
 
-.smowp-custom-count-label {
+.omnioffloader-custom-count-label {
 	font-size: 13px;
 	font-weight: 600;
-	color: var( --smowp-text );
+	color: var( --omnioffloader-text );
 	white-space: nowrap;
 }
 
-.smowp-custom-input-group {
+.omnioffloader-custom-input-group {
 	display: inline-flex;
 	align-items: center;
 	gap: 8px;
 	flex-shrink: 0;
 }
 
-.smowp-custom-count-input {
+.omnioffloader-custom-count-input {
 	width: 76px !important;
 	height: 36px !important;
 	min-height: 36px !important;
 	padding: 0 8px !important;
 	font-size: 14px !important;
 	font-weight: 600 !important;
-	border: 1.5px solid var( --smowp-border ) !important;
+	border: 1.5px solid var( --omnioffloader-border ) !important;
 	border-radius: 6px !important;
 	background: #ffffff !important;
-	color: var( --smowp-text ) !important;
+	color: var( --omnioffloader-text ) !important;
 	text-align: center !important;
 	margin: 0 !important;
 	box-shadow: none !important;
 	box-sizing: border-box !important;
 
 	&:focus {
-		border-color: var( --smowp-accent ) !important;
-		box-shadow: 0 0 0 1px var( --smowp-accent ) !important;
+		border-color: var( --omnioffloader-accent ) !important;
+		box-shadow: 0 0 0 1px var( --omnioffloader-accent ) !important;
 		outline: none !important;
 	}
 
@@ -1674,24 +1674,24 @@
 	}
 }
 
-.smowp-custom-count-unit {
+.omnioffloader-custom-count-unit {
 	font-size: 13px;
-	color: var( --smowp-text-muted );
+	color: var( --omnioffloader-text-muted );
 	font-weight: 500;
 	white-space: nowrap;
 }
 
-.smowp-custom-presets {
+.omnioffloader-custom-presets {
 	display: inline-flex;
 	align-items: center;
 	flex-wrap: wrap;
 	gap: 8px;
 	padding-left: 14px;
-	border-left: 1.5px solid var( --smowp-border );
+	border-left: 1.5px solid var( --omnioffloader-border );
 
 	&__label {
 		font-size: 12px;
-		color: var( --smowp-text-muted );
+		color: var( --omnioffloader-text-muted );
 		font-weight: 600;
 		white-space: nowrap;
 	}
@@ -1703,7 +1703,7 @@
 	}
 }
 
-.smowp-preset-chip {
+.omnioffloader-preset-chip {
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
@@ -1713,21 +1713,21 @@
 	font-weight: 600;
 	line-height: 1;
 	border-radius: 999px;
-	border: 1.5px solid var( --smowp-border );
+	border: 1.5px solid var( --omnioffloader-border );
 	background: #ffffff;
-	color: var( --smowp-text );
+	color: var( --omnioffloader-text );
 	cursor: pointer;
 	transition: all 0.15s ease;
 
 	&:hover:not( :disabled ) {
-		border-color: var( --smowp-accent );
-		background: var( --smowp-accent-tint );
-		color: var( --smowp-accent-dark );
+		border-color: var( --omnioffloader-accent );
+		background: var( --omnioffloader-accent-tint );
+		color: var( --omnioffloader-accent-dark );
 	}
 
 	&.is-active {
-		border-color: var( --smowp-accent );
-		background: var( --smowp-accent );
+		border-color: var( --omnioffloader-accent );
+		background: var( --omnioffloader-accent );
 		color: #ffffff;
 	}
 
@@ -1741,7 +1741,7 @@
 	}
 }
 
-.smowp-bulk-action {
+.omnioffloader-bulk-action {
 	display: flex;
 	flex-direction: column;
 	gap: 14px;
@@ -1756,11 +1756,11 @@
 	&__info {
 		margin: 0;
 		font-size: 13.5px;
-		color: var( --smowp-text );
+		color: var( --omnioffloader-text );
 	}
 }
 
-.smowp-safe-mode-banner.components-notice {
+.omnioffloader-safe-mode-banner.components-notice {
 	margin: 0 0 20px;
 
 	p {
@@ -1772,20 +1772,20 @@
 	}
 }
 
-.smowp-safe-mode-banner__actions {
+.omnioffloader-safe-mode-banner__actions {
 	display: flex;
 	flex-wrap: wrap;
 	gap: 8px;
 }
 
-.smowp-preflight-info {
+.omnioffloader-preflight-info {
 	margin-top: -6px;
 	font-size: 12.5px;
 }
 
 // Button styles
-.smowp-btn-primary.components-button.is-primary {
-	background: var( --smowp-accent );
+.omnioffloader-btn-primary.components-button.is-primary {
+	background: var( --omnioffloader-accent );
 	color: #ffffff;
 	border-radius: 8px;
 	font-weight: 600;
@@ -1799,7 +1799,7 @@
 	transition: background 0.15s ease, transform 0.1s ease, opacity 0.15s ease;
 
 	&:hover:not( :disabled ):not( [aria-disabled="true"] ):not( .is-disabled ) {
-		background: var( --smowp-accent-dark );
+		background: var( --omnioffloader-accent-dark );
 	}
 
 	&:active:not( :disabled ):not( [aria-disabled="true"] ):not( .is-disabled ) {
@@ -1820,14 +1820,14 @@
 	}
 }
 
-.smowp-bulk-action__btn-wrap {
+.omnioffloader-bulk-action__btn-wrap {
 	display: inline-flex;
 	flex-direction: column;
 	align-items: flex-start;
 	align-self: flex-start;
 }
 
-.smowp-btn-destructive.components-button {
+.omnioffloader-btn-destructive.components-button {
 	color: #b32d2e;
 	border: 1px solid #f0b8b8;
 	background: #ffffff;
@@ -1855,10 +1855,10 @@
 	}
 }
 
-.smowp-btn-dismiss.components-button {
-	color: var( --smowp-text );
-	border: 1px solid var( --smowp-border );
-	background: var( --smowp-surface );
+.omnioffloader-btn-dismiss.components-button {
+	color: var( --omnioffloader-text );
+	border: 1px solid var( --omnioffloader-border );
+	background: var( --omnioffloader-surface );
 	border-radius: 6px;
 	font-weight: 500;
 	height: 32px;
@@ -1867,12 +1867,12 @@
 	transition: all 0.15s ease;
 
 	&:hover {
-		background: var( --smowp-canvas );
+		background: var( --omnioffloader-canvas );
 		border-color: #d1d5db;
 	}
 }
 
-.smowp-badge {
+.omnioffloader-ui-badge {
 	display: inline-flex;
 	align-items: center;
 	gap: 6px;
@@ -1892,32 +1892,92 @@
 	}
 
 	&--running {
-		background: var( --smowp-accent-tint );
-		color: var( --smowp-accent-dark );
+		background: var( --omnioffloader-accent-tint );
+		color: var( --omnioffloader-accent-dark );
 	}
 
 	&--neutral {
 		background: #f0f2f5;
-		color: var( --smowp-text );
-		border: 1px solid var( --smowp-border );
+		color: var( --omnioffloader-text );
+		border: 1px solid var( --omnioffloader-border );
 	}
 
 	&--accent {
-		background: var( --smowp-accent-tint );
-		color: var( --smowp-accent-dark );
+		background: var( --omnioffloader-accent-tint );
+		color: var( --omnioffloader-accent-dark );
 		border: 1px solid rgba( 34, 113, 177, 0.2 );
 	}
 }
 
-.smowp-badge-pulse {
+.omnioffloader-failed-list {
+	margin: 16px 0;
+	padding: 0;
+	list-style: none;
+	border: 1px solid var( --omnioffloader-border );
+	border-radius: var( --omnioffloader-radius-sm );
+
+	&__item {
+		margin: 0;
+		padding: 12px 14px;
+
+		& + & {
+			border-top: 1px solid var( --omnioffloader-border );
+		}
+	}
+
+	&__head {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 12px;
+		font-weight: 600;
+
+		a {
+			color: var( --omnioffloader-accent );
+			text-decoration: none;
+			overflow-wrap: anywhere;
+		}
+	}
+
+	&__error {
+		margin: 6px 0 0;
+		color: var( --omnioffloader-text );
+		overflow-wrap: anywhere;
+	}
+
+	&__when,
+	&__note {
+		color: var( --omnioffloader-text-muted );
+	}
+
+	&__paging {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 12px;
+		margin-bottom: 16px;
+	}
+
+	&__actions {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 8px;
+	}
+
+	&__note {
+		margin: 12px 0 0;
+	}
+}
+
+.omnioffloader-ui-badge-pulse {
 	width: 6px;
 	height: 6px;
 	border-radius: 50%;
-	background: var( --smowp-accent );
-	animation: smowp-pulse 1.4s ease-in-out infinite;
+	background: var( --omnioffloader-accent );
+	animation: omnioffloader-pulse 1.4s ease-in-out infinite;
 }
 
-@keyframes smowp-pulse {
+@keyframes omnioffloader-pulse {
 	0%,
 	100% {
 		opacity: 1;
@@ -1929,11 +1989,11 @@
 	}
 }
 
-.smowp-muted {
-	color: var( --smowp-text-muted );
+.omnioffloader-muted {
+	color: var( --omnioffloader-text-muted );
 }
 
-.smowp-warning {
+.omnioffloader-warning {
 	background: #fcf0e4;
 	color: #8a4d00;
 	border-radius: 8px;
@@ -1946,20 +2006,20 @@
 // ---------------------------------------------------------------------------
 // Progress Card Container
 // ---------------------------------------------------------------------------
-.smowp-progress-card {
+.omnioffloader-progress-card {
 	display: flex;
 	flex-direction: column;
 	gap: 14px;
 	background: #f8fafc;
-	border: 1px solid var( --smowp-border );
-	border-radius: var( --smowp-radius-sm );
+	border: 1px solid var( --omnioffloader-border );
+	border-radius: var( --omnioffloader-radius-sm );
 	padding: 18px 20px;
 	margin-top: 16px;
 	max-width: 100%;
 	width: 100%;
 	box-sizing: border-box;
 	box-shadow: 0 1px 2px rgba( 0, 0, 0, 0.03 );
-	animation: smowp-fade-in 0.25s ease;
+	animation: omnioffloader-fade-in 0.25s ease;
 
 	&.is-running {
 		border-color: #bfdbfe;
@@ -1997,13 +2057,13 @@
 	&__count {
 		font-size: 13px;
 		font-weight: 500;
-		color: var( --smowp-text );
+		color: var( --omnioffloader-text );
 	}
 
 	&__pct {
 		font-size: 15px;
 		font-weight: 700;
-		color: var( --smowp-accent-dark );
+		color: var( --omnioffloader-accent-dark );
 		font-feature-settings: 'tnum';
 		font-variant-numeric: tabular-nums;
 	}
@@ -2018,7 +2078,7 @@
 
 	&__errors {
 		font-size: 12px;
-		color: var( --smowp-text-muted );
+		color: var( --omnioffloader-text-muted );
 	}
 
 	&__actions {
@@ -2028,7 +2088,7 @@
 	}
 }
 
-@keyframes smowp-fade-in {
+@keyframes omnioffloader-fade-in {
 	from {
 		opacity: 0;
 		transform: translateY( 4px );
@@ -2042,32 +2102,32 @@
 // ---------------------------------------------------------------------------
 // Progress Bar Track & Fill
 // ---------------------------------------------------------------------------
-.smowp-progress-wrapper {
+.omnioffloader-progress-wrapper {
 	display: flex;
 	flex-direction: column;
 	gap: 6px;
 	width: 100%;
 }
 
-.smowp-progress-meta {
+.omnioffloader-progress-meta {
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
 	font-size: 12.5px;
 }
 
-.smowp-progress-title {
+.omnioffloader-progress-title {
 	font-weight: 600;
-	color: var( --smowp-text );
+	color: var( --omnioffloader-text );
 }
 
-.smowp-progress-percent {
+.omnioffloader-progress-percent {
 	font-weight: 700;
-	color: var( --smowp-accent-dark );
+	color: var( --omnioffloader-accent-dark );
 	font-variant-numeric: tabular-nums;
 }
 
-.smowp-progress {
+.omnioffloader-progress {
 	position: relative;
 	height: 10px;
 	border-radius: 999px;
@@ -2079,7 +2139,7 @@
 		height: 100%;
 		background: linear-gradient(
 			90deg,
-			var( --smowp-accent ) 0%,
+			var( --omnioffloader-accent ) 0%,
 			#2563eb 100%
 		);
 		border-radius: 999px;
@@ -2090,7 +2150,7 @@
 // ---------------------------------------------------------------------------
 // Processed Media Activity Log
 // ---------------------------------------------------------------------------
-.smowp-activity-log {
+.omnioffloader-activity-log {
 	margin-top: 6px;
 	border-top: 1px solid rgba( 0, 0, 0, 0.07 );
 	padding-top: 14px;
@@ -2115,7 +2175,7 @@
 		margin: 0;
 		font-size: 13px;
 		font-weight: 600;
-		color: var( --smowp-text );
+		color: var( --omnioffloader-text );
 	}
 
 	&__live-pill {
@@ -2124,15 +2184,15 @@
 		gap: 5px;
 		font-size: 11px;
 		font-weight: 600;
-		color: var( --smowp-accent-dark );
-		background: var( --smowp-accent-tint );
+		color: var( --omnioffloader-accent-dark );
+		background: var( --omnioffloader-accent-tint );
 		padding: 2px 7px;
 		border-radius: 999px;
 	}
 
 	&__count {
 		font-size: 12px;
-		color: var( --smowp-text-muted );
+		color: var( --omnioffloader-text-muted );
 		font-variant-numeric: tabular-nums;
 	}
 
@@ -2164,11 +2224,11 @@
 		gap: 12px;
 		padding: 8px 12px;
 		background: #ffffff;
-		border: 1px solid var( --smowp-border );
+		border: 1px solid var( --omnioffloader-border );
 		border-radius: 8px;
 		font-size: 12.5px;
 		transition: background 0.15s ease, border-color 0.15s ease;
-		animation: smowp-item-in 0.2s ease;
+		animation: omnioffloader-item-in 0.2s ease;
 
 		&.is-ok:hover {
 			background: #fafbfc;
@@ -2191,12 +2251,12 @@
 		height: 32px;
 		border-radius: 6px;
 		overflow: hidden;
-		background: var( --smowp-canvas );
+		background: var( --omnioffloader-canvas );
 		display: flex;
 		align-items: center;
 		justify-content: center;
 		flex-shrink: 0;
-		border: 1px solid var( --smowp-border );
+		border: 1px solid var( --omnioffloader-border );
 
 		img {
 			width: 100%;
@@ -2205,7 +2265,7 @@
 		}
 
 		svg {
-			fill: var( --smowp-text-muted );
+			fill: var( --omnioffloader-text-muted );
 		}
 	}
 
@@ -2219,7 +2279,7 @@
 
 	&__filename {
 		font-weight: 600;
-		color: var( --smowp-text );
+		color: var( --omnioffloader-text );
 		white-space: nowrap;
 		overflow: hidden;
 		text-overflow: ellipsis;
@@ -2228,7 +2288,7 @@
 
 	&__sub {
 		font-size: 11.5px;
-		color: var( --smowp-text-muted );
+		color: var( --omnioffloader-text-muted );
 		display: flex;
 		align-items: center;
 		gap: 4px;
@@ -2250,7 +2310,7 @@
 	&__badge-wrap {
 		flex-shrink: 0;
 
-		.smowp-badge {
+		.omnioffloader-ui-badge {
 			padding: 2px 8px;
 			font-size: 11px;
 
@@ -2265,13 +2325,13 @@
 			}
 		}
 
-		.smowp-spinner-dot {
+		.omnioffloader-spinner-dot {
 			display: inline-block;
 			width: 6px;
 			height: 6px;
 			border-radius: 50%;
 			background-color: #0284c7;
-			animation: smowp-badge-pulse 1.2s ease-in-out infinite;
+			animation: omnioffloader-ui-badge-pulse 1.2s ease-in-out infinite;
 		}
 	}
 
@@ -2281,10 +2341,10 @@
 		gap: 10px;
 		padding: 14px 16px;
 		background: #ffffff;
-		border: 1px dashed var( --smowp-border );
+		border: 1px dashed var( --omnioffloader-border );
 		border-radius: 8px;
 		font-size: 12px;
-		color: var( --smowp-text-muted );
+		color: var( --omnioffloader-text-muted );
 
 		p {
 			margin: 0;
@@ -2292,7 +2352,7 @@
 	}
 }
 
-@keyframes smowp-item-in {
+@keyframes omnioffloader-item-in {
 	from {
 		opacity: 0;
 		transform: translateY( -4px );
@@ -2306,7 +2366,7 @@
 // ---------------------------------------------------------------------------
 // Snackbars / Toast Notifications
 // ---------------------------------------------------------------------------
-.components-snackbar-list.smowp-snackbars {
+.components-snackbar-list.omnioffloader-snackbars {
 	position: fixed !important;
 	top: 52px !important; // Sits below the 32px WordPress admin bar with 20px margin
 	right: 28px !important;
@@ -2333,7 +2393,7 @@
 		line-height: 1.4;
 		margin: 0;
 		border: 1px solid rgba(255, 255, 255, 0.12);
-		animation: smowp-toast-in 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+		animation: omnioffloader-toast-in 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 		transition: transform 0.2s ease, opacity 0.2s ease;
 
 		.components-snackbar__content {
@@ -2363,7 +2423,7 @@
 	}
 }
 
-@keyframes smowp-toast-in {
+@keyframes omnioffloader-toast-in {
 	from {
 		opacity: 0;
 		transform: translateY(-8px) scale(0.96);
@@ -2376,7 +2436,7 @@
 
 // A non-toggle setting sitting between toggles: same row rhythm and
 // separator as .components-toggle-control.
-.smowp-card .smowp-setting-row {
+.omnioffloader-card .omnioffloader-setting-row {
 	padding: 12px 0;
 	border-bottom: 1px solid #f1f5f9;
 
@@ -2384,7 +2444,7 @@
 		border-bottom: none;
 	}
 
-	.smowp-setting-row__sub {
+	.omnioffloader-setting-row__sub {
 		margin-top: 14px;
 
 		input {
@@ -2394,8 +2454,8 @@
 }
 
 // Space between stacked toggles inside cards.
-.smowp-card .components-toggle-control + .components-toggle-control,
-.smowp-card .components-toggle-control + .components-base-control {
+.omnioffloader-card .components-toggle-control + .components-toggle-control,
+.omnioffloader-card .components-toggle-control + .components-base-control {
 	margin-top: 14px;
 }
 
@@ -2403,18 +2463,18 @@
 // Responsive
 // ---------------------------------------------------------------------------
 @media ( max-width: 960px ) {
-	.smowp-app {
+	.omnioffloader-app {
 		display: flex;
 		flex-direction: column;
 		min-height: auto;
 	}
 
-	.smowp-main {
+	.omnioffloader-main {
 		min-height: auto;
 		flex: 1;
 	}
 
-	.smowp-sidebar {
+	.omnioffloader-sidebar {
 		position: static;
 		height: auto;
 		min-height: auto;
@@ -2422,8 +2482,8 @@
 		width: 100%;
 		padding: 0;
 		border-right: 0;
-		border-bottom: 1px solid var( --smowp-border );
-		background: var( --smowp-surface );
+		border-bottom: 1px solid var( --omnioffloader-border );
+		background: var( --omnioffloader-surface );
 
 		&__logo {
 			display: flex;
@@ -2431,7 +2491,7 @@
 			gap: 12px;
 			padding: 12px 20px;
 			margin-bottom: 0;
-			border-bottom: 1px solid var( --smowp-border );
+			border-bottom: 1px solid var( --omnioffloader-border );
 
 			&-icon {
 				width: 32px;
@@ -2455,9 +2515,9 @@
 				font-size: 16px;
 			}
 
-			.smowp-sidebar__version {
+			.omnioffloader-sidebar__version {
 				font-size: 11px;
-				color: var( --smowp-text-muted );
+				color: var( --omnioffloader-text-muted );
 				font-weight: 500;
 				margin-top: 0;
 			}
@@ -2466,7 +2526,7 @@
 		&__nav-wrapper {
 			position: relative;
 			width: 100%;
-			background: var( --smowp-surface );
+			background: var( --omnioffloader-surface );
 
 			// Right-side fade gradient indicating horizontal scrolling is available
 			&::after {
@@ -2476,7 +2536,7 @@
 				right: 0;
 				bottom: 0;
 				width: 36px;
-				background: linear-gradient( to right, rgba( 255, 255, 255, 0 ), var( --smowp-surface ) );
+				background: linear-gradient( to right, rgba( 255, 255, 255, 0 ), var( --omnioffloader-surface ) );
 				pointer-events: none;
 				z-index: 2;
 			}
@@ -2520,15 +2580,15 @@
 			border: 1px solid transparent;
 			border-left: 1px solid transparent;
 			background: #f0f0f1;
-			color: var( --smowp-text );
+			color: var( --omnioffloader-text );
 			cursor: pointer;
 			white-space: nowrap;
 			transition: all 0.15s ease;
 
-			.smowp-sidebar__item-icon {
+			.omnioffloader-sidebar__item-icon {
 				display: flex;
 				align-items: center;
-				color: var( --smowp-text-muted );
+				color: var( --omnioffloader-text-muted );
 
 				svg {
 					width: 18px;
@@ -2537,7 +2597,7 @@
 				}
 			}
 
-			.smowp-sidebar__item-text {
+			.omnioffloader-sidebar__item-text {
 				display: flex;
 				flex-direction: row;
 				align-items: center;
@@ -2546,7 +2606,7 @@
 				strong {
 					font-size: 13px;
 					font-weight: 500;
-					color: var( --smowp-text );
+					color: var( --omnioffloader-text );
 				}
 
 				small {
@@ -2557,51 +2617,51 @@
 			&:hover {
 				background: #e4e4e6;
 
-				.smowp-sidebar__item-text strong,
-				.smowp-sidebar__item-icon {
-					color: var( --smowp-text );
+				.omnioffloader-sidebar__item-text strong,
+				.omnioffloader-sidebar__item-icon {
+					color: var( --omnioffloader-text );
 				}
 			}
 
 			&.is-active {
-				background: var( --smowp-accent );
+				background: var( --omnioffloader-accent );
 				color: #ffffff;
 				font-weight: 600;
 				box-shadow: 0 2px 6px rgba( 19, 93, 190, 0.25 );
 				border-color: transparent;
 
-				.smowp-sidebar__item-icon,
-				.smowp-sidebar__item-text strong {
+				.omnioffloader-sidebar__item-icon,
+				.omnioffloader-sidebar__item-text strong {
 					color: #ffffff !important;
 				}
 			}
 		}
 	}
 
-	.smowp-header {
+	.omnioffloader-header {
 		position: static;
 		padding: 16px 20px;
 	}
 
-	.smowp-content {
+	.omnioffloader-content {
 		padding: 20px;
 	}
 
-	.smowp-savebar {
+	.omnioffloader-savebar {
 		left: 160px;
 	}
 
-	.folded .smowp-savebar {
+	.folded .omnioffloader-savebar {
 		left: 36px;
 	}
 }
 
 @media ( max-width: 782px ) {
-	#omnioffloader-admin-app, #smowp-admin-app {
+	#omnioffloader-admin-app {
 		margin-left: -10px;
 	}
 
-	.smowp-sidebar {
+	.omnioffloader-sidebar {
 		&__logo {
 			padding: 12px 14px;
 		}
@@ -2623,13 +2683,13 @@
 			max-width: max-content;
 			padding: 6px 13px;
 
-			.smowp-sidebar__item-text strong {
+			.omnioffloader-sidebar__item-text strong {
 				font-size: 12.5px;
 			}
 		}
 	}
 
-	.smowp-header {
+	.omnioffloader-header {
 		padding: 14px;
 		gap: 12px;
 
@@ -2643,15 +2703,15 @@
 		}
 	}
 
-	.smowp-content {
+	.omnioffloader-content {
 		padding: 14px;
 	}
 
-	.smowp-card {
+	.omnioffloader-card {
 		padding: 16px;
 	}
 
-	.smowp-savebar {
+	.omnioffloader-savebar {
 		left: 0 !important;
 		position: sticky;
 		bottom: 0;
@@ -2686,11 +2746,11 @@
 }
 
 @media ( max-width: 600px ) {
-	#omnioffloader-admin-app, #smowp-admin-app {
+	#omnioffloader-admin-app {
 		margin-left: 0;
 	}
 
-	.smowp-sidebar {
+	.omnioffloader-sidebar {
 		&__logo {
 			gap: 8px;
 			padding: 10px 12px;
@@ -2728,13 +2788,13 @@
 			max-width: max-content;
 			padding: 6px 12px;
 
-			.smowp-sidebar__item-text strong {
+			.omnioffloader-sidebar__item-text strong {
 				font-size: 12px;
 			}
 		}
 	}
 
-	.smowp-stats-grid {
+	.omnioffloader-stats-grid {
 		grid-template-columns: 1fr;
 	}
 }
@@ -2742,16 +2802,16 @@
 // ---------------------------------------------------------------------------
 // Tools: retention updates & WP-CLI reference
 // ---------------------------------------------------------------------------
-.smowp-retention-hint {
+.omnioffloader-retention-hint {
 	margin: 12px 0 0;
 	font-size: 12.5px;
 }
 
-.smowp-retention-notice {
+.omnioffloader-retention-notice {
 	margin: 14px 0 0;
 	align-items: center;
 
-	.smowp-notice-banner__text {
+	.omnioffloader-notice-banner__text {
 		flex: 1;
 	}
 
@@ -2760,16 +2820,16 @@
 	}
 }
 
-.smowp-media-chip__value--text {
+.omnioffloader-media-chip__value--text {
 	font-size: 16px;
 	line-height: 1.3;
 }
 
-.smowp-retention-facts {
+.omnioffloader-retention-facts {
 	margin: 0;
 	padding-left: 18px;
 	list-style: disc;
-	color: var( --smowp-text );
+	color: var( --omnioffloader-text );
 	font-size: 12.5px;
 	line-height: 1.55;
 
@@ -2778,39 +2838,39 @@
 	}
 }
 
-.smowp-retention-confirm {
+.omnioffloader-retention-confirm {
 	background: #fcf0e4;
 	border-radius: 8px;
 	padding: 12px 14px;
 	color: #8a4d00;
 }
 
-.smowp-cli {
+.omnioffloader-cli {
 	display: flex;
 	flex-direction: column;
 	gap: 16px;
 
 	&__command {
-		border: 1px solid var( --smowp-border );
-		border-radius: var( --smowp-radius-sm );
+		border: 1px solid var( --omnioffloader-border );
+		border-radius: var( --omnioffloader-radius-sm );
 		padding: 16px 18px;
 	}
 
 	&__background {
-		border: 1px solid var( --smowp-accent-tint );
-		border-left: 4px solid var( --smowp-accent );
-		border-radius: var( --smowp-radius-sm );
-		background: var( --smowp-accent-tint );
+		border: 1px solid var( --omnioffloader-accent-tint );
+		border-left: 4px solid var( --omnioffloader-accent );
+		border-radius: var( --omnioffloader-radius-sm );
+		background: var( --omnioffloader-accent-tint );
 		padding: 16px 18px;
 
 		h3 {
 			margin: 0;
 			font-size: 14px;
-			color: var( --smowp-accent-dark );
+			color: var( --omnioffloader-accent-dark );
 		}
 
-		.smowp-cli__summary {
-			color: var( --smowp-text );
+		.omnioffloader-cli__summary {
+			color: var( --omnioffloader-text );
 		}
 	}
 
@@ -2831,15 +2891,15 @@
 	&__name {
 		font-size: 13.5px;
 		font-weight: 600;
-		background: var( --smowp-accent-tint );
-		color: var( --smowp-accent-dark );
+		background: var( --omnioffloader-accent-tint );
+		color: var( --omnioffloader-accent-dark );
 		padding: 4px 8px;
 		border-radius: 6px;
 	}
 
 	&__summary {
 		margin: 8px 0 12px;
-		color: var( --smowp-text-muted );
+		color: var( --omnioffloader-text-muted );
 	}
 
 	&__examples {
@@ -2907,7 +2967,7 @@
 		}
 
 		dd {
-			color: var( --smowp-text-muted );
+			color: var( --omnioffloader-text-muted );
 		}
 	}
 }

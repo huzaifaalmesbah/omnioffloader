@@ -94,7 +94,7 @@ export function MoveFolderCard() {
 			) }
 		>
 			{ isDirty && (
-				<p className="smowp-warning">
+				<p className="omnioffloader-warning">
 					{ __(
 						'You have unsaved settings. Save them first — this moves media into the saved folder.',
 						'omnioffloader'
@@ -103,7 +103,7 @@ export function MoveFolderCard() {
 			) }
 
 			{ safeMode && (
-				<p className="smowp-warning">
+				<p className="omnioffloader-warning">
 					{ __(
 						'Safe mode is on, so nothing can be moved: moving writes to and deletes from your cloud storage.',
 						'omnioffloader'
@@ -111,28 +111,28 @@ export function MoveFolderCard() {
 				</p>
 			) }
 
-			<div className="smowp-media-summary">
-				<div className="smowp-media-chip">
-					<span className="smowp-media-chip__label">
+			<div className="omnioffloader-media-summary">
+				<div className="omnioffloader-media-chip">
+					<span className="omnioffloader-media-chip__label">
 						{ __( 'Current Folder', 'omnioffloader' ) }
 					</span>
-					<strong className="smowp-media-chip__value smowp-media-chip__value--text">
+					<strong className="omnioffloader-media-chip__value omnioffloader-media-chip__value--text">
 						{ preflight ? folder : '—' }
 					</strong>
 				</div>
-				<div className="smowp-media-chip smowp-media-chip--local">
-					<span className="smowp-media-chip__label">
+				<div className="omnioffloader-media-chip omnioffloader-media-chip--local">
+					<span className="omnioffloader-media-chip__label">
 						{ __( 'In Other Folders', 'omnioffloader' ) }
 					</span>
-					<strong className="smowp-media-chip__value">
+					<strong className="omnioffloader-media-chip__value">
 						{ preflight ? elsewhere.toLocaleString() : '—' }
 					</strong>
 				</div>
 			</div>
 
 			{ elsewhere > 0 && (
-				<div className="smowp-bulk-action">
-					<ul className="smowp-retention-facts">
+				<div className="omnioffloader-bulk-action">
+					<ul className="omnioffloader-retention-facts">
 						<li>
 							{ __(
 								'Files are copied inside your cloud storage, then the attachment switches to the new folder. Files on this server are not touched.',
@@ -175,14 +175,14 @@ export function MoveFolderCard() {
 					/>
 
 					{ ! running && (
-						<div className="smowp-bulk-action__btn-wrap">
+						<div className="omnioffloader-bulk-action__btn-wrap">
 							<Button
 								variant="primary"
-								className="smowp-btn-primary"
+								className="omnioffloader-btn-primary"
 								disabled={ ! canStart }
 								aria-describedby={
 									cliJob
-										? 'smowp-move-disabled-reason'
+										? 'omnioffloader-move-disabled-reason'
 										: undefined
 								}
 								isBusy={ busy }
@@ -209,8 +209,8 @@ export function MoveFolderCard() {
 							</Button>
 							{ cliJob && (
 								<p
-									id="smowp-move-disabled-reason"
-									className="smowp-disabled-reason"
+									id="omnioffloader-move-disabled-reason"
+									className="omnioffloader-disabled-reason"
 								>
 									{ cliJobTitle( cliJob.job ) }
 								</p>
@@ -232,7 +232,7 @@ export function MoveFolderCard() {
 			{ showProgress && state && (
 				<div
 					className={
-						'smowp-progress-card' +
+						'omnioffloader-progress-card' +
 						( running ? ' is-running' : '' ) +
 						( state.status === 'done' ? ' is-done' : '' ) +
 						( state.status === 'cancelled'
@@ -241,30 +241,30 @@ export function MoveFolderCard() {
 						( state.status === 'failed' ? ' is-failed' : '' )
 					}
 				>
-					<div className="smowp-progress-card__header">
-						<div className="smowp-progress-card__status">
+					<div className="omnioffloader-progress-card__header">
+						<div className="omnioffloader-progress-card__status">
 							{ running && (
-								<span className="smowp-badge smowp-badge--running">
-									<span className="smowp-badge-pulse" />
+								<span className="omnioffloader-ui-badge omnioffloader-ui-badge--running">
+									<span className="omnioffloader-ui-badge-pulse" />
 									{ __( 'Moving…', 'omnioffloader' ) }
 								</span>
 							) }
 							{ state.status === 'done' && (
-								<span className="smowp-badge smowp-badge--ok">
+								<span className="omnioffloader-ui-badge omnioffloader-ui-badge--ok">
 									{ __( 'Finished', 'omnioffloader' ) }
 								</span>
 							) }
 							{ state.status === 'cancelled' && (
-								<span className="smowp-badge smowp-badge--fail">
+								<span className="omnioffloader-ui-badge omnioffloader-ui-badge--fail">
 									{ __( 'Cancelled', 'omnioffloader' ) }
 								</span>
 							) }
 							{ state.status === 'failed' && (
-								<span className="smowp-badge smowp-badge--fail">
+								<span className="omnioffloader-ui-badge omnioffloader-ui-badge--fail">
 									{ __( 'Stopped', 'omnioffloader' ) }
 								</span>
 							) }
-							<span className="smowp-progress-card__count">
+							<span className="omnioffloader-progress-card__count">
 								{ sprintf(
 									/* translators: 1: moved count, 2: total count. */
 									__( '%1$d of %2$d moved', 'omnioffloader' ),
@@ -274,7 +274,7 @@ export function MoveFolderCard() {
 							</span>
 						</div>
 
-						<span className="smowp-progress-card__pct">
+						<span className="omnioffloader-progress-card__pct">
 							{ state.total > 0
 								? Math.min(
 										100,
@@ -298,14 +298,14 @@ export function MoveFolderCard() {
 						<Notice
 							status="error"
 							isDismissible={ false }
-							className="smowp-progress-card__notice"
+							className="omnioffloader-progress-card__notice"
 						>
 							{ state.message }
 						</Notice>
 					) }
 
-					<div className="smowp-progress-card__footer">
-						<span className="smowp-progress-card__errors">
+					<div className="omnioffloader-progress-card__footer">
+						<span className="omnioffloader-progress-card__errors">
 							{ state.errors > 0
 								? sprintf(
 										/* translators: %d: error count. */
@@ -320,12 +320,12 @@ export function MoveFolderCard() {
 								: __( 'No errors', 'omnioffloader' ) }
 						</span>
 
-						<div className="smowp-progress-card__actions">
+						<div className="omnioffloader-progress-card__actions">
 							{ running ? (
 								<Button
 									variant="secondary"
 									isDestructive
-									className="smowp-btn-destructive"
+									className="omnioffloader-btn-destructive"
 									disabled={ busy }
 									onClick={ () => void cancel() }
 								>
@@ -334,7 +334,7 @@ export function MoveFolderCard() {
 							) : (
 								<Button
 									variant="secondary"
-									className="smowp-btn-dismiss"
+									className="omnioffloader-btn-dismiss"
 									onClick={ dismiss }
 								>
 									{ __( 'Dismiss', 'omnioffloader' ) }

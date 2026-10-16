@@ -701,7 +701,7 @@ trait AttachmentHelper {
 				return array(
 					'status'       => 'processing',
 					'is_offloaded' => true,
-					'label'        => __( 'Restoring...', 'omnioffloader' ),
+					'label'        => __( 'Restoring…', 'omnioffloader' ),
 				);
 			}
 
@@ -751,7 +751,7 @@ trait AttachmentHelper {
 			return array(
 				'status'       => 'processing',
 				'is_offloaded' => false,
-				'label'        => __( 'Offloading...', 'omnioffloader' ),
+				'label'        => __( 'Offloading…', 'omnioffloader' ),
 			);
 		}
 

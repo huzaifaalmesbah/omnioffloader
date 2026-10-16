@@ -170,7 +170,7 @@ export function BringBackPage( { onNavigate }: BringBackProps ) {
 	};
 
 	return (
-		<div className="smowp-page">
+		<div className="omnioffloader-page">
 			<Card
 				title={ __( 'Bring Back', 'omnioffloader' ) }
 				docs="features/bring-back/"
@@ -182,7 +182,7 @@ export function BringBackPage( { onNavigate }: BringBackProps ) {
 				<CliJobNotice />
 
 				{ ! stats?.configured && (
-					<p className="smowp-muted">
+					<p className="omnioffloader-muted">
 						{ __(
 							'Configure a cloud provider in Settings first.',
 							'omnioffloader'
@@ -192,48 +192,48 @@ export function BringBackPage( { onNavigate }: BringBackProps ) {
 
 				{ stats?.configured && (
 					<>
-						<div className="smowp-media-summary">
-							<div className="smowp-media-chip">
-								<span className="smowp-media-chip__label">
+						<div className="omnioffloader-media-summary">
+							<div className="omnioffloader-media-chip">
+								<span className="omnioffloader-media-chip__label">
 									{ __(
 										'Total Library Media',
 										'omnioffloader'
 									) }
 								</span>
-								<strong className="smowp-media-chip__value">
+								<strong className="omnioffloader-media-chip__value">
 									{ totalCount }
 								</strong>
 							</div>
-							<div className="smowp-media-chip smowp-media-chip--offloaded">
-								<span className="smowp-media-chip__label">
+							<div className="omnioffloader-media-chip omnioffloader-media-chip--offloaded">
+								<span className="omnioffloader-media-chip__label">
 									{ __(
 										'Offloaded (Ready to Restore)',
 										'omnioffloader'
 									) }
 								</span>
-								<strong className="smowp-media-chip__value">
+								<strong className="omnioffloader-media-chip__value">
 									{ offloadedCount }
 								</strong>
 							</div>
-							<div className="smowp-media-chip smowp-media-chip--local">
-								<span className="smowp-media-chip__label">
+							<div className="omnioffloader-media-chip omnioffloader-media-chip--local">
+								<span className="omnioffloader-media-chip__label">
 									{ __( 'Already Local', 'omnioffloader' ) }
 								</span>
-								<strong className="smowp-media-chip__value">
+								<strong className="omnioffloader-media-chip__value">
 									{ localCount }
 								</strong>
 							</div>
 						</div>
 
 						{ isAllLocal && (
-							<div className="smowp-notice-banner smowp-notice-banner--info">
+							<div className="omnioffloader-notice-banner omnioffloader-notice-banner--info">
 								<span
-									className="smowp-notice-banner__icon"
+									className="omnioffloader-notice-banner__icon"
 									aria-hidden="true"
 								>
 									ℹ
 								</span>
-								<div className="smowp-notice-banner__text">
+								<div className="omnioffloader-notice-banner__text">
 									<strong>
 										{ __(
 											'All media is already stored locally on your server.',
@@ -250,9 +250,9 @@ export function BringBackPage( { onNavigate }: BringBackProps ) {
 							</div>
 						) }
 
-						<div className="smowp-bulk-action">
+						<div className="omnioffloader-bulk-action">
 							{ offloadedCount > 0 && (
-								<p className="smowp-bulk-action__info">
+								<p className="omnioffloader-bulk-action__info">
 									{ sprintf(
 										/* translators: %d: number of offloaded attachments. */
 										_n(
@@ -275,7 +275,7 @@ export function BringBackPage( { onNavigate }: BringBackProps ) {
 							) }
 
 							{ preflight && offloadedCount > 0 && (
-								<p className="smowp-muted smowp-preflight-info">
+								<p className="omnioffloader-muted omnioffloader-preflight-info">
 									{ scopeMode === 'custom' &&
 									customCount > 0 &&
 									customCount < offloadedCount
@@ -351,7 +351,7 @@ export function BringBackPage( { onNavigate }: BringBackProps ) {
 								offloadedCount > 0 &&
 								( preflight.unsized > 0 ||
 									( ! quota && freeKnown ) ) && (
-									<p className="smowp-muted smowp-preflight-info">
+									<p className="omnioffloader-muted omnioffloader-preflight-info">
 										{ preflight.unsized > 0 &&
 											sprintf(
 												/* translators: %d: number of attachments. */
@@ -373,7 +373,7 @@ export function BringBackPage( { onNavigate }: BringBackProps ) {
 								) }
 
 							{ preflight && ! preflight.disk_ok && (
-								<p className="smowp-warning">
+								<p className="omnioffloader-warning">
 									{ __(
 										'Warning: free disk space may not be enough for a full restore. Free up space before starting.',
 										'omnioffloader'
@@ -409,15 +409,15 @@ export function BringBackPage( { onNavigate }: BringBackProps ) {
 							) }
 
 							{ ! safeMode && (
-								<div className="smowp-bringback-options">
-									<h4 className="smowp-bringback-options__title">
+								<div className="omnioffloader-bringback-options">
+									<h4 className="omnioffloader-bringback-options__title">
 										{ __(
 											'Restore Safety & Storage Options',
 											'omnioffloader'
 										) }
 									</h4>
 									<div
-										className="smowp-bringback-options__grid"
+										className="omnioffloader-bringback-options__grid"
 										role="radiogroup"
 										aria-label={ __(
 											'Restore storage options',
@@ -437,7 +437,7 @@ export function BringBackPage( { onNavigate }: BringBackProps ) {
 												running || offloadedCount === 0
 											) }
 											className={
-												'smowp-option-card' +
+												'omnioffloader-option-card' +
 												( ! deleteCloud
 													? ' is-selected'
 													: '' ) +
@@ -468,22 +468,22 @@ export function BringBackPage( { onNavigate }: BringBackProps ) {
 												}
 											} }
 										>
-											<div className="smowp-option-card__radio">
-												<span className="smowp-radio-circle">
+											<div className="omnioffloader-option-card__radio">
+												<span className="omnioffloader-radio-circle">
 													{ ! deleteCloud && (
-														<span className="smowp-radio-dot" />
+														<span className="omnioffloader-radio-dot" />
 													) }
 												</span>
 											</div>
-											<div className="smowp-option-card__content">
-												<div className="smowp-option-card__head">
+											<div className="omnioffloader-option-card__content">
+												<div className="omnioffloader-option-card__head">
 													<strong>
 														{ __(
 															'Keep Cloud Copies',
 															'omnioffloader'
 														) }
 													</strong>
-													<span className="smowp-badge smowp-badge--ok">
+													<span className="omnioffloader-ui-badge omnioffloader-ui-badge--ok">
 														{ __(
 															'Recommended',
 															'omnioffloader'
@@ -512,7 +512,7 @@ export function BringBackPage( { onNavigate }: BringBackProps ) {
 												running || offloadedCount === 0
 											) }
 											className={
-												'smowp-option-card' +
+												'omnioffloader-option-card' +
 												( deleteCloud
 													? ' is-selected'
 													: '' ) +
@@ -543,22 +543,22 @@ export function BringBackPage( { onNavigate }: BringBackProps ) {
 												}
 											} }
 										>
-											<div className="smowp-option-card__radio">
-												<span className="smowp-radio-circle">
+											<div className="omnioffloader-option-card__radio">
+												<span className="omnioffloader-radio-circle">
 													{ deleteCloud && (
-														<span className="smowp-radio-dot" />
+														<span className="omnioffloader-radio-dot" />
 													) }
 												</span>
 											</div>
-											<div className="smowp-option-card__content">
-												<div className="smowp-option-card__head">
+											<div className="omnioffloader-option-card__content">
+												<div className="omnioffloader-option-card__head">
 													<strong>
 														{ __(
 															'Delete from Cloud After Restore',
 															'omnioffloader'
 														) }
 													</strong>
-													<span className="smowp-badge smowp-badge--fail">
+													<span className="omnioffloader-ui-badge omnioffloader-ui-badge--fail">
 														{ __(
 															'Reclaim Storage',
 															'omnioffloader'
@@ -578,22 +578,22 @@ export function BringBackPage( { onNavigate }: BringBackProps ) {
 							) }
 
 							{ ! running && (
-								<div className="smowp-bulk-action__btn-wrap">
+								<div className="omnioffloader-bulk-action__btn-wrap">
 									{ isDisabled && disabledReason ? (
 										<>
 											<Button
 												variant="primary"
-												className="smowp-btn-primary"
+												className="omnioffloader-btn-primary"
 												disabled
 												accessibleWhenDisabled
-												aria-describedby="smowp-bring-back-disabled-reason"
+												aria-describedby="omnioffloader-bring-back-disabled-reason"
 												isBusy={ busy }
 											>
 												{ buttonLabel }
 											</Button>
 											<p
-												id="smowp-bring-back-disabled-reason"
-												className="smowp-disabled-reason"
+												id="omnioffloader-bring-back-disabled-reason"
+												className="omnioffloader-disabled-reason"
 											>
 												{ disabledReason }
 											</p>
@@ -601,7 +601,7 @@ export function BringBackPage( { onNavigate }: BringBackProps ) {
 									) : (
 										<Button
 											variant="primary"
-											className="smowp-btn-primary"
+											className="omnioffloader-btn-primary"
 											disabled={ busy }
 											isBusy={ busy }
 											onClick={ () => void handleStart() }
@@ -627,7 +627,7 @@ export function BringBackPage( { onNavigate }: BringBackProps ) {
 						{ showProgress && state && (
 							<div
 								className={
-									'smowp-progress-card' +
+									'omnioffloader-progress-card' +
 									( running ? ' is-running' : '' ) +
 									( state.status === 'done'
 										? ' is-done'
@@ -640,11 +640,11 @@ export function BringBackPage( { onNavigate }: BringBackProps ) {
 										: '' )
 								}
 							>
-								<div className="smowp-progress-card__header">
-									<div className="smowp-progress-card__status">
+								<div className="omnioffloader-progress-card__header">
+									<div className="omnioffloader-progress-card__status">
 										{ running && (
-											<span className="smowp-badge smowp-badge--running">
-												<span className="smowp-badge-pulse" />
+											<span className="omnioffloader-ui-badge omnioffloader-ui-badge--running">
+												<span className="omnioffloader-ui-badge-pulse" />
 												{ __(
 													'Restoring…',
 													'omnioffloader'
@@ -652,7 +652,7 @@ export function BringBackPage( { onNavigate }: BringBackProps ) {
 											</span>
 										) }
 										{ state.status === 'done' && (
-											<span className="smowp-badge smowp-badge--ok">
+											<span className="omnioffloader-ui-badge omnioffloader-ui-badge--ok">
 												{ __(
 													'Finished',
 													'omnioffloader'
@@ -660,7 +660,7 @@ export function BringBackPage( { onNavigate }: BringBackProps ) {
 											</span>
 										) }
 										{ state.status === 'cancelled' && (
-											<span className="smowp-badge smowp-badge--fail">
+											<span className="omnioffloader-ui-badge omnioffloader-ui-badge--fail">
 												{ __(
 													'Cancelled',
 													'omnioffloader'
@@ -668,14 +668,14 @@ export function BringBackPage( { onNavigate }: BringBackProps ) {
 											</span>
 										) }
 										{ state.status === 'failed' && (
-											<span className="smowp-badge smowp-badge--fail">
+											<span className="omnioffloader-ui-badge omnioffloader-ui-badge--fail">
 												{ __(
 													'Stopped',
 													'omnioffloader'
 												) }
 											</span>
 										) }
-										<span className="smowp-progress-card__count">
+										<span className="omnioffloader-progress-card__count">
 											{ state.total === 0 && running
 												? __(
 														'Preparing restore…',
@@ -693,7 +693,7 @@ export function BringBackPage( { onNavigate }: BringBackProps ) {
 										</span>
 									</div>
 
-									<span className="smowp-progress-card__pct">
+									<span className="omnioffloader-progress-card__pct">
 										{ state.total > 0
 											? Math.min(
 													100,
@@ -719,23 +719,23 @@ export function BringBackPage( { onNavigate }: BringBackProps ) {
 										<Notice
 											status="error"
 											isDismissible={ false }
-											className="smowp-progress-card__notice"
+											className="omnioffloader-progress-card__notice"
 										>
 											{ state.message }
 										</Notice>
 									) }
 
-								<div className="smowp-progress-card__footer">
-									<span className="smowp-progress-card__errors">
+								<div className="omnioffloader-progress-card__footer">
+									<span className="omnioffloader-progress-card__errors">
 										{ statusDetail }
 									</span>
 
-									<div className="smowp-progress-card__actions">
+									<div className="omnioffloader-progress-card__actions">
 										{ running ? (
 											<Button
 												variant="secondary"
 												isDestructive
-												className="smowp-btn-destructive"
+												className="omnioffloader-btn-destructive"
 												disabled={ busy }
 												onClick={ () => void cancel() }
 											>
@@ -747,7 +747,7 @@ export function BringBackPage( { onNavigate }: BringBackProps ) {
 										) : (
 											<Button
 												variant="secondary"
-												className="smowp-btn-dismiss"
+												className="omnioffloader-btn-dismiss"
 												onClick={ dismiss }
 											>
 												{ __(

@@ -124,10 +124,27 @@ export interface AttachmentErrorEntry {
 	message: string;
 }
 
+/**
+ * One item of GET /offload/errors (OffloadController::errors_response()).
+ */
 export interface AttachmentErrors {
 	id: number;
 	title: string;
+	/** In the cloud: its errors come from a Bring Back, retention update or move. */
+	offloaded: boolean;
+	/** Edit screen of the attachment ('' when the user cannot edit it). */
+	edit_url: string;
 	errors: AttachmentErrorEntry[];
+}
+
+/** `state` argument of GET /offload/errors. */
+export type ErrorsState = 'all' | 'local' | 'offloaded';
+
+/** A page of GET /offload/errors with its X-WP-Total / X-WP-TotalPages. */
+export interface AttachmentErrorsPage {
+	items: AttachmentErrors[];
+	total: number;
+	totalPages: number;
 }
 
 /**
@@ -154,7 +171,7 @@ export interface MovePreflight {
 }
 
 /** A bulk job type; WP-CLI runs one of these at a time. */
-export type JobType = 'offload' | 'restore' | 'retention' | 'move';
+export type JobType = 'offload' | 'restore' | 'retention' | 'move' | 'verify';
 
 /**
  * Mirrors CoreController::get_cli_job_response(): the WP-CLI job running

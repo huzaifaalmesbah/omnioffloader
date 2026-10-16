@@ -53,26 +53,26 @@ export function DashboardPage( { onNavigate }: DashboardProps ) {
 	}
 
 	return (
-		<div className="smowp-page">
-			<div className="smowp-hero smowp-card">
-				<span className="smowp-hero__icon">
+		<div className="omnioffloader-page">
+			<div className="omnioffloader-hero omnioffloader-card">
+				<span className="omnioffloader-hero__icon">
 					<Icon icon={ PLUGIN_ICON } size={ 36 } />
 				</span>
-				<div className="smowp-hero__text">
-					<div className="smowp-hero__badge-wrap">
+				<div className="omnioffloader-hero__text">
+					<div className="omnioffloader-hero__badge-wrap">
 						{ stats?.configured && safeMode && (
-							<span className="smowp-hero__setup-badge">
+							<span className="omnioffloader-hero__setup-badge">
 								{ __( 'Safe mode', 'omnioffloader' ) }
 							</span>
 						) }
 						{ stats?.configured && ! safeMode && (
-							<span className="smowp-hero__live-badge">
-								<span className="smowp-badge-pulse" />
+							<span className="omnioffloader-hero__live-badge">
+								<span className="omnioffloader-ui-badge-pulse" />
 								{ __( 'Active', 'omnioffloader' ) }
 							</span>
 						) }
 						{ ! stats?.configured && (
-							<span className="smowp-hero__setup-badge">
+							<span className="omnioffloader-hero__setup-badge">
 								{ __( 'Setup Required', 'omnioffloader' ) }
 							</span>
 						) }
@@ -105,7 +105,7 @@ export function DashboardPage( { onNavigate }: DashboardProps ) {
 				</div>
 			</div>
 
-			<div className="smowp-stats-grid">
+			<div className="omnioffloader-stats-grid">
 				<StatCard
 					icon={ image }
 					value={ String( stats?.total ?? '—' ) }
@@ -142,9 +142,9 @@ export function DashboardPage( { onNavigate }: DashboardProps ) {
 					'omnioffloader'
 				) }
 			>
-				<div className="smowp-quick-actions-grid">
+				<div className="omnioffloader-quick-actions-grid">
 					<div
-						className="smowp-quick-action-card"
+						className="omnioffloader-quick-action-card"
 						role="button"
 						tabIndex={ 0 }
 						onClick={ () => onNavigate( 'offload' ) }
@@ -155,10 +155,10 @@ export function DashboardPage( { onNavigate }: DashboardProps ) {
 							}
 						} }
 					>
-						<div className="smowp-quick-action-card__icon smowp-quick-action-card__icon--offload">
+						<div className="omnioffloader-quick-action-card__icon omnioffloader-quick-action-card__icon--offload">
 							<Icon icon={ cloudUpload } size={ 22 } />
 						</div>
-						<div className="smowp-quick-action-card__info">
+						<div className="omnioffloader-quick-action-card__info">
 							<strong>
 								{ __( 'Bulk Offload', 'omnioffloader' ) }
 							</strong>
@@ -178,13 +178,13 @@ export function DashboardPage( { onNavigate }: DashboardProps ) {
 										) }
 							</p>
 						</div>
-						<span className="smowp-quick-action-card__arrow">
+						<span className="omnioffloader-quick-action-card__arrow">
 							{ '→' }
 						</span>
 					</div>
 
 					<div
-						className="smowp-quick-action-card"
+						className="omnioffloader-quick-action-card"
 						role="button"
 						tabIndex={ 0 }
 						onClick={ () => onNavigate( 'bring-back' ) }
@@ -195,10 +195,10 @@ export function DashboardPage( { onNavigate }: DashboardProps ) {
 							}
 						} }
 					>
-						<div className="smowp-quick-action-card__icon smowp-quick-action-card__icon--restore">
+						<div className="omnioffloader-quick-action-card__icon omnioffloader-quick-action-card__icon--restore">
 							<Icon icon={ download } size={ 22 } />
 						</div>
-						<div className="smowp-quick-action-card__info">
+						<div className="omnioffloader-quick-action-card__info">
 							<strong>
 								{ __(
 									'Bring Back (Restore)',
@@ -221,13 +221,13 @@ export function DashboardPage( { onNavigate }: DashboardProps ) {
 										) }
 							</p>
 						</div>
-						<span className="smowp-quick-action-card__arrow">
+						<span className="omnioffloader-quick-action-card__arrow">
 							{ '→' }
 						</span>
 					</div>
 
 					<div
-						className="smowp-quick-action-card"
+						className="omnioffloader-quick-action-card"
 						role="button"
 						tabIndex={ 0 }
 						onClick={ () => onNavigate( 'settings' ) }
@@ -238,10 +238,10 @@ export function DashboardPage( { onNavigate }: DashboardProps ) {
 							}
 						} }
 					>
-						<div className="smowp-quick-action-card__icon smowp-quick-action-card__icon--settings">
+						<div className="omnioffloader-quick-action-card__icon omnioffloader-quick-action-card__icon--settings">
 							<Icon icon={ settingsIcon } size={ 22 } />
 						</div>
-						<div className="smowp-quick-action-card__info">
+						<div className="omnioffloader-quick-action-card__info">
 							<strong>
 								{ __( 'Provider Settings', 'omnioffloader' ) }
 							</strong>
@@ -261,7 +261,7 @@ export function DashboardPage( { onNavigate }: DashboardProps ) {
 										) }
 							</p>
 						</div>
-						<span className="smowp-quick-action-card__arrow">
+						<span className="omnioffloader-quick-action-card__arrow">
 							{ '→' }
 						</span>
 					</div>

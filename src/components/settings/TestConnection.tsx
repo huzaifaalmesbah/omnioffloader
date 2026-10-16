@@ -56,7 +56,7 @@ export function TestConnection( { provider }: TestConnectionProps ) {
 	};
 
 	return (
-		<div className="smowp-test-connection">
+		<div className="omnioffloader-test-connection">
 			<Button
 				variant="secondary"
 				isBusy={ testing }
@@ -71,28 +71,34 @@ export function TestConnection( { provider }: TestConnectionProps ) {
 			{ /* A live region, so the result is read out after the test. */ }
 			<span role="status" aria-live="polite">
 				{ result === 'ok' && (
-					<span className="smowp-badge smowp-badge--ok">
+					<span className="omnioffloader-ui-badge omnioffloader-ui-badge--ok">
 						{ __( 'Connected', 'omnioffloader' ) }
 					</span>
 				) }
 				{ result === 'fail' && (
-					<span className="smowp-badge smowp-badge--fail">
+					<span className="omnioffloader-ui-badge omnioffloader-ui-badge--fail">
 						{ __( 'Not connected', 'omnioffloader' ) }
 					</span>
 				) }
 			</span>
 
 			{ result === 'ok' && folderWarning && (
-				<div className="smowp-test-connection__error" role="alert">
-					<span className="smowp-test-connection__error-text">
+				<div
+					className="omnioffloader-test-connection__error"
+					role="alert"
+				>
+					<span className="omnioffloader-test-connection__error-text">
 						{ folderWarning }
 					</span>
 				</div>
 			) }
 
 			{ result === 'fail' && errorDetail && (
-				<div className="smowp-test-connection__error" role="alert">
-					<span className="smowp-test-connection__error-text">
+				<div
+					className="omnioffloader-test-connection__error"
+					role="alert"
+				>
+					<span className="omnioffloader-test-connection__error-text">
 						{ errorDetail }
 					</span>
 				</div>

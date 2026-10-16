@@ -52,27 +52,27 @@ export function SaveBar() {
 	};
 
 	return (
-		<div className="smowp-savebar">
-			<div className="smowp-savebar__status">
+		<div className="omnioffloader-savebar">
+			<div className="omnioffloader-savebar__status">
 				{ isDirty ? (
-					<span className="smowp-savebar__dirty-text">
+					<span className="omnioffloader-savebar__dirty-text">
 						{ __( 'Unsaved changes', 'omnioffloader' ) }
 					</span>
 				) : (
-					<span className="smowp-savebar__clean-text">
+					<span className="omnioffloader-savebar__clean-text">
 						{ __( 'All changes saved', 'omnioffloader' ) }
 					</span>
 				) }
 			</div>
 
-			<div className="smowp-savebar__actions">
+			<div className="omnioffloader-savebar__actions">
 				{ saveFeedback && (
 					<div
-						className={ `smowp-savebar__feedback is-${ saveFeedback.status }` }
+						className={ `omnioffloader-savebar__feedback is-${ saveFeedback.status }` }
 						role="status"
 						aria-live="polite"
 					>
-						<span className="smowp-savebar__feedback-icon">
+						<span className="omnioffloader-savebar__feedback-icon">
 							<Icon
 								icon={
 									saveFeedback.status === 'success'
@@ -82,7 +82,7 @@ export function SaveBar() {
 								size={ 18 }
 							/>
 						</span>
-						<span className="smowp-savebar__feedback-text">
+						<span className="omnioffloader-savebar__feedback-text">
 							{ saveFeedback.message }
 						</span>
 					</div>
@@ -90,7 +90,7 @@ export function SaveBar() {
 
 				<Button
 					variant="primary"
-					className="smowp-savebar__button"
+					className="omnioffloader-savebar__button"
 					disabled={ ! isDirty || isSaving }
 					isBusy={ isSaving }
 					onClick={ () => void handleSave() }

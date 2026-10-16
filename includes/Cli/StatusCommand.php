@@ -37,13 +37,32 @@ class StatusCommand {
 	 * Exits with status 1 when the offload engine is off or the bucket
 	 * cannot be reached, so it can be used in monitoring.
 	 *
+	 * ## OPTIONS
+	 *
+	 * [--format=<format>]
+	 * : Output format. `json` prints one JSON object for monitoring scripts.
+	 * ---
+	 * default: text
+	 * options:
+	 *   - text
+	 *   - json
+	 * ---
+	 *
 	 * ## EXAMPLES
 	 *
 	 *     wp omnioffloader status
+	 *     wp omnioffloader status --format=json
 	 *
+	 * @param array<int, string>    $args       Positional arguments (unused).
+	 * @param array<string, string> $assoc_args Associative arguments.
 	 * @return void
 	 */
-	public function __invoke() {
+	public function __invoke( $args = array(), $assoc_args = array() ) {
+		if ( 'json' === ( $assoc_args['format'] ?? 'text' ) ) {
+			$this->print_json();
+			return;
+		}
+
 		$plugin   = Plugin::get_instance();
 		$provider = $plugin->get_provider();
 
@@ -165,6 +184,149 @@ class StatusCommand {
 			WP_CLI::log( sprintf( '%s attachment(s) are not offloaded yet. To offload them in the background:', number_format_i18n( $stats['local'] ) ) );
 			WP_CLI::log( '  nohup wp omnioffloader offload --all --concurrency=32 > ~/offload.log 2>&1 &' );
 		}
+
+		if ( ! $healthy ) {
+			WP_CLI::halt( 1 );
+		}
+	}
+
+	/**
+	 * Print the status as one JSON object. Exits 1 when unhealthy, like the
+	 * text output.
+	 *
+	 * @return void
+	 */
+	private function print_json() {
+		$provider = Plugin::get_instance()->get_provider();
+		$healthy  = null !== $provider;
+		$data     = array(
+			'version'    => OMNIOFFLOADER_VERSION,
+			'healthy'    => false,
+			'engine'     => null !== $provider,
+			'provider'   => null,
+			'connection' => null,
+			'safe_mode'  => null,
+			'folder'     => null,
+			'media'      => null,
+			'running'    => null,
+			'admin_jobs' => array(),
+			'cli_run'    => null,
+			'cli_last'   => null,
+		);
+
+		if ( null !== $provider ) {
+			$data['provider'] = array(
+				'key'    => $provider->get_key(),
+				'name'   => $provider->get_name(),
+				'bucket' => (string) $provider->get_bucket(),
+				'domain' => $provider->get_domain(),
+			);
+
+			$connection         = $provider->check_connection();
+			$data['connection'] = array(
+				'ok'    => true === $connection,
+				'error' => true === $connection ? null : $connection->get_error_message(),
+			);
+
+			if ( true === $connection ) {
+				FolderClaim::refresh();
+			} else {
+				$healthy = false;
+			}
+
+			$prefix         = FolderClaim::prefix();
+			$data['folder'] = array(
+				'prefix'              => $prefix,
+				'offloaded_elsewhere' => Helpers::count_offloaded_elsewhere( $prefix ),
+				'lost_folders'        => array_values( FolderClaim::lost_folders() ),
+			);
+		}
+
+		$safe              = SafeMode::status();
+		$data['safe_mode'] = array(
+			'active' => (bool) $safe['active'],
+			'reason' => $safe['active'] ? (string) $safe['reason'] : null,
+		);
+
+		$stats         = Helpers::get_media_stats( true );
+		$data['media'] = array(
+			'total'     => (int) $stats['total'],
+			'offloaded' => (int) $stats['offloaded'],
+			'local'     => (int) $stats['local'],
+			'missing'   => (int) $stats['missing'],
+		);
+
+		if ( null !== $provider ) {
+			$data['media']['outdated_retention'] = (int) Helpers::get_retention_preflight( true )['eligible'];
+		}
+
+		$jobs = array(
+			'offload'   => BulkOffloadProcessor::get_state(),
+			'restore'   => BulkRestoreProcessor::get_state(),
+			'retention' => BulkRetentionProcessor::get_state(),
+			'move'      => BulkMoveProcessor::get_state(),
+		);
+
+		foreach ( $jobs as $job => $state ) {
+			$data['admin_jobs'][ $job ] = array(
+				'status'     => (string) $state['status'],
+				'processed'  => (int) $state['processed'],
+				'total'      => (int) $state['total'],
+				'errors'     => (int) $state['errors'],
+				'updated_at' => ! empty( $state['updated_at'] ) ? (int) $state['updated_at'] : null,
+			);
+
+			if ( null === $data['running'] && 'running' === $state['status'] ) {
+				$data['running'] = array(
+					'job'    => $job,
+					'source' => 'admin',
+				);
+			}
+		}
+
+		$run = Plugin::get_cli_run( true );
+
+		if ( null !== $run ) {
+			$alive           = Plugin::cli_run_alive( $run );
+			$data['cli_run'] = array(
+				'job'       => (string) $run['job'],
+				'pid'       => (int) $run['pid'],
+				'host'      => (string) $run['host'],
+				'alive'     => $alive,
+				'stopping'  => Plugin::cli_stop_requested(),
+				'processed' => (int) $run['processed'],
+				'total'     => (int) $run['total'],
+				'failed'    => (int) $run['failed'],
+				'started'   => (int) $run['started'],
+				'updated'   => (int) ( $run['updated'] ?? time() ),
+				'log'       => ! empty( $run['log'] ) ? (string) $run['log'] : null,
+			);
+
+			if ( false !== $alive ) {
+				$data['running'] = array(
+					'job'    => (string) $run['job'],
+					'source' => 'cli',
+				);
+			}
+		} else {
+			$last = Plugin::get_cli_last_run();
+
+			if ( null !== $last ) {
+				$data['cli_last'] = array(
+					'job'       => (string) $last['job'],
+					'stopped'   => ! empty( $last['stopped'] ),
+					'processed' => (int) $last['processed'],
+					'total'     => (int) $last['total'],
+					'failed'    => (int) $last['failed'],
+					'started'   => (int) $last['started'],
+					'ended'     => (int) ( $last['updated'] ?? $last['started'] ),
+				);
+			}
+		}
+
+		$data['healthy'] = $healthy;
+
+		WP_CLI::line( (string) wp_json_encode( $data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES ) );
 
 		if ( ! $healthy ) {
 			WP_CLI::halt( 1 );

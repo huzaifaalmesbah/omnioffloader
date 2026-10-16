@@ -131,7 +131,7 @@ export function SafeModeBanner( { onNavigate }: SafeModeBannerProps ) {
 			<Notice
 				status="error"
 				isDismissible={ false }
-				className="smowp-safe-mode-banner"
+				className="omnioffloader-safe-mode-banner"
 			>
 				<p>
 					<strong>
@@ -146,7 +146,7 @@ export function SafeModeBanner( { onNavigate }: SafeModeBannerProps ) {
 						'omnioffloader'
 					) }
 				</p>
-				<div className="smowp-safe-mode-banner__actions">
+				<div className="omnioffloader-safe-mode-banner__actions">
 					<Button
 						variant="primary"
 						onClick={ () => onNavigate( 'settings' ) }
@@ -211,7 +211,7 @@ export function SafeModeBanner( { onNavigate }: SafeModeBannerProps ) {
 		<Notice
 			status="warning"
 			isDismissible={ false }
-			className="smowp-safe-mode-banner"
+			className="omnioffloader-safe-mode-banner"
 		>
 			<p>
 				<strong>{ __( 'Safe mode is on.', 'omnioffloader' ) }</strong>{ ' ' }

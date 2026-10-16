@@ -28,7 +28,7 @@ In grid view, the attachment details show the same live status.
 
 ## Filter by offload state
 
-Use the filter dropdown above the list to show **Offloaded** or **Local only** attachments.
+Use the filter dropdown above the list to show **Offloaded**, **Local only** or **Offload failed** attachments. Select failed ones and choose **Offload** in **Bulk actions** to retry them. See [Failed Items](/features/failed-items/).
 
 ## OmniOffloader box on the edit screen
 
@@ -50,7 +50,7 @@ Under each attachment title in list view:
 - **Retry Offload**: try again after a failure.
 - **Bring Back**: restore this attachment to your server.
 
-While a transfer runs, the action shows **Offloading...**, **Restoring...** or **Queued...** instead.
+While a transfer runs, the action shows **Offloading…**, **Restoring…** or **Queued…** instead.
 
 ## Bulk actions
 

@@ -51,8 +51,164 @@ function getCommands(): CliCommand[] {
 						'omnioffloader'
 					),
 				},
+				{
+					command: 'wp omnioffloader status --format=json',
+					description: __(
+						'The same as one JSON object, for monitoring scripts.',
+						'omnioffloader'
+					),
+				},
 			],
-			options: [],
+			options: [
+				{
+					flag: '--format=<format>',
+					description: __(
+						'text (default) or json.',
+						'omnioffloader'
+					),
+				},
+			],
+		},
+		{
+			name: 'wp omnioffloader verify',
+			summary: __(
+				'Check that every offloaded file is in your cloud storage, and on the server where its retention policy keeps it. --repair uploads or downloads what differs; it never deletes a file.',
+				'omnioffloader'
+			),
+			view: 'tools',
+			viewLabel: __( 'Open Tools', 'omnioffloader' ),
+			docs: 'wp-cli/verify/',
+			examples: [
+				{
+					command: 'wp omnioffloader verify',
+					description: __(
+						'Check everything; changes nothing.',
+						'omnioffloader'
+					),
+				},
+				{
+					command: 'wp omnioffloader verify --repair --dry-run',
+					description: __(
+						'See what --repair would fix.',
+						'omnioffloader'
+					),
+				},
+				{
+					command: 'wp omnioffloader verify --repair',
+					description: __(
+						'Upload or download what differs.',
+						'omnioffloader'
+					),
+				},
+			],
+			options: [
+				{
+					flag: '--ids=<ids>',
+					description: __(
+						'Comma-separated attachment IDs.',
+						'omnioffloader'
+					),
+				},
+				{
+					flag: '--limit=<number>',
+					description: __(
+						'Check at most this many attachments.',
+						'omnioffloader'
+					),
+				},
+				{
+					flag: '--repair',
+					description: __(
+						'Fix what can be fixed; never deletes a file.',
+						'omnioffloader'
+					),
+				},
+				{
+					flag: '--dry-run',
+					description: __(
+						'With --repair: list the repairs without making them.',
+						'omnioffloader'
+					),
+				},
+				{
+					flag: '--format=<format>',
+					description: __(
+						'table, json, csv or count.',
+						'omnioffloader'
+					),
+				},
+			],
+		},
+		{
+			name: 'wp omnioffloader errors',
+			summary: __(
+				'List media with errors (failed offloads, and offloaded media whose Bring Back, retention update or move failed), retry failed offloads, or clear error logs.',
+				'omnioffloader'
+			),
+			view: 'tools',
+			viewLabel: __( 'Open Failed Items', 'omnioffloader' ),
+			docs: 'wp-cli/errors/',
+			examples: [
+				{
+					command: 'wp omnioffloader errors',
+					description: __(
+						'List them with their last error.',
+						'omnioffloader'
+					),
+				},
+				{
+					command: 'wp omnioffloader errors --retry',
+					description: __(
+						'Offload the failed offloads again.',
+						'omnioffloader'
+					),
+				},
+				{
+					command:
+						'wp omnioffloader errors --state=offloaded --clear',
+					description: __(
+						'Clear the error logs once the cause is fixed.',
+						'omnioffloader'
+					),
+				},
+			],
+			options: [
+				{
+					flag: '--state=<state>',
+					description: __(
+						'all (default), local (failed offloads) or offloaded.',
+						'omnioffloader'
+					),
+				},
+				{
+					flag: '--retry',
+					description: __(
+						'Offload the failed offloads again; takes --dry-run, --force and --concurrency.',
+						'omnioffloader'
+					),
+				},
+				{
+					flag: '--clear',
+					description: __(
+						'Delete the error logs of the listed items (asks first unless --yes).',
+						'omnioffloader'
+					),
+				},
+				{
+					flag: '--limit=<number>',
+					description: __(
+						'At most this many items, newest first.',
+						'omnioffloader'
+					),
+				},
+				{
+					flag: '--format=<format>',
+					description: __(
+						'table, json, csv, ids or count.',
+						'omnioffloader'
+					),
+				},
+			],
 		},
 		{
 			name: 'wp omnioffloader stop',
@@ -571,8 +727,8 @@ interface CommandRowProps {
  */
 function CommandRow( { example, onCopy }: CommandRowProps ) {
 	return (
-		<li className="smowp-cli__example">
-			<div className="smowp-cli__example-text">
+		<li className="omnioffloader-cli__example">
+			<div className="omnioffloader-cli__example-text">
 				<code>{ example.command }</code>
 				<span>{ example.description }</span>
 			</div>
@@ -624,9 +780,9 @@ export function CliReference( { onNavigate }: CliReferenceProps ) {
 				'omnioffloader'
 			) }
 		>
-			<div className="smowp-cli">
-				<section className="smowp-cli__background">
-					<div className="smowp-cli__head">
+			<div className="omnioffloader-cli">
+				<section className="omnioffloader-cli__background">
+					<div className="omnioffloader-cli__head">
 						<h3>
 							{ __(
 								'Run a long job in the background',
@@ -637,13 +793,13 @@ export function CliReference( { onNavigate }: CliReferenceProps ) {
 							{ __( 'Step-by-step guide', 'omnioffloader' ) }
 						</DocsLink>
 					</div>
-					<p className="smowp-cli__summary">
+					<p className="omnioffloader-cli__summary">
 						{ __(
 							'For a large library, start the job in the background and close the terminal. --concurrency moves several files at once (offload, restore, retention and move): any number from 1 to 64. Start with 32 on a VPS or dedicated server, try 64 for an offload on a fast connection.',
 							'omnioffloader'
 						) }
 					</p>
-					<ul className="smowp-cli__examples">
+					<ul className="omnioffloader-cli__examples">
 						{ getBackgroundSteps().map( ( step ) => (
 							<CommandRow
 								key={ step.command }
@@ -661,13 +817,13 @@ export function CliReference( { onNavigate }: CliReferenceProps ) {
 							cmd.name.replace( 'wp omnioffloader ', '' )
 						) }
 						tabIndex={ -1 }
-						className="smowp-cli__command"
+						className="omnioffloader-cli__command"
 					>
-						<div className="smowp-cli__head">
-							<code className="smowp-cli__name">
+						<div className="omnioffloader-cli__head">
+							<code className="omnioffloader-cli__name">
 								{ cmd.name }
 							</code>
-							<div className="smowp-cli__actions">
+							<div className="omnioffloader-cli__actions">
 								{ cmd.view !== 'tools' && (
 									<Button
 										variant="link"
@@ -681,9 +837,11 @@ export function CliReference( { onNavigate }: CliReferenceProps ) {
 								</DocsLink>
 							</div>
 						</div>
-						<p className="smowp-cli__summary">{ cmd.summary }</p>
+						<p className="omnioffloader-cli__summary">
+							{ cmd.summary }
+						</p>
 
-						<ul className="smowp-cli__examples">
+						<ul className="omnioffloader-cli__examples">
 							{ cmd.examples.map( ( example ) => (
 								<CommandRow
 									key={ example.command }
@@ -694,11 +852,11 @@ export function CliReference( { onNavigate }: CliReferenceProps ) {
 						</ul>
 
 						{ cmd.options.length > 0 && (
-							<dl className="smowp-cli__options">
+							<dl className="omnioffloader-cli__options">
 								{ cmd.options.map( ( option ) => (
 									<div
 										key={ option.flag }
-										className="smowp-cli__option"
+										className="omnioffloader-cli__option"
 									>
 										<dt>
 											<code>{ option.flag }</code>

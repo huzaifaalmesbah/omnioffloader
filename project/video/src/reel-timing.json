@@ -1,0 +1,271 @@
+{
+ "duration": 112.45,
+ "sentences": [
+  {
+   "scene": "01-hook",
+   "k": 0,
+   "start": 0.04,
+   "end": 2.7,
+   "text": "আপনার WordPress সাইট optimize করেছেন।"
+  },
+  {
+   "scene": "01-hook",
+   "k": 1,
+   "start": 2.7,
+   "end": 5.98,
+   "text": "Cache plugin দিয়েছেন, ছবি compress করেছেন।"
+  },
+  {
+   "scene": "01-hook",
+   "k": 2,
+   "start": 5.98,
+   "end": 7.92,
+   "text": "তাও সাইট খুলতে সময় লাগে?"
+  },
+  {
+   "scene": "02-question",
+   "k": 0,
+   "start": 7.92,
+   "end": 9.3,
+   "text": "তাহলে একটা প্রশ্ন করি।"
+  },
+  {
+   "scene": "02-question",
+   "k": 1,
+   "start": 9.3,
+   "end": 12.62,
+   "text": "আপনার সাইটের ছবিগুলো আসে কোথা থেকে, বলেন তো?"
+  },
+  {
+   "scene": "02-question",
+   "k": 2,
+   "start": 12.62,
+   "end": 16.2,
+   "text": "বেশিরভাগ সাইটে, একটা ছোট hosting server থেকে।"
+  },
+  {
+   "scene": "02-question",
+   "k": 3,
+   "start": 16.2,
+   "end": 19.28,
+   "text": "Cache plugin পেজটা দ্রুত বানায়, এটা সত্যি।"
+  },
+  {
+   "scene": "02-question",
+   "k": 4,
+   "start": 19.28,
+   "end": 23.1,
+   "text": "কিন্তু প্রতিটা ছবি তারপরও ওই একই server থেকে যায়।"
+  },
+  {
+   "scene": "02-question",
+   "k": 5,
+   "start": 23.1,
+   "end": 27.02,
+   "text": "আর একটা পেজে ছবিই সাধারণত সবচেয়ে ভারী অংশ।"
+  },
+  {
+   "scene": "03-analogy",
+   "k": 0,
+   "start": 27.02,
+   "end": 28.2,
+   "text": "একটা উদাহরণ দিই।"
+  },
+  {
+   "scene": "03-analogy",
+   "k": 1,
+   "start": 28.2,
+   "end": 30.52,
+   "text": "ধরুন আপনার দোকান শুধু ঢাকায়।"
+  },
+  {
+   "scene": "03-analogy",
+   "k": 2,
+   "start": 30.52,
+   "end": 35.06,
+   "text": "চট্টগ্রাম, সিলেট, রাজশাহী, সবাইকে ঢাকায় এসে কিনতে হয়।"
+  },
+  {
+   "scene": "03-analogy",
+   "k": 3,
+   "start": 35.06,
+   "end": 37.3,
+   "text": "ভিড় বাড়ে, লাইন লম্বা হয়।"
+  },
+  {
+   "scene": "03-analogy",
+   "k": 4,
+   "start": 37.3,
+   "end": 40.2,
+   "text": "এখন যদি প্রতিটা শহরে একটা branch থাকে?"
+  },
+  {
+   "scene": "03-analogy",
+   "k": 5,
+   "start": 40.2,
+   "end": 41.9,
+   "text": "CDN ঠিক এটাই করে।"
+  },
+  {
+   "scene": "03-analogy",
+   "k": 6,
+   "start": 41.9,
+   "end": 45.06,
+   "text": "আপনার ছবি visitor এর কাছের server থেকে যায়।"
+  },
+  {
+   "scene": "04-cloud",
+   "k": 0,
+   "start": 45.06,
+   "end": 49.46,
+   "text": "আর ছবি রাখা থাকে cloud storage এ, যেমন Cloudflare R2।"
+  },
+  {
+   "scene": "04-cloud",
+   "k": 1,
+   "start": 49.46,
+   "end": 53.84,
+   "text": "R2 তে free tier আছে, আর download এর জন্য আলাদা টাকা নেয় না।"
+  },
+  {
+   "scene": "05-pain",
+   "k": 0,
+   "start": 53.84,
+   "end": 54.88,
+   "text": "কিন্তু তারপর?"
+  },
+  {
+   "scene": "05-pain",
+   "k": 1,
+   "start": 54.88,
+   "end": 57.94,
+   "text": "হাজার হাজার পুরনো ছবি cloud এ নেবে কে?"
+  },
+  {
+   "scene": "05-pain",
+   "k": 2,
+   "start": 57.94,
+   "end": 60.72,
+   "text": "প্রতিটা post এ ছবির link বদলাবে কে?"
+  },
+  {
+   "scene": "05-pain",
+   "k": 3,
+   "start": 60.72,
+   "end": 63.3,
+   "text": "নতুন ছবি upload করলেই কে পাঠাবে?"
+  },
+  {
+   "scene": "06-product",
+   "k": 0,
+   "start": 63.3,
+   "end": 66.52,
+   "text": "এই ঝামেলা থেকেই আমি OmniOffloader বানিয়েছি।"
+  },
+  {
+   "scene": "06-product",
+   "k": 1,
+   "start": 66.52,
+   "end": 68.46,
+   "text": "একটা free WordPress plugin।"
+  },
+  {
+   "scene": "06-product",
+   "k": 2,
+   "start": 68.46,
+   "end": 72.24,
+   "text": "আপনার bucket connect করবেন, একবার Bulk Offload চাপবেন।"
+  },
+  {
+   "scene": "06-product",
+   "k": 3,
+   "start": 72.24,
+   "end": 76.42,
+   "text": "পুরনো সব ছবি cloud এ যাবে, নতুনগুলো upload হলেই যাবে।"
+  },
+  {
+   "scene": "06-product",
+   "k": 4,
+   "start": 76.42,
+   "end": 80.2,
+   "text": "সাইটে ছবি আসবে cloud থেকে, link নিজে থেকেই বদলায়।"
+  },
+  {
+   "scene": "07-control",
+   "k": 0,
+   "start": 80.2,
+   "end": 84.24,
+   "text": "চাইলে server থেকে local copy মুছে জায়গাও খালি করতে পারবেন।"
+  },
+  {
+   "scene": "07-control",
+   "k": 1,
+   "start": 84.24,
+   "end": 85.4,
+   "text": "মত বদলালে?"
+  },
+  {
+   "scene": "07-control",
+   "k": 2,
+   "start": 85.4,
+   "end": 88.52,
+   "text": "Bring Back দিয়ে সব ছবি আবার server এ ফেরত।"
+  },
+  {
+   "scene": "08-honest",
+   "k": 0,
+   "start": 88.52,
+   "end": 90.36,
+   "text": "তবে একটা কথা সত্যি বলি।"
+  },
+  {
+   "scene": "08-honest",
+   "k": 1,
+   "start": 90.36,
+   "end": 94.06,
+   "text": "Theme বা plugin নিজেই ভারী হলে, সেটা আলাদা সমস্যা।"
+  },
+  {
+   "scene": "08-honest",
+   "k": 2,
+   "start": 94.06,
+   "end": 98.16,
+   "text": "কিন্তু slow হওয়ার কারণ যদি ছবি হয়, এটা খুব সহজ fix।"
+  },
+  {
+   "scene": "08-honest",
+   "k": 3,
+   "start": 98.16,
+   "end": 103.56,
+   "text": "মূল কথা হলো, শুধু optimize না, ছবি কোথা থেকে যাচ্ছে সেটাও দেখুন।"
+  },
+  {
+   "scene": "09-cta",
+   "k": 0,
+   "start": 103.56,
+   "end": 106.1,
+   "text": "আপনার সাইটের ছবি এখন কোথা থেকে আসে?"
+  },
+  {
+   "scene": "09-cta",
+   "k": 1,
+   "start": 106.1,
+   "end": 107.12,
+   "text": "কমেন্টে জানান।"
+  },
+  {
+   "scene": "09-cta",
+   "k": 2,
+   "start": 107.12,
+   "end": 109.02,
+   "text": "Plugin এর link কমেন্টে দিলাম।"
+  },
+  {
+   "scene": "09-cta",
+   "k": 3,
+   "start": 109.02,
+   "end": 112.06,
+   "text": "WordPress নিয়ে এমন practical ভিডিও পেতে Follow করুন।"
+  }
+ ]
+}

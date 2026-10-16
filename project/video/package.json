@@ -14,9 +14,13 @@
     "sfx": ".venv/bin/python scripts/sfx.py",
     "prep:bn": "mkdir -p public/voice-bn && cp voice-bn/*.mp3 public/voice-bn/",
     "render:bn": "pnpm prep:bn && remotion render BanglaR2 omnioffloader-r2-bangla.mp4 --codec=h264 --crf=18 --audio-bitrate=320k --image-format=jpeg --jpeg-quality=95",
+    "voice:reel": ".venv/bin/python scripts/reel-voice.py",
+    "render:reel": "remotion render ReelSlowSite reel-slow-site.mp4 --codec=h264 --crf=18 --audio-bitrate=320k --image-format=jpeg --jpeg-quality=95",
     "thumbs:bn": "remotion still BanglaThumbA thumbnail-a.png && remotion still BanglaThumbB thumbnail-b.png && remotion still BanglaThumb thumbnail-c.png"
   },
   "dependencies": {
+    "@dicebear/avataaars": "9.4.2",
+    "@dicebear/core": "9.4.2",
     "@remotion/cli": "4.0.534",
     "@remotion/google-fonts": "4.0.534",
     "@remotion/media-utils": "4.0.534",

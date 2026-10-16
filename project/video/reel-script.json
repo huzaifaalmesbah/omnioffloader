@@ -1,0 +1,49 @@
+[
+ {"id":"01-hook","text":"আপনার WordPress সাইট optimize করেছেন। Cache plugin দিয়েছেন, ছবি compress করেছেন। তাও সাইট খুলতে সময় লাগে?","beats":[
+  {"headline":"Optimize তো করেছেন","accent":"Optimize","tone":"idea","visual":"Character 'আপনি' smiling; checklist card pops in"},
+  {"headline":"Cache ✓ Compress ✓","accent":"","tone":"fix","visual":"Ticks stagger in: Cache, Compress, Lazy load with green OK badges"},
+  {"headline":"তাও slow?","accent":"slow?","tone":"problem","visual":"Browser card loading bar crawls; character turns worried with sweat drop"}]},
+ {"id":"02-question","text":"তাহলে একটা প্রশ্ন করি। আপনার সাইটের ছবিগুলো আসে কোথা থেকে, বলেন তো? বেশিরভাগ সাইটে, একটা ছোট hosting server থেকে। Cache plugin পেজটা দ্রুত বানায়, এটা সত্যি। কিন্তু প্রতিটা ছবি তারপরও ওই একই server থেকে যায়। আর একটা পেজে ছবিই সাধারণত সবচেয়ে ভারী অংশ।","beats":[
+  {"headline":"একটা প্রশ্ন","accent":"","tone":"idea","visual":"Previous scene dims; big ? in a circle"},
+  {"headline":"ছবি আসে কোথা থেকে?","accent":"কোথা থেকে?","tone":"idea","visual":"Web page card with image boxes; dotted lines lead off-screen"},
+  {"headline":"একটাই ছোট server","accent":"server","tone":"problem","visual":"Pan to small 'Shared hosting' server box; every line ends there"},
+  {"headline":"Cache কাজ করছে","accent":"কাজ করছে","tone":"fix","visual":"HTML card arrives fast with green OK"},
+  {"headline":"ছবি এখনো একই server থেকে","accent":"একই server","tone":"problem","visual":"Queue of image tiles crawls along one dotted connector"},
+  {"headline":"সবচেয়ে ভারী: ছবি","accent":"ছবি","tone":"problem","visual":"Page-weight bar: thin HTML, thin CSS/JS, big orange images block (no numbers)"}]},
+ {"id":"03-analogy","text":"একটা উদাহরণ দিই। ধরুন আপনার দোকান শুধু ঢাকায়। চট্টগ্রাম, সিলেট, রাজশাহী, সবাইকে ঢাকায় এসে কিনতে হয়। ভিড় বাড়ে, লাইন লম্বা হয়। এখন যদি প্রতিটা শহরে একটা branch থাকে? CDN ঠিক এটাই করে। আপনার ছবি visitor এর কাছের server থেকে যায়।","beats":[
+  {"headline":"একটা উদাহরণ","accent":"","tone":"idea","visual":"Wipe transition"},
+  {"headline":"দোকান শুধু ঢাকায়","accent":"ঢাকায়","tone":"idea","visual":"Simple Bangladesh map card, city dots, one shop in Dhaka"},
+  {"headline":"সবাইকে ঢাকায় আসতে হয়","accent":"ঢাকায়","tone":"problem","visual":"People icons walk dotted lines from each city to Dhaka"},
+  {"headline":"লাইন লম্বা","accent":"লাইন","tone":"problem","visual":"Queue grows; shopkeeper sweats"},
+  {"headline":"প্রতিটা শহরে branch","accent":"branch","tone":"fix","visual":"Shop pops up in every city; queues vanish"},
+  {"headline":"CDN = সব শহরে branch","accent":"CDN","tone":"brand","visual":"Shop icons morph into CDN nodes"},
+  {"headline":"ছবি আসে কাছ থেকে","accent":"কাছ থেকে","tone":"fix","visual":"Dot travels short hop from nearest node to visitor"}]},
+ {"id":"04-cloud","text":"আর ছবি রাখা থাকে cloud storage এ, যেমন Cloudflare R2। R2 তে free tier আছে, আর download এর জন্য আলাদা টাকা নেয় না।","beats":[
+  {"headline":"ছবি থাকে cloud এ","accent":"cloud এ","tone":"idea","visual":"Cloud tile; badges pop: R2, S3, B2, Spaces, Wasabi"},
+  {"headline":"শুরু করা যায় free তে","accent":"free তে","tone":"fix","visual":"Pills: Free tier, No egress fee"}]},
+ {"id":"05-pain","text":"কিন্তু তারপর? হাজার হাজার পুরনো ছবি cloud এ নেবে কে? প্রতিটা post এ ছবির link বদলাবে কে? নতুন ছবি upload করলেই কে পাঠাবে?","beats":[
+  {"headline":"কিন্তু তারপর?","accent":"তারপর?","tone":"problem","visual":"Background switches to dark navy"},
+  {"headline":"হাজার ছবি কে নেবে?","accent":"হাজার","tone":"problem","visual":"Media Library grid fills, counter climbs"},
+  {"headline":"link বদলাবে কে?","accent":"বদলাবে কে?","tone":"problem","visual":"Post card, every image link red-underlined"},
+  {"headline":"নতুন ছবি কে পাঠাবে?","accent":"কে পাঠাবে?","tone":"problem","visual":"Upload icon; character worried; OK badges flip red"}]},
+ {"id":"06-product","text":"এই ঝামেলা থেকেই আমি OmniOffloader বানিয়েছি। একটা free WordPress plugin। আপনার bucket connect করবেন, একবার Bulk Offload চাপবেন। পুরনো সব ছবি cloud এ যাবে, নতুনগুলো upload হলেই যাবে। সাইটে ছবি আসবে cloud থেকে, link নিজে থেকেই বদলায়।","beats":[
+  {"headline":"তাই OmniOffloader","accent":"OmniOffloader","tone":"brand","visual":"Back to light; logo pops; dashboard screenshot in BrowserFrame"},
+  {"headline":"Free WordPress plugin","accent":"Free","tone":"fix","visual":"WordPress.org pill"},
+  {"headline":"একবার Bulk Offload","accent":"Bulk Offload","tone":"idea","visual":"Offload page in BrowserFrame; cursor clicks; progress fills"},
+  {"headline":"পুরনো + নতুন, সব cloud এ","accent":"সব cloud এ","tone":"fix","visual":"Dots flow along server → cloud connector"},
+  {"headline":"link বদলায় নিজে থেকেই","accent":"নিজে থেকেই","tone":"fix","visual":"Post card links flip to CDN domain with green ✓"}]},
+ {"id":"07-control","text":"চাইলে server থেকে local copy মুছে জায়গাও খালি করতে পারবেন। মত বদলালে? Bring Back দিয়ে সব ছবি আবার server এ ফেরত।","beats":[
+  {"headline":"জায়গা খালি","accent":"জায়গা","tone":"fix","visual":"Hosting disk bar shrinks"},
+  {"headline":"মত বদলালে?","accent":"মত বদলালে?","tone":"idea","visual":"Character thinks; small ? bubble"},
+  {"headline":"Bring Back দিয়ে ফেরত","accent":"Bring Back","tone":"fix","visual":"Arrows reverse: cloud → server"}]},
+ {"id":"08-honest","text":"তবে একটা কথা সত্যি বলি। Theme বা plugin নিজেই ভারী হলে, সেটা আলাদা সমস্যা। কিন্তু slow হওয়ার কারণ যদি ছবি হয়, এটা খুব সহজ fix। মূল কথা হলো, শুধু optimize না, ছবি কোথা থেকে যাচ্ছে সেটাও দেখুন।","beats":[
+  {"headline":"সত্যি কথা","accent":"","tone":"idea","visual":"Scene dims"},
+  {"headline":"ভারী theme = আলাদা সমস্যা","accent":"আলাদা সমস্যা","tone":"problem","visual":"Theme card with weight icon"},
+  {"headline":"ছবি হলে সহজ fix","accent":"সহজ fix","tone":"fix","visual":"CDN map returns, all green"},
+  {"headline":"ছবি যাচ্ছে কোথা থেকে?","accent":"কোথা থেকে?","tone":"idea","visual":"Recap: server → cloud → visitor"}]},
+ {"id":"09-cta","text":"আপনার সাইটের ছবি এখন কোথা থেকে আসে? কমেন্টে জানান। Plugin এর link কমেন্টে দিলাম। WordPress নিয়ে এমন practical ভিডিও পেতে Follow করুন।","beats":[
+  {"headline":"আপনার ছবি কোথা থেকে আসে?","accent":"কোথা থেকে","tone":"idea","visual":"Comment card with typing caret"},
+  {"headline":"কমেন্টে জানান","accent":"কমেন্টে","tone":"idea","visual":"Comment card fills"},
+  {"headline":"link কমেন্টে","accent":"link","tone":"fix","visual":"Pinned-comment pill with plugin link"},
+  {"headline":"Follow করুন","accent":"Follow","tone":"brand","visual":"Profile card; cursor clicks Follow then Share; OmniOffloader logo"}]}
+]

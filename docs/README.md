@@ -15,4 +15,9 @@ pnpm build       # static site in dist/
 
 ## Deploy (Vercel)
 
-Import the repository in Vercel and set **Root Directory** to `docs`. `vercel.json` sets the install/build commands and skips builds when neither `docs/` nor `readme.txt` changed. Once a custom domain is connected, set the `DOCS_SITE_URL` environment variable (used for the sitemap and canonical URLs).
+Import the repository in Vercel and set **Root Directory** to `docs`. `vercel.json` sets the install/build commands, and its ignore step (`scripts/vercel-ignore.sh`) decides what builds:
+
+- **Production** builds only with a release — the merged Release Please PR (`chore: release x.y.z`) — so the live docs never describe features the released plugin doesn't have yet. For a docs fix that can't wait, put `[deploy docs]` in the commit message (or redeploy from Vercel).
+- **Previews** (pull requests, branches) build whenever `docs/` or `readme.txt` changed.
+
+Merge the release PR with **squash** (the default): its commit message must start with `chore: release`. Once a custom domain is connected, set the `DOCS_SITE_URL` environment variable (used for the sitemap and canonical URLs).

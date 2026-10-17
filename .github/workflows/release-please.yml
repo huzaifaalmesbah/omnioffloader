@@ -96,6 +96,27 @@ jobs:
             } );
             core.info( `Closed milestone ${ milestone.title }.` );
 
+  # The public docs (Vercel's production branch `docs-live`) follow releases:
+  # docs merged into main for unreleased features go live only now.
+  # Fast-forward only: docs fixes made on docs-live are merged into main by
+  # docs-live.yml, so a failure here means one was not — never overwrite it.
+  publish-docs:
+    needs: release-please
+    if: ${{ needs.release-please.outputs.release_created }}
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Move docs-live to the release
+        env:
+          TAG: ${{ needs.release-please.outputs.tag_name }}
+        run: |
+          SHA="$(git rev-parse "refs/tags/${TAG}^{commit}")"
+          git push origin "${SHA}:refs/heads/docs-live"
+
   # A release created with GITHUB_TOKEN does not fire the "release published"
   # event, so the deploy is called here instead of waiting for that event.
   deploy:

@@ -54,13 +54,7 @@ The public documentation website lives in `docs/` as a standalone Astro Starligh
 * **Synchronization Mandate**: When user-facing features, settings, CLI commands/flags, provider fields, or hooks change, update the matching markdown documentation in `docs/src/content/docs/` in the same commit.
 * **Privacy**: Never link to the private GitHub repository from public documentation.
 
-### 3.2 Internal Architecture & Notes (`project/`)
-All developer notes, architectural design specifications, roadmaps, security analyses, and audits are strictly segregated into `project/`:
-* `project/PLAN.md` — Core architectural blueprint, phase maps, and technical invariants.
-* `project/AUDIT.md` — Security and pre-release audit logs.
-* `project/roadmap/` — Future milestone planning.
-
-### 3.3 Automated Screenshot Engine (`pnpm screenshots`)
+### 3.2 Automated Screenshot Engine (`pnpm screenshots`)
 High-resolution screenshots are generated automatically by `scripts/capture-screenshots.js` using Puppeteer Core:
 * **Command**: `pnpm screenshots`
 * **Features**:

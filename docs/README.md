@@ -1,6 +1,6 @@
 # OmniOffloader — public docs site
 
-The user documentation, built with [Astro Starlight](https://starlight.astro.build/). This folder is excluded from the plugin bundle and the WordPress.org deploy (`.distignore`). Internal project notes live in `../project/`, never here.
+The user documentation, built with [Astro Starlight](https://starlight.astro.build/). This folder is excluded from the plugin bundle and the WordPress.org deploy (`.distignore`).
 
 ```bash
 pnpm install     # run inside docs/ — it is its own pnpm workspace

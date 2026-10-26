@@ -11,10 +11,29 @@ const { execSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 
-const WP_ROOT = '/Users/huzaifa/Sites/wp/wp71';
-const PLUGIN_ROOT = path.join(WP_ROOT, 'wp-content/plugins/omnioffloader');
+const PLUGIN_ROOT = path.resolve(__dirname, '..');
+const WP_ROOT = process.env.WP_ROOT || path.resolve(PLUGIN_ROOT, '../../..');
 const WPORG_DIR = path.join(PLUGIN_ROOT, '.wordpress-org');
 const DOCS_IMG_DIR = path.join(PLUGIN_ROOT, 'docs/public/images/screenshots');
+
+function getSiteUrl() {
+  if (process.env.WP_SITE_URL) {
+    return process.env.WP_SITE_URL.replace(/\/+$/, '');
+  }
+  try {
+    const raw = execSync('wp option get siteurl 2>/dev/null', { cwd: WP_ROOT }).toString();
+    const match = raw.match(/https?:\/\/[^\s\n\r]+/);
+    if (match) {
+      return match[0].replace(/\/+$/, '');
+    }
+  } catch (e) {
+    // fallback
+  }
+  return 'https://wp71.test';
+}
+
+const SITE_URL = getSiteUrl();
+const SITE_DOMAIN = new URL(SITE_URL).hostname;
 
 fs.mkdirSync(WPORG_DIR, { recursive: true });
 fs.mkdirSync(DOCS_IMG_DIR, { recursive: true });
@@ -54,7 +73,7 @@ async function getAuthCookies() {
     return {
       name,
       value: rest.join('='),
-      domain: 'wp71.test',
+      domain: SITE_DOMAIN,
       path: '/',
       secure: true
     };
@@ -294,7 +313,7 @@ async function captureScreen(browser, cookies, config, totalScreens) {
 }
 
 async function main() {
-  console.log('Fetching auth cookies for wp71.test...');
+  console.log(`Fetching auth cookies for ${SITE_DOMAIN}...`);
   const cookies = await getAuthCookies();
 
   const browser = await puppeteer.launch({
@@ -312,7 +331,7 @@ async function main() {
       width: 1440,
       height: 940,
       title: 'Dashboard Overview',
-      url: 'https://wp71.test/wp-admin/admin.php?page=omnioffloader&view=dashboard',
+      url: `${SITE_URL}/wp-admin/admin.php?page=omnioffloader&view=dashboard`,
       waitFor: '#omnioffloader-admin-app',
       annotations: [
         { selector: '.omnioffloader-hero', num: 1, label: 'Live Cloud Provider & Health', position: 'top-right', offsetY: -16 },
@@ -331,7 +350,7 @@ async function main() {
       width: 1440,
       height: 900,
       title: 'Dashboard Storage',
-      url: 'https://wp71.test/wp-admin/admin.php?page=omnioffloader&view=dashboard',
+      url: `${SITE_URL}/wp-admin/admin.php?page=omnioffloader&view=dashboard`,
       waitFor: '#omnioffloader-admin-app',
       mocks: [
         {
@@ -376,7 +395,7 @@ async function main() {
       width: 1440,
       height: 1320,
       title: 'Cloud Storage Provider & Credentials',
-      url: 'https://wp71.test/wp-admin/admin.php?page=omnioffloader&view=settings',
+      url: `${SITE_URL}/wp-admin/admin.php?page=omnioffloader&view=settings`,
       waitFor: '#omnioffloader-admin-app',
       beforeCapture: async (page) => {
         try {
@@ -405,7 +424,7 @@ async function main() {
       width: 1440,
       height: 1080,
       title: 'Retention & Delivery Policies',
-      url: 'https://wp71.test/wp-admin/admin.php?page=omnioffloader&view=settings',
+      url: `${SITE_URL}/wp-admin/admin.php?page=omnioffloader&view=settings`,
       waitFor: '#omnioffloader-admin-app',
       beforeCapture: async (page) => {
         await page.evaluate(() => {
@@ -431,7 +450,7 @@ async function main() {
       width: 1440,
       height: 980,
       title: 'Bulk Offload Center (Active & Custom Amount)',
-      url: 'https://wp71.test/wp-admin/admin.php?page=omnioffloader&view=offload',
+      url: `${SITE_URL}/wp-admin/admin.php?page=omnioffloader&view=offload`,
       waitFor: '#omnioffloader-admin-app',
       mocks: [
         {
@@ -446,8 +465,8 @@ async function main() {
               active: false,
               reason: '',
               locked: false,
-              live_address: 'wp71.test',
-              current_address: 'wp71.test',
+              live_address: SITE_DOMAIN,
+              current_address: SITE_DOMAIN,
               environment: 'production',
               bring_back: true,
               folder_owner: '',
@@ -484,7 +503,7 @@ async function main() {
       width: 1440,
       height: 980,
       title: 'Zero-Lock-In Bring Back (Restore)',
-      url: 'https://wp71.test/wp-admin/admin.php?page=omnioffloader&view=bring-back',
+      url: `${SITE_URL}/wp-admin/admin.php?page=omnioffloader&view=bring-back`,
       waitFor: '#omnioffloader-admin-app',
       annotations: [
         { selector: '.omnioffloader-media-summary', num: 1, label: 'Offload Status & Pre-Flight Disk Space Verification', position: 'top-left', offsetY: -16 },
@@ -502,7 +521,7 @@ async function main() {
       width: 1440,
       height: 940,
       title: 'WordPress Media Library Integration',
-      url: 'https://wp71.test/wp-admin/upload.php?mode=list',
+      url: `${SITE_URL}/wp-admin/upload.php?mode=list`,
       waitFor: '#the-list',
       beforeCapture: async (page) => {
         await page.evaluate(() => {
@@ -532,7 +551,7 @@ async function main() {
       width: 1440,
       height: 960,
       title: 'Apply Retention Policy to Existing Media (Tools)',
-      url: 'https://wp71.test/wp-admin/admin.php?page=omnioffloader&view=tools',
+      url: `${SITE_URL}/wp-admin/admin.php?page=omnioffloader&view=tools`,
       waitFor: '#omnioffloader-admin-app',
       mocks: [
         {
@@ -547,8 +566,8 @@ async function main() {
               active: false,
               reason: '',
               locked: false,
-              live_address: 'wp71.test',
-              current_address: 'wp71.test',
+              live_address: SITE_DOMAIN,
+              current_address: SITE_DOMAIN,
               environment: 'production',
               bring_back: true,
               folder_owner: '',
@@ -587,7 +606,7 @@ async function main() {
       width: 1440,
       height: 940,
       title: 'Safe Mode Staging & Dev Protection',
-      url: 'https://wp71.test/wp-admin/admin.php?page=omnioffloader&view=dashboard',
+      url: `${SITE_URL}/wp-admin/admin.php?page=omnioffloader&view=dashboard`,
       waitFor: '#omnioffloader-admin-app',
       mocks: [
         {
@@ -603,7 +622,7 @@ async function main() {
               reason: 'address',
               locked: false,
               live_address: 'https://example.com',
-              current_address: 'https://wp71.test',
+              current_address: SITE_URL,
               environment: 'staging',
               bring_back: true,
               folder_owner: '',
@@ -628,7 +647,7 @@ async function main() {
       width: 1440,
       height: 960,
       title: 'Shared Bucket & Custom Path Prefix',
-      url: 'https://wp71.test/wp-admin/admin.php?page=omnioffloader&view=settings',
+      url: `${SITE_URL}/wp-admin/admin.php?page=omnioffloader&view=settings`,
       waitFor: '#omnioffloader-admin-app',
       beforeCapture: async (page) => {
         await scrollToCard(page, 2);
@@ -648,7 +667,7 @@ async function main() {
       width: 1440,
       height: 960,
       title: 'Path Prefix Change Warning',
-      url: 'https://wp71.test/wp-admin/admin.php?page=omnioffloader&view=settings',
+      url: `${SITE_URL}/wp-admin/admin.php?page=omnioffloader&view=settings`,
       waitFor: '#omnioffloader-admin-app',
       beforeCapture: async (page) => {
         // Type a new folder through React's own value setter.
@@ -679,7 +698,7 @@ async function main() {
       width: 1440,
       height: 900,
       title: 'Bucket Folder Used by Another Site',
-      url: 'https://wp71.test/wp-admin/admin.php?page=omnioffloader&view=settings',
+      url: `${SITE_URL}/wp-admin/admin.php?page=omnioffloader&view=settings`,
       mocks: [
         {
           path: '/omnioffloader/v1/core/stats',
@@ -693,8 +712,8 @@ async function main() {
               active: true,
               reason: 'folder',
               locked: false,
-              live_address: 'https://wp71.test',
-              current_address: 'https://wp71.test',
+              live_address: SITE_URL,
+              current_address: SITE_URL,
               environment: 'production',
               bring_back: true,
               folder_owner: 'https://shop.example.com',
@@ -719,7 +738,7 @@ async function main() {
       width: 1440,
       height: 940,
       title: 'Staging & Dev Copies Settings Card',
-      url: 'https://wp71.test/wp-admin/admin.php?page=omnioffloader&view=settings',
+      url: `${SITE_URL}/wp-admin/admin.php?page=omnioffloader&view=settings`,
       waitFor: '#omnioffloader-admin-app',
       beforeCapture: async (page) => {
         // Ensure "Protect the live site when this is a copy" toggle is checked
@@ -757,7 +776,7 @@ async function main() {
       width: 1440,
       height: 940,
       title: 'Transfer Speed & Concurrency Settings',
-      url: 'https://wp71.test/wp-admin/admin.php?page=omnioffloader&view=settings',
+      url: `${SITE_URL}/wp-admin/admin.php?page=omnioffloader&view=settings`,
       waitFor: '#omnioffloader-admin-app',
       beforeCapture: async (page) => {
         await page.evaluate(() => {
@@ -781,7 +800,7 @@ async function main() {
       width: 1440,
       height: 940,
       title: 'Mirror Delete Behavior Setting',
-      url: 'https://wp71.test/wp-admin/admin.php?page=omnioffloader&view=settings',
+      url: `${SITE_URL}/wp-admin/admin.php?page=omnioffloader&view=settings`,
       waitFor: '#omnioffloader-admin-app',
       beforeCapture: async (page) => {
         // Ensure Mirror Delete toggle is turned ON
@@ -818,7 +837,7 @@ async function main() {
       width: 1440,
       height: 900,
       title: 'WP-CLI Job Running (Offload Screen)',
-      url: 'https://wp71.test/wp-admin/admin.php?page=omnioffloader&view=offload',
+      url: `${SITE_URL}/wp-admin/admin.php?page=omnioffloader&view=offload`,
       mocks: [
         {
           path: '/omnioffloader/v1/core/cli-job',
@@ -856,7 +875,7 @@ async function main() {
       width: 1440,
       height: 940,
       title: 'Move Media to the Current Folder (Tools)',
-      url: 'https://wp71.test/wp-admin/admin.php?page=omnioffloader&view=tools',
+      url: `${SITE_URL}/wp-admin/admin.php?page=omnioffloader&view=tools`,
       mocks: [
         { path: '/omnioffloader/v1/move/preflight', data: { folder: FOLDER, elsewhere: 18 } }
       ],
@@ -880,7 +899,7 @@ async function main() {
       width: 1440,
       height: 940,
       title: 'Path Prefix Change: Move Existing Media',
-      url: 'https://wp71.test/wp-admin/admin.php?page=omnioffloader&view=settings',
+      url: `${SITE_URL}/wp-admin/admin.php?page=omnioffloader&view=settings`,
       mocks: [
         { path: '/omnioffloader/v1/move/preflight', data: { folder: FOLDER, elsewhere: 18 } }
       ],
@@ -902,7 +921,7 @@ async function main() {
       width: 1440,
       height: 980,
       title: 'WP-CLI Reference (Tools)',
-      url: 'https://wp71.test/wp-admin/admin.php?page=omnioffloader&view=tools',
+      url: `${SITE_URL}/wp-admin/admin.php?page=omnioffloader&view=tools`,
       waitFor: '.omnioffloader-cli',
       beforeCapture: async (page) => {
         await scrollBelowHeader(page, '.omnioffloader-cli', 150);

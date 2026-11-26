@@ -180,8 +180,8 @@ class AttachmentUploader {
 		// Confirm the new objects before the policy may delete their local copies.
 		$confirmed = $this->confirm_all( array_column( $missing, 'key' ) );
 
-		foreach ( $missing as $entry ) {
-			if ( empty( $confirmed[ $entry['key'] ] ) ) {
+		foreach ( $missing as $sent ) {
+			if ( empty( $confirmed[ $sent['key'] ] ) ) {
 				return false;
 			}
 		}

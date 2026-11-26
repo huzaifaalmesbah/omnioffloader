@@ -968,7 +968,10 @@
 			var path = String((options && (options.path || options.url)) || '');
 			var method = String((options && options.method) || 'GET').toUpperCase();
 
-			if ('POST' === method && /\/wp\/v2\/media(?:\/\d+\/finalize)?(?:[/?]|$)/.test(path) && result && typeof result.then === 'function') {
+			// Only the create and finalize requests: not a sideload, and not an
+			// edit of one attachment (POST /wp/v2/media/123). "&" covers plain
+			// permalinks (?rest_route=/wp/v2/media&…).
+			if ('POST' === method && /\/wp\/v2\/media(?:\/\d+\/finalize)?\/?(?:[?&]|$)/.test(path) && result && typeof result.then === 'function') {
 				result.then(function() {
 					scheduleInFlightPoll(1000);
 				}, function() {});

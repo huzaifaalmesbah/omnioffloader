@@ -20,6 +20,7 @@ Releases are automated with Release Please (`.github/workflows/release-please.ym
 - Merged PRs without a milestone join the lowest open version milestone (`milestones.yml`).
 - A migration for the new version goes in `Core\Migrator`, in the feature PR that needs it.
 - Needs the repo setting "Allow GitHub Actions to create and approve pull requests".
+- **Workflow rules** (checked by `workflow-lint.yml`: actionlint + zizmor at `min-severity: low`): pin every action to a commit SHA with a `# vX.Y.Z` comment (Dependabot, `.github/dependabot.yml`, bumps them weekly with a 7-day cooldown — but not the `docker://` actionlint digest or the zizmor `version` in `workflow-lint.yml`, which are bumped by hand); `permissions: {}` at the top and per-job permissions; `persist-credentials: false` on every checkout that doesn't `git push`; `timeout-minutes` on every job (not allowed on a job that calls a reusable workflow); never put `${{ … }}` inside a `run:` script — pass it through `env:`; no dependency cache in release/deploy jobs (no `cache:` input, and `package-manager-cache: false` on setup-node — it only caches on its own for npm, the explicit false keeps that off). A deliberate exception gets `# zizmor: ignore[<audit>]` plus a comment saying why. Run `actionlint` locally before pushing workflow changes.
 
 ## What This Plugin Does
 
@@ -45,7 +46,13 @@ composer phpstan     # PHPStan level 8 (szepeviktor/phpstan-wordpress)
 composer phpcs       # WordPress Coding Standards
 ```
 
-Run `pnpm check-types`, `pnpm lint:js`, `composer phpstan` and `composer phpcs` before committing — GitHub Actions only builds and deploys, so nothing else catches a regression. Translations come from translate.wordpress.org; there is no local i18n build step and no `languages/` folder.
+Run `pnpm check-types`, `pnpm lint:js`, `composer phpstan` and `composer phpcs` before committing. `.github/workflows/tests.yml` runs them again on every PR and push to main, plus the integration tests on a **computed** PHP × WordPress matrix (`scripts/ci-matrix.mjs`: `Requires at least` / `Requires PHP` from `readme.txt`, WordPress versions from `api.wordpress.org/core/stable-check`, PHP versions from wordpress-develop's `.version-support-php.json` for the latest major — never hard-code versions in the workflow). PRs run a reduced matrix: lowest/highest PHP on the oldest (newest point release of `Requires at least`, on MySQL 5.7), previous-major and latest WordPress, plus one multisite job (main site **and** a sub-site), one Redis object-cache job (`redis-cache` drop-in, Predis) and one MariaDB 10.6 job; a PHP core lists only for its next major, and WordPress nightly (or a version given to a manual run), are experimental. The weekly run, a PR labelled **`full matrix`** and a manual run with `full` test every PHP × oldest/previous/latest × single/multisite. Database images are pinned by digest in `ci-matrix.mjs`.
+
+Static analysis details (PR checks, all on PHP 8.1):
+- `composer phpcs` = WPCS **+ PHPCompatibilityWP** (`testVersion 8.1-`). It stays on phpcompatibility-wp 2.x (PHPCompatibility 9.3.5, no PHP 8 sniffs) like core and Gutenberg: 3.x / 10.x alpha needs PHPCS 4, which WPCS 3 can't use. Newer-than-8.1 PHP is caught by **PHPStan's `phpVersion` range** (`min 80100`, `max 80599` — raise the max when PHPStan accepts 80699); symfony polyfills the AWS SDK ships count as available. CI adds a weekly PHPCS cache and `cs2pr` annotations.
+- PHPStan level 8 + **phpstan-strict-rules registered one by one** in `phpstan.neon.dist` (the extension installer skips its `rules.neon`, see `composer.json` `extra`), Gutenberg's way. Off until their errors are fixed: `disallowedEmpty`, `strictArrayFilter`, `uselessCast`, `booleansInConditions`. CI uses `--error-format=github`.
+- `composer audit --no-dev --locked` and `pnpm audit --prod` fail the build. An advisory in an npm package that never ships (everything under `@wordpress/components`: the build loads `wp-components` from core) is fixed with an `overrides:` entry in `pnpm-workspace.yaml`, never ignored. Dependabot (actions, composer `fix(deps)`, npm) has a 7-day cooldown.
+- **Plugin Check** (`WordPress/plugin-check-action`) scans the real release zip (`pnpm bundle`): errors fail, warnings annotate. Known warnings: three `PluginCheck.Security.DirectDB.UnescapedDBParameter` in `Core/Helpers.php` (SQL prepared in `elsewhere_sql()`, which Plugin Check can't follow). Translations come from translate.wordpress.org; there is no local i18n build step and no `languages/` folder.
 
 ### Integration tests
 
@@ -67,6 +74,8 @@ wp --exec="define( 'OMNIOFFLOADER_DISABLE_ENGINE', true );" eval-file tests/seed
 wp --user=admin eval-file tests/integration-stale-status.php   # needs a configured provider; no bucket calls
 wp eval-file tests/integration-bulk-rest.php   # needs real credentials; hits the live bucket
 ```
+
+`scripts/integration-tests.sh [wp-path]` runs every `tests/integration-*.php` the way CI does (plugin must be **active** there — the tests rely on hooks `Core\Plugin` registers on `plugins_loaded`, e.g. `MediaCounters`; skips the two that need real credentials). It fails on a failed check, a missing `RESULT` line, or any PHP warning/notice/deprecation from `includes/` or `omnioffloader.php`. Tests must not call a trait's static methods directly (deprecated since PHP 8.1 — go through a class that uses the trait) or no-op functions PHP 8.5 deprecates (`imagedestroy()`, `ReflectionMethod::setAccessible()`).
 
 `tests/MockProvider.php` implements the full `ProviderInterface` against a local directory, so the offload and restore pipelines run end-to-end without credentials. `OMNIOFFLOADER_DISABLE_ENGINE` is the kill switch that stops `Core\Plugin` booting the observers, so a test can wire its own provider.
 

@@ -1,0 +1,66 @@
+name: Workflow lint
+
+# Lints the GitHub Actions workflows themselves, like wordpress-develop does:
+# actionlint (syntax, expressions, shellcheck of run: blocks) and zizmor
+# (security: template injection, credential persistence, dangerous triggers,
+# unpinned actions…). Intentional exceptions are marked in place with a
+# `# zizmor: ignore[<audit>]` comment that says why.
+on:
+  pull_request:
+    paths:
+      - '.github/**'
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/**'
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: workflow-lint-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  actionlint:
+    name: actionlint
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # The amd64 image of rhysd/actionlint 1.7.11, pinned by digest.
+      # Dependabot doesn't update docker:// references: bump it by hand.
+      - name: Run actionlint
+        uses: docker://rhysd/actionlint@sha256:5457037ba91acd225478edac3d4b32e45cf6c10291e0dabbfd2491c63129afe1 # v1.7.11
+        with:
+          args: '-color'
+
+  zizmor:
+    name: zizmor
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # A private repository without GitHub Advanced Security can't take the
+      # SARIF upload, so findings fail the job and show as annotations.
+      # Dependabot bumps the action, not the zizmor `version` below.
+      - name: Run zizmor
+        uses: zizmorcore/zizmor-action@1b4550e929643b8b26a62303c6bd64814271a4f1 # v0.9.2
+        with:
+          version: '1.33.1'
+          advanced-security: false
+          annotations: true
+          min-severity: low

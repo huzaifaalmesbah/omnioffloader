@@ -172,16 +172,16 @@ class AttachmentUploader {
 		// Confirm the main object of every attachment whose files all made it.
 		$verify = array();
 
-		foreach ( $jobs as $job ) {
-			if ( $this->all_uploaded( $job, $uploaded ) && file_exists( $job['main']['file'] ) ) {
-				$verify[] = $job['main']['key'];
+		foreach ( $jobs as $candidate ) {
+			if ( $this->all_uploaded( $candidate, $uploaded ) && file_exists( $candidate['main']['file'] ) ) {
+				$verify[] = $candidate['main']['key'];
 			}
 		}
 
 		$confirmed = $this->confirm_all( $verify );
 
-		foreach ( $jobs as $attachment_id => $job ) {
-			$results[ $attachment_id ] = $this->finish( $attachment_id, $job, $uploaded, $confirmed, $metadata[ $attachment_id ] ?? null );
+		foreach ( $jobs as $attachment_id => $prepared ) {
+			$results[ $attachment_id ] = $this->finish( $attachment_id, $prepared, $uploaded, $confirmed, $metadata[ $attachment_id ] ?? null );
 		}
 
 		return $results;

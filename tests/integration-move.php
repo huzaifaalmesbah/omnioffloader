@@ -284,7 +284,6 @@ if ( $move_busy || '' !== (string) get_site_transient( OmniOffloader\Core\Plugin
 	omnioffloader_move_check( 1 === $queued, 'queues only the attachment outside the folder' );
 	omnioffloader_move_check( 'move-new/' === OmniOffloader\Services\BulkMoveProcessor::get_state()['folder'], 'target folder fixed in the state' );
 	$item = new ReflectionMethod( $queue, 'process_item' );
-	$item->setAccessible( true );
 	omnioffloader_move_check( true === $item->invoke( $queue, $d ), 'process_item() moved it' );
 	omnioffloader_move_check( 0 === strpos( (string) get_post_meta( $d, 'omnioffloader_path', true ), 'move-new/' ), 'stored path is in the new folder' );
 	omnioffloader_move_check( true === $item->invoke( $queue, $d ), 'an attachment already moved counts as done' );

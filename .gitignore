@@ -8,3 +8,7 @@ package-lock.json
 .idea/
 phpstan.neon
 phpcs.xml
+
+# PHPCS cache and reports (CI)
+.cache/
+plugin-check-build/

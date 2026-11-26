@@ -385,6 +385,10 @@ Depending on the provider you choose:
 
 = Unreleased =
 
+**Security**
+
+* Updated the bundled Symfony Filesystem library to 6.4.50, which fixes CVE-2026-135803.
+
 **Improvements**
 
 * Background uploads and bulk jobs no longer stop your site's other scheduled tasks (from other plugins too) from running while a job is in progress.
@@ -430,7 +434,7 @@ Older releases: see the [full changelog](https://omnioffloader.vercel.app/change
 == Upgrade Notice ==
 
 = Unreleased =
-Background jobs no longer stop your site's other scheduled tasks, and their requests are more secure. Recommended for all users.
+Background jobs no longer stop your site's other scheduled tasks, their requests are more secure, and a bundled library gets a security fix. Recommended for all users.
 
 = 0.1.7 =
 A new Storage overview on the Dashboard, and faster Bring Back and Tools screens on large media libraries. Recommended for all users.

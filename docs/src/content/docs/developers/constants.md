@@ -52,6 +52,22 @@ The constant only controls copy detection. It does **not** switch off Safe mode 
 Deploy tools often copy `wp-config.php` along with the site. Put `define( 'OMNIOFFLOADER_SAFE_MODE', true );` in the staging site's `wp-config.php` only, never in the live one.
 :::
 
+## `OMNIOFFLOADER_LOOPBACK_URL`
+
+OmniOffloader runs background uploads and bulk jobs by sending a request to your own site's `admin-ajax.php`. By default, that request goes to your public site address. If your site is behind a CDN or firewall (Cloudflare, Wordfence rate limits, basic auth), the request can be blocked or challenged. Uploads then stay **Queued…** until the next check, about every 5 minutes.
+
+Set this constant to send those requests straight to your own web server instead:
+
+```php
+define( 'OMNIOFFLOADER_LOOPBACK_URL', 'https://127.0.0.1/wp-admin/admin-ajax.php' );
+```
+
+The site's own host name is sent in the `Host` header, so the web server knows which site to serve.
+
+:::caution
+Check first that your server answers for your site on that address. For example, `curl -k -H 'Host: example.com' https://127.0.0.1/wp-admin/admin-ajax.php` should return `0`. If it doesn't, background jobs only run when the 5-minute check or an open Media Library picks them up. Remove the constant in that case.
+:::
+
 ## Advanced: `OMNIOFFLOADER_DISABLE_ENGINE`
 
 An emergency switch for debugging. When it is `true`, the offload engine does not start at all.

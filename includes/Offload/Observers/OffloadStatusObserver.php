@@ -675,6 +675,35 @@ class OffloadStatusObserver implements ObserverInterface {
 			return;
 		}
 
+		// Post edit screens only need the script where attachments can show up:
+		// the attachment editor, or a screen with the media modal. Both block
+		// and classic editors enqueue the modal before this hook; a classic
+		// editor's "Add Media" button can enqueue it later, while rendering.
+		if ( 'post.php' === $hook || 'post-new.php' === $hook ) {
+			$screen = function_exists( 'get_current_screen' ) ? get_current_screen() : null;
+
+			if ( ! ( $screen && 'attachment' === $screen->post_type ) && ! did_action( 'wp_enqueue_media' ) ) {
+				add_action( 'wp_enqueue_media', array( $this, 'enqueue_media_status' ) );
+
+				return;
+			}
+		}
+
+		$this->enqueue_media_status();
+	}
+
+	/**
+	 * Enqueue the Media Library status script and its styles.
+	 *
+	 * @since 0.1.8
+	 *
+	 * @return void
+	 */
+	public function enqueue_media_status() {
+		if ( wp_script_is( 'omnioffloader-media-status', 'enqueued' ) ) {
+			return;
+		}
+
 		$css_url = plugins_url( 'assets/css/media-status.css', OMNIOFFLOADER_FILE );
 		$js_url  = plugins_url( 'assets/js/media-status.js', OMNIOFFLOADER_FILE );
 

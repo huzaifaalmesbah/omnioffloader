@@ -58,6 +58,16 @@ class AsyncUploadProcessor extends WP_Background_Process {
 	private const MAX_ATTEMPTS = 3;
 
 	/**
+	 * Seconds without queue activity before an admin poll takes the queue
+	 * over (process_queue_now()). A healthy loopback starts within a second
+	 * or two of an upload and touches the queue after every item, so polls
+	 * only drive the queue when the loopback really is not arriving.
+	 *
+	 * @since 0.1.8
+	 */
+	public const STALL_SECONDS = 20;
+
+	/**
 	 * Whether this request holds the worker mutex.
 	 *
 	 * @var bool
@@ -111,6 +121,8 @@ class AsyncUploadProcessor extends WP_Background_Process {
 			set_site_transient( $this->identifier . '_process_lock', microtime(), (int) apply_filters( $this->identifier . '_queue_lock_time', $this->queue_lock_time ) );
 		};
 		add_action( 'omnioffloader_transfer_heartbeat', $renew );
+
+		$this->touch_activity();
 
 		try {
 			// The parent ends in wp_die() on a loopback request; the mutex is
@@ -227,6 +239,8 @@ class AsyncUploadProcessor extends WP_Background_Process {
 		update_post_meta( $attachment_id, 'omnioffloader_async_attempts', $attempts );
 		update_post_meta( $attachment_id, 'omnioffloader_status', 'processing' );
 
+		$this->touch_activity();
+
 		// One stats flush per worker pass instead of one per upload. A
 		// shutdown function, because the parent's handle() ends in wp_die().
 		if ( ! $this->deferring_stats ) {
@@ -254,8 +268,21 @@ class AsyncUploadProcessor extends WP_Background_Process {
 	 */
 	public function save() {
 		set_site_transient( $this->identifier . '_has_queue', 1, DAY_IN_SECONDS );
+		// A new item gives its loopback STALL_SECONDS to arrive.
+		$this->touch_activity();
 
 		return parent::save();
+	}
+
+	/**
+	 * Record that the queue moved just now (see process_queue_now()).
+	 *
+	 * @since 0.1.8
+	 *
+	 * @return void
+	 */
+	private function touch_activity() {
+		set_site_transient( $this->identifier . '_last_activity', time(), HOUR_IN_SECONDS );
 	}
 
 	/**
@@ -301,6 +328,14 @@ class AsyncUploadProcessor extends WP_Background_Process {
 			return;
 		}
 
+		// Between a worker's passes (and before the first loopback arrives)
+		// the queue looks idle; taking it over then would hold this poll
+		// request for seconds on every poll. Wait until it has gone quiet.
+		$last = (int) get_site_transient( $this->identifier . '_last_activity' );
+		if ( $last > 0 && time() - $last < self::STALL_SECONDS ) {
+			return;
+		}
+
 		// A poll-driven pass is short, and must survive handle()'s wp_die().
 		$shorten = static function () {
 			return 8;
@@ -324,6 +359,7 @@ class AsyncUploadProcessor extends WP_Background_Process {
 	 */
 	protected function complete() {
 		delete_site_transient( $this->identifier . '_has_queue' );
+		delete_site_transient( $this->identifier . '_last_activity' );
 		parent::complete();
 	}
 
@@ -349,6 +385,7 @@ class AsyncUploadProcessor extends WP_Background_Process {
 		delete_site_option( $identifier . '_status' );
 		delete_site_transient( $identifier . '_process_lock' );
 		delete_site_transient( $identifier . '_has_queue' );
+		delete_site_transient( $identifier . '_last_activity' );
 		// Flag name used before 0.1.3.
 		delete_site_transient( 'omnioffloader_async_has_queue' );
 		wp_clear_scheduled_hook( $identifier . '_cron' );

@@ -62,6 +62,7 @@ wp --exec="define( 'OMNIOFFLOADER_DISABLE_ENGINE', true );" eval-file tests/inte
 wp --exec="define( 'OMNIOFFLOADER_DISABLE_ENGINE', true );" eval-file tests/integration-content-rewrite.php
 wp --exec="define( 'OMNIOFFLOADER_DISABLE_ENGINE', true );" eval-file tests/integration-verify.php
 wp --exec="define( 'OMNIOFFLOADER_DISABLE_ENGINE', true );" eval-file tests/integration-counters.php
+wp --exec="define( 'OMNIOFFLOADER_DISABLE_ENGINE', true );" eval-file tests/integration-loopback.php
 wp --exec="define( 'OMNIOFFLOADER_DISABLE_ENGINE', true );" eval-file tests/seed-attachments.php 20 myprefix
 wp --user=admin eval-file tests/integration-stale-status.php   # needs a configured provider; no bucket calls
 wp eval-file tests/integration-bulk-rest.php   # needs real credentials; hits the live bucket
@@ -130,6 +131,9 @@ Key rules:
 - **`cancel_now()` tears down in-request** rather than via the parent's loopback dispatch, which never arrives on loopback-blocked hosts.
 - **`completed()` refuses to overwrite a non-`running` status**, so a late worker cannot report a cancelled run as done.
 - **`purge_stored_data()` is static** so deactivation/uninstall can clean batch rows, run status, process lock and cron without booting the engine.
+- **The loopback is authenticated by an HMAC token in the POST body** (`WP_Async_Request::loopback_token()`: queue identifier + hour, `wp_salt( 'nonce' )`, current or previous hour accepted). It is checked first in `maybe_handle()`, before any state branch, because the action is also `wp_ajax_nopriv_*`. It forwards **no cookies**: workers never depend on the current user. Don't bring back the URL nonce or `$_COOKIE`.
+- **`handle_cron_healthcheck()` returns, never `exit`s.** It runs inside `wp-cron.php`, and `exit` would skip every other due event in that run.
+- **The async upload queue's inline pass waits `AsyncUploadProcessor::STALL_SECONDS` (20) of quiet** (`{identifier}_last_activity` site transient, touched on save, pass start and every item) before an admin poll takes it over.
 
 Queue state statuses: `idle` · `running` · `done` · `cancelled` · `failed`.
 
@@ -218,7 +222,7 @@ The policy is applied once at offload time (`LocalCleaner`). Changing the settin
 
 **Cron:** watchdog event only while a bulk job runs; unschedule when idle.
 
-**Constants:** `OMNIOFFLOADER_SAFE_MODE` (true/false — force Safe mode), `OMNIOFFLOADER_VERSION`, `OMNIOFFLOADER_DIR`, `OMNIOFFLOADER_URL`, `OMNIOFFLOADER_ASSETS_URL`, `OMNIOFFLOADER_BASENAME`, `OMNIOFFLOADER_FILE`, `OMNIOFFLOADER_DOCS_URL` (the only place the docs domain is written — PHP uses it directly, the admin app via `docsUrl()` in `src/utils/docs.ts`), plus `OMNIOFFLOADER_DISABLE_ENGINE` (kill switch).
+**Constants:** `OMNIOFFLOADER_SAFE_MODE` (true/false — force Safe mode), `OMNIOFFLOADER_VERSION`, `OMNIOFFLOADER_DIR`, `OMNIOFFLOADER_URL`, `OMNIOFFLOADER_ASSETS_URL`, `OMNIOFFLOADER_BASENAME`, `OMNIOFFLOADER_FILE`, `OMNIOFFLOADER_DOCS_URL` (the only place the docs domain is written — PHP uses it directly, the admin app via `docsUrl()` in `src/utils/docs.ts`), `OMNIOFFLOADER_LOOPBACK_URL` (optional local target for the queue loopback, e.g. `https://127.0.0.1/wp-admin/admin-ajax.php`; the site host goes in the `Host` header), plus `OMNIOFFLOADER_DISABLE_ENGINE` (kill switch).
 
 ## Public Hooks
 

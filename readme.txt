@@ -383,6 +383,14 @@ Depending on the provider you choose:
 
 == Changelog ==
 
+= Unreleased =
+
+**Fixes**
+
+* Images uploaded in the block editor (WordPress 7.1 and later) and in the Media Library (WordPress 7.2) are now offloaded with all of their sizes. When WordPress resizes an image in the browser, OmniOffloader now waits until the last size has arrived. Before, the attachment could be offloaded without its thumbnails, which then showed as broken. Already affected? Run `wp omnioffloader verify --repair` to upload the missing files.
+* The video and poster WordPress makes from an animated GIF, and the original file of a converted HEIC photo, are now offloaded, restored and deleted together with their attachment.
+* The Media Library status badges now also update for uploads WordPress processes in the browser.
+
 = 0.1.7 =
 
 **New**
@@ -418,6 +426,9 @@ Depending on the provider you choose:
 Older releases: see the [full changelog](https://omnioffloader.vercel.app/changelog/).
 
 == Upgrade Notice ==
+
+= Unreleased =
+Fixes missing thumbnails in the cloud for images WordPress resizes in the browser (block editor on WordPress 7.1, Media Library on 7.2). Recommended before updating to WordPress 7.2.
 
 = 0.1.7 =
 A new Storage overview on the Dashboard, and faster Bring Back and Tools screens on large media libraries. Recommended for all users.

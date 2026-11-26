@@ -105,6 +105,94 @@ class AttachmentUploader {
 	}
 
 	/**
+	 * Upload the files an offloaded attachment's bucket copy is missing.
+	 *
+	 * For files that reach the server after the attachment was offloaded:
+	 * sub-sizes from a client-side upload whose finalize came late, or
+	 * sizes core resumed making after a failed request. Files already in
+	 * the bucket are left alone. The attachment's stored retention policy
+	 * is applied again only once every one of its local files is confirmed
+	 * in the bucket, so nothing is deleted from the server unverified.
+	 *
+	 * @since 0.1.8
+	 *
+	 * @param int                       $attachment_id Attachment ID.
+	 * @param array<string, mixed>|null $metadata      In-flight metadata (see AttachmentHelper).
+	 * @return bool True when every local file is in the bucket afterwards.
+	 */
+	public function upload_missing( $attachment_id, $metadata = null ) {
+		$attachment_id = (int) $attachment_id;
+
+		if ( ! self::is_offloaded( $attachment_id ) ) {
+			return false;
+		}
+
+		$files = self::collect_attachment_files( $attachment_id, $metadata );
+		$local = array_values(
+			array_filter(
+				array_merge( $files['main'], $files['sizes'] ),
+				static function ( $entry ) {
+					return file_exists( $entry['file'] );
+				}
+			)
+		);
+
+		if ( empty( $local ) ) {
+			return true;
+		}
+
+		$keys    = array_column( $local, 'key' );
+		$present = $this->confirm_all( $keys );
+		$missing = array_values(
+			array_filter(
+				$local,
+				static function ( $entry ) use ( $present ) {
+					return empty( $present[ $entry['key'] ] );
+				}
+			)
+		);
+
+		if ( empty( $missing ) ) {
+			return true;
+		}
+
+		$uploaded = $this->upload_all( $missing );
+		$all_ok   = true;
+
+		foreach ( $missing as $entry ) {
+			if ( empty( $uploaded[ $entry['key'] ] ) ) {
+				$all_ok = false;
+				self::log_attachment_error(
+					$attachment_id,
+					sprintf(
+						/* translators: %s: object key. */
+						__( 'Upload failed for "%s".', 'omnioffloader' ),
+						$entry['key']
+					)
+				);
+			}
+		}
+
+		if ( ! $all_ok ) {
+			return false;
+		}
+
+		// Confirm the new objects before the policy may delete their local copies.
+		$confirmed = $this->confirm_all( array_column( $missing, 'key' ) );
+
+		foreach ( $missing as $entry ) {
+			if ( empty( $confirmed[ $entry['key'] ] ) ) {
+				return false;
+			}
+		}
+
+		LocalCleaner::clean( $attachment_id, (int) get_post_meta( $attachment_id, 'omnioffloader_retention', true ), $metadata );
+		Helpers::flush_media_stats();
+
+		return true;
+	}
+
+	/**
 	 * Offload several attachments through one shared transfer pool.
 	 *
 	 * An attachment's files rarely fill every upload slot, and each one ends

@@ -153,7 +153,7 @@ trait AttachmentHelper {
 				$names[] = $metadata['original_image'];
 			}
 
-			$names = array_merge( $names, self::root_source_files( $metadata ) );
+			$names = array_merge( $names, self::root_source_files( $metadata ), self::companion_files( $metadata ) );
 		}
 
 		return $names;
@@ -313,6 +313,29 @@ trait AttachmentHelper {
 	}
 
 	/**
+	 * Companion files core's client-side media pipeline (WP 7.2) records
+	 * next to the main file: the source-format original of a converted
+	 * upload (HEIC), and an animated GIF's video and poster. Each is a file
+	 * name in the attachment's folder, deleted by core with the attachment.
+	 *
+	 * @since 0.1.8
+	 *
+	 * @param array<string, mixed> $metadata Attachment metadata.
+	 * @return string[]
+	 */
+	public static function companion_files( array $metadata ) {
+		$files = array();
+
+		foreach ( array( 'source_image', 'animated_video', 'animated_video_poster' ) as $key ) {
+			if ( ! empty( $metadata[ $key ] ) && is_string( $metadata[ $key ] ) ) {
+				$files[] = wp_basename( $metadata[ $key ] );
+			}
+		}
+
+		return array_values( array_unique( $files ) );
+	}
+
+	/**
 	 * Root-level modern-format source files (excluding the main file).
 	 *
 	 * @param array<string, mixed> $metadata Attachment metadata.
@@ -399,8 +422,9 @@ trait AttachmentHelper {
 			);
 		}
 
-		// Root-level modern-format sources belong with the main file.
-		foreach ( self::root_source_files( $metadata ) as $file ) {
+		// Root-level modern-format sources and the client-side pipeline's
+		// companion files belong with the main file.
+		foreach ( array_unique( array_merge( self::root_source_files( $metadata ), self::companion_files( $metadata ) ) ) as $file ) {
 			$result['main'][] = array(
 				'file' => $local_dir . $file,
 				'key'  => $subdir . $file,

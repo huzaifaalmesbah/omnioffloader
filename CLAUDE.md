@@ -62,6 +62,7 @@ wp --exec="define( 'OMNIOFFLOADER_DISABLE_ENGINE', true );" eval-file tests/inte
 wp --exec="define( 'OMNIOFFLOADER_DISABLE_ENGINE', true );" eval-file tests/integration-content-rewrite.php
 wp --exec="define( 'OMNIOFFLOADER_DISABLE_ENGINE', true );" eval-file tests/integration-verify.php
 wp --exec="define( 'OMNIOFFLOADER_DISABLE_ENGINE', true );" eval-file tests/integration-counters.php
+wp --exec="define( 'OMNIOFFLOADER_DISABLE_ENGINE', true );" eval-file tests/integration-client-side-media.php
 wp --exec="define( 'OMNIOFFLOADER_DISABLE_ENGINE', true );" eval-file tests/seed-attachments.php 20 myprefix
 wp --user=admin eval-file tests/integration-stale-status.php   # needs a configured provider; no bucket calls
 wp eval-file tests/integration-bulk-rest.php   # needs real credentials; hits the live bucket
@@ -106,6 +107,7 @@ includes/
 
 Key rules:
 - **No side effects at file load.** Everything boots from `Core\Plugin::get_instance()->run()` on `plugins_loaded`. Activation/deactivation hooks registered at top level of the main file only.
+- **An upload can arrive in three requests** (core's client-side media pipeline, WP 7.1 block editor, WP 7.2 Media Library/modals): `POST /wp/v2/media` with `generate_sub_sizes=false` (create — `wp_generate_attachment_metadata` runs with **no sub-sizes**), one `/sideload` per browser-made file (a `scaled`/`original` sideload **replaces the main file**; companions `source_image`, `animated_video`, `animated_video_poster` land next to it), then `/finalize` (`wp_generate_attachment_metadata` again with context **`'update'`** and every size). `UploadObserver` notes the create in `rest_insert_attachment`, waits for the `'update'` pass, and schedules `UploadObserver::FINALIZE_FALLBACK_HOOK` (15 min) because finalize is best effort. An `'update'` for an already-offloaded attachment runs `AttachmentUploader::upload_missing()`. Never offload on a `'create'` pass of a client-side upload.
 - Offload engine (observers, bulk processors) loads **only when a provider is configured** (`OptionsHelper::is_configured()`) and the AWS SDK class exists. `OMNIOFFLOADER_DISABLE_ENGINE` skips it entirely.
 - `Migrator::run()` on `init` priority 5 in every context (not just admin) so WP-CLI/cron updates migrate too. **A migration also runs inside the bulk queue's own worker requests** — guard anything destructive against a live run (see `migrate_to_0_1_1()`).
 

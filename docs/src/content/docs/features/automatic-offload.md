@@ -14,7 +14,8 @@ For each attachment, OmniOffloader uploads every file that belongs to it:
 - the **original** file,
 - every **thumbnail** and other generated image size,
 - the **`-scaled`** version WordPress creates for very large images,
-- modern **WebP / AVIF** sources created by image-format plugins.
+- modern **WebP / AVIF** sources created by image-format plugins,
+- the video and poster WordPress makes from an **animated GIF**, and the original **HEIC** file of a converted photo.
 
 An attachment only counts as offloaded when **every** one of its files uploaded and its main file is confirmed in your bucket.
 
@@ -25,6 +26,16 @@ The **Background Cloud Offload** setting (in **Settings → Behavior**) is on by
 While it waits, the Media Library shows the attachment as **Queued for background offload**. Once it is in the cloud, the status changes to **Offloaded**. See [Media Library](/features/media-library/).
 
 If you turn Background Cloud Offload off, the file is uploaded to the cloud during the upload request itself. This makes each upload slower, so keep it on unless you have a reason not to.
+
+## Uploads processed in the browser
+
+From WordPress 7.1, an image you upload in the block editor can be resized **in your browser** instead of on the server. WordPress 7.2 does this in the Media Library and media library pop-ups too, in Chrome and Edge on HTTPS sites. The browser then sends each image size to the server one after another.
+
+OmniOffloader waits until WordPress reports that the last size has arrived, and only then offloads the attachment, with every size. Until then, the Media Library shows it as **Queued for background offload**. If the browser never reports back (for example, the tab was closed during the upload), OmniOffloader offloads the files that reached the server after 15 minutes.
+
+:::tip[Thumbnails broken after uploading in the block editor?]
+Before OmniOffloader 0.1.8, images uploaded this way could be offloaded without their thumbnails. If you see broken thumbnails on images uploaded with WordPress 7.1 or later, run `wp omnioffloader verify --repair`. It uploads every file that is missing from your bucket. See [`wp omnioffloader verify`](/wp-cli/verify/).
+:::
 
 ## What happens to the local files
 

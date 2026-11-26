@@ -74,8 +74,9 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         # No dependency cache: a release build must not restore files a
-        # PR run could have written (cache poisoning). setup-node caches on
-        # its own when package.json names a packageManager.
+        # PR run could have written (cache poisoning). setup-node only
+        # caches on its own for npm (this repo uses pnpm); the explicit
+        # false keeps it off if that default ever widens.
         with:
           node-version: '24'
           package-manager-cache: false

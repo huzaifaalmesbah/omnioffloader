@@ -9,6 +9,8 @@ allowBuilds:
 # Nothing of them ships: the build loads wp-components from WordPress core.
 # Pinned so `pnpm audit --prod` in CI stays strict instead of ignoring
 # advisories. Drop an entry once the upstream chain requires the fix itself.
+# Caret ranges: an open-ended ">=" lets pnpm pick a new major version the
+# packages that use these were never written for.
 overrides:
-  fast-uri: '>=3.1.9'
-  source-map-js: '>=1.2.2'
+  fast-uri: '^3.1.9'
+  source-map-js: '^1.2.2'

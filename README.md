@@ -214,17 +214,15 @@ When you only want to update `readme.txt` (FAQ, description, changelog text) or 
 * **Option B (Manual Dispatch):** Go to GitHub repo → **Actions** → **Plugin asset/readme update** → click **Run workflow**.
 
 ### 3. Removing a Broken or Mistagged SVN Tag
-If a broken tag was deployed or a version tag needs to be removed:
-* **Option A (GitHub Actions):** Go to GitHub repo → **Actions** → **Delete SVN Tag** → click **Run workflow**, enter the tag name (e.g. `0.1.0`), and select whether to also remove the Git tag on GitHub.
-* **Option B (Command Line):**
-  ```bash
-  # Remove from WordPress.org SVN
-  svn rm "https://plugins.svn.wordpress.org/omnioffloader/tags/0.1.0" -m "Remove broken tag 0.1.0" --username your_svn_username
+If a broken tag was deployed or a version tag needs to be removed, do it from the command line:
+```bash
+# Remove from WordPress.org SVN
+svn rm "https://plugins.svn.wordpress.org/omnioffloader/tags/0.1.0" -m "Remove broken tag 0.1.0" --username your_svn_username
 
-  # Remove from GitHub Git
-  git tag -d 0.1.0
-  git push origin --delete 0.1.0
-  ```
+# Remove from GitHub Git
+git tag -d 0.1.0
+git push origin --delete 0.1.0
+```
 
 ---
 

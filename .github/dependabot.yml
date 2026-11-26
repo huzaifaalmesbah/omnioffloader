@@ -1,0 +1,21 @@
+version: 2
+
+# Workflows pin every action to a commit SHA (with a "# vX.Y.Z" comment).
+# Dependabot proposes the new SHA and comment when an action releases, so
+# the pins stay current. PR titles use the Conventional Commits "ci:" type
+# that pr-title.yml requires.
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    # Wait a week after an action releases: a compromised release is usually
+    # found and pulled within days.
+    cooldown:
+      default-days: 7
+    commit-message:
+      prefix: ci
+    groups:
+      actions:
+        patterns:
+          - '*'

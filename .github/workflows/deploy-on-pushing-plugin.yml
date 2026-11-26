@@ -16,6 +16,11 @@ on:
       dry-run:
         type: boolean
         default: false
+    secrets:
+      SVN_USERNAME:
+        required: true
+      SVN_PASSWORD:
+        required: true
   workflow_dispatch:
     inputs:
       tag:
@@ -36,6 +41,7 @@ jobs:
     # beta channel: anything committed there is a real version.
     if: ${{ github.event_name != 'release' || !github.event.release.prerelease }}
     runs-on: ubuntu-24.04
+    timeout-minutes: 30
     permissions:
       contents: write
     
@@ -45,12 +51,13 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          persist-credentials: false
           ref: ${{ inputs.tag || github.event.release.tag_name || github.ref }}
 
       - name: Setup PHP
-        uses: shivammathur/setup-php@v2
+        uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
         with:
           php-version: '8.1'
 
@@ -62,13 +69,17 @@ jobs:
           find vendor -type f \( -name "*.py" -o -name "*.sh" -o -name "*.bat" -o -name "*.cmd" -o -name "*.exe" -o -name "*.bin" -o -name "*.dylib" -o -name "*.so" -o -name "*.neon" -o -name "*.dist" -o -name "*.sample" -o -name ".DS_Store" -o -name "Thumbs.db" -o -name ".editorconfig" -o -name ".git*" \) -delete || true
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v6
+        uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
 
       - name: Setup Node.js
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        # No dependency cache: a release build must not restore files a
+        # PR run could have written (cache poisoning). setup-node only
+        # caches on its own for npm (this repo uses pnpm); the explicit
+        # false keeps it off if that default ever widens.
         with:
           node-version: '24'
-          cache: 'pnpm'
+          package-manager-cache: false
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -89,7 +100,7 @@ jobs:
 
       - name: WordPress Plugin Deploy
         id: deploy
-        uses: 10up/action-wordpress-plugin-deploy@stable
+        uses: 10up/action-wordpress-plugin-deploy@54bd289b8525fd23a5c365ec369185f2966529c2 # 2.3.0
         with:
           generate-zip: true
           dry-run: ${{ inputs.dry-run || false }}
@@ -113,9 +124,10 @@ jobs:
             echo "Total files: $(unzip -Z1 "$ZIP" | grep -c -v '/$')"
           } >> "$GITHUB_STEP_SUMMARY"
 
+      # zizmor suggests `gh release upload`; the action stays (it creates or updates the release too).
       - name: Upload release asset
         if: ${{ !inputs.dry-run }}
-        uses: softprops/action-gh-release@v3
+        uses: softprops/action-gh-release@8a0cd651e5b2365bd640854a3fa5dfc70e4875f3 # v3.0.4 # zizmor: ignore[superfluous-actions]
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:

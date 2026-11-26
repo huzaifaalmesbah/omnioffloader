@@ -27,8 +27,7 @@ on:
         required: false
         default: 'nightly'
 
-permissions:
-  contents: read
+permissions: {}
 
 concurrency:
   group: tests-${{ github.ref }}
@@ -39,12 +38,16 @@ jobs:
     name: Static checks
     runs-on: ubuntu-24.04
     timeout-minutes: 15
+    permissions:
+      contents: read
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - name: Setup PHP
-        uses: shivammathur/setup-php@v2
+        uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
         with:
           php-version: '8.1'
           coverage: none
@@ -54,10 +57,10 @@ jobs:
         run: composer install --no-interaction --prefer-dist --no-progress
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v6
+        uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
 
       - name: Setup Node.js
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: '24'
           cache: 'pnpm'
@@ -85,6 +88,8 @@ jobs:
     name: Integration (PHP ${{ matrix.php }} · WP ${{ matrix.wp }})
     runs-on: ubuntu-24.04
     timeout-minutes: 20
+    permissions:
+      contents: read
     # A job marked experimental (WordPress nightly, a brand-new PHP) reports
     # its result without failing the workflow.
     continue-on-error: ${{ matrix.experimental }}
@@ -121,15 +126,17 @@ jobs:
 
     env:
       WP_PATH: /tmp/wordpress
+      WP_VERSION: ${{ matrix.wp }}
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           path: omnioffloader
+          persist-credentials: false
 
       - name: Setup PHP
-        uses: shivammathur/setup-php@v2
+        uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
         with:
           php-version: ${{ matrix.php }}
           extensions: mysqli, gd, curl, mbstring, zip, intl
@@ -143,7 +150,7 @@ jobs:
 
       - name: Install WordPress ${{ matrix.wp }}
         run: |
-          wp core download --path="$WP_PATH" --version="${{ matrix.wp }}" --skip-content
+          wp core download --path="$WP_PATH" --version="$WP_VERSION" --skip-content
           mkdir -p "$WP_PATH/wp-content/plugins" "$WP_PATH/wp-content/uploads"
           wp config create --path="$WP_PATH" --dbname=wordpress_test --dbuser=root --dbpass=root --dbhost=127.0.0.1 --skip-check
           # Notices print to the output, where the test runner fails on any

@@ -4,7 +4,7 @@ Tags: offload, cloud storage, cdn, media library, s3
 Requires at least: 6.6
 Tested up to: 7.1
 Requires PHP: 8.1
-Stable tag: 0.1.7
+Stable tag: 0.1.8
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -383,7 +383,7 @@ Depending on the provider you choose:
 
 == Changelog ==
 
-= Unreleased =
+= 0.1.8 =
 
 **Security**
 
@@ -413,33 +413,11 @@ Depending on the provider you choose:
 
 * The Bring Back and Tools screens show their numbers instantly, even with tens of thousands of media items. OmniOffloader now keeps a running total as media changes, instead of going through the whole library each time you open the page.
 
-= 0.1.6 =
-
-**New**
-
-* **Failed Items** on the Tools screen: see every item that failed to offload, bring back, update or move, with the reason, and retry failed offloads with one click.
-* Media Library: a new **Offload failed** filter. Select the items and choose **Offload** to retry only those.
-* WP-CLI: `wp omnioffloader verify` checks that every offloaded file is in your cloud storage and on your server. Add `--repair` to fix what it finds; it never deletes anything.
-* WP-CLI: `wp omnioffloader errors` lists media with errors, retries failed offloads (`--retry`) and clears old errors (`--clear`).
-* WP-CLI: `wp omnioffloader status --format=json`, for monitoring scripts.
-* Optional usage insights through Appsero. An admin notice asks first, and nothing is collected unless an administrator allows it. See **External services** for exactly what is sent.
-
-**Improvements**
-
-* The OmniOffloader screens open right away, and the Settings fields no longer appear after a delay. Switching provider shows its fields instantly.
-* While a bigger job is running, you now get a message instead of offloading or bringing back a single item, so two jobs never work on the same files.
-* Media Library status labels can now be fully translated.
-
-**Under the hood**
-
-* Each release now ships the exact AWS SDK version it was tested with.
-* Tidier code names in the admin screen styles.
-
 Older releases: see the [full changelog](https://omnioffloader.vercel.app/changelog/).
 
 == Upgrade Notice ==
 
-= Unreleased =
+= 0.1.8 =
 Fixes missing thumbnails in the cloud for images WordPress resizes in the browser (block editor on WordPress 7.1, Media Library on 7.2). Background jobs no longer stop your site's other scheduled tasks, their requests are more secure, and a bundled library gets a security fix. Recommended for all users, and before updating to WordPress 7.2.
 
 = 0.1.7 =

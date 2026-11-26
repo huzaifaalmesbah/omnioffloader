@@ -16,9 +16,14 @@
 # Skipped: tests that need real credentials or a configured provider
 # (integration-bulk-rest.php, integration-stale-status.php).
 #
+# Also fails when no check passed at all (nothing really ran).
+#
 # Environment:
 #   WP_CLI   WP-CLI command (default: wp)
+#   WP_URL   Site to run on, e.g. a multisite sub-site (default: the main site)
 #   ONLY     Run just these test files, space separated (e.g. "integration-offload.php").
+#
+# On GitHub Actions the per-file table also goes to the job summary.
 
 set -u
 
@@ -35,6 +40,9 @@ path_arg=(--no-color)
 if [ -n "$WP_PATH" ]; then
 	path_arg+=(--path="$WP_PATH")
 fi
+if [ -n "${WP_URL:-}" ]; then
+	path_arg+=(--url="$WP_URL")
+fi
 
 if ! $WP_CLI "${path_arg[@]}" plugin is-active omnioffloader >/dev/null 2>&1; then
 	echo "OmniOffloader is not active in this WordPress install. Activate it first:"
@@ -42,11 +50,22 @@ if ! $WP_CLI "${path_arg[@]}" plugin is-active omnioffloader >/dev/null 2>&1; th
 	exit 2
 fi
 
-echo "WordPress $($WP_CLI "${path_arg[@]}" core version 2>/dev/null | tail -1) · PHP $(php -r 'echo PHP_VERSION;')"
+site="single site"
+if $WP_CLI "${path_arg[@]}" eval 'exit( is_multisite() ? 0 : 1 );' >/dev/null 2>&1; then
+	site="multisite (blog $($WP_CLI "${path_arg[@]}" eval 'echo get_current_blog_id();' 2>/dev/null | tail -1))"
+fi
+cache="no persistent object cache"
+if $WP_CLI "${path_arg[@]}" eval 'exit( wp_using_ext_object_cache() ? 0 : 1 );' >/dev/null 2>&1; then
+	cache="persistent object cache"
+fi
+heading="WordPress $($WP_CLI "${path_arg[@]}" core version 2>/dev/null | tail -1) · PHP $(php -r 'echo PHP_VERSION;') · $site · $cache"
+echo "$heading"
 echo
 
 failed=0
 ran=0
+checks=0
+rows=""
 
 for test in "$PLUGIN_DIR"/tests/integration-*.php; do
 	name="$(basename "$test")"
@@ -78,6 +97,10 @@ for test in "$PLUGIN_DIR"/tests/integration-*.php; do
 	fi
 
 	printf '%-40s %s\n' "$name" "$status"
+	rows+="| \`$name\` | ${status} |"$'\n'
+
+	passed_here="$(printf '%s' "$result" | sed -nE 's/^RESULT: ([0-9]+) passed.*/\1/p')"
+	checks=$((checks + ${passed_here:-0}))
 
 	if [[ "$status" == FAIL* ]]; then
 		failed=$((failed + 1))
@@ -87,13 +110,27 @@ for test in "$PLUGIN_DIR"/tests/integration-*.php; do
 	fi
 done
 
+if [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
+	{
+		echo "### Integration tests"
+		echo
+		echo "$heading"
+		echo
+		echo "| Test file | Result |"
+		echo "|---|---|"
+		printf '%s' "$rows"
+		echo
+		echo "**$checks checks passed** in $ran test files, $failed failed."
+	} >> "$GITHUB_STEP_SUMMARY"
+fi
+
 echo
-if [ "$ran" -eq 0 ]; then
-	echo "No tests ran."
+if [ "$ran" -eq 0 ] || [ "$checks" -eq 0 ]; then
+	echo "No tests ran (or no check passed)."
 	exit 2
 fi
 if [ "$failed" -gt 0 ]; then
-	echo "$failed of $ran test files failed."
+	echo "$failed of $ran test files failed ($checks checks passed)."
 	exit 1
 fi
-echo "All $ran test files passed."
+echo "All $ran test files passed: $checks checks."

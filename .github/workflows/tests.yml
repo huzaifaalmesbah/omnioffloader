@@ -3,8 +3,15 @@ name: Tests
 # Static checks plus the integration tests (tests/integration-*.php) on a
 # real WordPress install, across the PHP and WordPress versions the plugin
 # supports. The tests use tests/MockProvider.php: no credentials, no bucket.
+#
+# The version matrix is computed (scripts/ci-matrix.mjs) from readme.txt's
+# "Requires at least" / "Requires PHP", the WordPress.org API and the PHP
+# versions core supports: nothing here needs editing when they change.
+# Pull requests run a reduced matrix; the weekly run, a PR labelled
+# "full matrix" and a manual run with "full" run every combination.
 on:
   pull_request:
+    types: [opened, synchronize, reopened, labeled]
     paths-ignore:
       - 'docs/**'
       - '**/*.md'
@@ -26,6 +33,10 @@ on:
         description: 'WordPress version for the extra "next" job, e.g. 7.2-RC3 (default: nightly)'
         required: false
         default: 'nightly'
+      full:
+        description: 'Run the full matrix (every PHP × WordPress × single/multisite)'
+        type: boolean
+        default: false
 
 permissions: {}
 
@@ -84,35 +95,57 @@ jobs:
       - name: ESLint
         run: pnpm lint:js
 
+  versions:
+    name: Version matrix
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    outputs:
+      matrix: ${{ steps.matrix.outputs.matrix }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          sparse-checkout: |
+            readme.txt
+            scripts
+
+      - name: Setup Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '24'
+          package-manager-cache: false
+
+      - name: Compute the matrix
+        id: matrix
+        env:
+          FULL: ${{ github.event_name == 'schedule' || ( github.event_name == 'workflow_dispatch' && inputs.full ) || ( github.event_name == 'pull_request' && contains( github.event.pull_request.labels.*.name, 'full matrix' ) ) }}
+          NEXT_WP: ${{ inputs.wordpress }}
+        run: node scripts/ci-matrix.mjs
+
   integration:
-    name: Integration (PHP ${{ matrix.php }} · WP ${{ matrix.wp }})
+    name: >-
+      Integration (PHP ${{ matrix.php }} · WP ${{ matrix.wp }}${{ matrix.multisite && ' · multisite' || '' }}${{ matrix.object_cache && ' · Redis' || '' }}${{ matrix.db != 'mysql:8.0' && format( ' · {0}', matrix.db ) || '' }})
+    needs: versions
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     permissions:
       contents: read
-    # A job marked experimental (WordPress nightly, a brand-new PHP) reports
-    # its result without failing the workflow.
+    # A job marked experimental (WordPress nightly or a chosen version, a PHP
+    # core supports only from its next major) reports without failing the run.
     continue-on-error: ${{ matrix.experimental }}
     strategy:
       fail-fast: false
-      matrix:
-        include:
-          # Oldest supported pair: Requires at least 6.6, Requires PHP 8.1.
-          - { php: '8.1', wp: '6.6', experimental: false }
-          - { php: '8.2', wp: '6.9', experimental: false }
-          # Latest WordPress on every supported PHP.
-          - { php: '8.1', wp: 'latest', experimental: false }
-          - { php: '8.2', wp: 'latest', experimental: false }
-          - { php: '8.3', wp: 'latest', experimental: false }
-          - { php: '8.4', wp: 'latest', experimental: false }
-          - { php: '8.5', wp: 'latest', experimental: false }
-          # What comes next.
-          - { php: '8.6', wp: 'latest', experimental: true }
-          - { php: '8.5', wp: "${{ inputs.wordpress || 'nightly' }}", experimental: true }
+      matrix: ${{ fromJSON( needs.versions.outputs.matrix ) }}
 
     services:
       mysql:
-        image: mysql:8.0
+        # mysql:5.7 (oldest WordPress), mysql:8.0, or mariadb:10.6, each pinned
+        # by digest in scripts/ci-matrix.mjs. The MariaDB image still reads the
+        # MYSQL_* variables.
+        image: ${{ matrix.db_image }} # zizmor: ignore[unpinned-images]
         env:
           MYSQL_ROOT_PASSWORD: root
           MYSQL_DATABASE: wordpress_test
@@ -123,10 +156,23 @@ jobs:
           --health-interval=10s
           --health-timeout=5s
           --health-retries=10
+      # Only the object-cache job uses it; starting it everywhere keeps the
+      # job definition simple and costs a few seconds.
+      redis:
+        image: redis:7-alpine@sha256:7f7d30b7fdd09467bac58198a1f166dd69789d348d4fe859cccb20e0cf287fbe
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd="redis-cli ping"
+          --health-interval=5s
+          --health-timeout=3s
+          --health-retries=10
 
     env:
       WP_PATH: /tmp/wordpress
       WP_VERSION: ${{ matrix.wp }}
+      MULTISITE: ${{ matrix.multisite }}
+      OBJECT_CACHE: ${{ matrix.object_cache }}
 
     steps:
       - name: Checkout
@@ -156,14 +202,42 @@ jobs:
           # Notices print to the output, where the test runner fails on any
           # that come from the plugin's own code.
           wp config set --path="$WP_PATH" WP_DEBUG true --raw
-          wp core install --path="$WP_PATH" --url=http://localhost --title=OmniOffloader-CI \
-            --admin_user=admin --admin_password=admin --admin_email=ci@example.com --skip-email
+          if [ "$MULTISITE" = 'true' ]; then
+            wp core multisite-install --path="$WP_PATH" --url=http://localhost --title=OmniOffloader-CI \
+              --admin_user=admin --admin_password=admin --admin_email=ci@example.com --skip-email
+            # A sub-site, where the per-site queue prefix and switch_to_blog() paths run.
+            wp site create --path="$WP_PATH" --slug=sub --title=Sub --email=ci@example.com
+          else
+            wp core install --path="$WP_PATH" --url=http://localhost --title=OmniOffloader-CI \
+              --admin_user=admin --admin_password=admin --admin_email=ci@example.com --skip-email
+          fi
           echo "WordPress $(wp core version --path="$WP_PATH") on PHP $(php -r 'echo PHP_VERSION;')"
+          wp db query --path="$WP_PATH" 'SELECT VERSION();' --skip-column-names
+
+      - name: Enable the Redis object cache
+        if: ${{ matrix.object_cache }}
+        run: |
+          wp plugin install redis-cache --activate --path="$WP_PATH"
+          wp config set --path="$WP_PATH" WP_REDIS_HOST 127.0.0.1
+          # Predis ships with the plugin, so no PHP extension is needed.
+          wp config set --path="$WP_PATH" WP_REDIS_CLIENT predis
+          wp redis enable --path="$WP_PATH"
+          wp redis status --path="$WP_PATH"
+          wp eval --path="$WP_PATH" 'if ( ! wp_using_ext_object_cache() ) { WP_CLI::error( "The object cache drop-in is not active." ); }'
 
       - name: Activate the plugin
         run: |
           ln -s "$GITHUB_WORKSPACE/omnioffloader" "$WP_PATH/wp-content/plugins/omnioffloader"
           wp --path="$WP_PATH" --exec="define( 'OMNIOFFLOADER_DISABLE_ENGINE', true );" plugin activate omnioffloader
+          if [ "$MULTISITE" = 'true' ]; then
+            wp --path="$WP_PATH" --url=http://localhost/sub/ --exec="define( 'OMNIOFFLOADER_DISABLE_ENGINE', true );" plugin activate omnioffloader
+          fi
 
       - name: Integration tests
+        run: omnioffloader/scripts/integration-tests.sh "$WP_PATH"
+
+      - name: Integration tests (multisite sub-site)
+        if: ${{ matrix.multisite }}
+        env:
+          WP_URL: http://localhost/sub/
         run: omnioffloader/scripts/integration-tests.sh "$WP_PATH"

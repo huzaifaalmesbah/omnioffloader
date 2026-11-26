@@ -238,9 +238,9 @@ class RetentionApplier {
 
 			$listed = $provider->list_object_sizes_many( array_values( $prefixes ), self::group_size() );
 
-			foreach ( $prefixes as $id => $prefix ) {
+			foreach ( $prefixes as $listed_id => $prefix ) {
 				if ( is_array( $listed[ $prefix ] ?? null ) ) {
-					$this->prefetched[ $id ] = $listed[ $prefix ];
+					$this->prefetched[ $listed_id ] = $listed[ $prefix ];
 				}
 			}
 		}

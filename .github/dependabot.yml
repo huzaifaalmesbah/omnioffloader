@@ -19,3 +19,37 @@ updates:
       actions:
         patterns:
           - '*'
+
+  # Shipped PHP dependencies (AWS SDK, Guzzle, Symfony…) and dev tools.
+  # composer.json pins the platform to PHP 8.1, so updates stay installable
+  # on the lowest supported PHP.
+  - package-ecosystem: composer
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+    commit-message:
+      prefix: fix(deps)
+      prefix-development: chore(deps-dev)
+    groups:
+      composer-patch-minor:
+        update-types:
+          - minor
+          - patch
+
+  # Build tooling and @wordpress/* packages (wp-components itself loads from
+  # WordPress core at runtime, so these only change the build).
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+    commit-message:
+      prefix: chore(deps)
+    groups:
+      npm-patch-minor:
+        update-types:
+          - minor
+          - patch

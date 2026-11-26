@@ -3,3 +3,12 @@ allowBuilds:
   core-js: true
   core-js-pure: true
   unrs-resolver: true
+
+# Patched versions of two packages that reach us only through
+# @wordpress/components → @wordpress/ui → @wordpress/theme → stylelint.
+# Nothing of them ships: the build loads wp-components from WordPress core.
+# Pinned so `pnpm audit --prod` in CI stays strict instead of ignoring
+# advisories. Drop an entry once the upstream chain requires the fix itself.
+overrides:
+  fast-uri: '>=3.1.9'
+  source-map-js: '>=1.2.2'

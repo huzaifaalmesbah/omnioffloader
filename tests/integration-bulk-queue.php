@@ -84,8 +84,6 @@ $run_stopped    = new ReflectionMethod( $base, 'run_stopped' );
 $record_results = new ReflectionMethod( $base, 'record_results' );
 $pass_run       = new ReflectionProperty( $base, 'pass_run' );
 $superseded     = new ReflectionProperty( $base, 'superseded' );
-foreach ( array( $run_stopped, $record_results, $pass_run, $superseded ) as $reflected ) {
-}
 
 // The worker's pass began in run A.
 update_option( BulkRestoreProcessor::STATE_OPTION, array( 'status' => 'running', 'run' => 'run-a', 'total' => 5, 'processed' => 1 ), false );

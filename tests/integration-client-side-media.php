@@ -34,6 +34,14 @@ if ( ! defined( 'OMNIOFFLOADER_DISABLE_ENGINE' ) || ! OMNIOFFLOADER_DISABLE_ENGI
 	exit( 1 );
 }
 
+/**
+ * Calls the AttachmentHelper trait's static methods through a class that
+ * uses it (calling a trait's static method directly is deprecated in PHP 8.1).
+ */
+class OmniOffloader_CSM_Helper {
+	use AttachmentHelper;
+}
+
 global $csm_pass, $csm_fail;
 $csm_pass = 0;
 $csm_fail = 0;
@@ -68,7 +76,7 @@ function omnioffloader_csm_jpeg( $w, $h ) {
 	ob_start();
 	imagejpeg( $image, null, 80 );
 	$bits = (string) ob_get_clean();
-	imagedestroy( $image );
+	unset( $image );
 
 	return $bits;
 }
@@ -170,7 +178,7 @@ function omnioffloader_csm_sideload_and_finalize( $id, array $sizes, array $extr
  * @return string[]
  */
 function omnioffloader_csm_keys( $id ) {
-	$files = AttachmentHelper::collect_attachment_files( $id );
+	$files = OmniOffloader_CSM_Helper::collect_attachment_files( $id );
 
 	return array_column( array_merge( $files['main'], $files['sizes'] ), 'key' );
 }
@@ -267,7 +275,7 @@ file_put_contents( $dir . $late, omnioffloader_csm_jpeg( 768, 512 ) ); // phpcs:
 $metadata = apply_filters( 'wp_generate_attachment_metadata', $metadata, $id, 'update' );
 wp_update_attachment_metadata( $id, $metadata );
 
-$late_key = AttachmentHelper::get_offload_path( $id ) . $late;
+$late_key = OmniOffloader_CSM_Helper::get_offload_path( $id ) . $late;
 omnioffloader_csm_check( $provider->object_exists( $late_key ), 'the late size was uploaded' );
 
 // ---------------------------------------------------------------------------
@@ -298,10 +306,10 @@ omnioffloader_csm_sideload_and_finalize(
 
 $keys_c = omnioffloader_csm_keys( $id_c );
 foreach ( array( '.mp4', '-poster.jpg', '.heic' ) as $suffix ) {
-	$key = AttachmentHelper::get_offload_path( $id_c ) . $stem_c . $suffix;
+	$key = OmniOffloader_CSM_Helper::get_offload_path( $id_c ) . $stem_c . $suffix;
 	omnioffloader_csm_check( in_array( $key, $keys_c, true ) && $provider->object_exists( $key ), "companion {$stem_c}{$suffix} is collected and uploaded" );
 }
-omnioffloader_csm_check( in_array( $stem_c . '.mp4', AttachmentHelper::main_filenames( $id_c ), true ), 'companions stay with the main file under Smart Cleanup' );
+omnioffloader_csm_check( in_array( $stem_c . '.mp4', OmniOffloader_CSM_Helper::main_filenames( $id_c ), true ), 'companions stay with the main file under Smart Cleanup' );
 
 // ---------------------------------------------------------------------------
 echo "\nTest 7: Full migration keeps every file until finalize, then cleans up\n";
@@ -313,7 +321,7 @@ $upload_d  = get_attached_file( $id_d );
 omnioffloader_csm_check( file_exists( $upload_d ), 'the upload stays on the server after the create pass' );
 
 omnioffloader_csm_sideload_and_finalize( $id_d, array( 'thumbnail' => array( 150, 150 ) ) );
-$files_d = AttachmentHelper::collect_attachment_files( $id_d );
+$files_d = OmniOffloader_CSM_Helper::collect_attachment_files( $id_d );
 $left    = array_filter( array_merge( $files_d['main'], $files_d['sizes'] ), static fn( $e ) => file_exists( $e['file'] ) );
 omnioffloader_csm_check( (bool) get_post_meta( $id_d, 'omnioffloader_offloaded', true ), 'offloaded after finalize' );
 omnioffloader_csm_check( array() === $left, 'all local files removed only after every file was uploaded' );

@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.1.8](https://github.com/huzaifaalmesbah/omnioffloader/compare/0.1.7...0.1.8) (2026-11-26)
+
+
+### Bug Fixes
+
+* **deps:** update symfony/filesystem to 6.4.50 (CVE-2026-135803) ([#43](https://github.com/huzaifaalmesbah/omnioffloader/issues/43)) ([90f8ad3](https://github.com/huzaifaalmesbah/omnioffloader/commit/90f8ad3d3921925adda665df54460cb3b38389c6))
+* harden background queue loopback requests ([#35](https://github.com/huzaifaalmesbah/omnioffloader/issues/35)) ([e803c59](https://github.com/huzaifaalmesbah/omnioffloader/commit/e803c5954ca5d2917d7ad877c067baf5e58cbf40))
+* offload uploads from WordPress's client-side media pipeline ([#38](https://github.com/huzaifaalmesbah/omnioffloader/issues/38)) ([e4849c3](https://github.com/huzaifaalmesbah/omnioffloader/commit/e4849c30e99ad3a0e66664d84cccf4e62425b5d4))
+* **scripts:** make screenshot script root and domain dynamic ([6a296cc](https://github.com/huzaifaalmesbah/omnioffloader/commit/6a296cc3183be10d2dbf58914d8afc4dc8d111e1))
+
 ## [0.1.7](https://github.com/huzaifaalmesbah/omnioffloader/compare/0.1.6...0.1.7) (2026-10-16)
 
 

@@ -145,8 +145,9 @@ const wp = {
 if ( ! wp.oldest ) {
 	throw new Error( `No WordPress ${ requiresWp }.x release found ("Requires at least").` );
 }
-// The previous major can be the oldest supported one: test it once.
-if ( wp.previous && series( wp.previous ) === requiresWp ) {
+// Leave the previous major out when it is the oldest supported one (already
+// tested as "oldest") or older than `Requires at least` (not supported).
+if ( ! wp.previous || compare( series( wp.previous ), requiresWp ) <= 0 ) {
 	delete wp.previous;
 }
 

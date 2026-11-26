@@ -383,6 +383,12 @@ Depending on the provider you choose:
 
 == Changelog ==
 
+= Unreleased =
+
+**Security**
+
+* Updated the bundled Symfony Filesystem library to 6.4.50, which fixes CVE-2026-135803.
+
 = 0.1.7 =
 
 **New**
@@ -418,6 +424,9 @@ Depending on the provider you choose:
 Older releases: see the [full changelog](https://omnioffloader.vercel.app/changelog/).
 
 == Upgrade Notice ==
+
+= Unreleased =
+Updates a bundled library with a security fix. Recommended for all users.
 
 = 0.1.7 =
 A new Storage overview on the Dashboard, and faster Bring Back and Tools screens on large media libraries. Recommended for all users.

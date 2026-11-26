@@ -335,7 +335,6 @@ add_filter( 'omnioffloader_use_async_upload', '__return_true' );
 AsyncUploadProcessor::purge_stored_data();
 
 $is_queue_empty = new ReflectionMethod( $async, 'is_queue_empty' );
-$is_queue_empty->setAccessible( true );
 
 $id_e      = omnioffloader_csm_create( 'omnioffloader-csm-e.jpg' );
 $created[] = $id_e;

@@ -118,7 +118,6 @@ echo "\nTest 2: Background worker offloads the queued attachment\n";
 
 $reflection = new ReflectionClass( $async_processor );
 $task_method = $reflection->getMethod( 'task' );
-$task_method->setAccessible( true );
 
 $result = $task_method->invoke( $async_processor, $id );
 omnioffloader_async_check( false === $result, 'task() returns false (dequeued)' );

@@ -1,0 +1,162 @@
+name: Tests
+
+# Static checks plus the integration tests (tests/integration-*.php) on a
+# real WordPress install, across the PHP and WordPress versions the plugin
+# supports. The tests use tests/MockProvider.php: no credentials, no bucket.
+on:
+  pull_request:
+    paths-ignore:
+      - 'docs/**'
+      - '**/*.md'
+      - '.wordpress-org/**'
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - 'docs/**'
+      - '**/*.md'
+      - '.wordpress-org/**'
+  # Weekly, so a new WordPress nightly or PHP release that breaks something
+  # shows up before a user reports it.
+  schedule:
+    - cron: '17 4 * * 1'
+  workflow_dispatch:
+    inputs:
+      wordpress:
+        description: 'WordPress version for the extra "next" job, e.g. 7.2-RC3 (default: nightly)'
+        required: false
+        default: 'nightly'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  static:
+    name: Static checks
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+          coverage: none
+          tools: composer
+
+      - name: Install Composer dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          cache: 'pnpm'
+
+      - name: Install JS dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Before PHPStan: includes/Admin/Settings.php includes build/index.asset.php.
+      - name: Build
+        run: pnpm build
+
+      - name: PHPStan
+        run: composer phpstan
+
+      - name: PHPCS
+        run: composer phpcs
+
+      - name: TypeScript
+        run: pnpm check-types
+
+      - name: ESLint
+        run: pnpm lint:js
+
+  integration:
+    name: Integration (PHP ${{ matrix.php }} · WP ${{ matrix.wp }})
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    # A job marked experimental (WordPress nightly, a brand-new PHP) reports
+    # its result without failing the workflow.
+    continue-on-error: ${{ matrix.experimental }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Oldest supported pair: Requires at least 6.6, Requires PHP 8.1.
+          - { php: '8.1', wp: '6.6', experimental: false }
+          - { php: '8.2', wp: '6.9', experimental: false }
+          # Latest WordPress on every supported PHP.
+          - { php: '8.1', wp: 'latest', experimental: false }
+          - { php: '8.2', wp: 'latest', experimental: false }
+          - { php: '8.3', wp: 'latest', experimental: false }
+          - { php: '8.4', wp: 'latest', experimental: false }
+          - { php: '8.5', wp: 'latest', experimental: false }
+          # What comes next.
+          - { php: '8.6', wp: 'latest', experimental: true }
+          - { php: '8.5', wp: "${{ inputs.wordpress || 'nightly' }}", experimental: true }
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: wordpress_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -proot"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+
+    env:
+      WP_PATH: /tmp/wordpress
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          path: omnioffloader
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: mysqli, gd, curl, mbstring, zip, intl
+          ini-values: memory_limit=512M
+          coverage: none
+          tools: composer, wp-cli
+
+      - name: Install Composer dependencies
+        working-directory: omnioffloader
+        run: composer install --no-dev --no-interaction --prefer-dist --no-progress
+
+      - name: Install WordPress ${{ matrix.wp }}
+        run: |
+          wp core download --path="$WP_PATH" --version="${{ matrix.wp }}" --skip-content
+          mkdir -p "$WP_PATH/wp-content/plugins" "$WP_PATH/wp-content/uploads"
+          wp config create --path="$WP_PATH" --dbname=wordpress_test --dbuser=root --dbpass=root --dbhost=127.0.0.1 --skip-check
+          # Notices print to the output, where the test runner fails on any
+          # that come from the plugin's own code.
+          wp config set --path="$WP_PATH" WP_DEBUG true --raw
+          wp core install --path="$WP_PATH" --url=http://localhost --title=OmniOffloader-CI \
+            --admin_user=admin --admin_password=admin --admin_email=ci@example.com --skip-email
+          echo "WordPress $(wp core version --path="$WP_PATH") on PHP $(php -r 'echo PHP_VERSION;')"
+
+      - name: Activate the plugin
+        run: |
+          ln -s "$GITHUB_WORKSPACE/omnioffloader" "$WP_PATH/wp-content/plugins/omnioffloader"
+          wp --path="$WP_PATH" --exec="define( 'OMNIOFFLOADER_DISABLE_ENGINE', true );" plugin activate omnioffloader
+
+      - name: Integration tests
+        run: omnioffloader/scripts/integration-tests.sh "$WP_PATH"

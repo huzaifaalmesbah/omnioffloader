@@ -9,8 +9,9 @@ parameters:
 	excludePaths:
 		analyseAndScan:
 			- vendor/
-			- node_modules/
-			- build/
+			# Optional: absent until pnpm install / pnpm build have run.
+			- node_modules/ (?)
+			- build/ (?)
 		analyse:
 			# Vendored third-party library (Delicious Brains, GPL) — its
 			# symbols are still scanned, but it is not held to this

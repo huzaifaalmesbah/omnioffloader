@@ -63,7 +63,6 @@ function omnioffloader_make_attachment( $name ) {
 	ob_start();
 	imagejpeg( $image, null, 85 );
 	$bits = ob_get_clean();
-	imagedestroy( $image );
 
 	$upload = wp_upload_bits( $name, null, $bits );
 	if ( ! empty( $upload['error'] ) ) {
@@ -227,13 +226,12 @@ $size5    = is_array( $meta5 ) && ! empty( $meta5['sizes'] ) ? reset( $meta5['si
 omnioffloader_check( array_key_exists( $id5, $results5 ) && null === $results5[ $id5 ], 'missing file is skipped, not failed' );
 omnioffloader_check( OmniOffloader\Core\Helpers::STATUS_MISSING === get_post_meta( $id5, 'omnioffloader_status', true ), 'status is File missing' );
 omnioffloader_check( '' === $size5 || ! $provider->object_exists( $sub5 . $size5 ), 'nothing uploaded (its thumbnails stay off the bucket)' );
-omnioffloader_check( 'missing' === OmniOffloader\Traits\AttachmentHelper::get_attachment_status( $id5 )['status'], 'Media Library shows File missing' );
+omnioffloader_check( 'missing' === OmniOffloader\Services\AttachmentUploader::get_attachment_status( $id5 )['status'], 'Media Library shows File missing' );
 
 $stats5 = OmniOffloader\Core\Helpers::get_media_stats( true );
 omnioffloader_check( $stats5['missing'] >= 1, "counted as missing ({$stats5['missing']}), not ready to offload" );
 
 $queue5 = new ReflectionMethod( OmniOffloader\Services\BulkOffloadProcessor::class, 'queue_ids' );
-$queue5->setAccessible( true );
 $bulk5 = new OmniOffloader\Services\BulkOffloadProcessor( $provider );
 omnioffloader_check( ! in_array( $id5, $queue5->invoke( $bulk5 ), true ), 'left out of the bulk offload queue' );
 

@@ -1,0 +1,99 @@
+#!/usr/bin/env bash
+#
+# Run every tests/integration-*.php against a WordPress install.
+#
+#   scripts/integration-tests.sh [wp-path]
+#
+# The plugin must be active in that install (it boots like on a real site:
+# MediaCounters and other hooks register on plugins_loaded). Each test runs
+# with the offload engine off and Safe mode off, so it wires its own mock
+# provider and never touches a real bucket.
+#
+# Fails when a test reports a failed check, ends without a RESULT line (a
+# fatal error), or prints a PHP warning, notice or deprecation from the
+# plugin's own code (includes/ or omnioffloader.php).
+#
+# Skipped: tests that need real credentials or a configured provider
+# (integration-bulk-rest.php, integration-stale-status.php).
+#
+# Environment:
+#   WP_CLI   WP-CLI command (default: wp)
+#   ONLY     Run just these test files, space separated (e.g. "integration-offload.php").
+
+set -u
+
+WP_PATH="${1:-}"
+WP_CLI="${WP_CLI:-wp}"
+# Physical path (-P): PHP reports files by their real path, also when the
+# plugin folder is a symlink.
+PLUGIN_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
+SKIP=" integration-bulk-rest.php integration-stale-status.php "
+
+# Never empty: bash 3.2 (the macOS default) treats "${empty[@]}" as an
+# unbound variable under `set -u`.
+path_arg=(--no-color)
+if [ -n "$WP_PATH" ]; then
+	path_arg+=(--path="$WP_PATH")
+fi
+
+if ! $WP_CLI "${path_arg[@]}" plugin is-active omnioffloader >/dev/null 2>&1; then
+	echo "OmniOffloader is not active in this WordPress install. Activate it first:"
+	echo "  $WP_CLI ${path_arg[*]} --exec=\"define( 'OMNIOFFLOADER_DISABLE_ENGINE', true );\" plugin activate omnioffloader"
+	exit 2
+fi
+
+echo "WordPress $($WP_CLI "${path_arg[@]}" core version 2>/dev/null | tail -1) · PHP $(php -r 'echo PHP_VERSION;')"
+echo
+
+failed=0
+ran=0
+
+for test in "$PLUGIN_DIR"/tests/integration-*.php; do
+	name="$(basename "$test")"
+
+	if [[ "$SKIP" == *" $name "* ]]; then
+		continue
+	fi
+	if [ -n "${ONLY:-}" ] && [[ " $ONLY " != *" $name "* ]]; then
+		continue
+	fi
+
+	ran=$((ran + 1))
+	output="$($WP_CLI "${path_arg[@]}" \
+		--exec="define( 'OMNIOFFLOADER_DISABLE_ENGINE', true ); define( 'OMNIOFFLOADER_SAFE_MODE', false );" \
+		eval-file "$test" 2>&1)"
+
+	result="$(printf '%s\n' "$output" | grep -E '^RESULT:' | tail -1)"
+	# PHP notices raised inside the plugin's own code (not in tests or WP-CLI).
+	notices="$(printf '%s\n' "$output" | grep -E '(Warning|Notice|Deprecated|Fatal error)' | grep -v 'phar://' | grep -F -e "$PLUGIN_DIR/includes/" -e "$PLUGIN_DIR/omnioffloader.php" || true)"
+
+	if [ -z "$result" ]; then
+		status="FAIL (no RESULT line: fatal error?)"
+	elif ! printf '%s' "$result" | grep -qE ' 0 failed$'; then
+		status="FAIL ($result)"
+	elif [ -n "$notices" ]; then
+		status="FAIL (PHP notices from plugin code)"
+	else
+		status="ok   (${result#RESULT: })"
+	fi
+
+	printf '%-40s %s\n' "$name" "$status"
+
+	if [[ "$status" == FAIL* ]]; then
+		failed=$((failed + 1))
+		echo "----- output of $name -----"
+		printf '%s\n' "$output" | grep -v 'phar://' | tail -80
+		echo "---------------------------"
+	fi
+done
+
+echo
+if [ "$ran" -eq 0 ]; then
+	echo "No tests ran."
+	exit 2
+fi
+if [ "$failed" -gt 0 ]; then
+	echo "$failed of $ran test files failed."
+	exit 1
+fi
+echo "All $ran test files passed."

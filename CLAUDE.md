@@ -45,7 +45,7 @@ composer phpstan     # PHPStan level 8 (szepeviktor/phpstan-wordpress)
 composer phpcs       # WordPress Coding Standards
 ```
 
-Run `pnpm check-types`, `pnpm lint:js`, `composer phpstan` and `composer phpcs` before committing — GitHub Actions only builds and deploys, so nothing else catches a regression. Translations come from translate.wordpress.org; there is no local i18n build step and no `languages/` folder.
+Run `pnpm check-types`, `pnpm lint:js`, `composer phpstan` and `composer phpcs` before committing. `.github/workflows/tests.yml` runs them again on every PR and push to main, plus the integration tests on a PHP × WordPress matrix (oldest pair PHP 8.1 + WP 6.6, latest WP on PHP 8.1–8.5; PHP 8.6 and WP nightly as experimental, non-blocking jobs; weekly, and on demand with a chosen WordPress version). When `Requires at least` or `Requires PHP` changes, update that matrix in the same commit. Translations come from translate.wordpress.org; there is no local i18n build step and no `languages/` folder.
 
 ### Integration tests
 
@@ -66,6 +66,8 @@ wp --exec="define( 'OMNIOFFLOADER_DISABLE_ENGINE', true );" eval-file tests/seed
 wp --user=admin eval-file tests/integration-stale-status.php   # needs a configured provider; no bucket calls
 wp eval-file tests/integration-bulk-rest.php   # needs real credentials; hits the live bucket
 ```
+
+`scripts/integration-tests.sh [wp-path]` runs every `tests/integration-*.php` the way CI does (plugin must be **active** there — the tests rely on hooks `Core\Plugin` registers on `plugins_loaded`, e.g. `MediaCounters`; skips the two that need real credentials). It fails on a failed check, a missing `RESULT` line, or any PHP warning/notice/deprecation from `includes/` or `omnioffloader.php`. Tests must not call a trait's static methods directly (deprecated since PHP 8.1 — go through a class that uses the trait) or no-op functions PHP 8.5 deprecates (`imagedestroy()`, `ReflectionMethod::setAccessible()`).
 
 `tests/MockProvider.php` implements the full `ProviderInterface` against a local directory, so the offload and restore pipelines run end-to-end without credentials. `OMNIOFFLOADER_DISABLE_ENGINE` is the kill switch that stops `Core\Plugin` booting the observers, so a test can wire its own provider.
 

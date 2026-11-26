@@ -959,6 +959,28 @@
 		}
 	});
 
+	// Client-side media processing (WordPress 7.1+) uploads through the REST
+	// API instead of admin-ajax: POST /wp/v2/media, a sideload per sub-size,
+	// then /finalize, after which the file is queued for offload.
+	if (window.wp && wp.apiFetch && typeof wp.apiFetch.use === 'function') {
+		wp.apiFetch.use(function(options, next) {
+			var result = next(options);
+			var path = String((options && (options.path || options.url)) || '');
+			var method = String((options && options.method) || 'GET').toUpperCase();
+
+			// Only the create and finalize requests: not a sideload, and not an
+			// edit of one attachment (POST /wp/v2/media/123). "&" covers plain
+			// permalinks (?rest_route=/wp/v2/media&…).
+			if ('POST' === method && /\/wp\/v2\/media(?:\/\d+\/finalize)?\/?(?:[?&]|$)/.test(path) && result && typeof result.then === 'function') {
+				result.then(function() {
+					scheduleInFlightPoll(1000);
+				}, function() {});
+			}
+
+			return result;
+		});
+	}
+
 	if (window.wp && wp.Uploader && wp.Uploader.queue) {
 		wp.Uploader.queue.on('add reset', function() {
 			scheduleInFlightPoll(1000);

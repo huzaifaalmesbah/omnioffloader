@@ -397,6 +397,12 @@ Depending on the provider you choose:
 * The media status script now loads on post edit screens only when the media library can open there.
 * For hosts behind a CDN or firewall: the new `OMNIOFFLOADER_LOOPBACK_URL` constant sends background requests straight to your own server.
 
+**Fixes**
+
+* Images uploaded in the block editor (WordPress 7.1 and later) and in the Media Library (WordPress 7.2) are now offloaded with all of their sizes. When WordPress resizes an image in the browser, OmniOffloader now waits until the last size has arrived. Before, the attachment could be offloaded without its thumbnails, which then showed as broken. Already affected? Run `wp omnioffloader verify --repair` to upload the missing files.
+* The video and poster WordPress makes from an animated GIF, and the original file of a converted HEIC photo, are now offloaded, restored and deleted together with their attachment.
+* The Media Library status badges now also update for uploads WordPress processes in the browser.
+
 = 0.1.7 =
 
 **New**
@@ -434,7 +440,7 @@ Older releases: see the [full changelog](https://omnioffloader.vercel.app/change
 == Upgrade Notice ==
 
 = Unreleased =
-Background jobs no longer stop your site's other scheduled tasks, their requests are more secure, and a bundled library gets a security fix. Recommended for all users.
+Fixes missing thumbnails in the cloud for images WordPress resizes in the browser (block editor on WordPress 7.1, Media Library on 7.2). Background jobs no longer stop your site's other scheduled tasks, their requests are more secure, and a bundled library gets a security fix. Recommended for all users, and before updating to WordPress 7.2.
 
 = 0.1.7 =
 A new Storage overview on the Dashboard, and faster Bring Back and Tools screens on large media libraries. Recommended for all users.

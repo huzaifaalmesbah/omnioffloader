@@ -12,6 +12,7 @@ use OmniOffloader\Core\SafeMode;
 use OmniOffloader\Providers\ProviderInterface;
 use OmniOffloader\Services\AsyncUploadProcessor;
 use OmniOffloader\Services\AttachmentUploader;
+use OmniOffloader\Traits\AttachmentHelper;
 use OmniOffloader\Traits\OptionsHelper;
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -23,6 +24,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class UploadObserver implements ObserverInterface {
 
+	use AttachmentHelper;
 	use OptionsHelper;
 
 	/**
@@ -47,6 +49,30 @@ class UploadObserver implements ObserverInterface {
 	private $dispatched = false;
 
 	/**
+	 * Cron hook that offloads a client-side upload whose finalize request
+	 * never arrived.
+	 *
+	 * @since 0.1.8
+	 */
+	public const FINALIZE_FALLBACK_HOOK = 'omnioffloader_client_upload_fallback';
+
+	/**
+	 * Seconds to wait for a client-side upload's finalize request before
+	 * offloading it with whatever sizes reached the server.
+	 *
+	 * @since 0.1.8
+	 */
+	public const FINALIZE_WAIT = 15 * MINUTE_IN_SECONDS;
+
+	/**
+	 * Attachments created in this request by the client-side media pipeline
+	 * (their sub-sizes are still to come), as a lookup set.
+	 *
+	 * @var array<int, true>
+	 */
+	private $client_side_uploads = array();
+
+	/**
 	 * Constructor.
 	 *
 	 * @param ProviderInterface         $provider        Cloud provider.
@@ -69,7 +95,65 @@ class UploadObserver implements ObserverInterface {
 
 		// Late priority: run after every size (and modern-format source)
 		// has been added to the metadata by core and other plugins.
-		add_filter( 'wp_generate_attachment_metadata', array( $this, 'handle' ), 999, 2 );
+		add_filter( 'wp_generate_attachment_metadata', array( $this, 'handle' ), 999, 3 );
+
+		// Client-side media (WP 7.1+): the browser makes the sub-sizes and
+		// sends them after the attachment is created; see handle().
+		add_action( 'rest_insert_attachment', array( $this, 'note_client_side_upload' ), 10, 3 );
+		add_action( self::FINALIZE_FALLBACK_HOOK, array( $this, 'finalize_fallback' ) );
+	}
+
+	/**
+	 * Remember an attachment created by the client-side media pipeline.
+	 *
+	 * With client-side processing, `POST /wp/v2/media` (generate_sub_sizes
+	 * false) saves only the uploaded file. The browser then sideloads every
+	 * sub-size — a "scaled" one replaces the main file — and the finalize
+	 * request runs wp_generate_attachment_metadata a second time, with the
+	 * complete sizes and the context 'update'. Offloading on the first pass
+	 * would upload the wrong main file, no sizes, and mark the attachment
+	 * offloaded so the second pass is skipped.
+	 *
+	 * @since 0.1.8
+	 *
+	 * @param \WP_Post         $attachment Attachment.
+	 * @param \WP_REST_Request $request    Request.
+	 * @param bool             $creating   Whether the attachment is being created.
+	 * @return void
+	 */
+	public function note_client_side_upload( $attachment, $request, $creating ) {
+		if ( ! $creating || ! $attachment instanceof \WP_Post || ! $request instanceof \WP_REST_Request ) {
+			return;
+		}
+
+		$generate = $request->get_param( 'generate_sub_sizes' );
+
+		// The schema turns it into a boolean and defaults it to true; only an
+		// explicit false is a client-side upload.
+		if ( false === $generate || ( is_string( $generate ) && ! rest_sanitize_boolean( $generate ) ) ) {
+			$this->client_side_uploads[ (int) $attachment->ID ] = true;
+		}
+	}
+
+	/**
+	 * Offload a client-side upload whose finalize request never arrived.
+	 *
+	 * Finalize is best effort in core: a closed tab or a failed request
+	 * leaves the attachment with the sizes that reached the server.
+	 *
+	 * @since 0.1.8
+	 *
+	 * @param int $attachment_id Attachment ID.
+	 * @return void
+	 */
+	public function finalize_fallback( $attachment_id ) {
+		$attachment_id = (int) $attachment_id;
+
+		if ( SafeMode::is_active() || 'attachment' !== get_post_type( $attachment_id ) || self::is_offloaded( $attachment_id ) ) {
+			return;
+		}
+
+		$this->offload( $attachment_id, null );
 	}
 
 	/**
@@ -96,28 +180,77 @@ class UploadObserver implements ObserverInterface {
 	/**
 	 * Offload the attachment after metadata generation.
 	 *
+	 * Runs once per upload on the classic path ('create'). A client-side
+	 * upload runs it twice: at creation, before its sub-sizes exist, and
+	 * from the finalize request ('update') with all of them — only that
+	 * second pass offloads. An 'update' for an attachment that is already
+	 * offloaded (a finalize retry, resumed sub-sizes) uploads the files the
+	 * bucket is missing.
+	 *
+	 * @since 0.1.8 Takes $context; waits for a client-side upload's finalize.
+	 *
 	 * @param array<string, mixed> $metadata      Attachment metadata.
 	 * @param int                  $attachment_id Attachment ID.
+	 * @param string               $context       'create' or 'update'.
 	 * @return array<string, mixed> Unchanged metadata.
 	 */
-	public function handle( $metadata, $attachment_id ) {
+	public function handle( $metadata, $attachment_id, $context = 'create' ) {
 		$attachment_id = (int) $attachment_id;
 
 		if ( SafeMode::is_active() ) {
 			return $metadata;
 		}
 
-		if ( $this->should_use_async( $attachment_id ) ) {
-			$this->queue_for_async_upload( $attachment_id );
+		if ( 'create' === $context && isset( $this->client_side_uploads[ $attachment_id ] ) ) {
+			unset( $this->client_side_uploads[ $attachment_id ] );
+
+			if ( $this->should_use_async( $attachment_id ) ) {
+				update_post_meta( $attachment_id, 'omnioffloader_status', 'queued' );
+			}
+
+			if ( ! wp_next_scheduled( self::FINALIZE_FALLBACK_HOOK, array( $attachment_id ) ) ) {
+				wp_schedule_single_event( time() + self::FINALIZE_WAIT, self::FINALIZE_FALLBACK_HOOK, array( $attachment_id ) );
+			}
 
 			return $metadata;
 		}
 
-		// Synchronous fallback (e.g. WP-CLI, tests, or async_upload disabled in settings).
-		$uploader = new AttachmentUploader( $this->provider );
-		$uploader->upload( $attachment_id, is_array( $metadata ) ? $metadata : null );
+		if ( 'update' === $context ) {
+			wp_clear_scheduled_hook( self::FINALIZE_FALLBACK_HOOK, array( $attachment_id ) );
+		}
+
+		$this->offload( $attachment_id, is_array( $metadata ) ? $metadata : null );
 
 		return $metadata;
+	}
+
+	/**
+	 * Offload now or in the background, or sync the files an offloaded
+	 * attachment's bucket copy is missing.
+	 *
+	 * @since 0.1.8
+	 *
+	 * @param int                       $attachment_id Attachment ID.
+	 * @param array<string, mixed>|null $metadata      In-flight metadata, null to read it.
+	 * @return void
+	 */
+	private function offload( $attachment_id, $metadata ) {
+		if ( $this->should_use_async( $attachment_id ) ) {
+			$this->queue_for_async_upload( $attachment_id );
+
+			return;
+		}
+
+		// Synchronous fallback (e.g. WP-CLI, tests, or async_upload disabled in settings).
+		$uploader = new AttachmentUploader( $this->provider );
+
+		if ( self::is_offloaded( $attachment_id ) ) {
+			$uploader->upload_missing( $attachment_id, $metadata );
+
+			return;
+		}
+
+		$uploader->upload( $attachment_id, $metadata );
 	}
 
 	/**

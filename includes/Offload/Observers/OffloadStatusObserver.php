@@ -716,6 +716,12 @@ class OffloadStatusObserver implements ObserverInterface {
 		wp_enqueue_style( 'omnioffloader-media-status', $css_url, array(), $css_ver );
 
 		$deps = array( 'jquery' );
+
+		// Client-side media processing (WP 7.1+) uploads through apiFetch;
+		// media-status.js watches those requests to refresh its badges.
+		if ( function_exists( 'wp_is_client_side_media_processing_enabled' ) && wp_is_client_side_media_processing_enabled() ) {
+			$deps[] = 'wp-api-fetch';
+		}
 		if ( wp_script_is( 'media-views', 'enqueued' ) ) {
 			$deps[] = 'media-views';
 		}

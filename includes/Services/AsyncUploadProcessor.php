@@ -215,7 +215,17 @@ class AsyncUploadProcessor extends WP_Background_Process {
 		}
 
 		// Queued before the site was recognised as a copy: stays local.
-		if ( self::is_offloaded( $attachment_id ) || SafeMode::is_active() ) {
+		if ( SafeMode::is_active() ) {
+			delete_post_meta( $attachment_id, 'omnioffloader_status' );
+
+			return false;
+		}
+
+		// Already offloaded, queued again by a later metadata pass (a
+		// client-side upload's finalize, resumed sub-sizes): upload only the
+		// files that reached the server since.
+		if ( self::is_offloaded( $attachment_id ) ) {
+			( new AttachmentUploader( $this->provider ) )->upload_missing( $attachment_id );
 			delete_post_meta( $attachment_id, 'omnioffloader_status' );
 
 			return false;
@@ -389,5 +399,7 @@ class AsyncUploadProcessor extends WP_Background_Process {
 		// Flag name used before 0.1.3.
 		delete_site_transient( 'omnioffloader_async_has_queue' );
 		wp_clear_scheduled_hook( $identifier . '_cron' );
+		// Client-side uploads waiting for their finalize request (UploadObserver::FINALIZE_FALLBACK_HOOK).
+		wp_unschedule_hook( 'omnioffloader_client_upload_fallback' );
 	}
 }

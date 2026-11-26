@@ -389,6 +389,14 @@ Depending on the provider you choose:
 
 * Updated the bundled Symfony Filesystem library to 6.4.50, which fixes CVE-2026-135803.
 
+**Improvements**
+
+* Background uploads and bulk jobs no longer stop your site's other scheduled tasks (from other plugins too) from running while a job is in progress.
+* Background requests no longer carry your login cookies, and their security check is no longer written in server or CDN logs. Requests from anyone else are turned away before the plugin does any work.
+* With the Media Library open, OmniOffloader only takes over a background upload when the background worker has really stopped. The page stays quick and frees a server process.
+* The media status script now loads on post edit screens only when the media library can open there.
+* For hosts behind a CDN or firewall: the new `OMNIOFFLOADER_LOOPBACK_URL` constant sends background requests straight to your own server.
+
 **Fixes**
 
 * Images uploaded in the block editor (WordPress 7.1 and later) and in the Media Library (WordPress 7.2) are now offloaded with all of their sizes. When WordPress resizes an image in the browser, OmniOffloader now waits until the last size has arrived. Before, the attachment could be offloaded without its thumbnails, which then showed as broken. Already affected? Run `wp omnioffloader verify --repair` to upload the missing files.
@@ -432,7 +440,7 @@ Older releases: see the [full changelog](https://omnioffloader.vercel.app/change
 == Upgrade Notice ==
 
 = Unreleased =
-Fixes missing thumbnails in the cloud for images WordPress resizes in the browser (block editor on WordPress 7.1, Media Library on 7.2), and updates a bundled library with a security fix. Recommended for all users, and before updating to WordPress 7.2.
+Fixes missing thumbnails in the cloud for images WordPress resizes in the browser (block editor on WordPress 7.1, Media Library on 7.2). Background jobs no longer stop your site's other scheduled tasks, their requests are more secure, and a bundled library gets a security fix. Recommended for all users, and before updating to WordPress 7.2.
 
 = 0.1.7 =
 A new Storage overview on the Dashboard, and faster Bring Back and Tools screens on large media libraries. Recommended for all users.

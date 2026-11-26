@@ -29,12 +29,16 @@ set -u
 
 WP_PATH="${1:-}"
 WP_CLI="${WP_CLI:-wp}"
-PLUGIN_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# Physical path (-P): PHP reports files by their real path, also when the
+# plugin folder is a symlink.
+PLUGIN_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
 SKIP=" integration-bulk-rest.php integration-stale-status.php "
 
-path_arg=()
+# Never empty: bash 3.2 (the macOS default) treats "${empty[@]}" as an
+# unbound variable under `set -u`.
+path_arg=(--no-color)
 if [ -n "$WP_PATH" ]; then
-	path_arg=(--path="$WP_PATH")
+	path_arg+=(--path="$WP_PATH")
 fi
 if [ -n "${WP_URL:-}" ]; then
 	path_arg+=(--url="$WP_URL")
@@ -80,7 +84,7 @@ for test in "$PLUGIN_DIR"/tests/integration-*.php; do
 
 	result="$(printf '%s\n' "$output" | grep -E '^RESULT:' | tail -1)"
 	# PHP notices raised inside the plugin's own code (not in tests or WP-CLI).
-	notices="$(printf '%s\n' "$output" | grep -E '(Warning|Notice|Deprecated|Fatal error)' | grep -v 'phar://' | grep -E "$PLUGIN_DIR/(includes/|omnioffloader\.php)" || true)"
+	notices="$(printf '%s\n' "$output" | grep -E '(Warning|Notice|Deprecated|Fatal error)' | grep -v 'phar://' | grep -F -e "$PLUGIN_DIR/includes/" -e "$PLUGIN_DIR/omnioffloader.php" || true)"
 
 	if [ -z "$result" ]; then
 		status="FAIL (no RESULT line: fatal error?)"

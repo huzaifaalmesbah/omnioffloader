@@ -18,11 +18,13 @@ permissions: {}
 jobs:
   merge-into-main:
     runs-on: ubuntu-24.04
+    timeout-minutes: 10
     permissions:
       contents: write
       pull-requests: write
     steps:
-      - uses: actions/checkout@v7
+      # Keeps its credentials: it merges docs-live into main and pushes.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1 # zizmor: ignore[artipacked]
         with:
           ref: main
           fetch-depth: 0

@@ -3,8 +3,11 @@ name: Milestones
 # A PR merged into main without a milestone joins the next release: the open
 # milestone with the lowest version number. release-please.yml closes that
 # milestone when the version ships. Release PRs are left alone.
+# pull_request_target: setting a milestone needs a write token, which a
+# fork's pull_request run doesn't get. Safe here: no checkout, and PR data is
+# only read through the API, never put in a shell command.
 on:
-  pull_request_target:
+  pull_request_target: # zizmor: ignore[dangerous-triggers]
     types: [closed]
     branches: [main]
 
@@ -14,11 +17,12 @@ jobs:
   assign:
     if: ${{ github.event.pull_request.merged && !github.event.pull_request.milestone && !startsWith(github.event.pull_request.head.ref, 'release-please--') }}
     runs-on: ubuntu-24.04
+    timeout-minutes: 10
     permissions:
       issues: write
       pull-requests: write
     steps:
-      - uses: actions/github-script@v9
+      - uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         with:
           script: |
             const milestones = await github.paginate( github.rest.issues.listMilestones, {

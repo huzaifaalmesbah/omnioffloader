@@ -11,16 +11,21 @@ on:
         required: false
         default: 'no'
 
-permissions:
-  contents: write
+permissions: {}
 
 jobs:
   delete-tag:
     name: Delete SVN Tag
     runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    env:
+      RAW_TAG: ${{ github.event.inputs.tag }}
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v7
+      # Keeps its credentials: the last step deletes the git tag with git push.
+      - name: Checkout repository # zizmor: ignore[artipacked]
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
 
@@ -36,7 +41,6 @@ jobs:
         run: |
           SLUG="${GITHUB_REPOSITORY#*/}"
 
-          RAW_TAG="${{ github.event.inputs.tag }}"
           # Strip leading 'v' if present for SVN tags
           TAG="${RAW_TAG#v}"
 
@@ -55,7 +59,6 @@ jobs:
       - name: Delete tag from GitHub Git
         if: ${{ github.event.inputs.delete_git_tag == 'yes' }}
         run: |
-          RAW_TAG="${{ github.event.inputs.tag }}"
           TAG="${RAW_TAG#v}"
 
           for T in "$RAW_TAG" "$TAG" "v$TAG"; do

@@ -389,6 +389,14 @@ Depending on the provider you choose:
 
 * Updated the bundled Symfony Filesystem library to 6.4.50, which fixes CVE-2026-135803.
 
+**Improvements**
+
+* Background uploads and bulk jobs no longer stop your site's other scheduled tasks (from other plugins too) from running while a job is in progress.
+* Background requests no longer carry your login cookies, and their security check is no longer written in server or CDN logs. Requests from anyone else are turned away before the plugin does any work.
+* With the Media Library open, OmniOffloader only takes over a background upload when the background worker has really stopped. The page stays quick and frees a server process.
+* The media status script now loads on post edit screens only when the media library can open there.
+* For hosts behind a CDN or firewall: the new `OMNIOFFLOADER_LOOPBACK_URL` constant sends background requests straight to your own server.
+
 = 0.1.7 =
 
 **New**
@@ -426,7 +434,7 @@ Older releases: see the [full changelog](https://omnioffloader.vercel.app/change
 == Upgrade Notice ==
 
 = Unreleased =
-Updates a bundled library with a security fix. Recommended for all users.
+Background jobs no longer stop your site's other scheduled tasks, their requests are more secure, and a bundled library gets a security fix. Recommended for all users.
 
 = 0.1.7 =
 A new Storage overview on the Dashboard, and faster Bring Back and Tools screens on large media libraries. Recommended for all users.

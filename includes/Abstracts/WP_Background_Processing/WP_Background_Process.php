@@ -353,6 +353,11 @@ abstract class WP_Background_Process extends WP_Async_Request
         // Don't lock up other requests while processing.
         session_write_close();
 
+        // Authenticate before touching any queue state: this action is also
+        // registered for logged-out users (loopbacks from WP-Cron and from
+        // anonymous uploads run as user 0), so anyone can reach it.
+        $this->verify_loopback_request();
+
         // If cancelled, prioritize cleanup even if a stale process lock exists.
         if ($this->is_cancelled()) {
             // Clear scheduled event and any process lock to avoid getting stuck in "Canceling…".
@@ -382,8 +387,6 @@ abstract class WP_Background_Process extends WP_Async_Request
 
             return $this->maybe_wp_die();
         }
-
-        check_ajax_referer($this->identifier, 'nonce');
 
         $this->handle();
 
@@ -781,15 +784,17 @@ abstract class WP_Background_Process extends WP_Async_Request
      */
     public function handle_cron_healthcheck()
     {
+        // Return, never exit: this runs inside wp-cron.php, and exit would skip
+        // every other event due later in the same cron run.
         if ($this->is_processing()) {
             // Background process already running.
-            exit;
+            return;
         }
 
         if ($this->is_queue_empty()) {
             // No data to process.
             $this->clear_scheduled_event();
-            exit;
+            return;
         }
 
         $this->dispatch();

@@ -58,7 +58,6 @@ $queue = new BulkRestoreProcessor();
 
 // A worker is busy with the run (its process lock is held).
 $identifier_prop = new ReflectionProperty( $queue, 'identifier' );
-$identifier_prop->setAccessible( true );
 $identifier = $identifier_prop->getValue( $queue );
 set_site_transient( $identifier . '_process_lock', microtime(), MINUTE_IN_SECONDS );
 
@@ -86,7 +85,6 @@ $record_results = new ReflectionMethod( $base, 'record_results' );
 $pass_run       = new ReflectionProperty( $base, 'pass_run' );
 $superseded     = new ReflectionProperty( $base, 'superseded' );
 foreach ( array( $run_stopped, $record_results, $pass_run, $superseded ) as $reflected ) {
-	$reflected->setAccessible( true );
 }
 
 // The worker's pass began in run A.

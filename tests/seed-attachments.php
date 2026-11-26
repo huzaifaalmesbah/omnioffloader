@@ -21,7 +21,6 @@ for ( $i = 1; $i <= $omnioffloader_count; $i++ ) {
 	ob_start();
 	imagejpeg( $image );
 	$bits = ob_get_clean();
-	imagedestroy( $image );
 
 	$upload = wp_upload_bits( "{$omnioffloader_prefix}-{$i}.jpg", null, $bits );
 

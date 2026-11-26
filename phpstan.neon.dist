@@ -1,5 +1,12 @@
 parameters:
 	level: 8
+	# Every supported PHP: Requires PHP 8.1 up to the newest PHPStan knows
+	# (8.5 in PHPStan 2.2; raise the max when PHPStan accepts 80699).
+	# Code that needs a newer PHP than 8.1 (a function, a class, syntax) is
+	# reported, which PHPCompatibilityWP 2.x (pre-PHP 8 sniffs) can't do.
+	phpVersion:
+		min: 80100
+		max: 80599
 	bootstrapFiles:
 		- tests/phpstan-bootstrap.php
 	paths:
@@ -9,8 +16,9 @@ parameters:
 	excludePaths:
 		analyseAndScan:
 			- vendor/
-			- node_modules/
-			- build/
+			# Optional: absent until pnpm install / pnpm build have run.
+			- node_modules/ (?)
+			- build/ (?)
 		analyse:
 			# Vendored third-party library (Delicious Brains, GPL) — its
 			# symbols are still scanned, but it is not held to this
@@ -33,3 +41,69 @@ parameters:
 		WP_CLI:
 			- error
 			- halt
+
+# phpstan-strict-rules, Gutenberg's way: only the rules this code already
+# passes, registered one by one. Including the package's rules.neon (the
+# extension installer skips it, see composer.json) would also switch on
+# stricter PHPStan parameters. Not enabled: disallowedEmpty (560 errors:
+# empty() is the WordPress idiom), strictArrayFilter (33), uselessCast (10),
+# booleansInConditions (25). Turn one on when its errors are fixed.
+services:
+	-
+		class: PHPStan\Rules\BooleansInConditions\BooleanRuleHelper
+	-
+		class: PHPStan\Rules\Operators\OperatorRuleHelper
+	-
+		class: PHPStan\Rules\DisallowedConstructs\DisallowedLooseComparisonRule
+		arguments:
+			includeOperandTypesInErrorMessage: false
+		tags:
+			- phpstan.rules.rule
+	-
+		class: PHPStan\Rules\VariableVariables\VariablePropertyFetchRule
+		arguments:
+			universalObjectCratesClasses: %universalObjectCratesClasses%
+		tags:
+			- phpstan.rules.rule
+
+rules:
+	# booleansInLoopConditions
+	- PHPStan\Rules\BooleansInConditions\BooleanInDoWhileConditionRule
+	- PHPStan\Rules\BooleansInConditions\BooleanInWhileConditionRule
+	# requireParentConstructorCall, disallowedBacktick, disallowedImplicitArrayCreation, disallowedShortTernary
+	- PHPStan\Rules\Classes\RequireParentConstructCallRule
+	- PHPStan\Rules\DisallowedConstructs\DisallowedBacktickRule
+	- PHPStan\Rules\DisallowedConstructs\DisallowedImplicitArrayCreationRule
+	- PHPStan\Rules\DisallowedConstructs\DisallowedShortTernaryRule
+	# overwriteVariablesWithLoop, closureUsesThis, matchingInheritedMethodNames
+	- PHPStan\Rules\ForeachLoop\OverwriteVariablesWithForeachRule
+	- PHPStan\Rules\ForLoop\OverwriteVariablesWithForLoopInitRule
+	- PHPStan\Rules\Functions\ClosureUsesThisRule
+	- PHPStan\Rules\Methods\WrongCaseOfInheritedMethodRule
+	# numericOperandsInArithmeticOperators
+	- PHPStan\Rules\Operators\OperandInArithmeticPostDecrementRule
+	- PHPStan\Rules\Operators\OperandInArithmeticPostIncrementRule
+	- PHPStan\Rules\Operators\OperandInArithmeticPreDecrementRule
+	- PHPStan\Rules\Operators\OperandInArithmeticPreIncrementRule
+	- PHPStan\Rules\Operators\OperandInArithmeticUnaryMinusRule
+	- PHPStan\Rules\Operators\OperandInArithmeticUnaryPlusRule
+	- PHPStan\Rules\Operators\OperandsInArithmeticAdditionRule
+	- PHPStan\Rules\Operators\OperandsInArithmeticDivisionRule
+	- PHPStan\Rules\Operators\OperandsInArithmeticExponentiationRule
+	- PHPStan\Rules\Operators\OperandsInArithmeticModuloRule
+	- PHPStan\Rules\Operators\OperandsInArithmeticMultiplicationRule
+	- PHPStan\Rules\Operators\OperandsInArithmeticSubtractionRule
+	# dynamicCallOnStaticMethod, strictFunctionCalls, switchConditionsMatchingType
+	- PHPStan\Rules\StrictCalls\DynamicCallOnStaticMethodsRule
+	- PHPStan\Rules\StrictCalls\DynamicCallOnStaticMethodsCallableRule
+	- PHPStan\Rules\StrictCalls\StrictFunctionCallsRule
+	- PHPStan\Rules\SwitchConditions\MatchingTypeInSwitchCaseConditionRule
+	# noVariableVariables, illegalConstructorMethodCall
+	- PHPStan\Rules\VariableVariables\VariableMethodCallRule
+	- PHPStan\Rules\VariableVariables\VariableMethodCallableRule
+	- PHPStan\Rules\VariableVariables\VariableStaticMethodCallRule
+	- PHPStan\Rules\VariableVariables\VariableStaticMethodCallableRule
+	- PHPStan\Rules\VariableVariables\VariableStaticPropertyFetchRule
+	- PHPStan\Rules\VariableVariables\VariableVariablesRule
+	- PHPStan\Rules\Methods\IllegalConstructorMethodCallRule
+	- PHPStan\Rules\Methods\IllegalConstructorStaticCallRule

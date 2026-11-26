@@ -88,7 +88,6 @@ for ( $i = 1; $i <= 12; $i++ ) {
 	ob_start();
 	imagejpeg( $image, null, 80 );
 	$bits = ob_get_clean();
-	imagedestroy( $image );
 
 	$upload = wp_upload_bits( "omnioffloader-conc-{$i}.jpg", null, $bits );
 	$id     = wp_insert_attachment(

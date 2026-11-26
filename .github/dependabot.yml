@@ -1,0 +1,55 @@
+version: 2
+
+# Workflows pin every action to a commit SHA (with a "# vX.Y.Z" comment).
+# Dependabot proposes the new SHA and comment when an action releases, so
+# the pins stay current. PR titles use the Conventional Commits "ci:" type
+# that pr-title.yml requires.
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    # Wait a week after an action releases: a compromised release is usually
+    # found and pulled within days.
+    cooldown:
+      default-days: 7
+    commit-message:
+      prefix: ci
+    groups:
+      actions:
+        patterns:
+          - '*'
+
+  # Shipped PHP dependencies (AWS SDK, Guzzle, Symfony…) and dev tools.
+  # composer.json pins the platform to PHP 8.1, so updates stay installable
+  # on the lowest supported PHP.
+  - package-ecosystem: composer
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+    commit-message:
+      prefix: fix(deps)
+      prefix-development: chore(deps-dev)
+    groups:
+      composer-patch-minor:
+        update-types:
+          - minor
+          - patch
+
+  # Build tooling and @wordpress/* packages (wp-components itself loads from
+  # WordPress core at runtime, so these only change the build).
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+    commit-message:
+      prefix: chore(deps)
+    groups:
+      npm-patch-minor:
+        update-types:
+          - minor
+          - patch

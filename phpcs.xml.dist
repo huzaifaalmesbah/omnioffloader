@@ -18,6 +18,12 @@
 
 	<config name="minimum_wp_version" value="6.6"/>
 
+	<!-- PHP compatibility across every supported version (Requires PHP 8.1, no
+	     upper bound), as wordpress-develop and Gutenberg do. PHPCompatibilityWP
+	     knows the polyfills WordPress ships, so it doesn't flag those. -->
+	<config name="testVersion" value="8.1-"/>
+	<rule ref="PHPCompatibilityWP"/>
+
 	<rule ref="WordPress">
 		<!-- Short array syntax is used throughout this project. -->
 		<exclude name="Universal.Arrays.DisallowShortArraySyntax"/>

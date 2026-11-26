@@ -86,7 +86,6 @@ function omnioffloader_make_attachment( $name ) {
 	ob_start();
 	imagejpeg( $image, null, 85 );
 	$bits = ob_get_clean();
-	imagedestroy( $image );
 
 	$upload = wp_upload_bits( $name, null, $bits );
 	if ( ! empty( $upload['error'] ) ) {

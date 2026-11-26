@@ -60,12 +60,17 @@ jobs:
       - name: Setup PHP
         uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
         with:
+          # The lowest supported PHP, as Gutenberg runs its PHPCS.
           php-version: '8.1'
           coverage: none
-          tools: composer
+          tools: composer, cs2pr
 
       - name: Install Composer dependencies
         run: composer install --no-interaction --prefer-dist --no-progress
+
+      # Dependencies that ship in the plugin zip (vendor/, no dev tools).
+      - name: Composer audit
+        run: composer audit --no-dev --locked
 
       - name: Setup pnpm
         uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
@@ -79,21 +84,94 @@ jobs:
       - name: Install JS dependencies
         run: pnpm install --frozen-lockfile
 
+      # Production npm dependencies. Advisories in packages that never ship
+      # are fixed with overrides in pnpm-workspace.yaml, never ignored.
+      - name: pnpm audit
+        run: pnpm audit --prod
+
       # Before PHPStan: includes/Admin/Settings.php includes build/index.asset.php.
       - name: Build
         run: pnpm build
 
       - name: PHPStan
-        run: composer phpstan
+        run: composer phpstan -- --no-progress --error-format=github
 
+      # Weekly-flushed PHPCS cache, as wordpress-develop and Gutenberg do.
+      - name: Week for the PHPCS cache key
+        id: week
+        run: echo "date=$(/bin/date -u --date='last Mon' '+%F')" >> "$GITHUB_OUTPUT"
+
+      - name: PHPCS cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .cache/phpcs.json
+          key: ${{ runner.os }}-${{ steps.week.outputs.date }}-phpcs-${{ hashFiles( 'composer.lock', 'phpcs.xml.dist' ) }}
+
+      # WPCS + PHPCompatibilityWP (phpcs.xml.dist). Findings also show as
+      # inline annotations on the PR (cs2pr).
       - name: PHPCS
-        run: composer phpcs
+        id: phpcs
+        run: |
+          mkdir -p .cache
+          vendor/bin/phpcs -q --report-full --report-checkstyle=.cache/phpcs-report.xml --cache=.cache/phpcs.json
+
+      - name: PHPCS annotations
+        if: ${{ always() && steps.phpcs.outcome == 'failure' }}
+        run: cs2pr .cache/phpcs-report.xml
 
       - name: TypeScript
         run: pnpm check-types
 
       - name: ESLint
         run: pnpm lint:js
+
+  plugin-check:
+    name: Plugin Check
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
+        with:
+          php-version: '8.1'
+          coverage: none
+          tools: composer
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '24'
+          cache: 'pnpm'
+
+      - name: Install JS dependencies
+        run: pnpm install --frozen-lockfile
+
+      # The exact zip a release ships (scripts/bundle.js: production build,
+      # composer --no-dev, .distignore'd files removed).
+      - name: Build the release zip
+        run: |
+          pnpm bundle
+          mkdir -p plugin-check-build
+          unzip -q omnioffloader.zip -d plugin-check-build
+
+      # The WordPress.org directory rules. Errors fail the job; warnings show
+      # as annotations. Known warnings: three PluginCheck.Security.DirectDB.
+      # UnescapedDBParameter in Core/Helpers.php, where the SQL is built by
+      # $wpdb->prepare() in elsewhere_sql() — Plugin Check can't follow it.
+      - name: Plugin Check
+        uses: WordPress/plugin-check-action@10857da14b6c2246d15402b3e69f777edcf8c12e # v1.1.9
+        with:
+          build-dir: './plugin-check-build/omnioffloader'
 
   versions:
     name: Version matrix
